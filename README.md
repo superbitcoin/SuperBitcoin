@@ -1,7 +1,7 @@
 Super Bitcoin 
 =====================================
 
-https://superbtc.org
+http://superbtc.org
 
 What is SuperBitcoin?
 ----------------
