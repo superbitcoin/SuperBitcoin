@@ -7,6 +7,7 @@
 
 #include "uint256.h"
 #include "key.h"
+#include "dbwrapper.h"
 
 #include <map>
 #include <univalue/include/univalue.h>
@@ -21,20 +22,25 @@ struct CCheckpointData;
  */
 namespace Checkpoints {
 
-//! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
-    CBlockIndex *GetLastCheckpoint(const CCheckpointData &data);
+
+
+    extern CCriticalSection cs_checkPoint;
+
+
 
 
     class CCheckData {
     public:
         CCheckData();
 
+        CCheckData(int hight, const uint256 &blockHash);
+
         virtual ~CCheckData();
 
-        bool CheckSignature(const CPubKey &cPubKey);
+        bool CheckSignature(const CPubKey &cPubKey) const ;
 
 
-        bool Sign(const CKey &cPriKey, const std::vector<unsigned char> &vchSyncData);
+        bool Sign(const CKey &cPriKey);
 
         UniValue ToJsonObj();
 
@@ -48,12 +54,44 @@ namespace Checkpoints {
             READWRITE(m_vchSig);
         }
 
+        int getHight() const;
 
-    public:
+        void setHight(int hight);
+
+        const uint256 &getBlockHash() const;
+
+        void setBlockHash(const uint256 &blockHash);
+
+        const std::vector<unsigned char> &getM_vchSig() const;
+
+        void setM_vchSig(const std::vector<unsigned char> &m_vchSig);
+
+    private:
         int hight;
         uint256 blockHash;
         std::vector<unsigned char> m_vchSig;
     };
+
+    class CCheckPointDB {
+    public:
+        CCheckPointDB();
+
+        bool WriteCheckpoint(int height, const CCheckData& data);
+        bool ReadCheckpoint(int height, CCheckData& data);
+        bool ExistCheckpoint(int height);
+        bool LoadCheckPoint(std::map<int, CCheckData>& values);
+
+    protected:
+        CDBWrapper db;
+    };
+
+
+
+
+//! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
+    CBlockIndex *GetLastCheckpoint(const CCheckpointData &data);
+
+    bool GetCheckpointByHeight(const int nHeight, std::vector<CCheckData> &vnCheckPoints);
 
 
 } //namespace Checkpoints

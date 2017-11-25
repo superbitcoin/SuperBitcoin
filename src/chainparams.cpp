@@ -60,7 +60,7 @@ void CChainParams::UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64
 }
 
 
-bool CChainParams::AddCheckPoint(int const hight, const uint256 hash) {
+bool CChainParams::AddCheckPoint(int const hight, const uint256 hash) const {
 
     auto it = std::find_if(checkpointData.mapCheckpoints.begin(), checkpointData.mapCheckpoints.end(),
                            [&](std::map<int, uint256>::value_type pair) { return pair.first >= hight; });

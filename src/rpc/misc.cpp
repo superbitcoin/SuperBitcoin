@@ -30,6 +30,9 @@
 #endif
 
 #include <univalue.h>
+#include <checkpoints.h>
+#include <consensus/validation.h>
+#include <netmessagemaker.h>
 
 /**
  * @note Do not add or change anything in the information returned by this
@@ -104,6 +107,7 @@ UniValue getinfo(const JSONRPCRequest& request)
     obj.push_back(Pair("proxy",         (proxy.IsValid() ? proxy.proxy.ToStringIPPort() : std::string())));
     obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
     obj.push_back(Pair("testnet",       Params().NetworkIDString() == CBaseChainParams::TESTNET));
+    obj.push_back(Pair("nettype",       Params().NetworkIDString()));
 #ifdef ENABLE_WALLET
     if (pwallet) {
         obj.push_back(Pair("keypoololdest", pwallet->GetOldestKeyPoolTime()));
@@ -634,6 +638,126 @@ UniValue logging(const JSONRPCRequest& request)
 
     return result;
 }
+
+UniValue gencheckpoint(const JSONRPCRequest &request) {
+    if (request.fHelp || request.params.size() != 3) {
+        throw std::runtime_error(
+                "gencheckpoint \"privatekey\" \"hash\" \"hight\"\n"
+                        "\n generate checkpoint by Private key and block hash \n"
+                        "\nArguments:\n"
+                        "1. \"private_key\"  (string, required) the private key \n"
+                        "2. \"checkpoint_file\"  (string, required) the checkpoint file path\n"
+                        "3. \"hash\"  (string, required) check point block hash\n"
+                        "4. \"hight\" (string ,required) block hight\n"
+                        "\nResult:\n"
+                        "\nExamples:\n"
+                + HelpExampleCli("gencheckpoint", "\"privatekey\" \"hash\" \"hight\""));
+    }
+
+
+    boost::filesystem::path checkpoint_file = request.params[1].get_str();
+    checkpoint_file = boost::filesystem::absolute(checkpoint_file);
+
+     if (boost::filesystem::exists(checkpoint_file)) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, checkpoint_file.string() + " is  exists. ");
+    }
+
+    std::ofstream file;
+    file.open(checkpoint_file.string().c_str());
+    if (!file.is_open())
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open private key file");
+    UniValue obj(UniValue::VOBJ);
+
+    try {
+        std::string strSecret = request.params[0].get_str();
+
+        CBitcoinSecret vchSecret;
+        bool fGood = vchSecret.SetString(strSecret);
+
+        if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key encoding");
+
+        CKey key = vchSecret.GetKey();
+        if (!key.IsValid()) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Private key outside allowed range");
+
+
+        Checkpoints::CCheckData cCheckData(request.params[2].get_int(), uint256(ParseHex(request.params[3].get_str())));
+        cCheckData.Sign(key);
+
+        file << cCheckData.ToJsonObj().write();
+        file.close();
+        obj.push_back(Pair("status", "successed"));
+        obj.push_back(Pair("file", checkpoint_file.string().c_str()));
+    }
+    catch (...) {
+        file.close();
+    }
+
+
+    return obj;
+}
+
+
+/**
+ * 添加新的检查点
+ * @param params 输入参数
+ * @param bHelp 输出帮助信息。
+ * @return
+ */
+UniValue setcheckpoint(const JSONRPCRequest& request) {
+    if (request.fHelp || request.params.size() != 1) {
+        throw std::runtime_error(
+                "setcheckpoint \"filepath\"\n"
+                        "\nadd new checkpoint and send it out.\n"
+                        "\nArguments:\n"
+                        "1. \"filepath\"  (string, required) check point file path\n"
+                        "\nResult:\n"
+                        "\nExamples:\n"
+                + HelpExampleCli("setcheckpoint", "\"filepath\"")
+                + HelpExampleRpc("setcheckpoint", "\"filepath\""));
+    }
+
+    boost::filesystem::path checkpoint_file = request.params[1].get_str();
+    checkpoint_file = boost::filesystem::absolute(checkpoint_file);
+    if (boost::filesystem::exists(checkpoint_file)) {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, checkpoint_file.string() + " is  exists. ");
+    }
+
+    std::ofstream file;
+    file.open(checkpoint_file.string().c_str());
+    if (!file.is_open())
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open check point file");
+
+
+    std::ifstream file1;
+    file.open(request.params[0].get_str().c_str(), std::ios::in | std::ios::ate);
+    if (!file.is_open())
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open wallet dump file");
+
+
+    std::string str((std::istreambuf_iterator<char>(file1)),
+                    std::istreambuf_iterator<char>());
+
+
+    UniValue checkObj;
+    checkObj.read(str);
+
+    Checkpoints::CCheckData cCheckData;
+    cCheckData.setHight(checkObj["hight"].get_int());
+    cCheckData.setBlockHash(uint256(ParseHex(checkObj["blockHash"].get_str().c_str())));
+    cCheckData.setM_vchSig(ParseHex(checkObj["sig"].get_str()));
+
+
+    g_connman.get()->ForEachNode([&cCheckData](CNode *pnode) {
+        const CNetMsgMaker msgMaker(pnode->GetSendVersion());
+        g_connman.get()->PushMessage(pnode, msgMaker.Make(NetMsgType::CHECKPOINT, cCheckData));
+    });
+    UniValue retObj;
+    retObj.push_back(std::make_pair("info","the check point has been sended"));
+    retObj.push_back(std::make_pair("obj",checkObj));
+    return retObj;
+}
+
+
 
 UniValue echo(const JSONRPCRequest& request)
 {
