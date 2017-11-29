@@ -8,6 +8,7 @@ What is Super Bitcoin?
 
 Super Bitcoin is an experimental hard fork of Bitcoin, which is also ***an*** ***experimental*** digital currency. Super Bitcoin tries to implement, test, improve, and innovate features that Bitcoin society members have long proposed or requested, the results of which could in turn be valuable to Bitcoin itself. 
 
+
 License
 -------
 
