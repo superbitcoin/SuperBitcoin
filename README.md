@@ -1,17 +1,18 @@
 Super Bitcoin 
 =====================================
 
-https://superbtc.org
+http://superbtc.org
 
-What is SuperBitcoin?
+What is Super Bitcoin?
 ----------------
 
-SuperBitcoin is an experimental hard fork of Bitcoin, which is also ***an*** ***experimental*** digital currency. SuperBitcoin tries to implement, test, improve, and innovate features that Bitcoin society members have long proposed or requested, the results of which could in turn be valuable to Bitcoin itself. 
+Super Bitcoin is an experimental hard fork of Bitcoin, which is also ***an*** ***experimental*** digital currency. Super Bitcoin tries to implement, test, improve, and innovate features that Bitcoin society members have long proposed or requested, the results of which could in turn be valuable to Bitcoin itself. 
+
 
 License
 -------
 
-Bitcoin Core is released under the terms of the MIT license. See [COPYING](COPYING) for more
+Super Bitcoin  is released under the terms of the MIT license. See [COPYING](COPYING) for more
 information or see https://opensource.org/licenses/MIT.
 
 Development Process
@@ -19,7 +20,7 @@ Development Process
 
 The `master` branch is regularly built and tested, but is not guaranteed to be
 completely stable. [Tags](https://github.com/superbitcoin/SuperBitcoin/tags) are created
-regularly to indicate new official, stable release versions of Bitcoin Core.
+regularly to indicate new official, stable release versions of Super Bitcoin .
 
 The contribution workflow is described in [CONTRIBUTING.md](CONTRIBUTING.md).
 
