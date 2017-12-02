@@ -278,6 +278,12 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::P
 bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
+bool IsAgainstCheckPoint(const CChainParams& chainparams, const CBlockIndex* pindex);
+
+bool IsAgainstCheckPoint(const CChainParams& chainparams, const int &nHeight, const uint256 &hash);
+
+bool CheckActiveChain(CValidationState &state, const CChainParams& chainparams);
+
 /** Guess verification progress (as a fraction between 0.0=genesis and 1.0=current tip). */
 double GuessVerificationProgress(const ChainTxData& data, CBlockIndex* pindex);
 

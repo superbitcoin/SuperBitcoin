@@ -24,11 +24,6 @@ namespace Checkpoints {
 
 
 
-    extern CCriticalSection cs_checkPoint;
-
-
-
-
     class CCheckData {
     public:
         CCheckData();
@@ -49,29 +44,28 @@ namespace Checkpoints {
 
         template<typename Stream, typename Operation>
         inline void SerializationOp(Stream &s, Operation ser_action) {
-            READWRITE(VARINT(hight));
-            READWRITE(blockHash);
+            READWRITE(VARINT(height));
+            READWRITE(hash);
             READWRITE(m_vchSig);
         }
 
-        int getHight() const;
+        int getHeight() const;
 
-        void setHight(int hight);
+        void setHeight(int height);
 
-        const uint256 &getBlockHash() const;
+        const uint256 &getHash() const;
 
-        void setBlockHash(const uint256 &blockHash);
+        void setHash(const uint256 &blockHash);
 
         const std::vector<unsigned char> &getM_vchSig() const;
 
         void setM_vchSig(const std::vector<unsigned char> &m_vchSig);
 
     private:
-        int hight;
-        uint256 blockHash;
+        int height;
+        uint256 hash;
         std::vector<unsigned char> m_vchSig;
     };
-
     class CCheckPointDB {
     public:
         CCheckPointDB();
@@ -93,6 +87,7 @@ namespace Checkpoints {
 
     bool GetCheckpointByHeight(const int nHeight, std::vector<CCheckData> &vnCheckPoints);
 
+    CBlockIndex const * GetLastCheckPointBlockIndex(const CCheckpointData& data);
 
 } //namespace Checkpoints
 

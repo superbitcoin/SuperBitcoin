@@ -1866,23 +1866,23 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
 
     else if (strCommand == NetMsgType::CHECKPOINT) {
 
-        LOCK(Checkpoints::cs_checkPoint);
-        const CChainParams& chainparams = Params();
+
         LogPrint(BCLog::NET, "enter checkpoint\n");
 
         std::vector<Checkpoints::CCheckData> vdata;
         vRecv >> vdata;
         Checkpoints::CCheckPointDB cCheckPointDB;
         std::vector<Checkpoints::CCheckData> vIndex;
+        LogPrint(BCLog::BENCH, "receive check block list====\n");
         for (const auto &point : vdata) {
             if (point.CheckSignature(chainparams.GetCheckPointPKey())) {
-                if (!cCheckPointDB.ExistCheckpoint(point.getHight())) {
-                    cCheckPointDB.WriteCheckpoint(point.getHight(), point);
+                if (!cCheckPointDB.ExistCheckpoint(point.getHeight())) {
+                    cCheckPointDB.WriteCheckpoint(point.getHeight(), point);
                     /*
                      * add the check point to chainparams
                      */
-                    chainparams.AddCheckPoint(point.getHight(), point.getBlockHash());
-                    pfrom->m_checkPointKnown.insert(point.getHight());
+                    chainparams.AddCheckPoint(point.getHeight(), point.getHash());
+                    pfrom->m_checkPointKnown.insert(point.getHeight());
                     vIndex.push_back(point);
                 }
 
@@ -1890,20 +1890,25 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
                 LogPrint(BCLog::NET, "check point signature check failed \n");
                 break;
             }
+            LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
         }
+        if(vIndex.size() > 0) {
+            CValidationState state;
 
-        //todo  这里需 把区块分叉 什么的 调整过来
+            if(!CheckActiveChain(state, chainparams)) {
+                LogPrint(BCLog::NET, "CheckActiveChain error when receive  checkpoint\n");
+            }
+        }
 
         //broadcast the check point if it is necessary
         if (vIndex.size() == 1 && vIndex.size() == vdata.size()) {
             connman->ForEachNode([&](CNode *pnode) {
-                connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::CHECKPOINT, vdata));
+                connman->PushMessage(pnode, msgMaker.Make(NetMsgType::CHECKPOINT, vdata));
             });
         }
 
 
     } else if (strCommand == NetMsgType::GET_CHECKPOINT) {
-        LOCK(Checkpoints::cs_checkPoint);
         int nHeight = 0;
         vRecv >> nHeight;
 
@@ -1911,8 +1916,8 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         std::vector<Checkpoints::CCheckData> vnHeight;
         Checkpoints::GetCheckpointByHeight(nHeight, vnHeight);
         for (const auto &point : vnHeight) {
-            if (pfrom->m_checkPointKnown.count(point.getHight()) == 0 ) {
-                pfrom->m_checkPointKnown.insert(point.getHight());
+            if (pfrom->m_checkPointKnown.count(point.getHeight()) == 0 ) {
+                pfrom->m_checkPointKnown.insert(point.getHeight());
                 vSendData.push_back(point);
             }
         }

@@ -1505,6 +1505,10 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                         strLoadError = _("Error initializing block database");
                         break;
                     }
+                    // check current chain according to checkpoint
+                    CValidationState state;
+                    CheckActiveChain(state, chainparams);
+                    assert(state.IsValid());
                     assert(chainActive.Tip() != nullptr);
                 }
 

@@ -20,10 +20,10 @@
 
 namespace Checkpoints {
 
-    CCriticalSection cs_checkPoint;
 
     CBlockIndex* GetLastCheckpoint(const CCheckpointData& data)
     {
+        LOCK(cs_main);
         const MapCheckpoints& checkpoints = data.mapCheckpoints;
 
         for (const MapCheckpoints::value_type& i : reverse_iterate(checkpoints))
@@ -37,13 +37,28 @@ namespace Checkpoints {
     }
 
 
+
+    CBlockIndex const * GetLastCheckPointBlockIndex(const CCheckpointData& data)
+    {
+        LOCK(cs_main);
+        const MapCheckpoints& checkpoints = data.mapCheckpoints;
+        auto lastItem = checkpoints.rbegin();
+
+        for(auto it = lastItem; it != checkpoints.rend(); it++) {
+            auto t = mapBlockIndex.find(it->second);
+            if (t != mapBlockIndex.end())
+                return t->second;
+        }
+        return nullptr;
+    }
+
+
     bool GetCheckpointByHeight(const int nHeight, std::vector<CCheckData> &vnCheckPoints) {
-        LOCK(cs_checkPoint);
         CCheckPointDB db;
         std::map<int, CCheckData> mapCheckPoint;
         if(db.LoadCheckPoint(mapCheckPoint))
         {
-            std::map<int, CCheckData>::iterator iterMap = mapCheckPoint.upper_bound(nHeight);
+            auto iterMap = mapCheckPoint.upper_bound(nHeight);
             while (iterMap != mapCheckPoint.end()) {
                 vnCheckPoints.push_back(iterMap->second);
                 ++iterMap;
@@ -60,10 +75,10 @@ namespace Checkpoints {
     }
 
     bool CCheckData::CheckSignature(const CPubKey& cPubKey)  const{
-//        CPubKey cPubKey(ParseHex(strPubKey));
         CDataStream data(SER_NETWORK, PROTOCOL_VERSION) ;
-        data << hight << blockHash;
-        if (!cPubKey.Verify(Hash(data.begin(), data.end()), m_vchSig)) {
+        data << height << hash;
+        uint256 sighash = Hash(data.begin(), data.end());
+        if (!cPubKey.Verify(sighash, m_vchSig)) {
             return  error("CCheckData::CheckSignature : verify signature failed");
         }
         return true;
@@ -71,8 +86,9 @@ namespace Checkpoints {
 
     bool CCheckData::Sign(const CKey &cKey) {
         CDataStream data(SER_NETWORK, PROTOCOL_VERSION) ;
-        data << hight << blockHash;
-        if (!cKey.Sign(Hash(data.begin(), data.end()), m_vchSig)) {
+        data << height << hash;
+        uint256 sighash = Hash(data.begin(), data.end());
+        if (!cKey.Sign(sighash, m_vchSig)) {
             return error("CCheckData::Sign: Unable to sign checkpoint, check private key?");
         }
         return true;
@@ -81,28 +97,27 @@ namespace Checkpoints {
 
     UniValue CCheckData::ToJsonObj() {
         UniValue obj(UniValue::VOBJ);
-        obj.push_back(Pair("hight", hight));
-        obj.push_back(Pair("blockHash", blockHash.ToString()));
+        obj.push_back(Pair("height", height));
+        obj.push_back(Pair("hash", hash.ToString()));
         obj.push_back(Pair("sig", HexStr(m_vchSig)));
         return obj;
     }
 
-    int CCheckData::getHight() const {
-        return hight;
+    int CCheckData::getHeight() const {
+        return height;
     }
 
-    void CCheckData::setHight(int hight) {
-        CCheckData::hight = hight;
+    void CCheckData::setHeight(int height) {
+        CCheckData::height = height;
     }
 
-    CCheckData::CCheckData(int hight, const uint256 &blockHash) : hight(hight), blockHash(blockHash) {}
+    CCheckData::CCheckData(int hight, const uint256 &blockHash) : height(hight), hash(blockHash) {}
 
-    const uint256 &CCheckData::getBlockHash() const {
-        return blockHash;
+    const uint256 &CCheckData::getHash() const {
+        return hash;
     }
-
-    void CCheckData::setBlockHash(const uint256 &blockHash) {
-        CCheckData::blockHash = blockHash;
+    void CCheckData::setHash(const uint256 &blockHash) {
+        CCheckData::hash = blockHash;
     }
 
     const std::vector<unsigned char> &CCheckData::getM_vchSig() const {
@@ -129,7 +144,6 @@ namespace Checkpoints {
     }
 
     bool CCheckPointDB::LoadCheckPoint(std::map<int, CCheckData> &values) {
-
         std::unique_ptr<CDBIterator> pcursor(db.NewIterator());
         pcursor->Seek(std::make_pair('c',0));
 
@@ -139,7 +153,7 @@ namespace Checkpoints {
                 CCheckData data1;
                 if (pcursor->GetValue(data1)) {
                     pcursor->Next();
-                    values.insert(std::make_pair(data1.getHight(),data1));
+                    values.insert(std::make_pair(data1.getHeight(),data1));
                 } else {
                     return error("%s: failed to read value", __func__);
                 }
