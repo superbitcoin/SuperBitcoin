@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "chainparamsseeds.h"
+#include "checkpoints.h"
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
@@ -59,6 +60,19 @@ void CChainParams::UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64
     consensus.vDeployments[d].nTimeout = nTimeout;
 }
 
+
+bool CChainParams::AddCheckPoint(int const hight, const uint256 hash) const{
+
+    auto it = std::find_if(checkpointData.mapCheckpoints.begin(), checkpointData.mapCheckpoints.end(),
+                           [&](std::map<int, uint256>::value_type pair) { return pair.first >= hight; });
+
+    if (it != checkpointData.mapCheckpoints.end())
+        return false;
+
+    checkpointData.mapCheckpoints.insert(std::pair<const int, uint256>(hight, hash));
+    return true;
+
+}
 /**
  * Main network
  */
@@ -142,6 +156,8 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
+        // addrss :12XC2eso5P464A6KzRNCnZfrzKSTWC15XE
+        cCheckPointPubKey= CPubKey(ParseHex("034e97579c5613b3eb49cfc2367229576613450128d795513a6bd2a8fd62122a85"));
 
         checkpointData = (CCheckpointData) {
             {
@@ -241,6 +257,10 @@ public:
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
 
+        //      address:mnMi2YN5uTfUaKnJZzbTYE3TvKy4n2iAbL
+        //      private key:................
+        cCheckPointPubKey= CPubKey(ParseHex("02eac9199fe6f2db8ddf159c3e88739471077f14fe6c0981fb7fe1f2fc7903f0d7"));
+
 
         checkpointData = (CCheckpointData) {
             {
@@ -311,7 +331,9 @@ public:
         fDefaultConsistencyChecks = true;
         fRequireStandard = false;
         fMineBlocksOnDemand = true;
-
+//      address:mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs
+//      private key:cQLJjWeqTCCLLrNTwbRAUG7Fcwvs4BNo5GGT6AdNWS82na3EzdNE
+        cCheckPointPubKey= CPubKey(ParseHex("02246a362f9f887db8d33185ad1f72512884618f6789e279c34a86e18590c78154"));
         checkpointData = (CCheckpointData) {
             {
                 {0, uint256S("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")},

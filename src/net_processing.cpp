@@ -31,6 +31,7 @@
 #include "utilmoneystr.h"
 #include "utilstrencodings.h"
 #include "validationinterface.h"
+#include "checkpoints.h"
 
 #if defined(NDEBUG)
 # error "Bitcoin cannot be compiled without assertions."
@@ -1863,7 +1864,67 @@ bool static ProcessMessage(CNode* pfrom, const std::string& strCommand, CDataStr
         }
     }
 
+    else if (strCommand == NetMsgType::CHECKPOINT) {
 
+
+        LogPrint(BCLog::NET, "enter checkpoint\n");
+
+        std::vector<Checkpoints::CCheckData> vdata;
+        vRecv >> vdata;
+        Checkpoints::CCheckPointDB cCheckPointDB;
+        std::vector<Checkpoints::CCheckData> vIndex;
+        LogPrint(BCLog::BENCH, "receive check block list====\n");
+        for (const auto &point : vdata) {
+            if (point.CheckSignature(chainparams.GetCheckPointPKey())) {
+                if (!cCheckPointDB.ExistCheckpoint(point.getHeight())) {
+                    cCheckPointDB.WriteCheckpoint(point.getHeight(), point);
+                    /*
+                     * add the check point to chainparams
+                     */
+                    chainparams.AddCheckPoint(point.getHeight(), point.getHash());
+                    pfrom->m_checkPointKnown.insert(point.getHeight());
+                    vIndex.push_back(point);
+                }
+
+            } else {
+                LogPrint(BCLog::NET, "check point signature check failed \n");
+                break;
+            }
+            LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
+        }
+        if(vIndex.size() > 0) {
+            CValidationState state;
+
+            if(!CheckActiveChain(state, chainparams)) {
+                LogPrint(BCLog::NET, "CheckActiveChain error when receive  checkpoint\n");
+            }
+        }
+
+        //broadcast the check point if it is necessary
+        if (vIndex.size() == 1 && vIndex.size() == vdata.size()) {
+            connman->ForEachNode([&](CNode *pnode) {
+                connman->PushMessage(pnode, msgMaker.Make(NetMsgType::CHECKPOINT, vdata));
+            });
+        }
+
+
+    } else if (strCommand == NetMsgType::GET_CHECKPOINT) {
+        int nHeight = 0;
+        vRecv >> nHeight;
+
+        std::vector<Checkpoints::CCheckData> vSendData;
+        std::vector<Checkpoints::CCheckData> vnHeight;
+        Checkpoints::GetCheckpointByHeight(nHeight, vnHeight);
+        for (const auto &point : vnHeight) {
+            if (pfrom->m_checkPointKnown.count(point.getHeight()) == 0 ) {
+                pfrom->m_checkPointKnown.insert(point.getHeight());
+                vSendData.push_back(point);
+            }
+        }
+        if (!vSendData.empty()) {
+            connman->PushMessage(pfrom, msgMaker.Make(NetMsgType::CHECKPOINT, vSendData));
+        }
+    }
     else if (strCommand == NetMsgType::GETDATA)
     {
         std::vector<CInv> vInv;

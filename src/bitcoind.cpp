@@ -19,6 +19,7 @@
 #include "httpserver.h"
 #include "httprpc.h"
 #include "utilstrencodings.h"
+#include "checkpoints.h"
 
 #include <boost/thread.hpp>
 
@@ -54,6 +55,22 @@ void WaitForShutdown(boost::thread_group* threadGroup)
         Interrupt(*threadGroup);
         threadGroup->join_all();
     }
+}
+
+
+bool LoadCheckPoint() {
+    Checkpoints::CCheckPointDB cCheckPointDB;
+    std::map<int, Checkpoints::CCheckData> values;
+
+    if (cCheckPointDB.LoadCheckPoint(values)) {
+        std::map<int, Checkpoints::CCheckData>::iterator it = values.begin();
+        while (it != values.end()) {
+            Checkpoints::CCheckData data1 = it->second;
+            Params().AddCheckPoint(data1.getHeight(), data1.getHash());
+            it++;
+        }
+    }
+    return true;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -165,6 +182,8 @@ bool AppInit(int argc, char* argv[])
             // If locking the data directory failed, exit immediately
             exit(EXIT_FAILURE);
         }
+
+        LoadCheckPoint();
         fRet = AppInitMain(threadGroup, scheduler);
     }
     catch (const std::exception& e) {

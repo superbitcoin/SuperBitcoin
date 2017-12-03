@@ -87,8 +87,8 @@
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
-const char * const BITCOIN_CONF_FILENAME = "bitcoin.conf";
-const char * const BITCOIN_PID_FILENAME = "bitcoind.pid";
+const char * const BITCOIN_CONF_FILENAME = "sbtc.conf";
+const char * const BITCOIN_PID_FILENAME = "sbtc.pid";
 
 ArgsManager gArgs;
 bool fPrintToConsole = false;
