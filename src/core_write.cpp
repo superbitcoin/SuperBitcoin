@@ -63,11 +63,14 @@ std::string FormatScript(const CScript& script)
 
 const std::map<unsigned char, std::string> mapSigHashTypes = {
     {static_cast<unsigned char>(SIGHASH_ALL), std::string("ALL")},
-    {static_cast<unsigned char>(SIGHASH_ALL|SIGHASH_ANYONECANPAY), std::string("ALL|ANYONECANPAY")},
+    {static_cast<unsigned char>(SIGHASH_ALL|SIGHASH_SBTC_FORK), std::string("ALL|SBTC_FORK")},
+    {static_cast<unsigned char>(SIGHASH_ALL|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY), std::string("ALL|SBTC_FORK|ANYONECANPAY")},
     {static_cast<unsigned char>(SIGHASH_NONE), std::string("NONE")},
-    {static_cast<unsigned char>(SIGHASH_NONE|SIGHASH_ANYONECANPAY), std::string("NONE|ANYONECANPAY")},
+    {static_cast<unsigned char>(SIGHASH_NONE|SIGHASH_SBTC_FORK), std::string("NONE|SBTC_FORK|ANYONECANPAY")},
+    {static_cast<unsigned char>(SIGHASH_NONE|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY), std::string("NONE|SBTC_FORK|ANYONECANPAY")},
     {static_cast<unsigned char>(SIGHASH_SINGLE), std::string("SINGLE")},
-    {static_cast<unsigned char>(SIGHASH_SINGLE|SIGHASH_ANYONECANPAY), std::string("SINGLE|ANYONECANPAY")},
+    {static_cast<unsigned char>(SIGHASH_SINGLE|SIGHASH_SBTC_FORK), std::string("SINGLE|SBTC_FORK")},
+    {static_cast<unsigned char>(SIGHASH_SINGLE|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY), std::string("SINGLE|SBTC_FORK|ANYONECANPAY")},
 };
 
 /**
@@ -102,7 +105,14 @@ std::string ScriptToAsmStr(const CScript& script, const bool fAttemptSighashDeco
                     // this won't decode correctly formatted public keys in Pubkey or Multisig scripts due to
                     // the restrictions on the pubkey formats (see IsCompressedOrUncompressedPubKey) being incongruous with the
                     // checks in CheckSignatureEncoding.
-                    if (CheckSignatureEncoding(vch, SCRIPT_VERIFY_STRICTENC, nullptr)) {
+                    uint32_t flags = SCRIPT_VERIFY_STRICTENC;
+                    if (vch.back() & SIGHASH_SBTC_FORK) {
+                        // If the transaction is using SIGHASH_FORKID, we need
+                        // to set the apropriate flag.
+                        // TODO: Remove after the Hard Fork.
+                        flags |= SCRIPT_ENABLE_SIGHASH_SBTC_FORK;
+                    }
+                    if (CheckSignatureEncoding(vch,flags , nullptr)) {
                         const unsigned char chSigHashType = vch.back();
                         if (mapSigHashTypes.count(chSigHashType)) {
                             strSigHashDecode = "[" + mapSigHashTypes.find(chSigHashType)->second + "]";

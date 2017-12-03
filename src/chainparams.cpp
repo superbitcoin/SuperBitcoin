@@ -73,6 +73,9 @@ bool CChainParams::AddCheckPoint(int const hight, const uint256 hash) const{
     return true;
 
 }
+
+
+
 /**
  * Main network
  */
@@ -119,6 +122,9 @@ public:
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x0000000000000000003b9ce759c2a087d52abc4266f8f4ebd6d768b89defa50a"); //477890
+
+
+        consensus.SBTCForkHeight = 498888;
 
         /**
          * The message start string is designed to be unlikely to occur in normal data.
@@ -226,6 +232,8 @@ public:
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x0000000002e9e7b00e1f6dc5123a04aad68dd0f0968d8c7aa45f6640795c37b1"); //1135275
 
+        consensus.SBTCForkHeight = 0;
+
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
         pchMessageStart[2] = 0x09;
@@ -313,6 +321,8 @@ public:
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S("0x00");
 
+        consensus.SBTCForkHeight = 1000;
+
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0xbf;
         pchMessageStart[2] = 0xb5;
@@ -331,9 +341,10 @@ public:
         fDefaultConsistencyChecks = true;
         fRequireStandard = false;
         fMineBlocksOnDemand = true;
+        cCheckPointPubKey= CPubKey(ParseHex("02246a362f9f887db8d33185ad1f72512884618f6789e279c34a86e18590c78154"));
 //      address:mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs
 //      private key:cQLJjWeqTCCLLrNTwbRAUG7Fcwvs4BNo5GGT6AdNWS82na3EzdNE
-        cCheckPointPubKey= CPubKey(ParseHex("02246a362f9f887db8d33185ad1f72512884618f6789e279c34a86e18590c78154"));
+
         checkpointData = (CCheckpointData) {
             {
                 {0, uint256S("0f9188f13cb7b2c71f2a335e3a4fc328bf5beb436012afca590b1a11466e2206")},

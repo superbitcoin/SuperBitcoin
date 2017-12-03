@@ -1631,6 +1631,11 @@ static unsigned int GetBlockScriptFlags(const CBlockIndex* pindex, const Consens
         flags |= SCRIPT_VERIFY_NULLDUMMY;
     }
 
+    // If the sbtc fork is enabled
+    if (IsSBTCForkEnabled(consensusparams, pindex->pprev)) {
+          flags |= SCRIPT_ENABLE_SIGHASH_SBTC_FORK;
+    }
+
     return flags;
 }
 
@@ -2992,6 +2997,8 @@ bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& pa
     LOCK(cs_main);
     return (VersionBitsState(pindexPrev, params, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
 }
+
+
 
 // Compute at which vout of the block's coinbase transaction the witness
 // commitment occurs, or -1 if not found.
@@ -4435,6 +4442,15 @@ int VersionBitsTipStateSinceHeight(const Consensus::Params& params, Consensus::D
 {
     LOCK(cs_main);
     return VersionBitsStateSinceHeight(chainActive.Tip(), params, pos, versionbitscache);
+}
+
+
+bool IsSBTCForkEnabled(const Consensus::Params& params, const CBlockIndex *pindex) {
+    return pindex->nHeight >= params.SBTCForkHeight;
+}
+
+bool IsSBTCForkHeight(const Consensus::Params& params, const int &height) {
+    return params.SBTCForkHeight == height;
 }
 
 static const uint64_t MEMPOOL_DUMP_VERSION = 1;

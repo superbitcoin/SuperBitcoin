@@ -325,6 +325,12 @@ BIP9Stats VersionBitsTipStatistics(const Consensus::Params& params, Consensus::D
 int VersionBitsTipStateSinceHeight(const Consensus::Params& params, Consensus::DeploymentPos pos);
 
 
+/** Check is SBTC  has activated. */
+bool IsSBTCForkEnabled(const Consensus::Params& params,  const CBlockIndex *pindex);
+
+/** check whether is check point height */
+bool IsSBTCForkHeight(const Consensus::Params& params, const int &height);
+
 /** Apply the effects of this transaction on the UTXO set represented by view */
 void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 
