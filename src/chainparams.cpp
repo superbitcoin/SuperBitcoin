@@ -61,15 +61,15 @@ void CChainParams::UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64
 }
 
 
-bool CChainParams::AddCheckPoint(int const hight, const uint256 hash) const{
+bool CChainParams::AddCheckPoint(int const height, const uint256 hash) const{
 
     auto it = std::find_if(checkpointData.mapCheckpoints.begin(), checkpointData.mapCheckpoints.end(),
-                           [&](std::map<int, uint256>::value_type pair) { return pair.first >= hight; });
+                           [&](std::map<int, uint256>::value_type pair) { return pair.first >= height; });
 
     if (it != checkpointData.mapCheckpoints.end())
         return false;
 
-    checkpointData.mapCheckpoints.insert(std::pair<const int, uint256>(hight, hash));
+    checkpointData.mapCheckpoints.insert(std::pair<const int, uint256>(height, hash));
     return true;
 
 }
@@ -299,7 +299,7 @@ public:
         consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 1251; // BIP66 activated on regtest (Used in rpc activation tests)
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
+        consensus.nPowTargetTimespan = 24 * 60 * 60; // one day
         consensus.nPowTargetSpacing = 10 * 60;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
