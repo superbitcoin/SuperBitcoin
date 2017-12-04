@@ -58,6 +58,7 @@ public:
         MAX_BASE58_TYPES
     };
 
+
     const Consensus::Params& GetConsensus() const { return consensus; }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     int GetDefaultPort() const { return nDefaultPort; }
@@ -80,6 +81,7 @@ public:
     const ChainTxData& TxData() const { return chainTxData; }
     void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
     const CPubKey& GetCheckPointPKey()const{ return std::move(cCheckPointPubKey);}
+    virtual void GetScriptForPreMining(CScript& scriptPubKey)const {};
 protected:
     CChainParams() {}
 

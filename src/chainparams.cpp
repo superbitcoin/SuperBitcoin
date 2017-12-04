@@ -125,7 +125,7 @@ public:
 
 
         consensus.SBTCForkHeight = 498888;
-
+        consensus.SBTCdifDec = 12000;
         /**
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
@@ -144,12 +144,9 @@ public:
         assert(genesis.hashMerkleRoot == uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         // Note that of those with the service bits flag, most only support a subset of possible options
-        vSeeds.emplace_back("seed.bitcoin.sipa.be", true); // Pieter Wuille, only supports x1, x5, x9, and xd
-        vSeeds.emplace_back("dnsseed.bluematt.me", true); // Matt Corallo, only supports x9
-        vSeeds.emplace_back("dnsseed.bitcoin.dashjr.org", false); // Luke Dashjr
-        vSeeds.emplace_back("seed.bitcoinstats.com", true); // Christian Decker, supports x1 - xf
-        vSeeds.emplace_back("seed.bitcoin.jonasschnelli.ch", true); // Jonas Schnelli, only supports x1, x5, x9, and xd
-        vSeeds.emplace_back("seed.btc.petertodd.org", true); // Peter Todd, only supports x1, x5, x9, and xd
+
+        vSeeds.emplace_back("seed.superbtca.org", true);
+        vSeeds.emplace_back("seed.superbtca.com", true);
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
@@ -191,6 +188,14 @@ public:
             3.1         // * estimated number of transactions per second after that timestamp
         };
     }
+
+    virtual void  GetScriptForPreMining(CScript& scriptPubKey) const {
+    //      address:12XC2eso5P464A6KzRNCnZfrzKSTWC15XE
+        CPubKey pubkey = CPubKey(ParseHex("034e97579c5613b3eb49cfc2367229576613450128d795513a6bd2a8fd62122a85"));
+        scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    }
+
+
 };
 
 /**
@@ -233,7 +238,7 @@ public:
         consensus.defaultAssumeValid = uint256S("0x0000000002e9e7b00e1f6dc5123a04aad68dd0f0968d8c7aa45f6640795c37b1"); //1135275
 
         consensus.SBTCForkHeight = 0;
-
+        consensus.SBTCdifDec = 10;
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
         pchMessageStart[2] = 0x09;
@@ -249,9 +254,8 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
-        vSeeds.emplace_back("testnet-seed.bitcoin.jonasschnelli.ch", true);
-        vSeeds.emplace_back("seed.tbtc.petertodd.org", true);
-        vSeeds.emplace_back("testnet-seed.bluematt.me", false);
+        vSeeds.emplace_back("seed.superbtca.org", true);
+        vSeeds.emplace_back("seed.superbtca.com", true);
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
@@ -284,6 +288,15 @@ public:
         };
 
     }
+
+    const virtual void  GetPreMiningScript(CScript& scriptPubKey) const {
+        //      address:mnMi2YN5uTfUaKnJZzbTYE3TvKy4n2iAbL
+        //      private key:................
+        CPubKey pubkey = CPubKey(ParseHex("02eac9199fe6f2db8ddf159c3e88739471077f14fe6c0981fb7fe1f2fc7903f0d7"));
+        scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    }
+
+
 };
 
 /**
@@ -299,7 +312,7 @@ public:
         consensus.BIP65Height = 1351; // BIP65 activated on regtest (Used in rpc activation tests)
         consensus.BIP66Height = 1251; // BIP66 activated on regtest (Used in rpc activation tests)
         consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-        consensus.nPowTargetTimespan = 24 * 60 * 60; // one day
+        consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nPowTargetSpacing = 10 * 60;
         consensus.fPowAllowMinDifficultyBlocks = true;
         consensus.fPowNoRetargeting = true;
@@ -322,7 +335,7 @@ public:
         consensus.defaultAssumeValid = uint256S("0x00");
 
         consensus.SBTCForkHeight = 1000;
-
+        consensus.SBTCdifDec = 100;
         pchMessageStart[0] = 0xfa;
         pchMessageStart[1] = 0xbf;
         pchMessageStart[2] = 0xb5;
@@ -341,9 +354,10 @@ public:
         fDefaultConsistencyChecks = true;
         fRequireStandard = false;
         fMineBlocksOnDemand = true;
+        // address:mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs
+        // private key:cQLJjWeqTCCLLrNTwbRAUG7Fcwvs4BNo5GGT6AdNWS82na3EzdNE
         cCheckPointPubKey= CPubKey(ParseHex("02246a362f9f887db8d33185ad1f72512884618f6789e279c34a86e18590c78154"));
-//      address:mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs
-//      private key:cQLJjWeqTCCLLrNTwbRAUG7Fcwvs4BNo5GGT6AdNWS82na3EzdNE
+
 
         checkpointData = (CCheckpointData) {
             {
@@ -363,6 +377,15 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
     }
+
+    const virtual void  GetPreMiningScript(CScript &scriptPubKey) const {
+        //      address:mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs
+        //      private key:cQLJjWeqTCCLLrNTwbRAUG7Fcwvs4BNo5GGT6AdNWS82na3EzdNE
+        CPubKey pubkey = CPubKey(ParseHex("02246a362f9f887db8d33185ad1f72512884618f6789e279c34a86e18590c78154"));
+        scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
+    }
+
+
 };
 
 static std::unique_ptr<CChainParams> globalChainParams;
