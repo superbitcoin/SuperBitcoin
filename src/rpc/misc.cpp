@@ -699,6 +699,7 @@ UniValue gencheckpoint(const JSONRPCRequest &request) {
     }
     catch (...) {
         file.close();
+        obj.push_back(Pair("status", "falled"));
     }
 
 

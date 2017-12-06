@@ -327,7 +327,7 @@ int VersionBitsTipStateSinceHeight(const Consensus::Params& params, Consensus::D
 
 /** Check is SBTC  has activated. */
 bool IsSBTCForkEnabled(const Consensus::Params& params,  const CBlockIndex *pindex);
-
+bool IsSBTCForkEnabled(const Consensus::Params& params, const int height);
 /** check whether is check point height */
 bool IsSBTCForkHeight(const Consensus::Params& params, const int &height);
 

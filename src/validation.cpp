@@ -4457,6 +4457,10 @@ bool IsSBTCForkEnabled(const Consensus::Params& params, const CBlockIndex *pinde
     return pindex->nHeight >= params.SBTCForkHeight;
 }
 
+bool IsSBTCForkEnabled(const Consensus::Params& params, const int height) {
+    return height >= params.SBTCForkHeight;
+}
+
 bool IsSBTCForkHeight(const Consensus::Params& params, const int &height) {
     return params.SBTCForkHeight == height;
 }

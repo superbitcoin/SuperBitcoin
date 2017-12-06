@@ -149,7 +149,7 @@ unsigned int GetNextSBTCWorkRequired(const CBlockIndex *pindexPrev,
         const CBlockIndex *pindexFirst = GetSuitableBlock(pindexPrev->GetAncestor(nHeightFirst));
         assert(pindexFirst);
         // Compute the target based on time and work done during the interval.
-        nextTarget = ComputeTarget(pindexFirst, pindexLast, params);
+        nextTarget = ComputeTarget(pindexFirst, pindexLast, params,nCurHeight);
     }
 
 
@@ -195,7 +195,7 @@ const CBlockIndex *GetSuitableBlock(const CBlockIndex *pindex) {
 
 arith_uint256 ComputeTarget(const CBlockIndex *pindexFirst,
                                    const CBlockIndex *pindexLast,
-                                   const Consensus::Params &params) {
+                                   const Consensus::Params &params,int height) {
 
      arith_uint256 work;
     int64_t nActualTimespan;
@@ -216,7 +216,9 @@ arith_uint256 ComputeTarget(const CBlockIndex *pindexFirst,
     if (nActualTimespan > 288 * params.nPowTargetSpacing) {
         nActualTimespan = 288 * params.nPowTargetSpacing;
     } else if (nActualTimespan < 72 * params.nPowTargetSpacing) {
-         nActualTimespan = 72 * params.nPowTargetSpacing;
+        if (height > params.SBTCForkHeight + 500) { //
+            nActualTimespan = 72 * params.nPowTargetSpacing;
+        }
     }
     work /= nActualTimespan;
 

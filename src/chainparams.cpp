@@ -11,9 +11,12 @@
 #include "utilstrencodings.h"
 
 #include <assert.h>
+#include <script/standard.h>
 
 #include "chainparamsseeds.h"
 #include "checkpoints.h"
+#include "base58.h"
+
 
 static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesisOutputScript, uint32_t nTime, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
@@ -72,6 +75,12 @@ bool CChainParams::AddCheckPoint(int const height, const uint256 hash) const{
     checkpointData.mapCheckpoints.insert(std::pair<const int, uint256>(height, hash));
     return true;
 
+}
+
+void CChainParams::GetScriptForPreMining(CScript &scriptPubKey) const {
+    CBitcoinAddress addr(preMinerAddres);
+    assert(addr.IsValid());
+    scriptPubKey = GetScriptForDestination(addr.Get());
 }
 
 
@@ -145,8 +154,11 @@ public:
 
         // Note that of those with the service bits flag, most only support a subset of possible options
 
-        vSeeds.emplace_back("seed.superbtca.org", true);
         vSeeds.emplace_back("seed.superbtca.com", true);
+        vSeeds.emplace_back("seed.superbtca.info", true);
+        vSeeds.emplace_back("seed.superbtc.org", true);
+        vSeeds.emplace_back("seed.bitcoin.sipa.be", true);
+        vSeeds.emplace_back("dnsseed.bluematt.me", true);
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
@@ -161,7 +173,7 @@ public:
         fMineBlocksOnDemand = false;
         // addrss :12XC2eso5P464A6KzRNCnZfrzKSTWC15XE
         cCheckPointPubKey= CPubKey(ParseHex("034e97579c5613b3eb49cfc2367229576613450128d795513a6bd2a8fd62122a85"));
-
+        preMinerAddres = "148Rg5eF5Z1vbApApzc2saSq1geWDgfRQo";
         checkpointData = (CCheckpointData) {
             {
                 { 11111, uint256S("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")},
@@ -188,13 +200,6 @@ public:
             3.1         // * estimated number of transactions per second after that timestamp
         };
     }
-
-    virtual void  GetScriptForPreMining(CScript& scriptPubKey) const {
-    //      address:12XC2eso5P464A6KzRNCnZfrzKSTWC15XE
-        CPubKey pubkey = CPubKey(ParseHex("034e97579c5613b3eb49cfc2367229576613450128d795513a6bd2a8fd62122a85"));
-        scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
-    }
-
 
 };
 
@@ -254,8 +259,7 @@ public:
         vFixedSeeds.clear();
         vSeeds.clear();
         // nodes with support for servicebits filtering should be at the top
-        vSeeds.emplace_back("seed.superbtca.org", true);
-        vSeeds.emplace_back("seed.superbtca.com", true);
+        vSeeds.emplace_back("seedtest.superbtc.org", true);
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,111);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,196);
@@ -272,7 +276,7 @@ public:
         //      address:mnMi2YN5uTfUaKnJZzbTYE3TvKy4n2iAbL
         //      private key:................
         cCheckPointPubKey= CPubKey(ParseHex("02eac9199fe6f2db8ddf159c3e88739471077f14fe6c0981fb7fe1f2fc7903f0d7"));
-
+        preMinerAddres = "mnMi2YN5uTfUaKnJZzbTYE3TvKy4n2iAbL";
 
         checkpointData = (CCheckpointData) {
             {
@@ -289,12 +293,6 @@ public:
 
     }
 
-    const virtual void  GetPreMiningScript(CScript& scriptPubKey) const {
-        //      address:mnMi2YN5uTfUaKnJZzbTYE3TvKy4n2iAbL
-        //      private key:................
-        CPubKey pubkey = CPubKey(ParseHex("02eac9199fe6f2db8ddf159c3e88739471077f14fe6c0981fb7fe1f2fc7903f0d7"));
-        scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
-    }
 
 
 };
@@ -357,7 +355,7 @@ public:
         // address:mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs
         // private key:cQLJjWeqTCCLLrNTwbRAUG7Fcwvs4BNo5GGT6AdNWS82na3EzdNE
         cCheckPointPubKey= CPubKey(ParseHex("02246a362f9f887db8d33185ad1f72512884618f6789e279c34a86e18590c78154"));
-
+        preMinerAddres =  "mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs";
 
         checkpointData = (CCheckpointData) {
             {
@@ -377,14 +375,6 @@ public:
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x35, 0x87, 0xCF};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x35, 0x83, 0x94};
     }
-
-    const virtual void  GetPreMiningScript(CScript &scriptPubKey) const {
-        //      address:mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs
-        //      private key:cQLJjWeqTCCLLrNTwbRAUG7Fcwvs4BNo5GGT6AdNWS82na3EzdNE
-        CPubKey pubkey = CPubKey(ParseHex("02246a362f9f887db8d33185ad1f72512884618f6789e279c34a86e18590c78154"));
-        scriptPubKey = CScript() << ToByteVector(pubkey) << OP_CHECKSIG;
-    }
-
 
 };
 
