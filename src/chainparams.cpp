@@ -87,6 +87,11 @@ void CChainParams::SetSbtcForkHeigh(int height)const {
     consensus.SBTCForkHeight = height;
 }
 
+void CChainParams:: SetSbtcForkDec(int no) const{
+    consensus.SBTCdifDec = no;
+}
+
+
 
 
 /**

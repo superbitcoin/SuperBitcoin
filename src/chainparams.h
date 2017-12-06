@@ -83,7 +83,7 @@ public:
     const CPubKey& GetCheckPointPKey()const{ return std::move(cCheckPointPubKey);}
     void GetScriptForPreMining(CScript& scriptPubKey)const ;
     void SetSbtcForkHeigh(int height)const ;
-
+    void SetSbtcForkDec(int no) const;
 
 
 protected:
