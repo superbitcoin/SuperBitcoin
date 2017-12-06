@@ -83,6 +83,10 @@ void CChainParams::GetScriptForPreMining(CScript &scriptPubKey) const {
     scriptPubKey = GetScriptForDestination(addr.Get());
 }
 
+void CChainParams::SetSbtcForkHeigh(int height)const {
+    consensus.SBTCForkHeight = height;
+}
+
 
 
 /**

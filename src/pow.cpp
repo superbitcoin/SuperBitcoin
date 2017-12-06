@@ -17,7 +17,7 @@ unsigned int GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHead
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
     // active sbtc difficulty ajustment
-    if(IsSBTCForkEnabled(params, pindexLast)) {
+    if(IsSBTCForkEnabled(params, pindexLast->nHeight+1)) {
         return GetNextSBTCWorkRequired(pindexLast, pblock, params);
     }
 
@@ -195,7 +195,7 @@ const CBlockIndex *GetSuitableBlock(const CBlockIndex *pindex) {
 
 arith_uint256 ComputeTarget(const CBlockIndex *pindexFirst,
                                    const CBlockIndex *pindexLast,
-                                   const Consensus::Params &params,int height) {
+                                   const Consensus::Params &params,int Curheight) {
 
      arith_uint256 work;
     int64_t nActualTimespan;
@@ -216,7 +216,7 @@ arith_uint256 ComputeTarget(const CBlockIndex *pindexFirst,
     if (nActualTimespan > 288 * params.nPowTargetSpacing) {
         nActualTimespan = 288 * params.nPowTargetSpacing;
     } else if (nActualTimespan < 72 * params.nPowTargetSpacing) {
-        if (height > params.SBTCForkHeight + 500) { //
+        if (Curheight > params.SBTCForkHeight + 500) { //
             nActualTimespan = 72 * params.nPowTargetSpacing;
         }
     }

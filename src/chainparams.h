@@ -82,13 +82,14 @@ public:
     void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
     const CPubKey& GetCheckPointPKey()const{ return std::move(cCheckPointPubKey);}
     void GetScriptForPreMining(CScript& scriptPubKey)const ;
+    void SetSbtcForkHeigh(int height)const ;
 
 
 
 protected:
     CChainParams() {}
 
-    Consensus::Params consensus;
+    mutable Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
     int nDefaultPort;
     uint64_t nPruneAfterHeight;

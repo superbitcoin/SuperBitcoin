@@ -23,6 +23,6 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&
 
 const CBlockIndex *GetSuitableBlock(const CBlockIndex *pindex);
 unsigned int GetNextSBTCWorkRequired(const CBlockIndex *pindexPrev, const CBlockHeader *pblock, const Consensus::Params& params);
-arith_uint256 ComputeTarget(const CBlockIndex *pindexFirst, const CBlockIndex *pindexLast, const Consensus::Params &params,int nheiht);
+arith_uint256 ComputeTarget(const CBlockIndex *pindexFirst, const CBlockIndex *pindexLast, const Consensus::Params &params,int Curheight);
 
 #endif // BITCOIN_POW_H
