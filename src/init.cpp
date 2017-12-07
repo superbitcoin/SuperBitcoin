@@ -1224,10 +1224,12 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
     const CChainParams& chainparams = Params();
 
+    // for test
     int forkblock = gArgs.GetArg("-sbtcforkheight",-1);
     if(forkblock != -1)
     chainparams.SetSbtcForkHeigh(forkblock);
 
+    // for test
     int NO = gArgs.GetArg("-sbtcdiffcutydec",-1);
     if(NO != -1)
         chainparams.SetSbtcForkDec(NO);
