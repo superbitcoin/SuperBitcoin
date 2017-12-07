@@ -824,15 +824,21 @@ UniValue signrawtransaction(const JSONRPCRequest& request)
     const CKeyStore& keystore = tempKeystore;
 #endif
 
-    int nHashType = SIGHASH_ALL;
+    int nHashType = SIGHASH_ALL | SIGHASH_SBTC_FORK;
     if (request.params.size() > 3 && !request.params[3].isNull()) {
         static std::map<std::string, int> mapSigHashValues = {
-            {std::string("ALL"), int(SIGHASH_ALL)},
-            {std::string("ALL|ANYONECANPAY"), int(SIGHASH_ALL|SIGHASH_ANYONECANPAY)},
-            {std::string("NONE"), int(SIGHASH_NONE)},
-            {std::string("NONE|ANYONECANPAY"), int(SIGHASH_NONE|SIGHASH_ANYONECANPAY)},
-            {std::string("SINGLE"), int(SIGHASH_SINGLE)},
-            {std::string("SINGLE|ANYONECANPAY"), int(SIGHASH_SINGLE|SIGHASH_ANYONECANPAY)},
+           {std::string("ALL"), int(SIGHASH_ALL)},
+           {std::string("ALL|ANYONECANPAY"), int(SIGHASH_ALL|SIGHASH_ANYONECANPAY)},
+           {std::string("ALL|SBTC_FORK"), int(SIGHASH_ALL|SIGHASH_SBTC_FORK)},
+           {std::string("ALL|SBTC_FORK|ANYONECANPAY"), int(SIGHASH_ALL|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY)},
+           {std::string("NONE"), int(SIGHASH_NONE)},
+           {std::string("NONE|ANYONECANPAY"), int(SIGHASH_NONE|SIGHASH_ANYONECANPAY)},
+           {std::string("NONE|SBTC_FORK"), int(SIGHASH_NONE|SIGHASH_SBTC_FORK)},
+           {std::string("NONE|SBTC_FORK|ANYONECANPAY"), int(SIGHASH_NONE|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY)},
+           {std::string("SINGLE"), int(SIGHASH_SINGLE)},
+           {std::string("SINGLE|ANYONECANPAY"), int(SIGHASH_SINGLE|SIGHASH_ANYONECANPAY)},
+           {std::string("SINGLE|SBTC_FORK"), int(SIGHASH_SINGLE|SIGHASH_SBTC_FORK)},
+           {std::string("SINGLE|SBTC_FORK|ANYONECANPAY"), int(SIGHASH_SINGLE|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY)},
         };
         std::string strHashType = request.params[3].get_str();
         if (mapSigHashValues.count(strHashType))

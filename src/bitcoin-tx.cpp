@@ -490,17 +490,23 @@ static void MutateTxDelOutput(CMutableTransaction& tx, const std::string& strOut
     tx.vout.erase(tx.vout.begin() + outIdx);
 }
 
-static const unsigned int N_SIGHASH_OPTS = 6;
+static const unsigned int N_SIGHASH_OPTS = 12;
 static const struct {
     const char *flagStr;
     int flags;
 } sighashOptions[N_SIGHASH_OPTS] = {
-    {"ALL", SIGHASH_ALL},
-    {"NONE", SIGHASH_NONE},
-    {"SINGLE", SIGHASH_SINGLE},
-    {"ALL|ANYONECANPAY", SIGHASH_ALL|SIGHASH_ANYONECANPAY},
-    {"NONE|ANYONECANPAY", SIGHASH_NONE|SIGHASH_ANYONECANPAY},
-    {"SINGLE|ANYONECANPAY", SIGHASH_SINGLE|SIGHASH_ANYONECANPAY},
+        {"ALL", SIGHASH_ALL},
+        {"NONE", SIGHASH_NONE},
+        {"SINGLE", SIGHASH_SINGLE},
+        {"ALL|ANYONECANPAY", SIGHASH_ALL|SIGHASH_ANYONECANPAY},
+        {"NONE|ANYONECANPAY", SIGHASH_NONE|SIGHASH_ANYONECANPAY},
+        {"SINGLE|ANYONECANPAY", SIGHASH_SINGLE|SIGHASH_ANYONECANPAY},
+        {"ALL|SBTC_FORK", SIGHASH_ALL | SIGHASH_SBTC_FORK},
+        {"NONE|SBTC_FORK", SIGHASH_NONE | SIGHASH_SBTC_FORK},
+        {"SINGLE|SBTC_FORK", SIGHASH_SINGLE | SIGHASH_SBTC_FORK},
+        {"ALL|SBTC_FORK|ANYONECANPAY", SIGHASH_ALL | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY},
+        {"NONE|SBTC_FORK|ANYONECANPAY", SIGHASH_NONE | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY},
+        {"SINGLE|SBTC_FORK|ANYONECANPAY", SIGHASH_SINGLE | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY},
 };
 
 static bool findSighashFlags(int& flags, const std::string& flagStr)
@@ -531,7 +537,7 @@ static CAmount AmountFromValue(const UniValue& value)
 
 static void MutateTxSign(CMutableTransaction& tx, const std::string& flagStr)
 {
-    int nHashType = SIGHASH_ALL;
+    int nHashType = SIGHASH_ALL | SIGHASH_SBTC_FORK;
 
     if (flagStr.size() > 0)
         if (!findSighashFlags(nHashType, flagStr))
@@ -624,7 +630,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& flagStr)
 
     const CKeyStore& keystore = tempKeystore;
 
-    bool fHashSingle = ((nHashType & ~SIGHASH_ANYONECANPAY) == SIGHASH_SINGLE);
+    bool fHashSingle = ((nHashType & ~(SIGHASH_ANYONECANPAY | SIGHASH_SBTC_FORK)) == SIGHASH_SINGLE);
 
     // Sign what we can:
     for (unsigned int i = 0; i < mergedTx.vin.size(); i++) {

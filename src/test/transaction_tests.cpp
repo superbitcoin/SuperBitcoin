@@ -369,7 +369,7 @@ void CreateCreditAndSpend(const CKeyStore& keystore, const CScript& outscript, C
     inputm.vout.resize(1);
     inputm.vout[0].nValue = 1;
     inputm.vout[0].scriptPubKey = CScript();
-    bool ret = SignSignature(keystore, *output, inputm, 0, SIGHASH_ALL);
+    bool ret = SignSignature(keystore, *output, inputm, 0, SIGHASH_ALL | SIGHASH_SBTC_FORK);
     assert(ret == success);
     CDataStream ssin(SER_NETWORK, PROTOCOL_VERSION);
     ssin << inputm;

@@ -1223,6 +1223,24 @@ bool AppInitLockDataDirectory()
 bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
     const CChainParams& chainparams = Params();
+
+    // for test
+    int forkblock = gArgs.GetArg("-sbtcforkheight",-1);
+    if(forkblock != -1)
+    chainparams.SetSbtcForkHeigh(forkblock);
+
+    // for test
+    int NO = gArgs.GetArg("-sbtcdiffcutydec",-1);
+    if(NO != -1)
+        chainparams.SetSbtcForkDec(NO);
+
+
+    if (gArgs.GetBoolArg("-shrinkdebugfile", logCategories == BCLog::NONE)) {
+        // Do this first since it both loads a bunch of debug.log into memory,
+        // and because this needs to happen before any other debug.log printing
+        ShrinkDebugFile();
+    }
+
     // ********************************************************* Step 4a: application initialization
 #ifndef WIN32
     CreatePidFile(GetPidFile(), getpid());
