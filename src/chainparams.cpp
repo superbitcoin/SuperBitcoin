@@ -163,11 +163,11 @@ public:
 
         // Note that of those with the service bits flag, most only support a subset of possible options
 
-        vSeeds.emplace_back("seed.superbtca.com", true);
-        vSeeds.emplace_back("seed.superbtca.info", true);
-        vSeeds.emplace_back("seed.superbtc.org", true);
-        vSeeds.emplace_back("seed.bitcoin.sipa.be", true);
-        vSeeds.emplace_back("dnsseed.bluematt.me", true);
+        vSeeds.emplace_back("seed.superbtca.com", false);
+        vSeeds.emplace_back("seed.superbtca.info", false);
+        vSeeds.emplace_back("seed.superbtc.org", false);
+//        vSeeds.emplace_back("seed.bitcoin.sipa.be", true);
+//        vSeeds.emplace_back("dnsseed.bluematt.me", true);
 
         base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0);
         base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5);
