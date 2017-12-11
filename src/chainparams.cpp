@@ -143,7 +143,7 @@ public:
 
 
         consensus.SBTCForkHeight = 498888;
-        consensus.SBTCdifDec = 12000;
+        consensus.SBTCdifDec = 26000;
         /**
          * The message start string is designed to be unlikely to occur in normal data.
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
