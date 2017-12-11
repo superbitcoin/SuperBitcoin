@@ -1232,7 +1232,7 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
         ss << txTo.nLockTime;
         // Sighash type
         ss << nHashType;
-        if (nHashType && SIGHASH_SBTC_FORK) {
+        if (nHashType & SIGHASH_SBTC_FORK) {
             ss << std::string("sbtc");
         }
 
@@ -1259,7 +1259,7 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
     ss << txTmp << nHashType;
-    if (nHashType && SIGHASH_SBTC_FORK) {
+    if (nHashType & SIGHASH_SBTC_FORK) {
         ss << std::string("sbtc");
     }
 
