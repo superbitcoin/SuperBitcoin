@@ -64,6 +64,9 @@ typedef enum ScriptError_t
     SCRIPT_ERR_WITNESS_UNEXPECTED,
     SCRIPT_ERR_WITNESS_PUBKEYTYPE,
 
+    /* sbtc fork hash */
+    SCRIPT_ERR_ILLEGAL_SBTC_FORKID,
+
     SCRIPT_ERR_ERROR_COUNT
 } ScriptError;
 

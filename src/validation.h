@@ -278,6 +278,12 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::P
 bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
 
+bool IsAgainstCheckPoint(const CChainParams& chainparams, const CBlockIndex* pindex);
+
+bool IsAgainstCheckPoint(const CChainParams& chainparams, const int &nHeight, const uint256 &hash);
+
+bool CheckActiveChain(CValidationState &state, const CChainParams& chainparams);
+
 /** Guess verification progress (as a fraction between 0.0=genesis and 1.0=current tip). */
 double GuessVerificationProgress(const ChainTxData& data, CBlockIndex* pindex);
 
@@ -318,6 +324,12 @@ BIP9Stats VersionBitsTipStatistics(const Consensus::Params& params, Consensus::D
 /** Get the block height at which the BIP9 deployment switched into the state for the block building on the current tip. */
 int VersionBitsTipStateSinceHeight(const Consensus::Params& params, Consensus::DeploymentPos pos);
 
+
+/** Check is SBTC  has activated. */
+bool IsSBTCForkEnabled(const Consensus::Params& params,  const CBlockIndex *pindex);
+bool IsSBTCForkEnabled(const Consensus::Params& params, const int height);
+/** check whether is check point height */
+bool IsSBTCForkHeight(const Consensus::Params& params, const int &height);
 
 /** Apply the effects of this transaction on the UTXO set represented by view */
 void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);

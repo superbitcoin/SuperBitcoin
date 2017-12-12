@@ -24,6 +24,7 @@ enum
     SIGHASH_ALL = 1,
     SIGHASH_NONE = 2,
     SIGHASH_SINGLE = 3,
+    SIGHASH_SBTC_FORK = 0x40,
     SIGHASH_ANYONECANPAY = 0x80,
 };
 
@@ -106,6 +107,10 @@ enum
     // Public keys in segregated witness scripts must be compressed
     //
     SCRIPT_VERIFY_WITNESS_PUBKEYTYPE = (1U << 15),
+
+
+    // Do we accept signature using SIGHASH_SBTC_FORK
+    SCRIPT_ENABLE_SIGHASH_SBTC_FORK = (1U << 16),
 };
 
 bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned int flags, ScriptError* serror);

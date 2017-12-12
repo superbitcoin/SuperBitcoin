@@ -185,7 +185,7 @@ bool static IsDefinedHashtypeSignature(const valtype &vchSig) {
     if (vchSig.size() == 0) {
         return false;
     }
-    unsigned char nHashType = vchSig[vchSig.size() - 1] & (~(SIGHASH_ANYONECANPAY));
+    unsigned char nHashType = vchSig[vchSig.size() - 1] & (~(SIGHASH_ANYONECANPAY | SIGHASH_SBTC_FORK));
     if (nHashType < SIGHASH_ALL || nHashType > SIGHASH_SINGLE)
         return false;
 
@@ -200,11 +200,27 @@ bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned i
     }
     if ((flags & (SCRIPT_VERIFY_DERSIG | SCRIPT_VERIFY_LOW_S | SCRIPT_VERIFY_STRICTENC)) != 0 && !IsValidSignatureEncoding(vchSig)) {
         return set_error(serror, SCRIPT_ERR_SIG_DER);
-    } else if ((flags & SCRIPT_VERIFY_LOW_S) != 0 && !IsLowDERSignature(vchSig, serror)) {
+    }
+    if ((flags & SCRIPT_VERIFY_LOW_S) != 0 && !IsLowDERSignature(vchSig, serror)) {
         // serror is set
         return false;
-    } else if ((flags & SCRIPT_VERIFY_STRICTENC) != 0 && !IsDefinedHashtypeSignature(vchSig)) {
-        return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
+    }
+    if ((flags & SCRIPT_VERIFY_STRICTENC) != 0) {
+        if(!IsDefinedHashtypeSignature(vchSig)) {
+            return set_error(serror, SCRIPT_ERR_SIG_HASHTYPE);
+        }
+        unsigned char nHashType = vchSig[vchSig.size() - 1];
+        bool sbtcForkHash = nHashType & SIGHASH_SBTC_FORK;
+        bool sbtcforkEnabled = flags & SCRIPT_ENABLE_SIGHASH_SBTC_FORK;
+
+        if(!sbtcForkHash && sbtcforkEnabled) {
+            return set_error(serror, SCRIPT_ERR_ILLEGAL_SBTC_FORKID);
+        }
+
+        if(sbtcForkHash&& !sbtcforkEnabled) {
+            return set_error(serror, SCRIPT_ERR_ILLEGAL_SBTC_FORKID);
+        }
+
     }
     return true;
 }
@@ -1216,6 +1232,9 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
         ss << txTo.nLockTime;
         // Sighash type
         ss << nHashType;
+        if (nHashType & SIGHASH_SBTC_FORK) {
+            ss << std::string("sbtc");
+        }
 
         return ss.GetHash();
     }
@@ -1240,6 +1259,10 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, 0);
     ss << txTmp << nHashType;
+    if (nHashType & SIGHASH_SBTC_FORK) {
+        ss << std::string("sbtc");
+    }
+
     return ss.GetHash();
 }
 
@@ -1413,11 +1436,18 @@ bool VerifyScript(const CScript& scriptSig, const CScript& scriptPubKey, const C
     bool hadWitness = false;
 
     set_error(serror, SCRIPT_ERR_UNKNOWN_ERROR);
-
+   
+    // If FORKID is enabled, we also ensure strict encoding.
+    if (flags & SCRIPT_ENABLE_SIGHASH_SBTC_FORK) {
+        flags |= SCRIPT_VERIFY_STRICTENC;
+    }
+    
     if ((flags & SCRIPT_VERIFY_SIGPUSHONLY) != 0 && !scriptSig.IsPushOnly()) {
         return set_error(serror, SCRIPT_ERR_SIG_PUSHONLY);
     }
+    
 
+    
     std::vector<std::vector<unsigned char> > stack, stackCopy;
     if (!EvalScript(stack, scriptSig, flags, checker, SIGVERSION_BASE, serror))
         // serror is set

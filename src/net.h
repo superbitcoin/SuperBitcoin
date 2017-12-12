@@ -616,7 +616,7 @@ public:
     size_t nProcessQueueSize;
 
     CCriticalSection cs_sendProcessing;
-
+    std::set<int> m_checkPointKnown;  				// checkPoint's height
     std::deque<CInv> vRecvGetData;
     uint64_t nRecvBytes;
     std::atomic<int> nRecvVersion;

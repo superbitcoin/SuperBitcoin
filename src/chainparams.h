@@ -10,6 +10,7 @@
 #include "consensus/params.h"
 #include "primitives/block.h"
 #include "protocol.h"
+#include "pubkey.h"
 
 #include <memory>
 #include <vector>
@@ -57,6 +58,7 @@ public:
         MAX_BASE58_TYPES
     };
 
+
     const Consensus::Params& GetConsensus() const { return consensus; }
     const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
     int GetDefaultPort() const { return nDefaultPort; }
@@ -75,12 +77,19 @@ public:
     const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
     const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
     const CCheckpointData& Checkpoints() const { return checkpointData; }
+    bool  AddCheckPoint(int const height, const uint256 hash) const;
     const ChainTxData& TxData() const { return chainTxData; }
     void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
+    const CPubKey& GetCheckPointPKey()const{ return std::move(cCheckPointPubKey);}
+    void GetScriptForPreMining(CScript& scriptPubKey)const ;
+    void SetSbtcForkHeigh(int height)const ;
+    void SetSbtcForkDec(int no) const;
+
+
 protected:
     CChainParams() {}
 
-    Consensus::Params consensus;
+    mutable Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
     int nDefaultPort;
     uint64_t nPruneAfterHeight;
@@ -88,11 +97,13 @@ protected:
     std::vector<unsigned char> base58Prefixes[MAX_BASE58_TYPES];
     std::string strNetworkID;
     CBlock genesis;
+    CPubKey cCheckPointPubKey;
+    std::string preMinerAddres;
     std::vector<SeedSpec6> vFixedSeeds;
     bool fDefaultConsistencyChecks;
     bool fRequireStandard;
     bool fMineBlocksOnDemand;
-    CCheckpointData checkpointData;
+    mutable CCheckpointData checkpointData;
     ChainTxData chainTxData;
 };
 

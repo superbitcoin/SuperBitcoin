@@ -1555,7 +1555,7 @@ static std::string GetDNSHost(const CDNSSeedData& data, ServiceFlags* requiredSe
 {
     //use default host for non-filter-capable seeds or if we use the default service bits (NODE_NETWORK)
     if (!data.supportsServiceBitsFiltering || *requiredServiceBits == NODE_NETWORK) {
-        *requiredServiceBits = NODE_NETWORK;
+//        *requiredServiceBits = NODE_NETWORK;
         return data.host;
     }
 
