@@ -64,6 +64,8 @@
 
 #if ENABLE_ZMQ
 #include "zmq/zmqnotificationinterface.h"
+#include "base58.h"
+
 #endif
 
 bool fFeeEstimatesInitialized = false;
@@ -1223,6 +1225,10 @@ bool AppInitLockDataDirectory()
 bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
     const CChainParams& chainparams = Params();
+
+
+
+
 
     // for test
     int forkblock = gArgs.GetArg("-sbtcforkheight",-1);

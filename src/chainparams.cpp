@@ -77,11 +77,7 @@ bool CChainParams::AddCheckPoint(int const height, const uint256 hash) const{
 
 }
 
-void CChainParams::GetScriptForPreMining(CScript &scriptPubKey) const {
-    CBitcoinAddress addr(preMinerAddres);
-    assert(addr.IsValid());
-    scriptPubKey = GetScriptForDestination(addr.Get());
-}
+
 
 void CChainParams::SetSbtcForkHeigh(int height)const {
     consensus.SBTCForkHeight = height;
@@ -182,7 +178,7 @@ public:
         fMineBlocksOnDemand = false;
         // addrss :12XC2eso5P464A6KzRNCnZfrzKSTWC15XE
         cCheckPointPubKey= CPubKey(ParseHex("034e97579c5613b3eb49cfc2367229576613450128d795513a6bd2a8fd62122a85"));
-        preMinerAddres = "148Rg5eF5Z1vbApApzc2saSq1geWDgfRQo";
+
         checkpointData = (CCheckpointData) {
             {
                 { 11111, uint256S("0x0000000069e244f73d78e8fd29ba2fd2ed618bd6fa2ee92559f542fdb26e7c1d")},
@@ -197,7 +193,8 @@ public:
                 {225430, uint256S("0x00000000000001c108384350f74090433e7fcf79a606b8e797f065b130575932")},
                 {250000, uint256S("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214")},
                 {279000, uint256S("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40")},
-                {295000, uint256S("0x00000000000000004d9b4ef50f0f9d686fd69db2e03af35a100370c64632a983")},
+                {499060, uint256S("0x000000000000000cdb7383336c6b76dccd482a93200ec6f842fc538fbff6e0dc")},
+
             }
         };
 
@@ -281,11 +278,9 @@ public:
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
-
         //      address:mnMi2YN5uTfUaKnJZzbTYE3TvKy4n2iAbL
         //      private key:................
         cCheckPointPubKey= CPubKey(ParseHex("02eac9199fe6f2db8ddf159c3e88739471077f14fe6c0981fb7fe1f2fc7903f0d7"));
-        preMinerAddres = "mnMi2YN5uTfUaKnJZzbTYE3TvKy4n2iAbL";
 
         checkpointData = (CCheckpointData) {
             {
@@ -364,7 +359,6 @@ public:
         // address:mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs
         // private key:cQLJjWeqTCCLLrNTwbRAUG7Fcwvs4BNo5GGT6AdNWS82na3EzdNE
         cCheckPointPubKey= CPubKey(ParseHex("02246a362f9f887db8d33185ad1f72512884618f6789e279c34a86e18590c78154"));
-        preMinerAddres =  "mtkXqYXjPB3EChJcEq8bJJfeRrCsotFxhs";
 
         checkpointData = (CCheckpointData) {
             {
