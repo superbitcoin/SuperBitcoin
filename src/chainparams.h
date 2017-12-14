@@ -81,7 +81,6 @@ public:
     const ChainTxData& TxData() const { return chainTxData; }
     void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
     const CPubKey& GetCheckPointPKey()const{ return std::move(cCheckPointPubKey);}
-    void GetScriptForPreMining(CScript& scriptPubKey)const ;
     void SetSbtcForkHeigh(int height)const ;
     void SetSbtcForkDec(int no) const;
 
@@ -98,7 +97,6 @@ protected:
     std::string strNetworkID;
     CBlock genesis;
     CPubKey cCheckPointPubKey;
-    std::string preMinerAddres;
     std::vector<SeedSpec6> vFixedSeeds;
     bool fDefaultConsistencyChecks;
     bool fRequireStandard;
