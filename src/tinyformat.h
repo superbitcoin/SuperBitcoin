@@ -1050,7 +1050,9 @@ std::string format(const std::string &fmt, const Args&... args)
 }
 
 } // namespace tinyformat
-
+#ifdef  CHEAT_IDE
+#define strprintf
+#else
 #define strprintf tfm::format
-
+#endif // CHEAT_IDE
 #endif // TINYFORMAT_H_INCLUDED
