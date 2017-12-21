@@ -35,7 +35,7 @@ int64_t GetStartupTime();
 static const bool DEFAULT_LOGTIMEMICROS = false;
 static const bool DEFAULT_LOGIPS        = false;
 static const bool DEFAULT_LOGTIMESTAMPS = true;
-
+static const bool DEFAULT_LOGFILEINFO = true;
 /** Signals for translation. */
 class CTranslationInterface
 {
@@ -136,8 +136,11 @@ template<typename T, typename... Args> static inline void MarkUsed(const T& t, c
 #ifdef USE_COVERAGE
 #define LogPrintf(...) do { MarkUsed(__VA_ARGS__); } while(0)
 #define LogPrint(category, ...) do { MarkUsed(__VA_ARGS__); } while(0)
+#elif CHEAT_IDE
+#define LogPrintf(...) do { MarkUsed(__VA_ARGS__); } while(0)
+#define LogPrint(category, ...) do { MarkUsed(__VA_ARGS__); } while(0)
 #else
-#define LogPrintf(...) do { \
+#define LogPrintfFmt(...) do { \
     std::string _log_msg_; /* Unlikely name to avoid shadowing variables */ \
     try { \
         _log_msg_ = tfm::format(__VA_ARGS__); \
@@ -148,12 +151,28 @@ template<typename T, typename... Args> static inline void MarkUsed(const T& t, c
     LogPrintStr(_log_msg_); \
 } while(0)
 
+#define LogPrintfWithFileInfo(fmt1, fmt2, a1, a2, a...) do{ \
+    bool fileinfo = gArgs.GetBoolArg("-logfileinfo", true); \
+    if(fileinfo){ \
+        LogPrintfFmt(fmt1, a1, a2, ##a); \
+    }else{ \
+        LogPrintfFmt(fmt2, ##a); \
+    } \
+} while(0)
+
+#define LogPrintf(fmt, a...) LogPrintfWithFileInfo("%s(%d)" fmt, fmt, __FILE__, __LINE__, ##a)
+
 #define LogPrint(category, ...) do { \
     if (LogAcceptCategory((category))) { \
         LogPrintf(__VA_ARGS__); \
     } \
 } while(0)
+
 #endif
+
+
+
+
 
 template<typename... Args>
 bool error(const char* fmt, const Args&... args)

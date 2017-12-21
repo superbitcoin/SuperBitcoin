@@ -467,6 +467,7 @@ std::string HelpMessage(HelpMessageMode mode)
     strUsage += HelpMessageOpt("-help-debug", _("Show all debugging options (usage: --help -help-debug)"));
     strUsage += HelpMessageOpt("-logips", strprintf(_("Include IP addresses in debug output (default: %u)"), DEFAULT_LOGIPS));
     strUsage += HelpMessageOpt("-logtimestamps", strprintf(_("Prepend debug output with timestamp (default: %u)"), DEFAULT_LOGTIMESTAMPS));
+    strUsage += HelpMessageOpt("-logfileinfo", strprintf(_("Prepend debug output with file info (default: %u)"), DEFAULT_LOGFILEINFO));
     if (showDebug)
     {
         strUsage += HelpMessageOpt("-logtimemicros", strprintf("Add microsecond precision to debug timestamps (default: %u)", DEFAULT_LOGTIMEMICROS));
@@ -1225,21 +1226,6 @@ bool AppInitLockDataDirectory()
 bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
 {
     const CChainParams& chainparams = Params();
-
-
-
-
-
-    // for test
-    int forkblock = gArgs.GetArg("-sbtcforkheight",-1);
-    if(forkblock != -1)
-    chainparams.SetSbtcForkHeigh(forkblock);
-
-    // for test
-    int NO = gArgs.GetArg("-sbtcdiffcutydec",-1);
-    if(NO != -1)
-        chainparams.SetSbtcForkDec(NO);
-
 
     if (gArgs.GetBoolArg("-shrinkdebugfile", logCategories == BCLog::NONE)) {
         // Do this first since it both loads a bunch of debug.log into memory,
