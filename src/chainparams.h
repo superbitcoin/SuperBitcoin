@@ -81,14 +81,11 @@ public:
     const ChainTxData& TxData() const { return chainTxData; }
     void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
     const CPubKey& GetCheckPointPKey()const{ return std::move(cCheckPointPubKey);}
-    void SetSbtcForkHeigh(int height)const ;
-    void SetSbtcForkDec(int no) const;
-
 
 protected:
     CChainParams() {}
 
-    mutable Consensus::Params consensus;
+    Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
     int nDefaultPort;
     uint64_t nPruneAfterHeight;

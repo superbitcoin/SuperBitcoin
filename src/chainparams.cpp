@@ -79,15 +79,6 @@ bool CChainParams::AddCheckPoint(int const height, const uint256 hash) const{
 
 
 
-void CChainParams::SetSbtcForkHeigh(int height)const {
-    consensus.SBTCForkHeight = height;
-}
-
-void CChainParams:: SetSbtcForkDec(int no) const{
-    consensus.SBTCdifDec = no;
-}
-
-
 
 
 /**
@@ -194,6 +185,7 @@ public:
                 {250000, uint256S("0x000000000000003887df1f29024b06fc2200b55f8af8f35453d7be294df2d214")},
                 {279000, uint256S("0x0000000000000001ae8c72a0b0c301f67e3afca10e819efa9041e458e9bd7e40")},
                 {499060, uint256S("0x000000000000000cdb7383336c6b76dccd482a93200ec6f842fc538fbff6e0dc")},
+                {500448, uint256S("0x00000000000000002f5918df71aaa2ef31c004c1273a50147786b12e2db923c1")}
 
             }
         };
