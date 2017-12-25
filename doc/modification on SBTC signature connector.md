@@ -38,7 +38,7 @@ static const struct {
 ```
 &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;2.Add FORKID to the code of the signature part<br>
 ``` c++
-	  ss << hashOutputs;
+    ss << hashOutputs;
     // Locktime
     ss << txTo.nLockTime;
     // Sighash type
