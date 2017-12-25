@@ -6,7 +6,6 @@
 #if defined(HAVE_CONFIG_H)
 #include "config/bitcoin-config.h"
 #endif
-
 #include "chainparams.h"
 #include "clientversion.h"
 #include "compat.h"
@@ -22,7 +21,7 @@
 #include "checkpoints.h"
 
 #include <boost/thread.hpp>
-
+#include <iostream>
 #include <stdio.h>
 
 /* Introduction text for doxygen: */
