@@ -38,6 +38,8 @@ static const struct {
 ```
 &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;2.Add FORKID to the code of the signature part<br>
 ``` c++
+uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsigned int nIn, int nHashType, const CAmount& amount, SigVersion sigversion, const PrecomputedTransactionData* cache){
+......
     ss << hashOutputs;
     // Locktime
     ss << txTo.nLockTime;
@@ -47,6 +49,7 @@ static const struct {
         ss << std::string("sbtc");
     }
     return ss.GetHash();
+......
 ```
 In Trading
 ``` json
