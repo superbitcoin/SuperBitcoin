@@ -83,6 +83,12 @@
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
 #include <openssl/conf.h>
+#include <boost/program_options.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <vector>
+#include <string>
+
+namespace bpo = boost::program_options;
 
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
@@ -370,7 +376,8 @@ static bool InterpretBool(const std::string& strValue)
 {
     if (strValue.empty())
         return true;
-    return (atoi(strValue) != 0);
+
+    return (!strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "yes") || !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "y")) ? true : false;
 }
 
 /** Turn -noX into -X=0 */
@@ -381,6 +388,20 @@ static void InterpretNegativeSetting(std::string& strKey, std::string& strValue)
         strKey = "-" + strKey.substr(3);
         strValue = InterpretBool(strValue) ? "0" : "1";
     }
+}
+
+bool ArgsManager::InitPromOptions(std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc,
+                                         char **argv, HelpMessageMode mode)> callback, bpo::options_description *app, int argc, char **argv, HelpMessageMode mode)
+{
+    LOCK(cs_args);
+    if(callback == nullptr || argv == nullptr || app == nullptr)
+    {
+        return false;
+    }
+
+    this->app = app;
+    vm.clear();
+    callback(app, vm, argc, argv, mode);
 }
 
 void ArgsManager::ParseParameters(int argc, const char* const argv[])
@@ -422,67 +443,292 @@ void ArgsManager::ParseParameters(int argc, const char* const argv[])
 std::vector<std::string> ArgsManager::GetArgs(const std::string& strArg)
 {
     LOCK(cs_args);
-    if (IsArgSet(strArg))
-        return mapMultiArgs.at(strArg);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (IsArgSet(tmp_strArg))
+        return vm.at(tmp_strArg).as< std::vector<std::string> >();
+
     return {};
 }
 
 bool ArgsManager::IsArgSet(const std::string& strArg)
 {
     LOCK(cs_args);
-    return mapArgs.count(strArg);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    return vm.count(tmp_strArg);
 }
 
 std::string ArgsManager::GetArg(const std::string& strArg, const std::string& strDefault)
 {
     LOCK(cs_args);
-    if (mapArgs.count(strArg))
-        return mapArgs[strArg];
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (vm.count(tmp_strArg))
+        return vm[tmp_strArg].as<std::string>();
+
     return strDefault;
 }
 
 int64_t ArgsManager::GetArg(const std::string& strArg, int64_t nDefault)
 {
     LOCK(cs_args);
-    if (mapArgs.count(strArg))
-        return atoi64(mapArgs[strArg]);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (vm.count(tmp_strArg))
+        return vm[tmp_strArg].as<int64_t>();
+
     return nDefault;
 }
 
-bool ArgsManager::GetBoolArg(const std::string& strArg, bool fDefault)
+uint64_t ArgsManager::GetArg(const std::string& strArg, uint64_t nDefault)
 {
     LOCK(cs_args);
-    if (mapArgs.count(strArg))
-        return InterpretBool(mapArgs[strArg]);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+        return vm[tmp_strArg].as<uint64_t>();
+
+    return nDefault;
+}
+
+int32_t ArgsManager::GetArg(const std::string& strArg, int32_t nDefault)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return vm[tmp_strArg].as<int32_t>();
+    }
+
+    return nDefault;
+}
+
+unsigned int ArgsManager::GetArg(const std::string& strArg, unsigned int nDefault)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return vm[tmp_strArg].as<unsigned int>();
+    }
+
+    return nDefault;
+}
+
+bool ArgsManager::GetArg(const std::string &strArg, bool fDefault)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (vm.count(tmp_strArg))
+        return InterpretBool(vm[tmp_strArg].as<std::string>());
     return fDefault;
 }
 
 bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strValue)
 {
     LOCK(cs_args);
-    if (mapArgs.count(strArg))
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (vm.count(tmp_strArg))
         return false;
-    ForceSetArg(strArg, strValue);
+
+    boost::any tmp_value = strValue;
+    vm.at(tmp_strArg).value().swap(tmp_value);
     return true;
 }
 
-bool ArgsManager::SoftSetBoolArg(const std::string& strArg, bool fValue)
-{
-    if (fValue)
-        return SoftSetArg(strArg, std::string("1"));
-    else
-        return SoftSetArg(strArg, std::string("0"));
-}
-
-void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strValue)
+bool ArgsManager::SoftSetArg(const std::string& strArg, const int64_t& intValue)
 {
     LOCK(cs_args);
-    mapArgs[strArg] = strValue;
-    mapMultiArgs[strArg].clear();
-    mapMultiArgs[strArg].push_back(strValue);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    boost::any tmp_value(intValue);
+    vm.at(tmp_strArg).value().swap(tmp_value);
+    return true;
 }
 
+bool ArgsManager::SoftSetArg(const std::string& strArg, const uint64_t& intValue)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
 
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    boost::any tmp_value = intValue;
+    vm.at(tmp_strArg).value().swap(tmp_value);
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, const int32_t& intValue)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    boost::any tmp_value(intValue);
+    vm.at(tmp_strArg).value().swap(tmp_value);
+    return true;
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, bool fValue)
+{
+    if (fValue)
+        return SoftSetArg(strArg, std::string("yes"));
+    else
+        return SoftSetArg(strArg, std::string("no"));
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::string >& value)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    boost::any tmp_value = value;
+    vm.at(tmp_strArg).value().swap(tmp_value);
+}
+
+bool ArgsManager::PrintHelpMessage()
+{
+    if(vm.count("help"))
+    {
+        std::cout << *app << std::endl;
+
+        return true;
+    }
+
+    if(vm.count("version"))
+    {
+        std::cout << vm["version"].as<std::string>() << std::endl;
+
+        return true;
+    }
+
+    return false;
+}
 
 static const int screenWidth = 79;
 static const int optIndent = 2;
@@ -565,7 +811,7 @@ const fs::path &GetDataDir(bool fNetSpecific)
         return path;
 
     if (gArgs.IsArgSet("-datadir")) {
-        path = fs::system_complete(gArgs.GetArg("-datadir", ""));
+        path = fs::system_complete(gArgs.GetArg("-datadir", (std::string)""));
         if (!fs::is_directory(path)) {
             path = "";
             return path;
@@ -627,7 +873,7 @@ void ArgsManager::ReadConfigFile(const std::string& confPath)
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(gArgs.GetArg("-pid", BITCOIN_PID_FILENAME));
+    fs::path pathPidFile(gArgs.GetArg("pid", std::string(BITCOIN_PID_FILENAME)));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }

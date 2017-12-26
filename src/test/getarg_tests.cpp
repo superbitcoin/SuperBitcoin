@@ -128,7 +128,7 @@ BOOST_AUTO_TEST_CASE(intarg)
 BOOST_AUTO_TEST_CASE(doubledash)
 {
     ResetArgs("--foo");
-    BOOST_CHECK_EQUAL(gArgs.GetBoolArg("-foo", false), true);
+    BOOST_CHECK_EQUAL(gArgs.GetBoolArg("foo", false), true);
 
     ResetArgs("--foo=verbose --bar=1");
     BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", ""), "verbose");
