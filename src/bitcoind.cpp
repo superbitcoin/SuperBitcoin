@@ -124,7 +124,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
 
 #if mode == HMM_BITCOIND
 #if HAVE_DECL_DAEMON
-            ("daemon", "Run in the background as a daemon and accept commands") // dependence : mode, HAVE_DECL_DAEMON
+            ("daemon", bpo::value<string>(), "Run in the background as a daemon and accept commands") // dependence : mode, HAVE_DECL_DAEMON
 #endif
 #endif
 
@@ -133,12 +133,12 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("dbcache", bpo::value<int64_t>(), "Set database cache size in megabytes")
             ("feefilter", bpo::value<string>(), "Tell other nodes to filter invs to us by our mempool min fee (choices: n, no, y, yes)") // -help-debug
             ("loadblock", bpo::value< vector<string> >(), "Imports blocks from external blk000??.dat file on startup")
-            ("maxorphantx", bpo::value<int>(), "Keep at most <n> unconnectable transactions in memory")
-            ("maxmempool", bpo::value<int>(), "Keep the transaction memory pool below <n> megabytes")
-            ("mempoolexpiry", bpo::value<int>(), "Do not keep transactions in the mempool longer than <n> hours")
+            ("maxorphantx", bpo::value<unsigned int>(), "Keep at most <n> unconnectable transactions in memory")
+            ("maxmempool", bpo::value<unsigned int>(), "Keep the transaction memory pool below <n> megabytes")
+            ("mempoolexpiry", bpo::value<unsigned int>(), "Do not keep transactions in the mempool longer than <n> hours")
             ("minimumchainwork", bpo::value<string>(), "Minimum work assumed to exist on a valid chain in hex")    // -help-debug
             ("persistmempool", bpo::value<string>(), "Whether to save the mempool on shutdown and load on restart (choices: n, no, y, yes)")
-            ("blockreconstructionextratxn", bpo::value<int>(), "Extra transactions to keep in memory for compact block reconstructions")
+            ("blockreconstructionextratxn", bpo::value<unsigned int>(), "Extra transactions to keep in memory for compact block reconstructions")
             ("par", bpo::value<int>(), strprintf(_("Set the number of script verification threads (%u to %d, 0 = auto, <0 = leave that many cores free, default: %d)"),
                                                                                              -GetNumCores(), MAX_SCRIPTCHECK_THREADS, DEFAULT_SCRIPTCHECK_THREADS).c_str())
 
@@ -146,7 +146,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("pid", bpo::value<string>(), "Specify pid file")
 #endif
 
-            ("prune", bpo::value<int64_t>(), strprintf(_("Reduce storage requirements by enabling pruning (deleting) of old blocks. This allows the pruneblockchain RPC to be called to delete specific blocks, and enables automatic pruning of old blocks if a target size in MiB is provided. This mode is incompatible with -txindex and -rescan. "
+            ("prune", bpo::value<uint64_t>(), strprintf(_("Reduce storage requirements by enabling pruning (deleting) of old blocks. This allows the pruneblockchain RPC to be called to delete specific blocks, and enables automatic pruning of old blocks if a target size in MiB is provided. This mode is incompatible with -txindex and -rescan. "
                                                                                    "Warning: Reverting this setting requires re-downloading the entire blockchain. "
                                                                                    "(default: 0 = disable pruning blocks, 1 = allow manual pruning via RPC, >%u = automatically prune block files to stay under the specified target size in MiB)"), MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024).c_str())
             ("reindex-chainstate", bpo::value<string>(), "Rebuild chain state from the currently indexed blocks (choices: n, no, y, yes)")
@@ -224,7 +224,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("txconfirmtarget", bpo::value<unsigned int>(), "If paytxfee is not set, include enough fee so transactions begin confirmation on average within n blocks")
             ("usehd", bpo::value<string>(), "Use hierarchical deterministic key generation (HD) after BIP32. Only has effect during wallet creation/first start(choices: n, no, y, yes)")
             ("walletrbf", bpo::value<string>(), "Send transactions with full-RBF opt-in enabled(choices: n, no, y, yes)")
-            ("upgradewallet", bpo::value<string>(), "Upgrade wallet to latest format on startup(choices: n, no, y, yes)")
+            ("upgradewallet", bpo::value<int>(), "Upgrade wallet to latest format on startup(choices: n, no, y, yes)")
             ("wallet", bpo::value< vector<string> >(), "Specify wallet file (within data directory)")
             ("walletbroadcast", bpo::value<string>(), "Make the wallet broadcast transactions(choices: n, no, y, yes)")
             ("walletnotify", bpo::value<string>(), "Execute command when a wallet transaction changes")
@@ -266,8 +266,8 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("checkpoints", bpo::value<string>(), "Disable expensive verification for known chain history(choices: n, no, y, yes)")
             ("disablesafemode", bpo::value<string>(), "Disable safemode, override a real safe mode event(choices: n, no, y, yes)")
             ("testsafemode", bpo::value<string>(), "Force safe mode(choices: n, no, y, yes)")
-            ("dropmessagestest", bpo::value<int64_t>(), "Randomly drop 1 of every <n> network messages")
-            ("fuzzmessagestest", bpo::value<int64_t>(), "Randomly fuzz 1 of every <n> network messages")
+            ("dropmessagestest", bpo::value<int>(), "Randomly drop 1 of every <n> network messages")
+            ("fuzzmessagestest", bpo::value<int>(), "Randomly fuzz 1 of every <n> network messages")
             ("stopafterblockimport", bpo::value<string>(), "Stop running after importing blocks from disk(choices: n, no, y, yes)")
             ("stopatheight", bpo::value<int>(), "Stop running after reaching the given height in the main chain(choices: n, no, y, yes)")
             ("limitancestorcount", bpo::value<unsigned int>(), "Do not accept transactions if number of in-mempool ancestors is <n> or more")
@@ -311,7 +311,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             /*********************************-help-debug end**********************************************/
             ("bytespersigop", bpo::value<unsigned int>(), "Equivalent bytes per sigop in transactions for relay and mining")
             ("datacarrier", bpo::value<string>(), "Relay and mine data carrier transactions")
-            ("datacarriersize", bpo::value<unsigned>(), "Maximum size of data in data carrier transactions we relay and mine")
+            ("datacarriersize", bpo::value<unsigned int>(), "Maximum size of data in data carrier transactions we relay and mine")
             ("mempoolreplacement", bpo::value<string>(), "Enable transaction replacement in the memory pool")
             ("minrelaytxfee", bpo::value<string>(), strprintf(_("Fees (in %s/kB) smaller than this are considered zero fee for relaying, mining and transaction creation (default: %s)"),
                                                               CURRENCY_UNIT, FormatMoney(DEFAULT_MIN_RELAY_TX_FEE)).c_str())
@@ -322,7 +322,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
     bpo::options_description blockCreateGroup("Block creation options:");
     blockCreateGroup.add_options()
             ("blockmaxweight", bpo::value<unsigned int>(), "Set maximum BIP141 block weight")
-            ("blockmaxsize", bpo::value<int64_t>(), "Set maximum BIP141 block weight to this * 4. Deprecated, use blockmaxweight")
+            ("blockmaxsize", bpo::value<unsigned int>(), "Set maximum BIP141 block weight to this * 4. Deprecated, use blockmaxweight")
             ("blockmintxfee", bpo::value<string>(), strprintf(_("Set lowest fee rate (in %s/kB) for transactions to be included in block creation. (default: %s)"), CURRENCY_UNIT, FormatMoney(DEFAULT_BLOCK_MIN_TX_FEE)).c_str())
             ("blockversion", bpo::value<int32_t>(), "Override block version to test forking scenarios");    // -help-debug
     app->add(blockCreateGroup);
