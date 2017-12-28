@@ -22,7 +22,7 @@
 #include "checkpoints.h"
 
 #include <boost/thread.hpp>
-
+#include <iostream>
 #include <stdio.h>
 
 /* Introduction text for doxygen: */
@@ -40,7 +40,7 @@
  * \section Navigation
  * Use the buttons <code>Namespaces</code>, <code>Classes</code> or <code>Files</code> at the top of the page to start navigating the code.
  */
-
+//
 void WaitForShutdown(boost::thread_group* threadGroup)
 {
     bool fShutdown = ShutdownRequested();
@@ -73,10 +73,10 @@ bool LoadCheckPoint() {
     return true;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Start
-//
+////////////////////////////////////////////////////////////////////////////////
+////
+//// Start
+////
 bool AppInit(int argc, char* argv[])
 {
     boost::thread_group threadGroup;
@@ -207,9 +207,10 @@ bool AppInit(int argc, char* argv[])
 int main(int argc, char* argv[])
 {
     SetupEnvironment();
-
+//    std::cout << "fuck" << std::endl;
     // Connect bitcoind signal handlers
     noui_connect();
+//    return 12;
 
     return (AppInit(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE);
 }

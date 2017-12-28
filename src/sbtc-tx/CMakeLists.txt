@@ -3,7 +3,6 @@ file(GLOB sources "*.cpp")
 
 #add_library(wallet ${sources} ${headers})
 
-message(sdfdsf ${EVENT_LIBRARIES})
 
 link_directories(../rpc)
 
