@@ -3942,7 +3942,7 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
     // needed to restore wallet transaction meta data after -zapwallettxes
     std::vector<CWalletTx> vWtx;
 
-    if (gArgs.GetArg("-zapwallettxes", false)) {
+    if (gArgs.GetArg("-zapwallettxes", 0)) {
         uiInterface.InitMessage(_("Zapping all transactions from wallet..."));
 
         std::unique_ptr<CWalletDBWrapper> dbw(new CWalletDBWrapper(&bitdb, walletFile));
@@ -3991,7 +3991,7 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
         }
     }
 
-    if (gArgs.GetArg("-upgradewallet", fFirstRun))
+    if (gArgs.GetArg("-upgradewallet", fFirstRun ? 1 : 0))
     {
         int nMaxVersion = gArgs.GetArg("-upgradewallet", 0);
         if (nMaxVersion == 0) // the -upgradewallet without argument case
@@ -4094,7 +4094,7 @@ CWallet* CWallet::CreateWalletFromFile(const std::string walletFile)
         walletInstance->dbw->IncrementUpdateCounter();
 
         // Restore wallet transaction metadata after -zapwallettxes=1
-        if (gArgs.GetArg("-zapwallettxes", false) && gArgs.GetArg("-zapwallettxes", 1) != 2)
+        if (gArgs.GetArg("-zapwallettxes", 0) && gArgs.GetArg("-zapwallettxes", 1) != 2)
         {
             CWalletDB walletdb(*walletInstance->dbw);
 
@@ -4201,7 +4201,7 @@ bool CWallet::ParameterInteraction()
     }
 
     if (is_multiwallet) {
-        if (gArgs.GetArg("-upgradewallet", false)) {
+        if (gArgs.GetArg("-upgradewallet", 0)) {
             return InitError(strprintf("%s is only allowed with a single wallet file", "-upgradewallet"));
         }
     }
@@ -4275,8 +4275,8 @@ bool CWallet::ParameterInteraction()
                                        gArgs.GetArg("maxtxfee", ""), ::minRelayTxFee.ToString()));
         }
     }
-    nTxConfirmTarget = gArgs.GetArg("txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);
-    bSpendZeroConfChange = gArgs.GetArg("spendzeroconfchange", DEFAULT_SPEND_ZEROCONF_CHANGE);
+    nTxConfirmTarget = gArgs.GetArg("-txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);
+    bSpendZeroConfChange = gArgs.GetArg("-spendzeroconfchange", DEFAULT_SPEND_ZEROCONF_CHANGE);
     fWalletRbf = gArgs.GetArg("walletrbf", DEFAULT_WALLET_RBF);
 
     return true;

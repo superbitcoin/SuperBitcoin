@@ -55,6 +55,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
     confGroup.add_options()
             ("help,h", "Print this message and exit.")
             ("?", "Print this message and exit.")
+            ("version", "Print version and exit")
             ("conf", bpo::value<string>(), strprintf(_("Specify configuration file (default: %s)"), BITCOIN_CONF_FILENAME).c_str())
             ("datadir", bpo::value<string>(), "Specify data directory");
     app->add(confGroup);
@@ -96,6 +97,11 @@ public:
 // This function returns either one of EXIT_ codes when it's expected to stop the process or
 // CONTINUE_EXECUTION when it's expected to continue further.
 //
+void PrintVersion()
+{
+    std::cout << strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n" << std::endl;
+}
+
 static int AppInitRPC(int argc, char* argv[])
 {
     //
@@ -115,7 +121,7 @@ static int AppInitRPC(int argc, char* argv[])
                           "  bitcoin-cli [options] help <command>      " + _("Get help for a command") + "\n";
     app = new bpo::options_description(strHead.c_str());
     gArgs.InitPromOptions(InitPromOptions, app, argc, argv, HMM_EMPTY);
-    if(gArgs.PrintHelpMessage())
+    if(gArgs.PrintHelpMessage(PrintVersion))
     {
         return EXIT_SUCCESS;
     }

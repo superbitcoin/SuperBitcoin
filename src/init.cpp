@@ -823,12 +823,12 @@ void ThreadImport(std::vector<fs::path> vImportFiles)
         StartShutdown();
     }
 
-        if (gArgs.GetArg("stopafterblockimport", DEFAULT_STOPAFTERBLOCKIMPORT)) {
+        if (gArgs.GetArg("-stopafterblockimport", DEFAULT_STOPAFTERBLOCKIMPORT)) {
             LogPrintf("Stopping after block import\n");
             StartShutdown();
         }
     } // End scope of CImportingNow
-    if (gArgs.GetArg("persistmempool", DEFAULT_PERSIST_MEMPOOL)) {
+    if (gArgs.GetArg("-persistmempool", DEFAULT_PERSIST_MEMPOOL)) {
         LoadMempool();
         fDumpMempoolLater = !fRequestShutdown;
     }
@@ -867,7 +867,7 @@ bool AppInitServers(boost::thread_group& threadGroup)
         return false;
     if (!StartHTTPRPC())
         return false;
-    if (gArgs.GetArg("rest", DEFAULT_REST_ENABLE) && !StartREST())
+    if (gArgs.GetArg("-rest", DEFAULT_REST_ENABLE) && !StartREST())
         return false;
     if (!StartHTTPServer())
         return false;
@@ -938,8 +938,8 @@ void InitParameterInteraction()
     }
 
     if (gArgs.IsArgSet("-blockmaxsize")) {
-        unsigned int max_size = gArgs.GetArg("-blockmaxsize", 0);
-        if (gArgs.SoftSetArg("-blockmaxweight", strprintf("%d", max_size * WITNESS_SCALE_FACTOR))) {
+        unsigned int max_size = gArgs.GetArg("-blockmaxsize", 0U);
+        if (gArgs.SoftSetArg("-blockmaxweight", (uint32_t)(max_size * WITNESS_SCALE_FACTOR))) {
             LogPrintf(
                     "%s: parameter interaction: -blockmaxsize=%d -> setting -blockmaxweight=%d (-blockmaxsize is deprecated!)\n",
                     __func__, max_size, max_size * WITNESS_SCALE_FACTOR);
@@ -1043,8 +1043,8 @@ bool AppInitParameterInteraction()
     // also see: InitParameterInteraction()
 
     // if using block pruning, then disallow txindex
-    if (gArgs.GetArg("prune", 0)) {
-        if (gArgs.GetArg("txindex", DEFAULT_TXINDEX))
+    if (gArgs.GetArg("-prune", 0)) {
+        if (gArgs.GetArg("-txindex", DEFAULT_TXINDEX))
             return InitError(_("Prune mode is incompatible with -txindex."));
     }
 
@@ -1056,7 +1056,7 @@ bool AppInitParameterInteraction()
 
     // Make sure enough file descriptors are available
     int nBind = std::max(nUserBind, size_t(1));
-    nUserMaxConnections = gArgs.GetArg("maxconnections", DEFAULT_MAX_PEER_CONNECTIONS);
+    nUserMaxConnections = gArgs.GetArg("-maxconnections", DEFAULT_MAX_PEER_CONNECTIONS);
     nMaxConnections = std::max(nUserMaxConnections, 0);
 
     // Trim requested connection counts, to fit into system limitations
@@ -1256,13 +1256,6 @@ bool AppInitParameterInteraction()
     nMaxTipAge = gArgs.GetArg("maxtipage", DEFAULT_MAX_TIP_AGE);
 
     fEnableReplacement = gArgs.GetArg("-mempoolreplacement", DEFAULT_ENABLE_REPLACEMENT);
-    if ((!fEnableReplacement) && gArgs.IsArgSet("-mempoolreplacement")) {
-        // Minimal effort at forwards compatibility
-        std::string strReplacementModeList = gArgs.GetArg("-mempoolreplacement", std::string(""));  // default is impossible
-        std::vector<std::string> vstrReplacementModes;
-        boost::split(vstrReplacementModes, strReplacementModeList, boost::is_any_of(","));
-        fEnableReplacement = (std::find(vstrReplacementModes.begin(), vstrReplacementModes.end(), "fee") != vstrReplacementModes.end());
-    }
 
     if (gArgs.IsArgSet("-vbparams")) {
         // Allow overriding version bits parameters for testing
@@ -1406,7 +1399,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
      * that the server is there and will be ready later).  Warmup mode will
      * be disabled when initialisation is finished.
      */
-    if (gArgs.GetArg("server", false)) {
+    if (gArgs.GetArg("-server", false)) {
         uiInterface.InitMessage.connect(SetRPCWarmupStatus);
         if (!AppInitServers(threadGroup))
             return InitError(_("Unable to start HTTP server. See debug log for details."));
@@ -1599,7 +1592,7 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
                     return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
 
                 // Check for changed -txindex state
-                if (fTxIndex != gArgs.GetArg("txindex", DEFAULT_TXINDEX)) {
+                if (fTxIndex != gArgs.GetArg("-txindex", DEFAULT_TXINDEX)) {
                     strLoadError = _("You need to rebuild the database using -reindex to change -txindex");
                     break;
                 }
@@ -1830,8 +1823,8 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     connOptions.nBestHeight = chainActive.Height();
     connOptions.uiInterface = &uiInterface;
     connOptions.m_msgproc = peerLogic.get();
-    connOptions.nSendBufferMaxSize = 1000 * gArgs.GetArg("maxsendbuffer", DEFAULT_MAXSENDBUFFER);
-    connOptions.nReceiveFloodSize = 1000 * gArgs.GetArg("maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
+    connOptions.nSendBufferMaxSize = 1000 * gArgs.GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
+    connOptions.nReceiveFloodSize = 1000 * gArgs.GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
 
     connOptions.nMaxOutboundTimeframe = nMaxOutboundTimeframe;
     connOptions.nMaxOutboundLimit = nMaxOutboundLimit;

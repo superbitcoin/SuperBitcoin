@@ -751,7 +751,7 @@ void MaybeCompactWalletDB()
     if (fOneThread.exchange(true)) {
         return;
     }
-    if (!gArgs.GetArg("flushwallet", DEFAULT_FLUSHWALLET)) {
+    if (!gArgs.GetArg("-flushwallet", DEFAULT_FLUSHWALLET)) {
         return;
     }
 

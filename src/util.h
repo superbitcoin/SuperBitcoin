@@ -157,7 +157,7 @@ template<typename T, typename... Args> static inline void MarkUsed(const T& t, c
 } while(0)
 
 #define LogPrintfWithFileInfo(fmt1, fmt2, a1, a2, a...) do{ \
-    bool fileinfo = gArgs.GetArg("logfileinfo", true); \
+    bool fileinfo = gArgs.GetArg("-logfileinfo", true); \
     if(fileinfo){ \
         LogPrintfFmt(fmt1, a1, a2, ##a); \
     }else{ \
@@ -227,13 +227,22 @@ protected:
     /************reconfiguration****************/
     bpo::options_description *app;
     bpo::variables_map vm;
+//    std::string version;
     /************reconfiguration****************/
 public:
+//    ArgsManager::ArgsManager()
+//    {
+//        app = nullptr;
+//        vm = bpo::variables_map();
+//        version = strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" + FormatParagraph(LicenseInfo());
+//    }
+
     void ParseParameters(int argc, const char*const argv[]);
     void ReadConfigFile(const std::string& confPath);
     std::vector<std::string> GetArgs(const std::string& strArg);
+//    const std::string& GetVersion() const { return version; }
 
-    bool PrintHelpMessage();
+    bool PrintHelpMessage(std::function<void(void)>);   // because of compilation
 
     /**
      * Return true if initialize program options seccess
@@ -297,7 +306,7 @@ public:
      * @param nDefault (e.g. 1)
      * @return command-line argument (0 if invalid number) or default value
      */
-    unsigned int GetArg(const std::string& strArg, unsigned int nDefault);
+    unsigned int GetArg(const std::string& strArg, uint32_t nDefault);
 
     /**
      * Return boolean argument or default value
@@ -334,6 +343,15 @@ public:
      * @return true if argument gets set, false if it already had a value
      */
     bool SoftSetArg(const std::string& strArg, const int32_t& value);
+
+    /**
+     * Set an argument if it doesn't already have a value
+     *
+     * @param strArg Argument to set (e.g. "--foo")
+     * @param strValue Value (e.g. 1)
+     * @return true if argument gets set, false if it already had a value
+     */
+    bool SoftSetArg(const std::string& strArg, const uint32_t& intValue);
 
     /**
      * Set an argument if it doesn't already have a value

@@ -87,6 +87,8 @@
 #include <boost/program_options/options_description.hpp>
 #include <vector>
 #include <string>
+#include "clientversion.h"
+#include "init.h"
 
 namespace bpo = boost::program_options;
 
@@ -402,6 +404,7 @@ bool ArgsManager::InitPromOptions(std::function<void(bpo::options_description *a
     this->app = app;
     vm.clear();
     callback(app, vm, argc, argv, mode);
+    return true;
 }
 
 void ArgsManager::ParseParameters(int argc, const char* const argv[])
@@ -656,9 +659,33 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const uint64_t& intValue
 
     boost::any tmp_value = intValue;
     vm.at(tmp_strArg).value().swap(tmp_value);
+    return true;
 }
 
 bool ArgsManager::SoftSetArg(const std::string& strArg, const int32_t& intValue)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    boost::any tmp_value(intValue);
+    vm.at(tmp_strArg).value().swap(tmp_value);
+    return true;
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, const uint32_t& intValue)
 {
     LOCK(cs_args);
     std::string tmp_strArg;
@@ -709,9 +736,10 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::
 
     boost::any tmp_value = value;
     vm.at(tmp_strArg).value().swap(tmp_value);
+    return true;
 }
 
-bool ArgsManager::PrintHelpMessage()
+bool ArgsManager::PrintHelpMessage(std::function<void(void)> callback)
 {
     if(vm.count("help"))
     {
@@ -722,9 +750,15 @@ bool ArgsManager::PrintHelpMessage()
 
     if(vm.count("version"))
     {
-        std::cout << vm["version"].as<std::string>() << std::endl;
-
-        return true;
+        if(callback)
+        {
+            callback();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
     }
 
     return false;
@@ -873,7 +907,7 @@ void ArgsManager::ReadConfigFile(const std::string& confPath)
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(gArgs.GetArg("pid", std::string(BITCOIN_PID_FILENAME)));
+    fs::path pathPidFile(gArgs.GetArg("-pid", std::string(BITCOIN_PID_FILENAME)));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }
