@@ -132,7 +132,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("dbbatchsize", bpo::value<int64_t>(), "Maximum database write batch size in bytes")  // -help-debug
             ("dbcache", bpo::value<int64_t>(), "Set database cache size in megabytes")
             ("feefilter", bpo::value<string>(), "Tell other nodes to filter invs to us by our mempool min fee (parameters: n, no, y, yes)") // -help-debug
-            ("loadblock", bpo::value< vector<string> >(), "Imports blocks from external blk000??.dat file on startup")
+            ("loadblock", bpo::value< vector<string> >()->multitoken(), "Imports blocks from external blk000??.dat file on startup")
             ("maxorphantx", bpo::value<unsigned int>(), "Keep at most <n> unconnectable transactions in memory")
             ("maxmempool", bpo::value<unsigned int>(), "Keep the transaction memory pool below <n> megabytes")
             ("mempoolexpiry", bpo::value<unsigned int>(), "Do not keep transactions in the mempool longer than <n> hours")
@@ -161,15 +161,15 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
 
     bpo::options_description connGroup("Connection options:");
     connGroup.add_options()
-            ("addnode", bpo::value< vector<string> >(), "Add a node to connect to and attempt to keep the connection open")
+            ("addnode", bpo::value< vector<string> >()->multitoken(), "Add a node to connect to and attempt to keep the connection open")
             ("banscore", bpo::value<unsigned int>(), "Threshold for disconnecting misbehaving peers")
             ("bantime", bpo::value<unsigned int>(), "Number of seconds to keep misbehaving peers from reconnecting")
-            ("bind", bpo::value< vector<string> >(), "Bind to given address and always listen on it. Use [host]:port notation for IPv6")
-            ("connect", bpo::value< vector<string> >(), "Connect only to the specified node(s); -connect=0 disables automatic connections")
+            ("bind", bpo::value< vector<string> >()->multitoken(), "Bind to given address and always listen on it. Use [host]:port notation for IPv6")
+            ("connect", bpo::value< vector<string> >()->multitoken(), "Connect only to the specified node(s); -connect=0 disables automatic connections")
             ("discover", bpo::value<string>(), "Discover own IP addresses default: yes when listening and no -externalip or -proxy(parameters: n, no, y, yes)")
             ("dns", bpo::value<string>(), "Allow DNS lookups for -addnode, -seednode and -connect, default: yes(parameters: n, no, y, yes)")
             ("dnsseed", bpo::value<string>(), "Query for peer addresses via DNS lookup, if low on addresses default: yes unless -connect used(parameters: n, no, y, yes)")
-            ("externalip", bpo::value< vector<string> >(), "Specify your own public address")
+            ("externalip", bpo::value< vector<string> >()->multitoken(), "Specify your own public address")
             ("forcednsseed", bpo::value<string>(), "Always query for peer addresses via DNS lookup default: no(parameters: n, no, y, yes)")
             ("listen", bpo::value<string>(), "Accept connections from outside default: yes if no -proxy or -connect(parameters: n, no, y, yes)")
             ("listenonion", bpo::value<string>(), "Automatically create Tor hidden service default: yes(parameters: n, no, y, yes)")
@@ -178,13 +178,13 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("maxsendbuffer", bpo::value<size_t>(), "Maximum per-connection send buffer, <n>*1000 bytes")
             ("maxtimeadjustment", bpo::value<int64_t>(), "Maximum allowed median peer time offset adjustment. Local perspective of time may be influenced by peers forward or backward by this amount.")
             ("onion", bpo::value<string>(), strprintf(_("Use separate SOCKS5 proxy to reach peers via Tor hidden services (default: %s)"), "-proxy").c_str())
-            ("onlynet", bpo::value< vector<string> >(), "Only connect to nodes in network <net> (ipv4, ipv6 or onion)")
+            ("onlynet", bpo::value< vector<string> >()->multitoken(), "Only connect to nodes in network <net> (ipv4, ipv6 or onion)")
             ("permitbaremultisig", bpo::value<string>(), "Relay non-P2SH multisig(parameters: n, no, y, yes)")
             ("peerbloomfilters", bpo::value<string>(), "Support filtering of blocks and transaction with bloom filters(parameters: n, no, y, yes)")
             ("port", bpo::value<int>(), strprintf(_("Listen for connections on <port> (default: %u or testnet: %u)"), defaultChainParams->GetDefaultPort(), testnetChainParams->GetDefaultPort()).c_str())
             ("proxy", bpo::value<string>(), "Connect through SOCKS5 proxy")
             ("proxyrandomize", bpo::value<string>(), "Randomize credentials for every proxy connection. This enables Tor stream isolation(parameters: n, no, y, yes)")
-            ("seednode", bpo::value< vector<string> >(), "Connect to a node to retrieve peer addresses, and disconnect")
+            ("seednode", bpo::value< vector<string> >()->multitoken(), "Connect to a node to retrieve peer addresses, and disconnect")
             ("timeout", bpo::value<int>(), strprintf(_("Specify connection timeout in milliseconds (minimum: 1, default: %d)"), DEFAULT_CONNECT_TIMEOUT).c_str())
             ("torcontrol", bpo::value<string>(), "Tor control port to use if onion listening enabled")
             ("torpassword", bpo::value<string>(), "Tor control port password (default: empty)")
@@ -197,8 +197,8 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
 #endif
 #endif
 
-            ("whitebind", bpo::value< vector<string> >(), "Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6")
-            ("whitelist", bpo::value< vector<string> >(), "Whitelist peers connecting from the given IP address (e.g. 1.2.3.4) or CIDR notated network (e.g. 1.2.3.0/24). Can be specified multiple times. "
+            ("whitebind", bpo::value< vector<string> >()->multitoken(), "Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6")
+            ("whitelist", bpo::value< vector<string> >()->multitoken(), "Whitelist peers connecting from the given IP address (e.g. 1.2.3.4) or CIDR notated network (e.g. 1.2.3.0/24). Can be specified multiple times. "
                     "Whitelisted peers cannot be DoS banned and their transactions are always relayed, even if they are already in the mempool, useful e.g. for a gateway")
             ("maxuploadtarget", bpo::value<uint64_t>(), strprintf(_("Tries to keep outbound traffic under the given target (in MiB per 24h), 0 = no limit (default: %d)"), DEFAULT_MAX_UPLOAD_TARGET).c_str());
     app->add(connGroup);
@@ -225,7 +225,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("usehd", bpo::value<string>(), "Use hierarchical deterministic key generation (HD) after BIP32. Only has effect during wallet creation/first start(parameters:: n, no, y, yes)")
             ("walletrbf", bpo::value<string>(), "Send transactions with full-RBF opt-in enabled(parameters:: n, no, y, yes)")
             ("upgradewallet", bpo::value<int>(), "Upgrade wallet to latest format on startup(0 for false, 1 for true)")
-            ("wallet", bpo::value< vector<string> >(), "Specify wallet file (within data directory)")
+            ("wallet", bpo::value< vector<string> >()->multitoken(), "Specify wallet file (within data directory)")
             ("walletbroadcast", bpo::value<string>(), "Make the wallet broadcast transactions(parameters:: n, no, y, yes)")
             ("walletnotify", bpo::value<string>(), "Execute command when a wallet transaction changes")
             ("zapwallettxes", bpo::value<int>(), "Delete all wallet transactions and only recover those parts of the blockchain through -rescan on startup"
@@ -297,8 +297,8 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
 
     bpo::options_description chainSelectionGroup("Chain selection options:");
     chainSelectionGroup.add_options()
-            ("testnet", bpo::value<string>(), "Use the test chain(parameters:: n, no, y, yes)")
-            ("regtest", bpo::value<string>(), "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
+            ("testnet", "Use the test chain(parameters:: n, no, y, yes)")
+            ("regtest", "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
                     "This is intended for regression testing tools and app development(parameters:: n, no, y, yes).");
     app->add(chainSelectionGroup);
 
@@ -389,6 +389,9 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());
             return false;
         }
+
+        vector<string> stroptions = gArgs.GetArgs("-wallet");
+        stroptions.size();
         // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
         try {
             SelectParams(ChainNameFromCommandLine());
@@ -397,16 +400,30 @@ bool AppInit(int argc, char* argv[])
             return false;
         }
 
+        stroptions = gArgs.GetArgs("-wallet");
+        stroptions.size();
+
         // -server defaults to true for bitcoind but not for the GUI so do this here
         gArgs.SoftSetArg("-server", true);
+
+        stroptions = gArgs.GetArgs("-wallet");
+        stroptions.size();
         // Set this early so that parameter interactions go to console
         InitLogging();
+        stroptions = gArgs.GetArgs("-wallet");
+        stroptions.size();
+
         InitParameterInteraction();
+        stroptions = gArgs.GetArgs("-wallet");
+        stroptions.size();
+
         if (!AppInitBasicSetup())
         {
             // InitError will have been called with detailed error, which ends up on console
             exit(EXIT_FAILURE);
         }
+        stroptions = gArgs.GetArgs("-wallet");
+        stroptions.size();
         if (!AppInitParameterInteraction())
         {
             // InitError will have been called with detailed error, which ends up on console

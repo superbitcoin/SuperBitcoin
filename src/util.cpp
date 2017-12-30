@@ -83,14 +83,15 @@
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
 #include <openssl/conf.h>
+#include <map>
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
-#include <vector>
-#include <string>
 #include "clientversion.h"
 #include "init.h"
+#include <vector>
+#include <algorithm>
 
-namespace bpo = boost::program_options;
+using std::map;
 
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
@@ -457,7 +458,7 @@ std::vector<std::string> ArgsManager::GetArgs(const std::string& strArg)
     }
 
     if (IsArgSet(tmp_strArg))
-        return vm.at(tmp_strArg).as< std::vector<std::string> >();
+        return vm.at(tmp_strArg).as< vector<string> >();
 
     return {};
 }
@@ -607,12 +608,24 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strVa
     {
         tmp_strArg = strArg;
     }
-
-    if (vm.count(tmp_strArg))
+    if(vm.count(strArg))
+    {
         return false;
+    }
 
-    boost::any tmp_value = strValue;
-    vm.at(tmp_strArg).value().swap(tmp_value);
+    vector<string>::iterator ite = find(options_arr.begin(), options_arr.end(), tmp_strArg);
+
+    // not an array
+    if(ite == options_arr.end())
+    {
+        std::pair< map<string, bpo::variable_value>::iterator, bool > res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));
+
+        return true;
+    }
+
+    // the option is an array
+    std::pair< map<string, bpo::variable_value>::iterator, bool > res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<string>({strValue})), false)));
+
     return true;
 }
 
@@ -634,8 +647,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const int64_t& intValue)
         return false;
     }
 
-    boost::any tmp_value(intValue);
-    vm.at(tmp_strArg).value().swap(tmp_value);
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(int64_t(intValue)), false)));
     return true;
 }
 
@@ -657,8 +669,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const uint64_t& intValue
         return false;
     }
 
-    boost::any tmp_value = intValue;
-    vm.at(tmp_strArg).value().swap(tmp_value);
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(uint64_t(intValue)), false)));
     return true;
 }
 
@@ -680,8 +691,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const int32_t& intValue)
         return false;
     }
 
-    boost::any tmp_value(intValue);
-    vm.at(tmp_strArg).value().swap(tmp_value);
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(int32_t(intValue)), false)));
     return true;
 }
 
@@ -703,8 +713,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const uint32_t& intValue
         return false;
     }
 
-    boost::any tmp_value(intValue);
-    vm.at(tmp_strArg).value().swap(tmp_value);
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(uint32_t(intValue)), false)));
     return true;
 }
 
@@ -734,8 +743,8 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::
         return false;
     }
 
-    boost::any tmp_value = value;
-    vm.at(tmp_strArg).value().swap(tmp_value);
+
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::vector<std::string>(value)), false)));
     return true;
 }
 
@@ -878,30 +887,49 @@ fs::path GetConfigFile(const std::string& confPath)
     return pathConfigFile;
 }
 
-void ArgsManager::ReadConfigFile(const std::string& confPath)
+bool ArgsManager::merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source)
 {
-    fs::ifstream streamConfig(GetConfigFile(confPath));
-    if (!streamConfig.good())
-        return; // No bitcoin.conf file is OK
-
+    LOCK(cs_args);
+    for(bpo::variables_map::iterator ite_src = source.begin(); ite_src != source.end(); ite_src++)
     {
-        LOCK(cs_args);
-        std::set<std::string> setOptions;
-        setOptions.insert("*");
-
-        for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
+        bpo::variables_map::iterator ite_desc = desc.find(ite_src->first);
+        if(ite_desc != desc.end())  // find
         {
-            // Don't overwrite existing settings so command line settings override bitcoin.conf
-            std::string strKey = std::string("-") + it->string_key;
-            std::string strValue = it->value[0];
-            InterpretNegativeSetting(strKey, strValue);
-            if (mapArgs.count(strKey) == 0)
-                mapArgs[strKey] = strValue;
-            mapMultiArgs[strKey].push_back(strValue);
+            vector<string>::const_iterator ite_options_arr = find(options_arr.begin(), options_arr.end(), ite_src->first);
+            if(ite_options_arr != options_arr.end())    // value is array
+            {
+                vector<string> &desc_value = desc.at(ite_src->first).as< vector<string> >();
+                desc_value.insert(desc_value.end(), ite_src->second.as< vector<string> >().begin(), ite_src->second.as< vector<string> >().end());
+
+                // delete mutiple parameters
+                sort(desc_value.begin(), desc_value.end());
+                desc_value.erase(unique(desc_value.begin(), desc_value.end()), desc_value.end());
+            }
+            else
+            {
+                //value is basic data type, pass(use parameter from commond line)
+            }
+        }
+        else    // not find
+        {
+            bpo::variable_value tmp_value = ite_src->second;
+            std::pair< map<string, bpo::variable_value>::iterator, bool > res = desc.insert(std::make_pair(ite_src->first, tmp_value));
+            if(!res.second)
+            {
+                return false;
+            }
         }
     }
-    // If datadir is changed in .conf file:
-    ClearDatadirCache();
+
+    return true;
+}
+
+void ArgsManager::ReadConfigFile(const std::string& confPath)
+{
+    bpo::variables_map vm_tmp;
+    bfs::path config_file_name(GetConfigFile(confPath));
+    bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app, true), vm_tmp);
+    merge_variable_map(vm, vm_tmp);
 }
 
 #ifndef WIN32

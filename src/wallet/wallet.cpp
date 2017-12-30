@@ -4164,8 +4164,9 @@ void CWallet::postInitProcess(CScheduler& scheduler)
 
 bool CWallet::ParameterInteraction()
 {
-    gArgs.SoftSetArg("-wallet", DEFAULT_WALLET_DAT);
-    const bool is_multiwallet = gArgs.GetArgs("-wallet").size() > 1;
+    gArgs.SoftSetArg("-wallet", std::string(DEFAULT_WALLET_DAT));
+    vector<string> tmp_options = gArgs.GetArgs("-wallet");
+    const bool is_multiwallet = tmp_options.size() > 1;
 
     if (gArgs.GetArg("-disablewallet", DEFAULT_DISABLE_WALLET))
         return true;

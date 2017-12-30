@@ -89,8 +89,8 @@ void SelectBaseParams(const std::string& chain)
 
 std::string ChainNameFromCommandLine()
 {
-    bool fRegTest = gArgs.GetArg("-regtest", false);
-    bool fTestNet = gArgs.GetArg("-testnet", false);
+    bool fRegTest = gArgs.IsArgSet("-regtest");
+    bool fTestNet = gArgs.IsArgSet("-testnet");
 
     if (fTestNet && fRegTest)
         throw std::runtime_error("Invalid combination of -regtest and -testnet.");

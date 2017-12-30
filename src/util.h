@@ -31,8 +31,12 @@
 #include "init.h"
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
+#include <boost/filesystem/path.hpp>
 
 namespace bpo = boost::program_options;
+namespace bfs = boost::filesystem;
+using std::vector;
+using std::string;
 
 // Application startup time (used for uptime calculation)
 int64_t GetStartupTime();
@@ -219,6 +223,13 @@ inline bool IsSwitchChar(char c)
 
 class ArgsManager
 {
+private:
+    // if the option has multiple arguments, add to this arr
+    vector<string> options_arr;
+
+private:
+    bool merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source);
+
 protected:
     CCriticalSection cs_args;
     std::map<std::string, std::string> mapArgs;
@@ -230,12 +241,30 @@ protected:
 //    std::string version;
     /************reconfiguration****************/
 public:
-//    ArgsManager::ArgsManager()
-//    {
-//        app = nullptr;
-//        vm = bpo::variables_map();
-//        version = strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" + FormatParagraph(LicenseInfo());
-//    }
+    ArgsManager()
+    {
+        options_arr =
+       {
+           "loadblock",
+           "addnode",
+           "bind",
+           "connect",
+           "externalip",
+           "onlynet",
+           "seednode",
+           "whitebind",
+           "whitelist",
+           "wallet",
+           "uacomment",
+           "vbparams",
+           "debug",
+           "debugexclude",
+           "rpcbind",
+           "rpcauth",
+           "rpcallowip"
+       };
+
+    }
 
     void ParseParameters(int argc, const char*const argv[]);
     void ReadConfigFile(const std::string& confPath);
