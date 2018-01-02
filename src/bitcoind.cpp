@@ -389,9 +389,6 @@ bool AppInit(int argc, char* argv[])
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());
             return false;
         }
-
-        vector<string> stroptions = gArgs.GetArgs("-wallet");
-        stroptions.size();
         // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
         try {
             SelectParams(ChainNameFromCommandLine());
@@ -400,30 +397,17 @@ bool AppInit(int argc, char* argv[])
             return false;
         }
 
-        stroptions = gArgs.GetArgs("-wallet");
-        stroptions.size();
-
         // -server defaults to true for bitcoind but not for the GUI so do this here
         gArgs.SoftSetArg("-server", true);
 
-        stroptions = gArgs.GetArgs("-wallet");
-        stroptions.size();
         // Set this early so that parameter interactions go to console
         InitLogging();
-        stroptions = gArgs.GetArgs("-wallet");
-        stroptions.size();
-
         InitParameterInteraction();
-        stroptions = gArgs.GetArgs("-wallet");
-        stroptions.size();
-
         if (!AppInitBasicSetup())
         {
             // InitError will have been called with detailed error, which ends up on console
             exit(EXIT_FAILURE);
         }
-        stroptions = gArgs.GetArgs("-wallet");
-        stroptions.size();
         if (!AppInitParameterInteraction())
         {
             // InitError will have been called with detailed error, which ends up on console
