@@ -33,76 +33,76 @@ static void ResetArgs(const std::string& strArg)
 BOOST_AUTO_TEST_CASE(boolarg)
 {
     ResetArgs("-foo");
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(gArgs.GetArg("-foo", false));
+    BOOST_CHECK(gArgs.GetArg("-foo", true));
 
-    BOOST_CHECK(!gArgs.GetBoolArg("-fo", false));
-    BOOST_CHECK(gArgs.GetBoolArg("-fo", true));
+    BOOST_CHECK(!gArgs.GetArg("-fo", false));
+    BOOST_CHECK(gArgs.GetArg("-fo", true));
 
-    BOOST_CHECK(!gArgs.GetBoolArg("-fooo", false));
-    BOOST_CHECK(gArgs.GetBoolArg("-fooo", true));
+    BOOST_CHECK(!gArgs.GetArg("-fooo", false));
+    BOOST_CHECK(gArgs.GetArg("-fooo", true));
 
     ResetArgs("-foo=0");
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
 
     ResetArgs("-foo=1");
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(gArgs.GetArg("-foo", false));
+    BOOST_CHECK(gArgs.GetArg("-foo", true));
 
     // New 0.6 feature: auto-map -nosomething to !-something:
     ResetArgs("-nofoo");
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
 
     ResetArgs("-nofoo=1");
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
 
     ResetArgs("-foo -nofoo");  // -nofoo should win
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
 
     ResetArgs("-foo=1 -nofoo=1");  // -nofoo should win
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
 
     ResetArgs("-foo=0 -nofoo=0");  // -nofoo=0 should win
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(gArgs.GetArg("-foo", false));
+    BOOST_CHECK(gArgs.GetArg("-foo", true));
 
     // New 0.6 feature: treat -- same as -:
     ResetArgs("--foo=1");
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(gArgs.GetArg("-foo", false));
+    BOOST_CHECK(gArgs.GetArg("-foo", true));
 
     ResetArgs("--nofoo=1");
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
 
 }
 
 BOOST_AUTO_TEST_CASE(stringarg)
 {
     ResetArgs("");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", ""), "");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", "eleven"), "eleven");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)""), "");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)"eleven"), "eleven");
 
     ResetArgs("-foo -bar");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", ""), "");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", "eleven"), "");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)""), "");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)"eleven"), "");
 
     ResetArgs("-foo=");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", ""), "");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", "eleven"), "");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)""), "");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)"eleven"), "");
 
     ResetArgs("-foo=11");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", ""), "11");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", "eleven"), "11");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)""), "11");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)"eleven"), "11");
 
     ResetArgs("-foo=eleven");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", ""), "eleven");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", "eleven"), "eleven");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)""), "eleven");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)"eleven"), "eleven");
 
 }
 
@@ -128,34 +128,34 @@ BOOST_AUTO_TEST_CASE(intarg)
 BOOST_AUTO_TEST_CASE(doubledash)
 {
     ResetArgs("--foo");
-    BOOST_CHECK_EQUAL(gArgs.GetBoolArg("foo", false), true);
+    BOOST_CHECK_EQUAL(gArgs.GetArg("foo", false), true);
 
     ResetArgs("--foo=verbose --bar=1");
-    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", ""), "verbose");
+    BOOST_CHECK_EQUAL(gArgs.GetArg("-foo", (std::string)""), "verbose");
     BOOST_CHECK_EQUAL(gArgs.GetArg("-bar", 0), 1);
 }
 
 BOOST_AUTO_TEST_CASE(boolargno)
 {
     ResetArgs("-nofoo");
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
 
     ResetArgs("-nofoo=1");
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
 
     ResetArgs("-nofoo=0");
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", true));
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", false));
+    BOOST_CHECK(gArgs.GetArg("-foo", true));
+    BOOST_CHECK(gArgs.GetArg("-foo", false));
 
     ResetArgs("-foo --nofoo"); // --nofoo should win
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", true));
-    BOOST_CHECK(!gArgs.GetBoolArg("-foo", false));
+    BOOST_CHECK(!gArgs.GetArg("-foo", true));
+    BOOST_CHECK(!gArgs.GetArg("-foo", false));
 
     ResetArgs("-nofoo -foo"); // foo always wins:
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", true));
-    BOOST_CHECK(gArgs.GetBoolArg("-foo", false));
+    BOOST_CHECK(gArgs.GetArg("-foo", true));
+    BOOST_CHECK(gArgs.GetArg("-foo", false));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

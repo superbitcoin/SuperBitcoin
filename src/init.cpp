@@ -1382,15 +1382,15 @@ bool AppInitMain(boost::thread_group& threadGroup, CScheduler& scheduler)
     InitSignatureCache();
     InitScriptExecutionCache();
 
-//    LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
-//    if (nScriptCheckThreads) {
-//        for (int i = 0; i < nScriptCheckThreads - 1; i++)
-//            threadGroup.create_thread(&ThreadScriptCheck);
-//    }
-//
-//    // Start the lightweight task scheduler thread
-//    CScheduler::Function serviceLoop = boost::bind(&CScheduler::serviceQueue, &scheduler);
-//    threadGroup.create_thread(boost::bind(&TraceThread<CScheduler::Function>, "scheduler", serviceLoop));
+    LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
+    if (nScriptCheckThreads) {
+        for (int i = 0; i < nScriptCheckThreads - 1; i++)
+            threadGroup.create_thread(&ThreadScriptCheck);
+    }
+
+    // Start the lightweight task scheduler thread
+    CScheduler::Function serviceLoop = boost::bind(&CScheduler::serviceQueue, &scheduler);
+    threadGroup.create_thread(boost::bind(&TraceThread<CScheduler::Function>, "scheduler", serviceLoop));
 
     GetMainSignals().RegisterBackgroundSignalScheduler(scheduler);
 

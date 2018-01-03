@@ -4209,7 +4209,7 @@ bool CWallet::ParameterInteraction()
 
     if (gArgs.GetArg("-sysperms", false))
         return InitError("-sysperms is not allowed in combination with enabled wallet functionality");
-    if (gArgs.GetArg("-prune", 0) && gArgs.GetArg("rescan", false))
+    if (gArgs.GetArg("-prune", 0) && gArgs.GetArg("-rescan", false))
         return InitError(_("Rescans are not possible in pruned mode. You will need to use -reindex which will download the whole blockchain again."));
 
     if (::minRelayTxFee.GetFeePerK() > HIGH_TX_FEE_PER_KB)
@@ -4259,7 +4259,7 @@ bool CWallet::ParameterInteraction()
         if (payTxFee < ::minRelayTxFee)
         {
             return InitError(strprintf(_("Invalid amount for -paytxfee=<amount>: '%s' (must be at least %s)"),
-                                       gArgs.GetArg("paytxfee", ""), ::minRelayTxFee.ToString()));
+                                       gArgs.GetArg("-paytxfee", ""), ::minRelayTxFee.ToString()));
         }
     }
     if (gArgs.IsArgSet("-maxtxfee"))
@@ -4273,12 +4273,12 @@ bool CWallet::ParameterInteraction()
         if (CFeeRate(maxTxFee, 1000) < ::minRelayTxFee)
         {
             return InitError(strprintf(_("Invalid amount for -maxtxfee=<amount>: '%s' (must be at least the minrelay fee of %s to prevent stuck transactions)"),
-                                       gArgs.GetArg("maxtxfee", ""), ::minRelayTxFee.ToString()));
+                                       gArgs.GetArg("-maxtxfee", ""), ::minRelayTxFee.ToString()));
         }
     }
     nTxConfirmTarget = gArgs.GetArg("-txconfirmtarget", DEFAULT_TX_CONFIRM_TARGET);
     bSpendZeroConfChange = gArgs.GetArg("-spendzeroconfchange", DEFAULT_SPEND_ZEROCONF_CHANGE);
-    fWalletRbf = gArgs.GetArg("walletrbf", DEFAULT_WALLET_RBF);
+    fWalletRbf = gArgs.GetArg("-walletrbf", DEFAULT_WALLET_RBF);
 
     return true;
 }
