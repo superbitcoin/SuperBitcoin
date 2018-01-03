@@ -618,12 +618,12 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strVa
     // not an array
     if(ite == options_arr.end())
     {
-        std::pair< map<string, bpo::variable_value>::iterator, bool > res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));
+        auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
         return res.second;
     }
 
     // the option is an array
-    std::pair< map<string, bpo::variable_value>::iterator, bool > res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<string>({strValue})), false)));
+    auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<string>({strValue})), false)));   // std::pair< map<string, bpo::variable_value>::iterator, bool >
     return res.second;
 }
 
