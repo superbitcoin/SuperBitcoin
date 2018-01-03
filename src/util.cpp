@@ -619,14 +619,12 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strVa
     if(ite == options_arr.end())
     {
         std::pair< map<string, bpo::variable_value>::iterator, bool > res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));
-
-        return true;
+        return res.second;
     }
 
     // the option is an array
     std::pair< map<string, bpo::variable_value>::iterator, bool > res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<string>({strValue})), false)));
-
-    return true;
+    return res.second;
 }
 
 bool ArgsManager::SoftSetArg(const std::string& strArg, const int64_t& intValue)
@@ -913,7 +911,7 @@ bool ArgsManager::merge_variable_map(bpo::variables_map &desc, bpo::variables_ma
         else    // not find
         {
             bpo::variable_value tmp_value = ite_src->second;
-            std::pair< map<string, bpo::variable_value>::iterator, bool > res = desc.insert(std::make_pair(ite_src->first, tmp_value));
+            auto res = desc.insert(std::make_pair(ite_src->first, tmp_value)); // return type of insert is std::pair< map<string, bpo::variable_value>::iterator, bool >
             if(!res.second)
             {
                 return false;
