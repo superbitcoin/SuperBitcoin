@@ -746,6 +746,33 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::
     return true;
 }
 
+void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strValue)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    vector<string>::const_iterator ite_options_arr = find(options_arr.begin(), options_arr.end(), tmp_strArg);
+
+    if(ite_options_arr == options_arr.end())
+    {
+        vm.erase(tmp_strArg);
+        vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
+
+        return;
+    }
+
+    vector<string> &tmp_value_arr = vm.at(tmp_strArg).as< vector<string> >();
+    tmp_value_arr.insert(tmp_value_arr.end(), strValue);
+}
+
 bool ArgsManager::PrintHelpMessage(std::function<void(void)> callback)
 {
     if(vm.count("help"))
@@ -852,6 +879,7 @@ const fs::path &GetDataDir(bool fNetSpecific)
         return path;
 
     if (gArgs.IsArgSet("-datadir")) {
+        std::string tmp = gArgs.GetArg("-datadir", (std::string)"");
         path = fs::system_complete(gArgs.GetArg("-datadir", (std::string)""));
         if (!fs::is_directory(path)) {
             path = "";

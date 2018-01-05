@@ -3555,6 +3555,8 @@ static void FindFilesToPrune(std::set<int>& setFilesToPrune, uint64_t nPruneAfte
 
 bool CheckDiskSpace(uint64_t nAdditionalBytes)
 {
+    fs::path path = GetDataDir();
+    std::string tmp = path.string();
     uint64_t nFreeBytesAvailable = fs::space(GetDataDir()).available;
 
     // Check for nMinDiskSpace bytes (currently 50MB)

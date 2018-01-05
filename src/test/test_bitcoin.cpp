@@ -41,7 +41,6 @@ FastRandomContext insecure_rand_ctx(insecure_rand_seed);
 
 extern bool fPrintToConsole;
 extern void noui_connect();
-
 BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
 {
         SHA256AutoDetect();
@@ -72,7 +71,7 @@ TestingSetup::TestingSetup(const std::string& chainName) : BasicTestingSetup(cha
         ClearDatadirCache();
         pathTemp = fs::temp_directory_path() / strprintf("test_bitcoin_%lu_%i", (unsigned long)GetTime(), (int)(InsecureRandRange(100000)));
         fs::create_directories(pathTemp);
-        gArgs.SoftSetArg("-datadir", pathTemp.string());
+        gArgs.ForceSetArg("-datadir", pathTemp.string());
 
         // Note that because we don't bother running a scheduler thread here,
         // callbacks via CValidationInterface are unreliable, but that's OK,

@@ -408,6 +408,8 @@ public:
      * @return true if argument gets set, false if it already had a value
      */
     bool SoftSetArg(const std::string &strArg, bool fValue);
+
+    void ForceSetArg(const std::string&, const std::string&);
 };
 
 extern ArgsManager gArgs;
