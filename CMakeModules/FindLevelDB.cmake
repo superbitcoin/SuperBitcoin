@@ -18,7 +18,7 @@ find_path(
 
 find_library(
 	LEVELDB_LIBRARY
-	NAMES leveldb
+	NAMES  leveldb
 	DOC "leveldb library"
 )
 

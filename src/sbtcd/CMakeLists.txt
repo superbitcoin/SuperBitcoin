@@ -7,18 +7,18 @@ file(GLOB sources "*.cpp")
 link_directories(../rpc)
 
 add_executable(sbtcd ${sources} )
-target_include_directories(sbtcd PUBLIC ${CMAKE_CURRENT_BINARY_DIR} )
+target_include_directories(sbtcd PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${Secp256k1_INCLUDE_DIR} )
 #message(ddddddddd  ${LEVELDB_LIBRARIES})
 
 target_link_libraries(sbtcd
         base
-        compat consensus crypto leveldb policy
-        primitives rpc script secp256k1 support
+        compat consensus crypto  policy
+        primitives rpc script  support
         univalue wallet   ${EVENT_LIBRARIES}  libevent_pthreads.so ${Boost_LIBRARIES} miniupnpc ${OPENSSL_LIBRARIES}
-        ${LIBDB_CXX_LIBRARIES}
+        ${LIBDB_CXX_LIBRARIES} ${LEVELDB_LIBRARIES} libmemenv.a ${Secp256k1_LIBRARY}
         )
-#${LEVELDB_LIBRARIES}
 
+message( ${Secp256k1_LIBRARY})
 #target_link_libraries( eos_chain fc chainbase eos_types Logging IR WAST WASM Runtime )
 #
 #target_include_directories( eos_chain

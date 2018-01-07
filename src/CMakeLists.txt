@@ -10,12 +10,12 @@ add_subdirectory( compat )
 #add_subdirectory( config )
 add_subdirectory( consensus )
 add_subdirectory( crypto )
-add_subdirectory( leveldb )
+#add_subdirectory( leveldb )
 add_subdirectory( policy )
 add_subdirectory( primitives )
 add_subdirectory( rpc )
 add_subdirectory( script )
-add_subdirectory( secp256k1 )
+#add_subdirectory( secp256k1 )
 #univalue
 #include(ProjectSecp256k1)
 
@@ -40,16 +40,17 @@ add_library(base ${sources} ${headers})
 #
 #        )
 
-#find_package(LevelDB)
+find_package(LevelDB)
 #IF(LEVELDB_FOUND)
 #message( FFFFFFFFFFFFFFFFFFF ${LEVELDB_LIBRARIES})
 #ENDIF()
 target_include_directories(base SYSTEM PUBLIC "${LEVELDB_INCLUDE_DIR}" "${LEVELDB_INCLUDE_DIR}/leveldb/helpers")
-
-
+find_package(Secp256k1)
+#include(ProjectSecp256k1)
 find_package(Miniupnpc)
 find_package(OpenSSL)
 find_package(Event)
+
 
 add_subdirectory(sbtcd)
 add_subdirectory(sbtc-tx)
