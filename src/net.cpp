@@ -474,6 +474,7 @@ void CConnman::ClearBanned()
 bool CConnman::IsBanned(CNetAddr ip)
 {
     LOCK(cs_setBanned);
+    int i = setBanned.size();
     for (banmap_t::iterator it = setBanned.begin(); it != setBanned.end(); it++)
     {
         CSubNet subNet = (*it).first;

@@ -193,7 +193,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           raw_script = test[1].get_str();
           nIn = test[2].get_int();
           nHashType = test[3].get_int();
-//          sigHashHex = test[4].get_str();
+//          sigHashHex = test[4].get_str(); // precompute with SignatureHash algorithm
 
           CDataStream stream(ParseHex(raw_tx), SER_NETWORK, PROTOCOL_VERSION);
           stream >> tx;

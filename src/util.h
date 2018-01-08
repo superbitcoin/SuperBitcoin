@@ -410,6 +410,8 @@ public:
     bool SoftSetArg(const std::string &strArg, bool fValue);
 
     void ForceSetArg(const std::string&, const std::string&);
+
+    void ForceSetArg(const std::string&, const unsigned int);
 };
 
 extern ArgsManager gArgs;

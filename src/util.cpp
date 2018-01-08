@@ -570,7 +570,8 @@ unsigned int ArgsManager::GetArg(const std::string& strArg, unsigned int nDefaul
         tmp_strArg = strArg;
     }
 
-    if(vm.count(tmp_strArg))
+    bool res = vm.count(tmp_strArg);
+    if(res)
     {
         return vm[tmp_strArg].as<unsigned int>();
     }
@@ -771,6 +772,27 @@ void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strV
 
     vector<string> &tmp_value_arr = vm.at(tmp_strArg).as< vector<string> >();
     tmp_value_arr.insert(tmp_value_arr.end(), strValue);
+}
+
+void ArgsManager::ForceSetArg(const std::string& strArg, const unsigned int value)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        vm.erase(tmp_strArg);
+    }
+
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any((unsigned int)value), false)));
 }
 
 bool ArgsManager::PrintHelpMessage(std::function<void(void)> callback)
