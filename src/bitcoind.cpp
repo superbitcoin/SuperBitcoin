@@ -48,8 +48,6 @@ using std::string;
 using std::vector;
 namespace bpo = boost::program_options;
 
-static bpo::options_description *app = nullptr;
-
 /* Introduction text for doxygen: */
 
 /*! \mainpage Developer documentation
@@ -102,7 +100,7 @@ bool LoadCheckPoint() {
 //
 // Start
 //
-void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, char **argv, HelpMessageMode mode)
+void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv, HelpMessageMode mode)
 {
     const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::MAIN);
     const auto testnetBaseParams = CreateBaseChainParams(CBaseChainParams::TESTNET);
@@ -364,8 +362,8 @@ bool AppInit(int argc, char* argv[])
     // Parameters
     //
     // If Qt is used, parameters/bitcoin.conf are parsed in qt/bitcoin.cpp's main()
-    app = new bpo::options_description("sbtcd");
-    if(!gArgs.InitPromOptions(InitPromOptions, app, argc, argv, HMM_BITCOIND))
+    bpo::options_description *app = new bpo::options_description("sbtcd");
+    if(!gArgs.InitPromOptions(InitPromOptions, app, argc, (const char**)argv, HMM_BITCOIND))
     {
         return false;
     }

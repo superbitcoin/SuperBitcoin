@@ -31,8 +31,6 @@
 namespace bpo = boost::program_options;
 using std::string;
 
-static bpo::options_description *app = nullptr;
-
 static const char DEFAULT_RPCCONNECT[] = "127.0.0.1";
 static const int DEFAULT_HTTP_CLIENT_TIMEOUT=900;
 static const bool DEFAULT_NAMED=false;
@@ -46,7 +44,7 @@ static const int CONTINUE_EXECUTION=-1;
 // Exception thrown on connection error.  This error is used to determine
 // when to wait if -rpcwait is given.
 //
-void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, char **argv, HelpMessageMode mode)
+void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv, HelpMessageMode mode)
 {
     const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::MAIN);
     const auto testnetBaseParams = CreateBaseChainParams(CBaseChainParams::TESTNET);
@@ -119,8 +117,12 @@ static int AppInitRPC(int argc, char* argv[])
                           "  bitcoin-cli [options] -named <command> [name=value] ... " + strprintf(_("Send command to %s (with named arguments)"), _(PACKAGE_NAME)) + "\n" +
                           "  bitcoin-cli [options] help                " + _("List commands") + "\n" +
                           "  bitcoin-cli [options] help <command>      " + _("Get help for a command") + "\n";
-    app = new bpo::options_description(strHead.c_str());
-    gArgs.InitPromOptions(InitPromOptions, app, argc, argv, HMM_EMPTY);
+    bpo::options_description *app = new bpo::options_description(strHead.c_str());
+    if(!gArgs.InitPromOptions(InitPromOptions, app, argc, (const char**)argv, HMM_EMPTY))
+    {
+        return EXIT_FAILURE;
+    }
+
     if(gArgs.PrintHelpMessage(PrintVersion))
     {
         return EXIT_SUCCESS;

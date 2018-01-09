@@ -394,7 +394,7 @@ static void InterpretNegativeSetting(std::string& strKey, std::string& strValue)
 }
 
 bool ArgsManager::InitPromOptions(std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc,
-                                         char **argv, HelpMessageMode mode)> callback, bpo::options_description *app, int argc, char **argv, HelpMessageMode mode)
+                                         const char **argv, HelpMessageMode mode)> callback, bpo::options_description *app, int argc, const char **argv, HelpMessageMode mode)
 {
     LOCK(cs_args);
     if(callback == nullptr || argv == nullptr || app == nullptr)
@@ -570,8 +570,7 @@ unsigned int ArgsManager::GetArg(const std::string& strArg, unsigned int nDefaul
         tmp_strArg = strArg;
     }
 
-    bool res = vm.count(tmp_strArg);
-    if(res)
+    if(vm.count(tmp_strArg))
     {
         return vm[tmp_strArg].as<unsigned int>();
     }

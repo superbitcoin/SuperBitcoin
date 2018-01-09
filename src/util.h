@@ -282,7 +282,7 @@ public:
      * @param mode The help message mode determines what help message to show
      * @return true if the argument has been set
      */
-    bool InitPromOptions(std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc, char **argv, HelpMessageMode mode)> callback, bpo::options_description *app, int argc, char **argv, HelpMessageMode mode);
+    bool InitPromOptions(std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv, HelpMessageMode mode)> callback, bpo::options_description *app, int argc, const char **argv, HelpMessageMode mode);
 
     /**
      * Return true if the given argument has been manually set

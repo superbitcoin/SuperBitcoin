@@ -10,10 +10,26 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/test/unit_test.hpp>
+#include <boost/program_options.hpp>
+
+using std::string;
+using std::vector;
+namespace bpo = boost::program_options;
 
 BOOST_FIXTURE_TEST_SUITE(getarg_tests, BasicTestingSetup)
 
-static void ResetArgs(const std::string& strArg)
+void generate_options(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv, HelpMessageMode mode)
+{
+    bpo::options_description demo("for test cmd parser");
+    demo.add_options()
+            ("integer", bpo::value<int>(), "integer test")
+            ("bool", bpo::value<bool>(), "bool test")
+            ("string", bpo::value<string>(), "string test")
+            ("vector_string", bpo::value< vector<string> >(), "string array test");
+    app->add(demo);
+}
+
+static void ResetArgs(const std::string &strArg)
 {
     std::vector<std::string> vecArg;
     if (strArg.size())
@@ -27,7 +43,8 @@ static void ResetArgs(const std::string& strArg)
     for (std::string& s : vecArg)
         vecChar.push_back(s.c_str());
 
-    gArgs.ParseParameters(vecChar.size(), &vecChar[0]);
+    bpo::options_description *app = new bpo::options_description("");
+    gArgs.InitPromOptions(generate_options, app, vecChar.size(), &vecChar[0], HMM_EMPTY);
 }
 
 BOOST_AUTO_TEST_CASE(boolarg)
