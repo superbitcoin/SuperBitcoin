@@ -23,8 +23,23 @@ static void TestBlockSubsidyHalvings(const Consensus::Params& consensusParams)
     for (int nHalvings = 0; nHalvings < maxHalvings; nHalvings++) {
         int nHeight = nHalvings * consensusParams.nSubsidyHalvingInterval;
         CAmount nSubsidy = GetBlockSubsidy(nHeight, consensusParams);
-        BOOST_CHECK(nSubsidy <= nInitialSubsidy);
-        BOOST_CHECK_EQUAL(nSubsidy, nPreviousSubsidy / 2);
+        if(!IsSBTCForkHeight(consensusParams, nHeight))
+        {
+            BOOST_CHECK(nSubsidy <= nInitialSubsidy);
+        }
+        else
+        {
+            BOOST_CHECK_EQUAL(nSubsidy, 210000*COIN);
+        }
+        if(IsSBTCForkHeight(consensusParams, nHeight) || IsSBTCForkHeight(consensusParams, (nHalvings - 1) * consensusParams.nSubsidyHalvingInterval))
+        {
+            BOOST_CHECK_NE(nSubsidy, nPreviousSubsidy / 2);
+        }
+        else
+        {
+            BOOST_CHECK_EQUAL(nSubsidy, nPreviousSubsidy / 2);
+        }
+
         nPreviousSubsidy = nSubsidy;
     }
     BOOST_CHECK_EQUAL(GetBlockSubsidy(maxHalvings * consensusParams.nSubsidyHalvingInterval, consensusParams), 0);
