@@ -18,6 +18,8 @@ namespace bpo = boost::program_options;
 
 BOOST_FIXTURE_TEST_SUITE(getarg_tests, BasicTestingSetup)
 
+static bpo::options_description *app = nullptr;
+
 void generate_options(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv, HelpMessageMode mode)
 {
     bpo::options_description demo("for test cmd parser");
@@ -44,7 +46,6 @@ static void ResetArgs(const std::string &strArg)
     for (std::string& s : vecArg)
         vecChar.push_back(s.c_str());
 
-    static bpo::options_description *app = nullptr;
     // options_description can`t be cleared
     if(!app)
     {
@@ -104,6 +105,8 @@ BOOST_AUTO_TEST_CASE(doubledash)
     ResetArgs("--string verbose --integer 1");
     BOOST_CHECK_EQUAL(gArgs.GetArg("-string", (std::string)""), "verbose");
     BOOST_CHECK_EQUAL(gArgs.GetArg("-integer", 0), 1);
+
+    delete app;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

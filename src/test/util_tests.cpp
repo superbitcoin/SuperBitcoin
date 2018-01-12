@@ -20,6 +20,18 @@
 
 namespace bpo = boost::program_options;
 
+void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv, HelpMessageMode mode)
+{
+    bpo::options_description options("test");
+    options.add_options()
+            ("string,s", bpo::value<string>(), "string test")
+            ("integer,i", bpo::value<int>(), "integer test")
+            ("bool", bpo::value<string>(), "bool test");
+    app->add(options);
+
+    bpo::store(bpo::parse_command_line(argc, argv, *app), vm);
+}
+
 BOOST_FIXTURE_TEST_SUITE(util_tests, BasicTestingSetup)
 
 BOOST_AUTO_TEST_CASE(util_criticalsection)
@@ -112,27 +124,31 @@ public:
 
 BOOST_AUTO_TEST_CASE(util_ParseParameters)
 {
+    bpo::options_description app("test");
+    const char *argv_test[] = {"test_bitcoin", "--string", "str", "--integer", "1", "--bool", "yes"};
     TestArgsManager testArgs;
-    const char *argv_test[] = {"-ignored", "-a", "-b", "-ccc=argument", "-ccc=multiple", "f", "-d=e"};
 
-    testArgs.ParseParameters(0, (char**)argv_test);
+    testArgs.InitPromOptions(InitPromOptions, &app, 0, argv_test, HMM_EMPTY);
     BOOST_CHECK(testArgs.GetOptionMap().empty());
 
-    testArgs.ParseParameters(1, (char**)argv_test);
-    BOOST_CHECK(testArgs.GetOptionMap().empty());
+    bpo::options_description app1("test");
+    testArgs.InitPromOptions(InitPromOptions, &app1, 3, argv_test, HMM_EMPTY);
+    BOOST_CHECK(!testArgs.GetOptionMap().empty());
+    BOOST_CHECK(testArgs.GetOptionMap().size() == 1);
 
-    testArgs.ParseParameters(5, (char**)argv_test);
+    bpo::options_description app2("test");
+    testArgs.InitPromOptions(InitPromOptions, &app2, 7, argv_test, HMM_EMPTY);
     // expectation: -ignored is ignored (program name argument),
     // -a, -b and -ccc end up in map, -d ignored because it is after
     // a non-option argument (non-GNU option parsing)
     BOOST_CHECK(testArgs.GetOptionMap().size() == 3);
-    BOOST_CHECK(testArgs.IsArgSet("-a") && testArgs.IsArgSet("-b") && testArgs.IsArgSet("-ccc")
+    BOOST_CHECK(testArgs.IsArgSet("-string") && testArgs.IsArgSet("-integer") && testArgs.IsArgSet("-bool")
                 && !testArgs.IsArgSet("-f") && !testArgs.IsArgSet("-d"));
-    BOOST_CHECK(testArgs.GetOptionMap().count("-a") && testArgs.GetOptionMap().count("-b") && testArgs.GetOptionMap().count("-ccc")
-                && !testArgs.GetOptionMap().count("f") && !testArgs.GetOptionMap().count("-d"));
+    BOOST_CHECK(testArgs.GetOptionMap().count("string") && testArgs.GetOptionMap().count("integer") && testArgs.GetOptionMap().count("bool")
+                && !testArgs.GetOptionMap().count("f") && !testArgs.GetOptionMap().count("d"));
 
-    BOOST_CHECK(testArgs.GetOptionMap()["-a"].as<std::string>() == "" && testArgs.GetOptionMap()["-ccc"].as<std::string>() == "multiple");
-    BOOST_CHECK(testArgs.GetArgs("-ccc").size() == 2);
+    BOOST_CHECK(testArgs.GetOptionMap()["string"].as<std::string>() == "str" && testArgs.GetOptionMap()["integer"].as<int>() == 1
+        && testArgs.GetArg("-bool", false));
 }
 
 BOOST_AUTO_TEST_CASE(util_GetArg)
