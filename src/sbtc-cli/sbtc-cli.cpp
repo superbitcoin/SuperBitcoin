@@ -86,7 +86,7 @@ class CConnectionFailed : public std::runtime_error
 public:
 
     explicit inline CConnectionFailed(const std::string& msg) :
-        std::runtime_error(msg)
+            std::runtime_error(msg)
     {}
 
 };
@@ -168,21 +168,21 @@ const char *http_errorstring(int code)
 {
     switch(code) {
 #if LIBEVENT_VERSION_NUMBER >= 0x02010300
-    case EVREQ_HTTP_TIMEOUT:
-        return "timeout reached";
-    case EVREQ_HTTP_EOF:
-        return "EOF reached";
-    case EVREQ_HTTP_INVALID_HEADER:
-        return "error while reading header, or invalid header";
-    case EVREQ_HTTP_BUFFER_ERROR:
-        return "error encountered while reading or writing";
-    case EVREQ_HTTP_REQUEST_CANCEL:
-        return "request was canceled";
-    case EVREQ_HTTP_DATA_TOO_LONG:
-        return "response body is larger than allowed";
+        case EVREQ_HTTP_TIMEOUT:
+            return "timeout reached";
+        case EVREQ_HTTP_EOF:
+            return "EOF reached";
+        case EVREQ_HTTP_INVALID_HEADER:
+            return "error while reading header, or invalid header";
+        case EVREQ_HTTP_BUFFER_ERROR:
+            return "error encountered while reading or writing";
+        case EVREQ_HTTP_REQUEST_CANCEL:
+            return "request was canceled";
+        case EVREQ_HTTP_DATA_TOO_LONG:
+            return "response body is larger than allowed";
 #endif
-    default:
-        return "unknown";
+        default:
+            return "unknown";
     }
 }
 
@@ -251,7 +251,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
         // Try fall back to cookie-based authentication if no password is provided
         if (!GetAuthCookie(&strRPCUserColonPass)) {
             throw std::runtime_error(strprintf(
-                _("Could not locate RPC credentials. No authentication cookie could be found, and no rpcpassword is set in the configuration file (%s)"),
+                    _("Could not locate RPC credentials. No authentication cookie could be found, and no rpcpassword is set in the configuration file (%s)"),
                     GetConfigFile(gArgs.GetArg("-conf", std::string(BITCOIN_CONF_FILENAME))).string().c_str()));
 
         }

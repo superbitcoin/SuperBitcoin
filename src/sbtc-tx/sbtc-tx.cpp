@@ -55,10 +55,10 @@ static int AppInitRawTx(int argc, char* argv[])
     {
         // First part of help message is specific to this utility
         std::string strUsage = strprintf(_("%s bitcoin-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
-            _("Usage:") + "\n" +
-              "  bitcoin-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded bitcoin transaction") + "\n" +
-              "  bitcoin-tx [options] -create [commands]   " + _("Create hex-encoded bitcoin transaction") + "\n" +
-              "\n";
+                               _("Usage:") + "\n" +
+                               "  bitcoin-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded bitcoin transaction") + "\n" +
+                               "  bitcoin-tx [options] -create [commands]   " + _("Create hex-encoded bitcoin transaction") + "\n" +
+                               "\n";
 
         fprintf(stdout, "%s", strUsage.c_str());
 
@@ -80,20 +80,20 @@ static int AppInitRawTx(int argc, char* argv[])
         strUsage += HelpMessageOpt("replaceable(=N)", _("Set RBF opt-in sequence number for input N (if not provided, opt-in all available inputs)"));
         strUsage += HelpMessageOpt("outaddr=VALUE:ADDRESS", _("Add address-based output to TX"));
         strUsage += HelpMessageOpt("outpubkey=VALUE:PUBKEY[:FLAGS]", _("Add pay-to-pubkey output to TX") + ". " +
-            _("Optionally add the \"W\" flag to produce a pay-to-witness-pubkey-hash output") + ". " +
-            _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash."));
+                                                                     _("Optionally add the \"W\" flag to produce a pay-to-witness-pubkey-hash output") + ". " +
+                                                                     _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash."));
         strUsage += HelpMessageOpt("outdata=[VALUE:]DATA", _("Add data-based output to TX"));
         strUsage += HelpMessageOpt("outscript=VALUE:SCRIPT[:FLAGS]", _("Add raw script output to TX") + ". " +
-            _("Optionally add the \"W\" flag to produce a pay-to-witness-script-hash output") + ". " +
-            _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash."));
+                                                                     _("Optionally add the \"W\" flag to produce a pay-to-witness-script-hash output") + ". " +
+                                                                     _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash."));
         strUsage += HelpMessageOpt("outmultisig=VALUE:REQUIRED:PUBKEYS:PUBKEY1:PUBKEY2:....[:FLAGS]", _("Add Pay To n-of-m Multi-sig output to TX. n = REQUIRED, m = PUBKEYS") + ". " +
-            _("Optionally add the \"W\" flag to produce a pay-to-witness-script-hash output") + ". " +
-            _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash."));
+                                                                                                      _("Optionally add the \"W\" flag to produce a pay-to-witness-script-hash output") + ". " +
+                                                                                                      _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash."));
         strUsage += HelpMessageOpt("sign=SIGHASH-FLAGS", _("Add zero or more signatures to transaction") + ". " +
-            _("This command requires JSON registers:") +
-            _("prevtxs=JSON object") + ", " +
-            _("privatekeys=JSON object") + ". " +
-            _("See signrawtransaction docs for format of sighash flags, JSON objects."));
+                                                         _("This command requires JSON registers:") +
+                                                         _("prevtxs=JSON object") + ", " +
+                                                         _("privatekeys=JSON object") + ". " +
+                                                         _("See signrawtransaction docs for format of sighash flags, JSON objects."));
         fprintf(stdout, "%s", strUsage.c_str());
 
         strUsage = HelpMessageGroup(_("Register Commands:"));
@@ -452,11 +452,11 @@ static void MutateTxAddOutScript(CMutableTransaction& tx, const std::string& str
     }
 
     if (bSegWit) {
-      scriptPubKey = GetScriptForWitness(scriptPubKey);
+        scriptPubKey = GetScriptForWitness(scriptPubKey);
     }
     if (bScriptHash) {
-      CBitcoinAddress addr(scriptPubKey);
-      scriptPubKey = GetScriptForDestination(addr.Get());
+        CBitcoinAddress addr(scriptPubKey);
+        scriptPubKey = GetScriptForDestination(addr.Get());
     }
 
     // construct TxOut, append to transaction output list
@@ -581,9 +581,9 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& flagStr)
                 throw std::runtime_error("expected prevtxs internal object");
 
             std::map<std::string, UniValue::VType> types = {
-                {"txid", UniValue::VSTR},
-                {"vout", UniValue::VNUM},
-                {"scriptPubKey", UniValue::VSTR},
+                    {"txid", UniValue::VSTR},
+                    {"vout", UniValue::VNUM},
+                    {"scriptPubKey", UniValue::VSTR},
             };
             if (!prevOut.checkObject(types))
                 throw std::runtime_error("prevtxs internal object typecheck fail");
@@ -603,7 +603,7 @@ static void MutateTxSign(CMutableTransaction& tx, const std::string& flagStr)
                 if (!coin.IsSpent() && coin.out.scriptPubKey != scriptPubKey) {
                     std::string err("Previous output scriptPubKey mismatch:\n");
                     err = err + ScriptToAsmStr(coin.out.scriptPubKey) + "\nvs:\n"+
-                        ScriptToAsmStr(scriptPubKey);
+                          ScriptToAsmStr(scriptPubKey);
                     throw std::runtime_error(err);
                 }
                 Coin newcoin;
