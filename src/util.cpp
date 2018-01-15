@@ -83,6 +83,15 @@
 #include <openssl/crypto.h>
 #include <openssl/rand.h>
 #include <openssl/conf.h>
+#include <map>
+#include <boost/program_options.hpp>
+#include <boost/program_options/options_description.hpp>
+#include "clientversion.h"
+#include "init.h"
+#include <vector>
+#include <algorithm>
+
+using std::map;
 
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
@@ -370,7 +379,8 @@ static bool InterpretBool(const std::string& strValue)
 {
     if (strValue.empty())
         return true;
-    return (atoi(strValue) != 0);
+
+    return (!strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "yes") || !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "y")) ? true : false;
 }
 
 /** Turn -noX into -X=0 */
@@ -381,6 +391,21 @@ static void InterpretNegativeSetting(std::string& strKey, std::string& strValue)
         strKey = "-" + strKey.substr(3);
         strValue = InterpretBool(strValue) ? "0" : "1";
     }
+}
+
+bool ArgsManager::InitPromOptions(std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc,
+                                         const char **argv, HelpMessageMode mode)> callback, bpo::options_description *app, int argc, const char **argv, HelpMessageMode mode)
+{
+    LOCK(cs_args);
+    if(callback == nullptr || argv == nullptr || app == nullptr)
+    {
+        return false;
+    }
+
+    this->app = app;
+    vm.clear();
+    callback(app, vm, argc, argv, mode);
+    return true;
 }
 
 void ArgsManager::ParseParameters(int argc, const char* const argv[])
@@ -422,67 +447,377 @@ void ArgsManager::ParseParameters(int argc, const char* const argv[])
 std::vector<std::string> ArgsManager::GetArgs(const std::string& strArg)
 {
     LOCK(cs_args);
-    if (IsArgSet(strArg))
-        return mapMultiArgs.at(strArg);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (IsArgSet(tmp_strArg))
+        return vm.at(tmp_strArg).as< vector<string> >();
+
     return {};
 }
 
 bool ArgsManager::IsArgSet(const std::string& strArg)
 {
     LOCK(cs_args);
-    return mapArgs.count(strArg);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    return vm.count(tmp_strArg);
 }
 
 std::string ArgsManager::GetArg(const std::string& strArg, const std::string& strDefault)
 {
     LOCK(cs_args);
-    if (mapArgs.count(strArg))
-        return mapArgs[strArg];
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (vm.count(tmp_strArg))
+        return vm[tmp_strArg].as<std::string>();
+
     return strDefault;
 }
 
 int64_t ArgsManager::GetArg(const std::string& strArg, int64_t nDefault)
 {
     LOCK(cs_args);
-    if (mapArgs.count(strArg))
-        return atoi64(mapArgs[strArg]);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (vm.count(tmp_strArg))
+        return vm[tmp_strArg].as<int64_t>();
+
     return nDefault;
 }
 
-bool ArgsManager::GetBoolArg(const std::string& strArg, bool fDefault)
+uint64_t ArgsManager::GetArg(const std::string& strArg, uint64_t nDefault)
 {
     LOCK(cs_args);
-    if (mapArgs.count(strArg))
-        return InterpretBool(mapArgs[strArg]);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+        return vm[tmp_strArg].as<uint64_t>();
+
+    return nDefault;
+}
+
+int32_t ArgsManager::GetArg(const std::string& strArg, int32_t nDefault)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return vm[tmp_strArg].as<int32_t>();
+    }
+
+    return nDefault;
+}
+
+unsigned int ArgsManager::GetArg(const std::string& strArg, unsigned int nDefault)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return vm[tmp_strArg].as<unsigned int>();
+    }
+
+    return nDefault;
+}
+
+bool ArgsManager::GetArg(const std::string &strArg, bool fDefault)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if (vm.count(tmp_strArg))
+        return InterpretBool(vm[tmp_strArg].as<std::string>());
     return fDefault;
 }
 
 bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strValue)
 {
     LOCK(cs_args);
-    if (mapArgs.count(strArg))
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+    if(vm.count(strArg))
+    {
         return false;
-    ForceSetArg(strArg, strValue);
+    }
+
+    vector<string>::iterator ite = find(options_arr.begin(), options_arr.end(), tmp_strArg);
+
+    // not an array
+    if(ite == options_arr.end())
+    {
+        auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
+        return res.second;
+    }
+
+    // the option is an array
+    auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<string>({strValue})), false)));   // std::pair< map<string, bpo::variable_value>::iterator, bool >
+    return res.second;
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, const int64_t& intValue)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(int64_t(intValue)), false)));
     return true;
 }
 
-bool ArgsManager::SoftSetBoolArg(const std::string& strArg, bool fValue)
+bool ArgsManager::SoftSetArg(const std::string& strArg, const uint64_t& intValue)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(uint64_t(intValue)), false)));
+    return true;
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, const int32_t& intValue)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(int32_t(intValue)), false)));
+    return true;
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, const uint32_t& intValue)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(uint32_t(intValue)), false)));
+    return true;
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, bool fValue)
 {
     if (fValue)
-        return SoftSetArg(strArg, std::string("1"));
+        return SoftSetArg(strArg, std::string("yes"));
     else
-        return SoftSetArg(strArg, std::string("0"));
+        return SoftSetArg(strArg, std::string("no"));
+}
+
+bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::string >& value)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    if(vm.count(tmp_strArg))
+    {
+        return false;
+    }
+
+
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::vector<std::string>(value)), false)));
+    return true;
 }
 
 void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strValue)
 {
     LOCK(cs_args);
-    mapArgs[strArg] = strValue;
-    mapMultiArgs[strArg].clear();
-    mapMultiArgs[strArg].push_back(strValue);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
+
+    vector<string>::const_iterator ite_options_arr = find(options_arr.begin(), options_arr.end(), tmp_strArg);
+
+    if(ite_options_arr == options_arr.end())
+    {
+        vm.erase(tmp_strArg);
+        vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
+
+        return;
+    }
+
+    vector<string> &tmp_value_arr = vm.at(tmp_strArg).as< vector<string> >();
+    tmp_value_arr.insert(tmp_value_arr.end(), strValue);
 }
 
+void ArgsManager::ForceSetArg(const std::string& strArg, const unsigned int value)
+{
+    LOCK(cs_args);
+    std::string tmp_strArg;
+    if(strArg[0] == '-')
+    {
+        tmp_strArg = strArg.substr(1);
+    }
+    else
+    {
+        tmp_strArg = strArg;
+    }
 
+    if(vm.count(tmp_strArg))
+    {
+        vm.erase(tmp_strArg);
+    }
+
+    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any((unsigned int)value), false)));
+}
+
+bool ArgsManager::PrintHelpMessage(std::function<void(void)> callback)
+{
+    if(vm.count("help"))
+    {
+        std::cout << *app << std::endl;
+
+        return true;
+    }
+
+    if(vm.count("version"))
+    {
+        if(callback)
+        {
+            callback();
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return false;
+}
 
 static const int screenWidth = 79;
 static const int optIndent = 2;
@@ -565,7 +900,8 @@ const fs::path &GetDataDir(bool fNetSpecific)
         return path;
 
     if (gArgs.IsArgSet("-datadir")) {
-        path = fs::system_complete(gArgs.GetArg("-datadir", ""));
+        std::string tmp = gArgs.GetArg("-datadir", (std::string)"");
+        path = fs::system_complete(gArgs.GetArg("-datadir", (std::string)""));
         if (!fs::is_directory(path)) {
             path = "";
             return path;
@@ -598,36 +934,55 @@ fs::path GetConfigFile(const std::string& confPath)
     return pathConfigFile;
 }
 
-void ArgsManager::ReadConfigFile(const std::string& confPath)
+bool ArgsManager::merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source)
 {
-    fs::ifstream streamConfig(GetConfigFile(confPath));
-    if (!streamConfig.good())
-        return; // No bitcoin.conf file is OK
-
+    LOCK(cs_args);
+    for(bpo::variables_map::iterator ite_src = source.begin(); ite_src != source.end(); ite_src++)
     {
-        LOCK(cs_args);
-        std::set<std::string> setOptions;
-        setOptions.insert("*");
-
-        for (boost::program_options::detail::config_file_iterator it(streamConfig, setOptions), end; it != end; ++it)
+        bpo::variables_map::iterator ite_desc = desc.find(ite_src->first);
+        if(ite_desc != desc.end())  // find
         {
-            // Don't overwrite existing settings so command line settings override bitcoin.conf
-            std::string strKey = std::string("-") + it->string_key;
-            std::string strValue = it->value[0];
-            InterpretNegativeSetting(strKey, strValue);
-            if (mapArgs.count(strKey) == 0)
-                mapArgs[strKey] = strValue;
-            mapMultiArgs[strKey].push_back(strValue);
+            vector<string>::const_iterator ite_options_arr = find(options_arr.begin(), options_arr.end(), ite_src->first);
+            if(ite_options_arr != options_arr.end())    // value is array
+            {
+                vector<string> &desc_value = desc.at(ite_src->first).as< vector<string> >();
+                desc_value.insert(desc_value.end(), ite_src->second.as< vector<string> >().begin(), ite_src->second.as< vector<string> >().end());
+
+                // delete mutiple parameters
+                sort(desc_value.begin(), desc_value.end());
+                desc_value.erase(unique(desc_value.begin(), desc_value.end()), desc_value.end());
+            }
+            else
+            {
+                //value is basic data type, pass(use parameter from commond line)
+            }
+        }
+        else    // not find
+        {
+            bpo::variable_value tmp_value = ite_src->second;
+            auto res = desc.insert(std::make_pair(ite_src->first, tmp_value)); // return type of insert is std::pair< map<string, bpo::variable_value>::iterator, bool >
+            if(!res.second)
+            {
+                return false;
+            }
         }
     }
-    // If datadir is changed in .conf file:
-    ClearDatadirCache();
+
+    return true;
+}
+
+void ArgsManager::ReadConfigFile(const std::string& confPath)
+{
+    bpo::variables_map vm_tmp;
+    bfs::path config_file_name(GetConfigFile(confPath));
+    bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app, true), vm_tmp);
+    merge_variable_map(vm, vm_tmp);
 }
 
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(gArgs.GetArg("-pid", BITCOIN_PID_FILENAME));
+    fs::path pathPidFile(gArgs.GetArg("-pid", std::string(BITCOIN_PID_FILENAME)));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }

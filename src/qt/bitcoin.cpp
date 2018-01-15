@@ -498,7 +498,7 @@ void BitcoinApplication::initializeResult(bool success)
 #endif
 
         // If -min option passed, start window minimized.
-        if(gArgs.GetBoolArg("-min", false))
+        if(gArgs.GetArg("-min", false))
         {
             window->showMinimized();
         }
@@ -623,7 +623,7 @@ int main(int argc, char *argv[])
     if (!fs::is_directory(GetDataDir(false)))
     {
         QMessageBox::critical(0, QObject::tr(PACKAGE_NAME),
-                              QObject::tr("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(gArgs.GetArg("-datadir", ""))));
+                              QObject::tr("Error: Specified data directory \"%1\" does not exist.").arg(QString::fromStdString(gArgs.GetArg("-datadir", std::string("")))));
         return EXIT_FAILURE;
     }
     try {
@@ -696,7 +696,7 @@ int main(int argc, char *argv[])
     // Subscribe to global signals from core
     uiInterface.InitMessage.connect(InitMessage);
 
-    if (gArgs.GetBoolArg("-splash", DEFAULT_SPLASHSCREEN) && !gArgs.GetBoolArg("-min", false))
+    if (gArgs.GetArg("-splash", DEFAULT_SPLASHSCREEN) && !gArgs.GetArg("-min", false))
         app.createSplashScreen(networkStyle.data());
 
     int rv = EXIT_SUCCESS;

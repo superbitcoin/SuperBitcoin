@@ -81,6 +81,9 @@ uint256 static SignatureHashOld(CScript scriptCode, const CTransaction& txTo, un
     // Serialize and hash
     CHashWriter ss(SER_GETHASH, SERIALIZE_TRANSACTION_NO_WITNESS);
     ss << txTmp << nHashType;
+    if (nHashType & SIGHASH_SBTC_FORK) {
+        ss << std::string("sbtc");
+    }
     return ss.GetHash();
 }
 
@@ -190,7 +193,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           raw_script = test[1].get_str();
           nIn = test[2].get_int();
           nHashType = test[3].get_int();
-          sigHashHex = test[4].get_str();
+//          sigHashHex = test[4].get_str(); // precompute with SignatureHash algorithm
 
           CDataStream stream(ParseHex(raw_tx), SER_NETWORK, PROTOCOL_VERSION);
           stream >> tx;
@@ -206,6 +209,7 @@ BOOST_AUTO_TEST_CASE(sighash_from_data)
           continue;
         }
 
+        sigHashHex = SignatureHashOld(scriptCode, *tx, nIn, nHashType).GetHex();
         sh = SignatureHash(scriptCode, *tx, nIn, nHashType, 0, SIGVERSION_BASE);
         BOOST_CHECK_MESSAGE(sh.GetHex() == sigHashHex, strTest);
     }

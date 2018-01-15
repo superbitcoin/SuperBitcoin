@@ -59,13 +59,6 @@ UniValue JSONRPCError(int code, const std::string& message)
     return error;
 }
 
-/** Username used when cookie authentication is in use (arbitrary, only for
- * recognizability in debugging/logging purposes)
- */
-static const std::string COOKIEAUTH_USER = "__cookie__";
-/** Default name for auth cookie file */
-static const std::string COOKIEAUTH_FILE = ".cookie";
-
 /** Get name of RPC authentication cookie file */
 static fs::path GetAuthCookieFile(bool temp=false)
 {

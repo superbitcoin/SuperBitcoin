@@ -66,7 +66,7 @@ const std::map<unsigned char, std::string> mapSigHashTypes = {
     {static_cast<unsigned char>(SIGHASH_ALL|SIGHASH_SBTC_FORK), std::string("ALL|SBTC_FORK")},
     {static_cast<unsigned char>(SIGHASH_ALL|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY), std::string("ALL|SBTC_FORK|ANYONECANPAY")},
     {static_cast<unsigned char>(SIGHASH_NONE), std::string("NONE")},
-    {static_cast<unsigned char>(SIGHASH_NONE|SIGHASH_SBTC_FORK), std::string("NONE|SBTC_FORK|ANYONECANPAY")},
+    {static_cast<unsigned char>(SIGHASH_NONE|SIGHASH_SBTC_FORK), std::string("NONE|SBTC_FORK")},
     {static_cast<unsigned char>(SIGHASH_NONE|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY), std::string("NONE|SBTC_FORK|ANYONECANPAY")},
     {static_cast<unsigned char>(SIGHASH_SINGLE), std::string("SINGLE")},
     {static_cast<unsigned char>(SIGHASH_SINGLE|SIGHASH_SBTC_FORK), std::string("SINGLE|SBTC_FORK")},

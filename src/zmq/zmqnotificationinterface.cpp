@@ -46,7 +46,7 @@ CZMQNotificationInterface* CZMQNotificationInterface::Create()
         if (gArgs.IsArgSet(arg))
         {
             CZMQNotifierFactory factory = i->second;
-            std::string address = gArgs.GetArg(arg, "");
+            std::string address = gArgs.GetArg(arg, std::string(""));
             CZMQAbstractNotifier *notifier = factory();
             notifier->SetType(i->first);
             notifier->SetAddress(address);

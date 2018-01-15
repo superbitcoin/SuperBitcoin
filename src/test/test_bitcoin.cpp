@@ -41,7 +41,6 @@ FastRandomContext insecure_rand_ctx(insecure_rand_seed);
 
 extern bool fPrintToConsole;
 extern void noui_connect();
-
 BasicTestingSetup::BasicTestingSetup(const std::string& chainName)
 {
         SHA256AutoDetect();

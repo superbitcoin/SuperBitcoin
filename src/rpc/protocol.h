@@ -15,6 +15,13 @@
 
 #include <univalue.h>
 
+/** Username used when cookie authentication is in use (arbitrary, only for
+ * recognizability in debugging/logging purposes)
+ */
+static const std::string COOKIEAUTH_USER = "__cookie__";
+/** Default name for auth cookie file */
+static const std::string COOKIEAUTH_FILE = ".cookie";
+
 //! HTTP status codes
 enum HTTPStatusCode
 {

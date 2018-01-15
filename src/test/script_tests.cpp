@@ -1306,18 +1306,24 @@ BOOST_AUTO_TEST_CASE(script_GetScriptAsm)
     BOOST_CHECK_EQUAL(derSig + "[ALL] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "01")) << vchPubKey, true));
     BOOST_CHECK_EQUAL(derSig + "[NONE] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "02")) << vchPubKey, true));
     BOOST_CHECK_EQUAL(derSig + "[SINGLE] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "03")) << vchPubKey, true));
-    BOOST_CHECK_EQUAL(derSig + "[ALL|ANYONECANPAY] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "81")) << vchPubKey, true));
-    BOOST_CHECK_EQUAL(derSig + "[NONE|ANYONECANPAY] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "82")) << vchPubKey, true));
-    BOOST_CHECK_EQUAL(derSig + "[SINGLE|ANYONECANPAY] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "83")) << vchPubKey, true));
+    BOOST_CHECK_EQUAL(derSig + "[ALL|SBTC_FORK] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "41")) << vchPubKey, true));
+    BOOST_CHECK_EQUAL(derSig + "[NONE|SBTC_FORK] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "42")) << vchPubKey, true));
+    BOOST_CHECK_EQUAL(derSig + "[SINGLE|SBTC_FORK] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "43")) << vchPubKey, true));
+    BOOST_CHECK_EQUAL(derSig + "[ALL|SBTC_FORK|ANYONECANPAY] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "c1")) << vchPubKey, true));
+    BOOST_CHECK_EQUAL(derSig + "[NONE|SBTC_FORK|ANYONECANPAY] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "c2")) << vchPubKey, true));
+    BOOST_CHECK_EQUAL(derSig + "[SINGLE|SBTC_FORK|ANYONECANPAY] " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "c3")) << vchPubKey, true));
 
     BOOST_CHECK_EQUAL(derSig + "00 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "00")) << vchPubKey));
     BOOST_CHECK_EQUAL(derSig + "80 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "80")) << vchPubKey));
     BOOST_CHECK_EQUAL(derSig + "01 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "01")) << vchPubKey));
     BOOST_CHECK_EQUAL(derSig + "02 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "02")) << vchPubKey));
     BOOST_CHECK_EQUAL(derSig + "03 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "03")) << vchPubKey));
-    BOOST_CHECK_EQUAL(derSig + "81 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "81")) << vchPubKey));
-    BOOST_CHECK_EQUAL(derSig + "82 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "82")) << vchPubKey));
-    BOOST_CHECK_EQUAL(derSig + "83 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "83")) << vchPubKey));
+    BOOST_CHECK_EQUAL(derSig + "41 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "41")) << vchPubKey));
+    BOOST_CHECK_EQUAL(derSig + "42 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "42")) << vchPubKey));
+    BOOST_CHECK_EQUAL(derSig + "43 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "43")) << vchPubKey));
+    BOOST_CHECK_EQUAL(derSig + "c1 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "c1")) << vchPubKey));
+    BOOST_CHECK_EQUAL(derSig + "c2 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "c2")) << vchPubKey));
+    BOOST_CHECK_EQUAL(derSig + "c3 " + pubKey, ScriptToAsmStr(CScript() << ToByteVector(ParseHex(derSig + "c3")) << vchPubKey));
 }
 
 static CScript
