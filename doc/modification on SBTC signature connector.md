@@ -1,7 +1,7 @@
 * The trading format of SBTC is more or less the same. Main difference are two points:<br>
     * FORKID is added to the hashtype of the signature<br>
     * If there is FORKID in the signature hashtype, “sbtc” will be added to GetHash()<br>
-    (Note: before the "sbtc", add the length value, as follows: **04**73627463）<font color=#00ffff>Attention:04 is must be need</font>.<br>
+    (Note: before the "sbtc", add the length value, as follows: **04**73627463）**Attention:04 is must be need**.<br>
 
 * In doe:<br>
 &ensp;&ensp;1.Custimized fork signature type<br>
