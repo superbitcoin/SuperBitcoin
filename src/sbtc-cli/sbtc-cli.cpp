@@ -14,6 +14,7 @@
 #include "rpc/protocol.h"
 #include "util.h"
 #include "utilstrencodings.h"
+#include "init.h"
 
 #include <stdio.h>
 
@@ -23,43 +24,63 @@
 
 #include <univalue.h>
 
+#include <iostream>
+#include <boost/program_options.hpp>
+#include <boost/program_options/options_description.hpp>
+
+namespace bpo = boost::program_options;
+using std::string;
+
 static const char DEFAULT_RPCCONNECT[] = "127.0.0.1";
 static const int DEFAULT_HTTP_CLIENT_TIMEOUT=900;
 static const bool DEFAULT_NAMED=false;
 static const int CONTINUE_EXECUTION=-1;
 
-std::string HelpMessageCli()
-{
-    const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::MAIN);
-    const auto testnetBaseParams = CreateBaseChainParams(CBaseChainParams::TESTNET);
-    std::string strUsage;
-    strUsage += HelpMessageGroup(_("Options:"));
-    strUsage += HelpMessageOpt("-?", _("This help message"));
-    strUsage += HelpMessageOpt("-conf=<file>", strprintf(_("Specify configuration file (default: %s)"), BITCOIN_CONF_FILENAME));
-    strUsage += HelpMessageOpt("-datadir=<dir>", _("Specify data directory"));
-    AppendParamsHelpMessages(strUsage);
-    strUsage += HelpMessageOpt("-named", strprintf(_("Pass named instead of positional arguments (default: %s)"), DEFAULT_NAMED));
-    strUsage += HelpMessageOpt("-rpcconnect=<ip>", strprintf(_("Send commands to node running on <ip> (default: %s)"), DEFAULT_RPCCONNECT));
-    strUsage += HelpMessageOpt("-rpcport=<port>", strprintf(_("Connect to JSON-RPC on <port> (default: %u or testnet: %u)"), defaultBaseParams->RPCPort(), testnetBaseParams->RPCPort()));
-    strUsage += HelpMessageOpt("-rpcwait", _("Wait for RPC server to start"));
-    strUsage += HelpMessageOpt("-rpcuser=<user>", _("Username for JSON-RPC connections"));
-    strUsage += HelpMessageOpt("-rpcpassword=<pw>", _("Password for JSON-RPC connections"));
-    strUsage += HelpMessageOpt("-rpcclienttimeout=<n>", strprintf(_("Timeout in seconds during HTTP requests, or 0 for no timeout. (default: %d)"), DEFAULT_HTTP_CLIENT_TIMEOUT));
-    strUsage += HelpMessageOpt("-stdin", _("Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases)"));
-    strUsage += HelpMessageOpt("-rpcwallet=<walletname>", _("Send RPC for non-default wallet on RPC server (argument is wallet filename in bitcoind directory, required if bitcoind/-Qt runs with multiple wallets)"));
-
-    return strUsage;
-}
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Start
 //
-
 //
 // Exception thrown on connection error.  This error is used to determine
 // when to wait if -rpcwait is given.
 //
+void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv, HelpMessageMode mode)
+{
+    const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::MAIN);
+    const auto testnetBaseParams = CreateBaseChainParams(CBaseChainParams::TESTNET);
+
+    bpo::options_description confGroup("configuration options:");
+    confGroup.add_options()
+            ("help,h", "Print this message and exit.")
+            ("?", "Print this message and exit.")
+            ("version", "Print version and exit")
+            ("conf", bpo::value<string>(), strprintf(_("Specify configuration file (default: %s)"), BITCOIN_CONF_FILENAME).c_str())
+            ("datadir", bpo::value<string>(), "Specify data directory");
+    app->add(confGroup);
+
+    bpo::options_description chainGroup("Chain selection options:");
+    chainGroup.add_options()
+            ("testnet", bpo::value<string>(), "Use the test chain")
+            ("regtest", bpo::value<string>(), "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
+                    "This is intended for regression testing tools and app development.");
+    app->add(chainGroup);
+
+    bpo::options_description rpcGroup("rpc options:");
+    rpcGroup.add_options()
+            ("named", bpo::value<string>(), strprintf(_("Pass named instead of positional arguments (default: %s)"), DEFAULT_NAMED).c_str())
+            ("rpcconnect", bpo::value<string>(), strprintf(_("Send commands to node running on <ip> (default: %s)"), DEFAULT_RPCCONNECT).c_str())
+            ("rpcport", bpo::value<int>(), strprintf(_("Connect to JSON-RPC on <port> (default: %u or testnet: %u)"), defaultBaseParams->RPCPort(), testnetBaseParams->RPCPort()).c_str())
+            ("rpcwait", bpo::value<string>(), "Wait for RPC server to start")
+            ("rpcuser", bpo::value<string>(), "Username for JSON-RPC connections")
+            ("rpcpassword", bpo::value<string>(), "Password for JSON-RPC connections")
+            ("rpcclienttimeout", bpo::value<int>(), strprintf(_("Timeout in seconds during HTTP requests, or 0 for no timeout. (default: %d)"), DEFAULT_HTTP_CLIENT_TIMEOUT).c_str())
+            ("stdin", bpo::value<string>(), "Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases)")
+            ("rpcwallet", bpo::value<string>(), "Send RPC for non-default wallet on RPC server (argument is wallet filename in bitcoind directory, required if bitcoind/-Qt runs with multiple wallets)");
+    app->add(rpcGroup);
+
+    bpo::store(bpo::parse_command_line(argc, argv, *app), vm);
+}
+
 class CConnectionFailed : public std::runtime_error
 {
 public:
@@ -74,37 +95,45 @@ public:
 // This function returns either one of EXIT_ codes when it's expected to stop the process or
 // CONTINUE_EXECUTION when it's expected to continue further.
 //
+void PrintVersion()
+{
+    std::cout << strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n" << std::endl;
+}
+
 static int AppInitRPC(int argc, char* argv[])
 {
     //
     // Parameters
     //
-    gArgs.ParseParameters(argc, argv);
-    if (argc<2 || gArgs.IsArgSet("-?") || gArgs.IsArgSet("-h") || gArgs.IsArgSet("-help") || gArgs.IsArgSet("-version")) {
-        std::string strUsage = strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n";
-        if (!gArgs.IsArgSet("-version")) {
-            strUsage += "\n" + _("Usage:") + "\n" +
-                  "  bitcoin-cli [options] <command> [params]  " + strprintf(_("Send command to %s"), _(PACKAGE_NAME)) + "\n" +
-                  "  bitcoin-cli [options] -named <command> [name=value] ... " + strprintf(_("Send command to %s (with named arguments)"), _(PACKAGE_NAME)) + "\n" +
-                  "  bitcoin-cli [options] help                " + _("List commands") + "\n" +
-                  "  bitcoin-cli [options] help <command>      " + _("Get help for a command") + "\n";
+    if(argc < 2)
+    {
+        fprintf(stdout, "%s", "Error: too few parameters, please enter: sbtc-cli --help for help.\n");
 
-            strUsage += "\n" + HelpMessageCli();
-        }
+        return EXIT_FAILURE;
+    }
 
-        fprintf(stdout, "%s", strUsage.c_str());
-        if (argc < 2) {
-            fprintf(stderr, "Error: too few parameters\n");
-            return EXIT_FAILURE;
-        }
+    std::string strHead = strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n" + "\n" + _("Usage:") + "\n" +
+                          "  bitcoin-cli [options] <command> [params]  " + strprintf(_("Send command to %s"), _(PACKAGE_NAME)) + "\n" +
+                          "  bitcoin-cli [options] -named <command> [name=value] ... " + strprintf(_("Send command to %s (with named arguments)"), _(PACKAGE_NAME)) + "\n" +
+                          "  bitcoin-cli [options] help                " + _("List commands") + "\n" +
+                          "  bitcoin-cli [options] help <command>      " + _("Get help for a command") + "\n";
+    bpo::options_description *app = new bpo::options_description(strHead.c_str());
+    if(!gArgs.InitPromOptions(InitPromOptions, app, argc, (const char**)argv, HMM_EMPTY))
+    {
+        return EXIT_FAILURE;
+    }
+
+    if(gArgs.PrintHelpMessage(PrintVersion))
+    {
         return EXIT_SUCCESS;
     }
+
     if (!fs::is_directory(GetDataDir(false))) {
-        fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", gArgs.GetArg("-datadir", "").c_str());
+        fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", gArgs.GetArg("-datadir", (std::string)"").c_str());
         return EXIT_FAILURE;
     }
     try {
-        gArgs.ReadConfigFile(gArgs.GetArg("-conf", BITCOIN_CONF_FILENAME));
+        gArgs.ReadConfigFile(gArgs.GetArg("-conf", std::string(BITCOIN_CONF_FILENAME)));
     } catch (const std::exception& e) {
         fprintf(stderr,"Error reading configuration file: %s\n", e.what());
         return EXIT_FAILURE;
@@ -116,7 +145,7 @@ static int AppInitRPC(int argc, char* argv[])
         fprintf(stderr, "Error: %s\n", e.what());
         return EXIT_FAILURE;
     }
-    if (gArgs.GetBoolArg("-rpcssl", false))
+    if (gArgs.GetArg("-rpcssl", false))
     {
         fprintf(stderr, "Error: SSL mode for RPC (-rpcssl) is no longer supported.\n");
         return EXIT_FAILURE;
@@ -198,7 +227,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
     //     2. port in -rpcconnect (ie following : in ipv4 or ]: in ipv6)
     //     3. default port for chain
     int port = BaseParams().RPCPort();
-    SplitHostPort(gArgs.GetArg("-rpcconnect", DEFAULT_RPCCONNECT), port, host);
+    SplitHostPort(gArgs.GetArg("-rpcconnect", std::string(DEFAULT_RPCCONNECT)), port, host);
     port = gArgs.GetArg("-rpcport", port);
 
     // Obtain event base
@@ -218,12 +247,12 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 
     // Get credentials
     std::string strRPCUserColonPass;
-    if (gArgs.GetArg("-rpcpassword", "") == "") {
+    if (gArgs.GetArg("-rpcpassword", std::string("")) == "") {
         // Try fall back to cookie-based authentication if no password is provided
         if (!GetAuthCookie(&strRPCUserColonPass)) {
             throw std::runtime_error(strprintf(
                 _("Could not locate RPC credentials. No authentication cookie could be found, and no rpcpassword is set in the configuration file (%s)"),
-                    GetConfigFile(gArgs.GetArg("-conf", BITCOIN_CONF_FILENAME)).string().c_str()));
+                    GetConfigFile(gArgs.GetArg("-conf", std::string(BITCOIN_CONF_FILENAME))).string().c_str()));
 
         }
     } else {
@@ -244,7 +273,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 
     // check if we should use a special wallet endpoint
     std::string endpoint = "/";
-    std::string walletName = gArgs.GetArg("-rpcwallet", "");
+    std::string walletName = gArgs.GetArg("-rpcwallet", std::string(""));
     if (!walletName.empty()) {
         char *encodedURI = evhttp_uriencode(walletName.c_str(), walletName.size(), false);
         if (encodedURI) {
@@ -294,7 +323,7 @@ int CommandLineRPC(int argc, char *argv[])
             argv++;
         }
         std::vector<std::string> args = std::vector<std::string>(&argv[1], &argv[argc]);
-        if (gArgs.GetBoolArg("-stdin", false)) {
+        if (gArgs.GetArg("-stdin", false)) {
             // Read one arg per line from stdin and append
             std::string line;
             while (std::getline(std::cin,line))
@@ -306,14 +335,14 @@ int CommandLineRPC(int argc, char *argv[])
         args.erase(args.begin()); // Remove trailing method name from arguments vector
 
         UniValue params;
-        if(gArgs.GetBoolArg("-named", DEFAULT_NAMED)) {
+        if(gArgs.GetArg("-named", DEFAULT_NAMED)) {
             params = RPCConvertNamedValues(strMethod, args);
         } else {
             params = RPCConvertValues(strMethod, args);
         }
 
         // Execute and handle connection failures with -rpcwait
-        const bool fWait = gArgs.GetBoolArg("-rpcwait", false);
+        const bool fWait = gArgs.GetArg("-rpcwait", false);
         do {
             try {
                 const UniValue reply = CallRPC(strMethod, params);

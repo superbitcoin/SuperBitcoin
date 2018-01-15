@@ -425,12 +425,12 @@ BOOST_AUTO_TEST_CASE(test_big_witness_transaction) {
     CScript scriptPubKey = CScript() << OP_0 << std::vector<unsigned char>(hash.begin(), hash.end());
 
     std::vector<int> sigHashes;
-    sigHashes.push_back(SIGHASH_NONE | SIGHASH_ANYONECANPAY);
-    sigHashes.push_back(SIGHASH_SINGLE | SIGHASH_ANYONECANPAY);
-    sigHashes.push_back(SIGHASH_ALL | SIGHASH_ANYONECANPAY);
-    sigHashes.push_back(SIGHASH_NONE);
-    sigHashes.push_back(SIGHASH_SINGLE);
-    sigHashes.push_back(SIGHASH_ALL);
+    sigHashes.push_back(SIGHASH_NONE | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY);
+    sigHashes.push_back(SIGHASH_SINGLE | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY);
+    sigHashes.push_back(SIGHASH_ALL | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY);
+    sigHashes.push_back(SIGHASH_NONE | SIGHASH_SBTC_FORK);
+    sigHashes.push_back(SIGHASH_SINGLE | SIGHASH_SBTC_FORK);
+    sigHashes.push_back(SIGHASH_ALL | SIGHASH_SBTC_FORK);
 
     // create a big transaction of 4500 inputs signed by the same key
     for(uint32_t ij = 0; ij < 4500; ij++) {
