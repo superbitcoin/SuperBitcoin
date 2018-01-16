@@ -54,38 +54,56 @@ uint256 SignatureHash(const CScript& scriptCode, const CTransaction& txTo, unsig
 ```
 In Trading
 ``` json
+#Example:
 {
-  "txid": "148adc53629288da9f454082de274f11a529226ea3e717bb7d32edcd1b530ebc",
-  "hash": "148adc53629288da9f454082de274f11a529226ea3e717bb7d32edcd1b530ebc",
-  "version": 2,
-  "size": 266,
-  "vsize": 266,
-  "locktime": 0,
-  "vin": [
-    {
-      "txid": "592dea637e1fcf7979f05d64fcde8160e5e155a070a3169c52a5584ba3435d8b",
-      "vout": 0,
-      "scriptSig": {
-        "asm": "0 3045022100999b81caed114a3ce216700e21f8340c9c0b2a6652f7c16dcd2a7776852209ad02207f529c43d64b5e6976c7a80bfc5b8d8dc2c3b8a51404cd37c08e8026863f4f30[ALL|SBTC_FORK] 52210367d84d80ed1a6df7dd61ec34cee1c27362c901b1e0d5775bf719cd68015d08f1210349fd4db36c27ea63f61064a7fd9bc99a10ddd1e633b1892d71279247276f2cd42103a3e3cdb4bc755c0a5c65162051bfee427d2258806668665f9de3915079a7159253ae",
-        "hex": "00483045022100999b81caed114a3ce216700e21f8340c9c0b2a6652f7c16dcd2a7776852209ad02207f529c43d64b5e6976c7a80bfc5b8d8dc2c3b8a51404cd37c08e8026863f4f30414c6952210367d84d80ed1a6df7dd61ec34cee1c27362c901b1e0d5775bf719cd68015d08f1210349fd4db36c27ea63f61064a7fd9bc99a10ddd1e633b1892d71279247276f2cd42103a3e3cdb4bc755c0a5c65162051bfee427d2258806668665f9de3915079a7159253ae"
-      },
-      "sequence": 4294967295
-    }
-  ],
-  "vout": [
-    {
-      "value": 1.24800000,
-      "n": 0,
-      "scriptPubKey": {
-        "asm": "OP_DUP OP_HASH160 2072170412da7fe3c4f831688298be958b26abc6 OP_EQUALVERIFY OP_CHECKSIG",
-        "hex": "76a9142072170412da7fe3c4f831688298be958b26abc688ac",
-        "reqSigs": 1,
-        "type": "pubkeyhash",
-        "addresses": [
-          "miUWbJFVcxXouXvLHqkFUG522P8r7ZBEu3"
-        ]
-      }
-    }
-  ]
+	"txid": "5b11df4832b84e95a7b03b2e32ca0bd5c8051f8901d8fed997ecf16dda83df9c",
+	"hash": "5b11df4832b84e95a7b03b2e32ca0bd5c8051f8901d8fed997ecf16dda83df9c",
+	"version": 2,
+	"size": 191,
+	"vsize": 191,
+	"locktime": 1101,
+	"vin": [{
+		"txid": "22c384d4c1070bc983af026b2386956b3d57d175ad41ef29c08a66926cd3e283",
+		"vout": 0,
+		"scriptSig": {
+			"asm": "3044022074765c87ba0814d13893be7ed5dfbdf6253de25ec610fa0bd3c5bd0046f3fe1002207c7cdf55a3158fa4bb76442533d129391d84f30df098817b8772bd4e56f9f4be[ALL|SBTC_FORK]",
+			"hex": "473044022074765c87ba0814d13893be7ed5dfbdf6253de25ec610fa0bd3c5bd0046f3fe1002207c7cdf55a3158fa4bb76442533d129391d84f30df098817b8772bd4e56f9f4be41"
+		},
+		"sequence": 4294967294
+	}],
+	"vout": [{
+			"value": 12.00000000,
+			"n": 0,
+			"scriptPubKey": {
+				"asm": "OP_DUP OP_HASH160 8f3ebd63167cfcda786a77ce330bff37612a23b9 OP_EQUALVERIFY OP_CHECKSIG",
+				"hex": "76a9148f3ebd63167cfcda786a77ce330bff37612a23b988ac",
+				"reqSigs": 1,
+				"type": "pubkeyhash",
+				"addresses": [
+					"mtaN5itWgbNrjBzKXFHwGNbcEHL4RKR2N3"
+				]
+			}
+		},
+		{
+			"value": 0.49996160,
+			"n": 1,
+			"scriptPubKey": {
+				"asm": "OP_DUP OP_HASH160 9e6edbad276a8f2fa3ea3621e27c6a236d563e65 OP_EQUALVERIFY OP_CHECKSIG",
+				"hex": "76a9149e6edbad276a8f2fa3ea3621e27c6a236d563e6588ac",
+				"reqSigs": 1,
+				"type": "pubkeyhash",
+				"addresses": [
+					"muxfrvJUk58or2X28kALqT4jpzQR1W2UVx"
+				]
+			}
+		}
+	],
+	"hex": "020000000183e2d36c92668ac029ef41ad75d1573d6b9586236b02af83c90b07c1d484c3220000000048473044022074765c87ba0814d13893be7ed5dfbdf6253de25ec610fa0bd3c5bd0046f3fe1002207c7cdf55a3158fa4bb76442533d129391d84f30df098817b8772bd4e56f9f4be41feffffff02008c8647000000001976a9148f3ebd63167cfcda786a77ce330bff37612a23b988ac80e1fa02000000001976a9149e6edbad276a8f2fa3ea3621e27c6a236d563e6588ac4d040000"
 }
 ```
+#The source data used to calculate the signature HASH.
+020000000183e2d36c92668ac029ef41ad75d1573d6b9586236b02af83c90b07c1d484c32200000000232102943696352fe793e440db5bb74c3333a71389630975d2f3ba80ea372b7c34bc2dacfeffffff02008c8647000000001976a9148f3ebd63167cfcda786a77ce330bff37612a23b988ac80e1fa02000000001976a9149e6edbad276a8f2fa3ea3621e27c6a236d563e6588ac4d040000410000000473627463
+
+#The HASH value used to sign.<br>
+674c5c78ebed24ffda49f7b4d8f30b441e7ea430a4780237b74f0ce4f815e07a
+
