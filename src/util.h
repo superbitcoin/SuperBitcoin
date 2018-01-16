@@ -160,9 +160,9 @@ template<typename T, typename... Args> static inline void MarkUsed(const T& t, c
     } \
     LogPrintStr(_log_msg_); \
 } while(0)
-//gArgs.GetArg<bool>("-logfileinfo", true);
+//;
 #define LogPrintfWithFileInfo(fmt1, fmt2, a1, a2, a...) do{ \
-    bool fileinfo = true ; \
+    bool fileinfo = gArgs.GetArg<bool>("-logfileinfo", true) ; \
     if(fileinfo){ \
         LogPrintfFmt(fmt1, a1, a2, ##a); \
     }else{ \
