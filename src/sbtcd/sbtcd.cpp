@@ -377,12 +377,12 @@ bool AppInit(int argc, char* argv[])
     {
         if (!fs::is_directory(GetDataDir(false)))
         {
-            fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", gArgs.GetArg("-datadir", std::string("")).c_str());
+            fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", gArgs.GetArg<std::string>("-datadir", "").c_str());
             return false;
         }
         try
         {
-            gArgs.ReadConfigFile(gArgs.GetArg("-conf", std::string(BITCOIN_CONF_FILENAME)));
+            gArgs.ReadConfigFile(gArgs.GetArg<std::string>("-conf", BITCOIN_CONF_FILENAME));
         } catch (const std::exception& e) {
             fprintf(stderr,"Error reading configuration file: %s\n", e.what());
             return false;
@@ -416,7 +416,7 @@ bool AppInit(int argc, char* argv[])
             // InitError will have been called with detailed error, which ends up on console
             exit(EXIT_FAILURE);
         }
-        if (gArgs.GetArg("-daemon", false))
+        if (gArgs.GetArg<bool>("-daemon", false))
         {
 #if HAVE_DECL_DAEMON
             fprintf(stdout, "Bitcoin server starting\n");

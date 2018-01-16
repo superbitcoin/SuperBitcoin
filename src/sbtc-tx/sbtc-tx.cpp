@@ -49,12 +49,12 @@ static int AppInitRawTx(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    fCreateBlank = gArgs.GetArg("-create", false);
+    fCreateBlank = gArgs.GetArg<bool>("-create", false);
 
     if (argc<2 || gArgs.IsArgSet("-?") || gArgs.IsArgSet("-h") || gArgs.IsArgSet("-help"))
     {
         // First part of help message is specific to this utility
-        std::string strUsage = strprintf(_("%s bitcoin-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
+        std::string strUsage = strprintf(_("%s sbtc-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
                                _("Usage:") + "\n" +
                                "  bitcoin-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded bitcoin transaction") + "\n" +
                                "  bitcoin-tx [options] -create [commands]   " + _("Create hex-encoded bitcoin transaction") + "\n" +
@@ -751,9 +751,9 @@ static void OutputTxHex(const CTransaction& tx)
 
 static void OutputTx(const CTransaction& tx)
 {
-    if (gArgs.GetArg("-json", false))
+    if (gArgs.GetArg<bool>("-json", false))
         OutputTxJSON(tx);
-    else if (gArgs.GetArg("-txid", false))
+    else if (gArgs.GetArg<bool>("-txid", false))
         OutputTxHash(tx);
     else
         OutputTxHex(tx);

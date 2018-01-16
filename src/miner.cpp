@@ -79,10 +79,10 @@ static BlockAssembler::Options DefaultOptions(const CChainParams& params)
     // If only one is given, only restrict the specified resource.
     // If both are given, restrict both.
     BlockAssembler::Options options;
-    options.nBlockMaxWeight = gArgs.GetArg("-blockmaxweight", DEFAULT_BLOCK_MAX_WEIGHT);
+    options.nBlockMaxWeight = gArgs.GetArg<uint32_t>("-blockmaxweight", DEFAULT_BLOCK_MAX_WEIGHT);
     if (gArgs.IsArgSet("-blockmintxfee")) {
         CAmount n = 0;
-        ParseMoney(gArgs.GetArg("-blockmintxfee", std::string("")), n);
+        ParseMoney(gArgs.GetArg<std::string>("-blockmintxfee", ""), n);
         options.blockMinFeeRate = CFeeRate(n);
     } else {
         options.blockMinFeeRate = CFeeRate(DEFAULT_BLOCK_MIN_TX_FEE);
@@ -131,7 +131,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& sc
     // -regtest only: allow overriding block.nVersion with
     // -blockversion=N to test forking scenarios
     if (chainparams.MineBlocksOnDemand())
-        pblock->nVersion = gArgs.GetArg("-blockversion", pblock->nVersion);
+        pblock->nVersion = gArgs.GetArg<int32_t>("-blockversion", pblock->nVersion);
 
     pblock->nTime = GetAdjustedTime();
     const int64_t nMedianTimePast = pindexPrev->GetMedianTimePast();
@@ -238,7 +238,7 @@ void BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
     nFees += iter->GetFee();
     inBlock.insert(iter);
 
-    bool fPrintPriority = gArgs.GetArg("-printpriority", DEFAULT_PRINTPRIORITY);
+    bool fPrintPriority = gArgs.GetArg<bool>("-printpriority", DEFAULT_PRINTPRIORITY);
     if (fPrintPriority) {
         LogPrintf("fee %s txid %s\n",
                   CFeeRate(iter->GetModifiedFee(), iter->GetTxSize()).ToString(),

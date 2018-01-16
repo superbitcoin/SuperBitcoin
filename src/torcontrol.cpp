@@ -525,7 +525,7 @@ void TorController::auth_cb(TorControlConnection& _conn, const TorControlReply& 
 
         // Now that we know Tor is running setup the proxy for onion addresses
         // if -onion isn't set to something else.
-        if (gArgs.GetArg("-onion", std::string("")) == "") {
+        if (gArgs.GetArg<std::string>("-onion", "") == "") {
             CService resolved(LookupNumeric("127.0.0.1", 9050));
             proxyType addrOnion = proxyType(resolved, true);
             SetProxy(NET_TOR, addrOnion);
@@ -642,7 +642,7 @@ void TorController::protocolinfo_cb(TorControlConnection& _conn, const TorContro
          *   cookie:   hex-encoded ~/.tor/control_auth_cookie
          *   password: "password"
          */
-        std::string torpassword = gArgs.GetArg("-torpassword", std::string(""));
+        std::string torpassword = gArgs.GetArg<std::string>("-torpassword", "");
         if (!torpassword.empty()) {
             if (methods.count("HASHEDPASSWORD")) {
                 LogPrint(BCLog::TOR, "tor: Using HASHEDPASSWORD authentication\n");
@@ -735,7 +735,7 @@ static boost::thread torControlThread;
 
 static void TorControlThread()
 {
-    TorController ctrl(gBase, gArgs.GetArg("-torcontrol", DEFAULT_TOR_CONTROL));
+    TorController ctrl(gBase, gArgs.GetArg<std::string>("-torcontrol", DEFAULT_TOR_CONTROL));
 
     event_base_dispatch(gBase);
 }

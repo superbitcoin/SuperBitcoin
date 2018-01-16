@@ -32,6 +32,7 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/filesystem/path.hpp>
+#include <boost/algorithm/string.hpp>
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
@@ -159,9 +160,9 @@ template<typename T, typename... Args> static inline void MarkUsed(const T& t, c
     } \
     LogPrintStr(_log_msg_); \
 } while(0)
-
+//gArgs.GetArg<bool>("-logfileinfo", true);
 #define LogPrintfWithFileInfo(fmt1, fmt2, a1, a2, a...) do{ \
-    bool fileinfo = gArgs.GetArg("-logfileinfo", true); \
+    bool fileinfo = true ; \
     if(fileinfo){ \
         LogPrintfFmt(fmt1, a1, a2, ##a); \
     }else{ \
@@ -229,6 +230,7 @@ private:
 
 private:
     bool merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source);
+    const std::string SubPrefix( std::string str);
 
 protected:
     CCriticalSection cs_args;
@@ -265,7 +267,7 @@ public:
        };
 
     }
-
+    static bool InterpretBool(const std::string& strValue);
     void ParseParameters(int argc, const char*const argv[]);
     void ReadConfigFile(const std::string& confPath);
     std::vector<std::string> GetArgs(const std::string& strArg);
@@ -299,53 +301,31 @@ public:
      * @param strDefault (e.g. "1")
      * @return command-line argument or default value
      */
-    std::string GetArg(const std::string& strArg, const std::string& strDefault);
 
-    /**
-     * Return int64_t argument or default value
-     *
-     * @param strArg Argument to get (e.g. "--foo")
-     * @param nDefault (e.g. 1)
-     * @return command-line argument (0 if invalid number) or default value
-     */
-    int64_t GetArg(const std::string& strArg, int64_t nDefault);
+    template <class T>
+    const T GetArg(const std::string &strArg, T const & tDefault)
+    {
+    LOCK(cs_args);
+    std::string tmp_strArg = SubPrefix(strArg);
 
-    /**
-     * Return uint64_t argument or default value
-     *
-     * @param strArg Argument to get (e.g. "--foo")
-     * @param nDefault (e.g. 1)
-     * @return command-line argument (0 if invalid number) or default value
-     */
-    uint64_t GetArg(const std::string& strArg, uint64_t nDefault);
 
-    /**
-     * Return int32_t argument or default value
-     *
-     * @param strArg Argument to get (e.g. "--foo")
-     * @param nDefault (e.g. 1)
-     * @return command-line argument (0 if invalid number) or default value
-     */
-    int32_t GetArg(const std::string& strArg, int32_t nDefault);
 
-    /**
-     * Return unsigned int argument or default value
-     *
-     * @param strArg Argument to get (e.g. "--foo")
-     * @param nDefault (e.g. 1)
-     * @return command-line argument (0 if invalid number) or default value
-     */
-    unsigned int GetArg(const std::string& strArg, uint32_t nDefault);
+        if (vm.count(tmp_strArg))
+        {
+            if (typeid(T) == typeid(bool)) {
+                std::string str =  vm[tmp_strArg].as<std::string>();
+                bool te = InterpretBool(str);
+                T * pte = (T*)&te;
+                return *pte;
+            } else {
+                return vm[tmp_strArg].as<T>();
+            }
+        }
+    return tDefault;
+};
 
-    /**
-     * Return boolean argument or default value
-     *
-     * @param strArg Argument to get (e.g. "--foo")
-     * @param fDefault (true or false)
-     * @return command-line argument or default value
-     */
-    bool GetArg(const std::string &strArg, bool fDefault);
-
+//    template <class T ,class  T2>
+//    const T GetArg(const T2 strArg, const T& strDefault);
     /**
      * Set an argument if it doesn't already have a value
      *

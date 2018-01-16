@@ -129,11 +129,11 @@ static int AppInitRPC(int argc, char* argv[])
     }
 
     if (!fs::is_directory(GetDataDir(false))) {
-        fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", gArgs.GetArg("-datadir", (std::string)"").c_str());
+        fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n", gArgs.GetArg<std::string>("-datadir", "").c_str());
         return EXIT_FAILURE;
     }
     try {
-        gArgs.ReadConfigFile(gArgs.GetArg("-conf", std::string(BITCOIN_CONF_FILENAME)));
+        gArgs.ReadConfigFile(gArgs.GetArg<std::string>("-conf", BITCOIN_CONF_FILENAME));
     } catch (const std::exception& e) {
         fprintf(stderr,"Error reading configuration file: %s\n", e.what());
         return EXIT_FAILURE;
@@ -145,7 +145,7 @@ static int AppInitRPC(int argc, char* argv[])
         fprintf(stderr, "Error: %s\n", e.what());
         return EXIT_FAILURE;
     }
-    if (gArgs.GetArg("-rpcssl", false))
+    if (gArgs.GetArg<bool>("-rpcssl", false))
     {
         fprintf(stderr, "Error: SSL mode for RPC (-rpcssl) is no longer supported.\n");
         return EXIT_FAILURE;
@@ -227,15 +227,15 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
     //     2. port in -rpcconnect (ie following : in ipv4 or ]: in ipv6)
     //     3. default port for chain
     int port = BaseParams().RPCPort();
-    SplitHostPort(gArgs.GetArg("-rpcconnect", std::string(DEFAULT_RPCCONNECT)), port, host);
-    port = gArgs.GetArg("-rpcport", port);
+    SplitHostPort(gArgs.GetArg<std::string>("-rpcconnect",DEFAULT_RPCCONNECT), port, host);
+    port = gArgs.GetArg<int>("-rpcport", port);
 
     // Obtain event base
     raii_event_base base = obtain_event_base();
 
     // Synchronously look up hostname
     raii_evhttp_connection evcon = obtain_evhttp_connection_base(base.get(), host, port);
-    evhttp_connection_set_timeout(evcon.get(), gArgs.GetArg("-rpcclienttimeout", DEFAULT_HTTP_CLIENT_TIMEOUT));
+    evhttp_connection_set_timeout(evcon.get(), gArgs.GetArg<int>("-rpcclienttimeout", DEFAULT_HTTP_CLIENT_TIMEOUT));
 
     HTTPReply response;
     raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void*)&response);
@@ -247,16 +247,16 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 
     // Get credentials
     std::string strRPCUserColonPass;
-    if (gArgs.GetArg("-rpcpassword", std::string("")) == "") {
+    if (gArgs.GetArg<std::string>("-rpcpassword","") == "") {
         // Try fall back to cookie-based authentication if no password is provided
         if (!GetAuthCookie(&strRPCUserColonPass)) {
             throw std::runtime_error(strprintf(
                     _("Could not locate RPC credentials. No authentication cookie could be found, and no rpcpassword is set in the configuration file (%s)"),
-                    GetConfigFile(gArgs.GetArg("-conf", std::string(BITCOIN_CONF_FILENAME))).string().c_str()));
+                    GetConfigFile(gArgs.GetArg<std::string>("-conf", std::string(BITCOIN_CONF_FILENAME))).string().c_str()));
 
         }
     } else {
-        strRPCUserColonPass = gArgs.GetArg("-rpcuser", "") + ":" + gArgs.GetArg("-rpcpassword", "");
+        strRPCUserColonPass = gArgs.GetArg<std::string>("-rpcuser", "") + ":" + gArgs.GetArg<std::string>("-rpcpassword", "");
     }
 
     struct evkeyvalq* output_headers = evhttp_request_get_output_headers(req.get());
@@ -273,7 +273,7 @@ UniValue CallRPC(const std::string& strMethod, const UniValue& params)
 
     // check if we should use a special wallet endpoint
     std::string endpoint = "/";
-    std::string walletName = gArgs.GetArg("-rpcwallet", std::string(""));
+    std::string walletName = gArgs.GetArg<std::string>("-rpcwallet", "");
     if (!walletName.empty()) {
         char *encodedURI = evhttp_uriencode(walletName.c_str(), walletName.size(), false);
         if (encodedURI) {
@@ -323,7 +323,7 @@ int CommandLineRPC(int argc, char *argv[])
             argv++;
         }
         std::vector<std::string> args = std::vector<std::string>(&argv[1], &argv[argc]);
-        if (gArgs.GetArg("-stdin", false)) {
+        if (gArgs.GetArg<bool>("-stdin", false)) {
             // Read one arg per line from stdin and append
             std::string line;
             while (std::getline(std::cin,line))
@@ -335,14 +335,14 @@ int CommandLineRPC(int argc, char *argv[])
         args.erase(args.begin()); // Remove trailing method name from arguments vector
 
         UniValue params;
-        if(gArgs.GetArg("-named", DEFAULT_NAMED)) {
+        if(gArgs.GetArg<bool>("-named", DEFAULT_NAMED)) {
             params = RPCConvertNamedValues(strMethod, args);
         } else {
             params = RPCConvertValues(strMethod, args);
         }
 
         // Execute and handle connection failures with -rpcwait
-        const bool fWait = gArgs.GetArg("-rpcwait", false);
+        const bool fWait = gArgs.GetArg<bool>("-rpcwait", false);
         do {
             try {
                 const UniValue reply = CallRPC(strMethod, params);

@@ -375,12 +375,14 @@ int LogPrintStr(const std::string &str)
 }
 
 /** Interpret string as boolean, for argument parsing */
-static bool InterpretBool(const std::string& strValue)
+bool ArgsManager::InterpretBool(const std::string& strValue)
 {
     if (strValue.empty())
         return true;
-
-    return (!strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "yes") || !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "y")) ? true : false;
+    return (!strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "yes") ||
+            !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "y")
+            || !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "1")
+           ) ? true : false;
 }
 
 /** Turn -noX into -X=0 */
@@ -389,7 +391,7 @@ static void InterpretNegativeSetting(std::string& strKey, std::string& strValue)
     if (strKey.length()>3 && strKey[0]=='-' && strKey[1]=='n' && strKey[2]=='o')
     {
         strKey = "-" + strKey.substr(3);
-        strValue = InterpretBool(strValue) ? "0" : "1";
+        strValue = ArgsManager::InterpretBool(strValue) ? "0" : "1";
     }
 }
 
@@ -478,123 +480,24 @@ bool ArgsManager::IsArgSet(const std::string& strArg)
 
     return vm.count(tmp_strArg);
 }
-
-std::string ArgsManager::GetArg(const std::string& strArg, const std::string& strDefault)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
-
-    if (vm.count(tmp_strArg))
-        return vm[tmp_strArg].as<std::string>();
-
-    return strDefault;
-}
-
-int64_t ArgsManager::GetArg(const std::string& strArg, int64_t nDefault)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
-
-    if (vm.count(tmp_strArg))
-        return vm[tmp_strArg].as<int64_t>();
-
-    return nDefault;
-}
-
-uint64_t ArgsManager::GetArg(const std::string& strArg, uint64_t nDefault)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
-
-    if(vm.count(tmp_strArg))
-        return vm[tmp_strArg].as<uint64_t>();
-
-    return nDefault;
-}
-
-int32_t ArgsManager::GetArg(const std::string& strArg, int32_t nDefault)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
-
-    if(vm.count(tmp_strArg))
-    {
-        return vm[tmp_strArg].as<int32_t>();
-    }
-
-    return nDefault;
-}
-
-unsigned int ArgsManager::GetArg(const std::string& strArg, unsigned int nDefault)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
-
-    if(vm.count(tmp_strArg))
-    {
-        return vm[tmp_strArg].as<unsigned int>();
-    }
-
-    return nDefault;
-}
-
-bool ArgsManager::GetArg(const std::string &strArg, bool fDefault)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
-
-    if (vm.count(tmp_strArg))
-        return InterpretBool(vm[tmp_strArg].as<std::string>());
-    return fDefault;
-}
+//
+//bool ArgsManager::GetArg(const std::string &strArg, bool fDefault)
+//{
+//    LOCK(cs_args);
+//    std::string tmp_strArg;
+//    if(strArg[0] == '-')
+//    {
+//        tmp_strArg = strArg.substr(1);
+//    }
+//    else
+//    {
+//        tmp_strArg = strArg;
+//    }
+//
+//    if (vm.count(tmp_strArg))
+//        return InterpretBool(vm[tmp_strArg].as<std::string>());
+//    return fDefault;
+//}
 
 bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strValue)
 {
@@ -900,8 +803,8 @@ const fs::path &GetDataDir(bool fNetSpecific)
         return path;
 
     if (gArgs.IsArgSet("-datadir")) {
-        std::string tmp = gArgs.GetArg("-datadir", (std::string)"");
-        path = fs::system_complete(gArgs.GetArg("-datadir", (std::string)""));
+        std::string tmp = gArgs.GetArg<std::string>("-datadir", "");
+        path = fs::system_complete(gArgs.GetArg<std::string>("-datadir", ""));
         if (!fs::is_directory(path)) {
             path = "";
             return path;
@@ -979,10 +882,57 @@ void ArgsManager::ReadConfigFile(const std::string& confPath)
     merge_variable_map(vm, vm_tmp);
 }
 
+const std::string ArgsManager::SubPrefix(std::string str) {
+
+    std::string tmp_strArg;
+    if(str[0] == '-')
+    {
+        tmp_strArg = str.substr(1);
+    }
+    else
+    {
+        tmp_strArg = str;
+    }
+    return tmp_strArg;
+}
+
+//template<class T>
+//const T ArgsManager::GetArg(const std::string &strArg, T &strDefault) {
+////    LOCK(cs_args);
+////    std::string tmp_strArg = SubPrefix(strArg);
+////
+////    if (vm.count(tmp_strArg))
+////    {
+////        if (typeid(T) == typeid(bool)) {
+////            return InterpretBool(vm[tmp_strArg].as<std::string>());
+////        } else {
+////            return vm[tmp_strArg].as<T>();
+////        }
+////    }
+//    return strDefault;
+//}
+
+//template<class T>
+//const T ArgsManager::GetArg(const std::string &strArg, const T &strDefault) {
+////    LOCK(cs_args);
+////    std::string tmp_strArg = SubPrefix(strArg);
+////
+////    if (vm.count(tmp_strArg))
+////    {
+////        if (typeid(T) == typeid(bool)) {
+//////            return InterpretBool(vm[tmp_strArg].as<std::string>());
+////        } else {
+////          //  return vm[tmp_strArg].as<T>();
+////        }
+////    }
+//    return strDefault;
+//}
+
+
 #ifndef WIN32
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(gArgs.GetArg("-pid", std::string(BITCOIN_PID_FILENAME)));
+    fs::path pathPidFile(gArgs.GetArg<std::string>("-pid",BITCOIN_PID_FILENAME));
     if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }
