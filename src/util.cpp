@@ -381,7 +381,8 @@ bool ArgsManager::InterpretBool(const std::string& strValue)
         return true;
     return (!strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "yes") ||
             !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "y")
-            || !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "1")
+            || !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "1") ||
+            !strcmp(boost::to_lower_copy<std::string>(strValue).c_str(), "true")
            ) ? true : false;
 }
 
@@ -449,15 +450,7 @@ void ArgsManager::ParseParameters(int argc, const char* const argv[])
 std::vector<std::string> ArgsManager::GetArgs(const std::string& strArg)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     if (IsArgSet(tmp_strArg))
         return vm.at(tmp_strArg).as< vector<string> >();
@@ -468,49 +461,16 @@ std::vector<std::string> ArgsManager::GetArgs(const std::string& strArg)
 bool ArgsManager::IsArgSet(const std::string& strArg)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     return vm.count(tmp_strArg);
 }
-//
-//bool ArgsManager::GetArg(const std::string &strArg, bool fDefault)
-//{
-//    LOCK(cs_args);
-//    std::string tmp_strArg;
-//    if(strArg[0] == '-')
-//    {
-//        tmp_strArg = strArg.substr(1);
-//    }
-//    else
-//    {
-//        tmp_strArg = strArg;
-//    }
-//
-//    if (vm.count(tmp_strArg))
-//        return InterpretBool(vm[tmp_strArg].as<std::string>());
-//    return fDefault;
-//}
+
 
 bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strValue)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
     if(vm.count(strArg))
     {
         return false;
@@ -533,15 +493,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strVa
 bool ArgsManager::SoftSetArg(const std::string& strArg, const int64_t& intValue)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     if(vm.count(tmp_strArg))
     {
@@ -555,15 +507,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const int64_t& intValue)
 bool ArgsManager::SoftSetArg(const std::string& strArg, const uint64_t& intValue)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     if(vm.count(tmp_strArg))
     {
@@ -577,15 +521,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const uint64_t& intValue
 bool ArgsManager::SoftSetArg(const std::string& strArg, const int32_t& intValue)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     if(vm.count(tmp_strArg))
     {
@@ -599,15 +535,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const int32_t& intValue)
 bool ArgsManager::SoftSetArg(const std::string& strArg, const uint32_t& intValue)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     if(vm.count(tmp_strArg))
     {
@@ -629,15 +557,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, bool fValue)
 bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::string >& value)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     if(vm.count(tmp_strArg))
     {
@@ -652,15 +572,7 @@ bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::
 void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strValue)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     vector<string>::const_iterator ite_options_arr = find(options_arr.begin(), options_arr.end(), tmp_strArg);
 
@@ -679,15 +591,7 @@ void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strV
 void ArgsManager::ForceSetArg(const std::string& strArg, const unsigned int value)
 {
     LOCK(cs_args);
-    std::string tmp_strArg;
-    if(strArg[0] == '-')
-    {
-        tmp_strArg = strArg.substr(1);
-    }
-    else
-    {
-        tmp_strArg = strArg;
-    }
+    std::string tmp_strArg = SubPrefix(strArg);
 
     if(vm.count(tmp_strArg))
     {

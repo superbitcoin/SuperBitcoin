@@ -307,9 +307,6 @@ public:
     {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
-
-
-
         if (vm.count(tmp_strArg))
         {
             if (typeid(T) == typeid(bool)) {
