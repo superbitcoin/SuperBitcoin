@@ -9,6 +9,8 @@ set(   depSources
         ../policy/rbf.h
         ../keystore.h
         ../keystore.cpp
+        ../httpserver.cpp
+        ../httpserver.h
 )
 message(rpcsources   ${depSources})
 

@@ -1,10 +1,11 @@
 file(GLOB sources "*.cpp")
+file(GLOB data_sources "data/*.cpp")
 link_directories(../rpc)
 
-add_executable(sbtcd ${sources} )
-target_include_directories(sbtcd PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${Secp256k1_INCLUDE_DIR} )
+add_executable(sbtc-test ${sources} ${data_sources})
+target_include_directories(sbtc-test PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${Secp256k1_INCLUDE_DIR} )
 
-target_link_libraries(sbtcd
+target_link_libraries(sbtc-test
         base
         compat consensus crypto  policy
         primitives rpc script  support
@@ -12,4 +13,3 @@ target_link_libraries(sbtcd
         ${LIBDB_CXX_LIBRARIES} ${LEVELDB_LIBRARIES} libmemenv.a ${Secp256k1_LIBRARY}
         )
 
-message( ${LEVELDB_LIBRARIES})

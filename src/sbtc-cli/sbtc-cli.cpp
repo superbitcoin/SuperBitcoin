@@ -117,8 +117,25 @@ static int AppInitRPC(int argc, char* argv[])
                           "  bitcoin-cli [options] -named <command> [name=value] ... " + strprintf(_("Send command to %s (with named arguments)"), _(PACKAGE_NAME)) + "\n" +
                           "  bitcoin-cli [options] help                " + _("List commands") + "\n" +
                           "  bitcoin-cli [options] help <command>      " + _("Get help for a command") + "\n";
+
+    vector<string> argv_tmp_arr;
+    for(int i = 0; i != argc; i++)
+    {
+        if(strlen(argv[i]) > 2 && argv[i][0] == '-' && argv[i][1] != '-')
+        {
+            argv_tmp_arr.push_back("-" + string(argv[i]));
+            continue;
+        }
+
+        argv_tmp_arr.push_back(string(argv[i]));
+    }
+    vector<const char*> argv_arr;
+    for(string &s : argv_tmp_arr)
+    {
+        argv_arr.push_back(s.c_str());
+    }
     bpo::options_description *app = new bpo::options_description(strHead.c_str());
-    if(!gArgs.InitPromOptions(InitPromOptions, app, argc, (const char**)argv, HMM_EMPTY))
+    if(!gArgs.InitPromOptions(InitPromOptions, app, argv_arr.size(), &argv_arr[0], HMM_EMPTY))
     {
         return EXIT_FAILURE;
     }
