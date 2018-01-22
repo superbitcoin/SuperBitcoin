@@ -318,8 +318,8 @@ public:
                 return vm[tmp_strArg].as<T>();
             }
         }
-    return tDefault;
-};
+        return tDefault;
+    };
 
 //    template <class T ,class  T2>
 //    const T GetArg(const T2 strArg, const T& strDefault);
@@ -330,61 +330,100 @@ public:
      * @param strValue Value (e.g. "1")
      * @return true if argument gets set, false if it already had a value
      */
-    bool SoftSetArg(const std::string& strArg, const std::string& strValue);
+    template <typename T>
+    bool SoftSetArg(const std::string& strArg, const T& value)
+    {
+        LOCK(cs_args);
 
-    /**
-     * Set an argument if it doesn't already have a value
-     *
-     * @param strArg Argument to set (e.g. "--foo")
-     * @param strValue Value (e.g. "1")
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetArg(const std::string& strArg, const uint64_t& intValue);
+        std::string tmp_strArg = SubPrefix(strArg);
+        if(vm.count(tmp_strArg))
+        {
+            return false;
+        }
 
-    /**
-     * Set an argument if it doesn't already have a value
-     *
-     * @param strArg Argument to set (e.g. "--foo")
-     * @param strValue Value (e.g. 1)
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetArg(const std::string& strArg, const int32_t& value);
+        if(typeid(T) == typeid(bool))
+        {
+            bool const * const pbool =  (bool const * const)&value;
+            string value_tmp = *pbool ? "yes" : "no";
+            vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(string(value_tmp)), false)));
+            return true;
+        }
 
-    /**
-     * Set an argument if it doesn't already have a value
-     *
-     * @param strArg Argument to set (e.g. "--foo")
-     * @param strValue Value (e.g. 1)
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetArg(const std::string& strArg, const uint32_t& intValue);
+        if(typeid(T) == typeid(std::string))
+        {
+            vector<string>::iterator ite = find(options_arr.begin(), options_arr.end(), tmp_strArg);
 
-    /**
-     * Set an argument if it doesn't already have a value
-     *
-     * @param strArg Argument to set (e.g. "--foo")
-     * @param strValue Value (e.g. 1L)
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetArg(const std::string& strArg, const int64_t& value);
+            // not an array
+            if(ite == options_arr.end())
+            {
+                auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(T(value)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
+                return res.second;
+            }
 
-    /**
-     * Set an argument if it doesn't already have a value
-     *
-     * @param strArg Argument to set (e.g. "--foo")
-     * @param strValue Values
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetArg(const std::string& strArg, const std::vector< std::string >& value);
+            // the option is an array
+            auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<T>({value})), false)));   // std::pair< map<string, bpo::variable_value>::iterator, bool >
+            return res.second;
+        }
 
-    /**
-     * Set a boolean argument if it doesn't already have a value
-     *
-     * @param strArg Argument to set (e.g. "--foo")
-     * @param fValue Value (e.g. false)
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetArg(const std::string &strArg, bool fValue);
+        vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(T(value)), false)));
+        return true;
+    }
+
+//    bool SoftSetArg(const std::string& strArg, const std::string& strValue);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Value (e.g. "1")
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const uint64_t& intValue);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Value (e.g. 1)
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const int32_t& value);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Value (e.g. 1)
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const uint32_t& intValue);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Value (e.g. 1L)
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const int64_t& value);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Values
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const std::vector< std::string >& value);
+//
+//    /**
+//     * Set a boolean argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param fValue Value (e.g. false)
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string &strArg, bool fValue);
 
     void ForceSetArg(const std::string&, const std::string&);
 
@@ -446,6 +485,8 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
         throw;
     }
 }
+
+void GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char*> &argv_arr);
 
 std::string CopyrightHolders(const std::string& strPrefix);
 
