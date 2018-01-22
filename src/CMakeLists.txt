@@ -26,5 +26,6 @@ find_package(Event)
 add_subdirectory(sbtcd)
 add_subdirectory(sbtc-tx)
 add_subdirectory(sbtc-cli)
-#add_subdirectory(test)
-
+if (TESTS)
+    add_subdirectory(test)
+endif()
