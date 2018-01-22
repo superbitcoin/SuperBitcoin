@@ -362,22 +362,9 @@ bool AppInit(int argc, char* argv[])
     // Parameters
     //
     // If Qt is used, parameters/bitcoin.conf are parsed in qt/bitcoin.cpp's main()
-    vector<string> argv_tmp_arr;
-    for(int i = 0; i != argc; i++)
-    {
-        if(strlen(argv[i]) > 2 && argv[i][0] == '-' && argv[i][1] != '-')
-        {
-            argv_tmp_arr.push_back("-" + string(argv[i]));
-            continue;
-        }
-
-        argv_tmp_arr.push_back(string(argv[i]));
-    }
+    vector<string> argv_arr_tmp;
     vector<const char*> argv_arr;
-    for(string &s : argv_tmp_arr)
-    {
-        argv_arr.push_back(s.c_str());
-    }
+    GenerateOptFormat(argc, (const char**)argv, argv_arr_tmp, argv_arr);
     bpo::options_description *app = new bpo::options_description("sbtcd");
     if(!gArgs.InitPromOptions(InitPromOptions, app, argv_arr.size(), &argv_arr[0], HMM_BITCOIND))
     {

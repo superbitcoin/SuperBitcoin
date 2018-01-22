@@ -466,107 +466,107 @@ bool ArgsManager::IsArgSet(const std::string& strArg)
 }
 
 
-bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strValue)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg = SubPrefix(strArg);
-    if(vm.count(strArg))
-    {
-        return false;
-    }
-
-    vector<string>::iterator ite = find(options_arr.begin(), options_arr.end(), tmp_strArg);
-
-    // not an array
-    if(ite == options_arr.end())
-    {
-        auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
-        return res.second;
-    }
-
-    // the option is an array
-    auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<string>({strValue})), false)));   // std::pair< map<string, bpo::variable_value>::iterator, bool >
-    return res.second;
-}
-
-bool ArgsManager::SoftSetArg(const std::string& strArg, const int64_t& intValue)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg = SubPrefix(strArg);
-
-    if(vm.count(tmp_strArg))
-    {
-        return false;
-    }
-
-    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(int64_t(intValue)), false)));
-    return true;
-}
-
-bool ArgsManager::SoftSetArg(const std::string& strArg, const uint64_t& intValue)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg = SubPrefix(strArg);
-
-    if(vm.count(tmp_strArg))
-    {
-        return false;
-    }
-
-    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(uint64_t(intValue)), false)));
-    return true;
-}
-
-bool ArgsManager::SoftSetArg(const std::string& strArg, const int32_t& intValue)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg = SubPrefix(strArg);
-
-    if(vm.count(tmp_strArg))
-    {
-        return false;
-    }
-
-    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(int32_t(intValue)), false)));
-    return true;
-}
-
-bool ArgsManager::SoftSetArg(const std::string& strArg, const uint32_t& intValue)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg = SubPrefix(strArg);
-
-    if(vm.count(tmp_strArg))
-    {
-        return false;
-    }
-
-    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(uint32_t(intValue)), false)));
-    return true;
-}
-
-bool ArgsManager::SoftSetArg(const std::string& strArg, bool fValue)
-{
-    if (fValue)
-        return SoftSetArg(strArg, std::string("yes"));
-    else
-        return SoftSetArg(strArg, std::string("no"));
-}
-
-bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::string >& value)
-{
-    LOCK(cs_args);
-    std::string tmp_strArg = SubPrefix(strArg);
-
-    if(vm.count(tmp_strArg))
-    {
-        return false;
-    }
-
-
-    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::vector<std::string>(value)), false)));
-    return true;
-}
+//bool ArgsManager::SoftSetArg(const std::string& strArg, const std::string& strValue)
+//{
+//    LOCK(cs_args);
+//    std::string tmp_strArg = SubPrefix(strArg);
+//    if(vm.count(strArg))
+//    {
+//        return false;
+//    }
+//
+//    vector<string>::iterator ite = find(options_arr.begin(), options_arr.end(), tmp_strArg);
+//
+//    // not an array
+//    if(ite == options_arr.end())
+//    {
+//        auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
+//        return res.second;
+//    }
+//
+//    // the option is an array
+//    auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<string>({strValue})), false)));   // std::pair< map<string, bpo::variable_value>::iterator, bool >
+//    return res.second;
+//}
+//
+//bool ArgsManager::SoftSetArg(const std::string& strArg, const int64_t& intValue)
+//{
+//    LOCK(cs_args);
+//    std::string tmp_strArg = SubPrefix(strArg);
+//
+//    if(vm.count(tmp_strArg))
+//    {
+//        return false;
+//    }
+//
+//    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(int64_t(intValue)), false)));
+//    return true;
+//}
+//
+//bool ArgsManager::SoftSetArg(const std::string& strArg, const uint64_t& intValue)
+//{
+//    LOCK(cs_args);
+//    std::string tmp_strArg = SubPrefix(strArg);
+//
+//    if(vm.count(tmp_strArg))
+//    {
+//        return false;
+//    }
+//
+//    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(uint64_t(intValue)), false)));
+//    return true;
+//}
+//
+//bool ArgsManager::SoftSetArg(const std::string& strArg, const int32_t& intValue)
+//{
+//    LOCK(cs_args);
+//    std::string tmp_strArg = SubPrefix(strArg);
+//
+//    if(vm.count(tmp_strArg))
+//    {
+//        return false;
+//    }
+//
+//    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(int32_t(intValue)), false)));
+//    return true;
+//}
+//
+//bool ArgsManager::SoftSetArg(const std::string& strArg, const uint32_t& intValue)
+//{
+//    LOCK(cs_args);
+//    std::string tmp_strArg = SubPrefix(strArg);
+//
+//    if(vm.count(tmp_strArg))
+//    {
+//        return false;
+//    }
+//
+//    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(uint32_t(intValue)), false)));
+//    return true;
+//}
+//
+//bool ArgsManager::SoftSetArg(const std::string& strArg, bool fValue)
+//{
+//    if (fValue)
+//        return SoftSetArg(strArg, std::string("yes"));
+//    else
+//        return SoftSetArg(strArg, std::string("no"));
+//}
+//
+//bool ArgsManager::SoftSetArg(const std::string& strArg, const std::vector< std::string >& value)
+//{
+//    LOCK(cs_args);
+//    std::string tmp_strArg = SubPrefix(strArg);
+//
+//    if(vm.count(tmp_strArg))
+//    {
+//        return false;
+//    }
+//
+//
+//    vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::vector<std::string>(value)), false)));
+//    return true;
+//}
 
 void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strValue)
 {
@@ -1106,4 +1106,23 @@ std::string CopyrightHolders(const std::string& strPrefix)
 int64_t GetStartupTime()
 {
     return nStartupTime;
+}
+
+
+void GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char*> &argv_arr)
+{
+    for(int i = 0; i != argc; i++)
+    {
+        if(strlen(argv[i]) > 2 && argv[i][0] == '-' && argv[i][1] != '-')
+        {
+            argv_arr_tmp.push_back("-" + string(argv[i]));
+            continue;
+        }
+
+        argv_arr_tmp.push_back(string(argv[i]));
+    }
+    for(string &s : argv_arr_tmp)
+    {
+        argv_arr.push_back(s.c_str());
+    }
 }
