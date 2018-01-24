@@ -1637,6 +1637,7 @@ static unsigned int GetBlockScriptFlags(const CBlockIndex* pindex, const Consens
 
     // If the sbtc fork is enabled
     if (IsSBTCForkEnabled(consensusparams, pindex->pprev)) {
+          flags |= SCRIPT_VERIFY_STRICTENC;
           flags |= SCRIPT_ENABLE_SIGHASH_SBTC_FORK;
     }
 
