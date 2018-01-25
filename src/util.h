@@ -11,7 +11,7 @@
 #define BITCOIN_UTIL_H
 
 #if defined(HAVE_CONFIG_H)
-#include "config/bitcoin-config.h"
+#include "config/sbtc-config.h"
 #endif
 
 #include "compat.h"
@@ -28,6 +28,16 @@
 #include <vector>
 
 #include <boost/signals2/signal.hpp>
+#include "init.h"
+#include <boost/program_options.hpp>
+#include <boost/program_options/options_description.hpp>
+#include <boost/filesystem/path.hpp>
+#include <boost/algorithm/string.hpp>
+
+namespace bpo = boost::program_options;
+namespace bfs = boost::filesystem;
+using std::vector;
+using std::string;
 
 // Application startup time (used for uptime calculation)
 int64_t GetStartupTime();
@@ -150,9 +160,9 @@ template<typename T, typename... Args> static inline void MarkUsed(const T& t, c
     } \
     LogPrintStr(_log_msg_); \
 } while(0)
-
+//;
 #define LogPrintfWithFileInfo(fmt1, fmt2, a1, a2, a...) do{ \
-    bool fileinfo = gArgs.GetBoolArg("-logfileinfo", true); \
+    bool fileinfo = gArgs.GetArg<bool>("-logfileinfo", true) ; \
     if(fileinfo){ \
         LogPrintfFmt(fmt1, a1, a2, ##a); \
     }else{ \
@@ -214,19 +224,72 @@ inline bool IsSwitchChar(char c)
 
 class ArgsManager
 {
+private:
+    // if the option has multiple arguments, add to this arr
+    vector<string> options_arr;
+
+private:
+    bool merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source);
+    const std::string SubPrefix( std::string str);
+
 protected:
     CCriticalSection cs_args;
     std::map<std::string, std::string> mapArgs;
     std::map<std::string, std::vector<std::string> > mapMultiArgs;
+
+    /************reconfiguration****************/
+    bpo::options_description *app;
+    bpo::variables_map vm;
+//    std::string version;
+    /************reconfiguration****************/
 public:
+    ArgsManager()
+    {
+        options_arr =
+       {
+           "loadblock",
+           "addnode",
+           "bind",
+           "connect",
+           "externalip",
+           "onlynet",
+           "seednode",
+           "whitebind",
+           "whitelist",
+           "wallet",
+           "uacomment",
+           "vbparams",
+           "debug",
+           "debugexclude",
+           "rpcbind",
+           "rpcauth",
+           "rpcallowip"
+       };
+
+    }
+    static bool InterpretBool(const std::string& strValue);
     void ParseParameters(int argc, const char*const argv[]);
     void ReadConfigFile(const std::string& confPath);
     std::vector<std::string> GetArgs(const std::string& strArg);
+//    const std::string& GetVersion() const { return version; }
+
+    bool PrintHelpMessage(std::function<void(void)>);   // because of compilation
+
+    /**
+     * Return true if initialize program options seccess
+     *
+     * @param callback Argument to execute initialization
+     * @param argc the number of arguments
+     * @param argv arguments
+     * @param mode The help message mode determines what help message to show
+     * @return true if the argument has been set
+     */
+    bool InitPromOptions(std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv, HelpMessageMode mode)> callback, bpo::options_description *app, int argc, const char **argv, HelpMessageMode mode);
 
     /**
      * Return true if the given argument has been manually set
      *
-     * @param strArg Argument to get (e.g. "-foo")
+     * @param strArg Argument to get (e.g. "--foo")
      * @return true if the argument has been set
      */
     bool IsArgSet(const std::string& strArg);
@@ -234,51 +297,137 @@ public:
     /**
      * Return string argument or default value
      *
-     * @param strArg Argument to get (e.g. "-foo")
+     * @param strArg Argument to get (e.g. "--foo")
      * @param strDefault (e.g. "1")
      * @return command-line argument or default value
      */
-    std::string GetArg(const std::string& strArg, const std::string& strDefault);
 
-    /**
-     * Return integer argument or default value
-     *
-     * @param strArg Argument to get (e.g. "-foo")
-     * @param nDefault (e.g. 1)
-     * @return command-line argument (0 if invalid number) or default value
-     */
-    int64_t GetArg(const std::string& strArg, int64_t nDefault);
+    template <class T>
+    const T GetArg(const std::string &strArg, T const & tDefault)
+    {
+    LOCK(cs_args);
+    std::string tmp_strArg = SubPrefix(strArg);
+        if (vm.count(tmp_strArg))
+        {
+            if (typeid(T) == typeid(bool)) {
+                std::string str =  vm[tmp_strArg].as<std::string>();
+                bool te = InterpretBool(str);
+                T * pte = (T*)&te;
+                return *pte;
+            } else {
+                return vm[tmp_strArg].as<T>();
+            }
+        }
+        return tDefault;
+    };
 
-    /**
-     * Return boolean argument or default value
-     *
-     * @param strArg Argument to get (e.g. "-foo")
-     * @param fDefault (true or false)
-     * @return command-line argument or default value
-     */
-    bool GetBoolArg(const std::string& strArg, bool fDefault);
-
+//    template <class T ,class  T2>
+//    const T GetArg(const T2 strArg, const T& strDefault);
     /**
      * Set an argument if it doesn't already have a value
      *
-     * @param strArg Argument to set (e.g. "-foo")
+     * @param strArg Argument to set (e.g. "--foo")
      * @param strValue Value (e.g. "1")
      * @return true if argument gets set, false if it already had a value
      */
-    bool SoftSetArg(const std::string& strArg, const std::string& strValue);
+    template <typename T>
+    bool SoftSetArg(const std::string& strArg, const T& value)
+    {
+        LOCK(cs_args);
 
-    /**
-     * Set a boolean argument if it doesn't already have a value
-     *
-     * @param strArg Argument to set (e.g. "-foo")
-     * @param fValue Value (e.g. false)
-     * @return true if argument gets set, false if it already had a value
-     */
-    bool SoftSetBoolArg(const std::string& strArg, bool fValue);
+        std::string tmp_strArg = SubPrefix(strArg);
+        if(vm.count(tmp_strArg))
+        {
+            return false;
+        }
 
-    // Forces an arg setting. Called by SoftSetArg() if the arg hasn't already
-    // been set. Also called directly in testing.
-    void ForceSetArg(const std::string& strArg, const std::string& strValue);
+        if(typeid(T) == typeid(bool))
+        {
+            bool const * const pbool =  (bool const * const)&value;
+            string value_tmp = *pbool ? "yes" : "no";
+            vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(string(value_tmp)), false)));
+            return true;
+        }
+
+        if(typeid(T) == typeid(std::string))
+        {
+            vector<string>::iterator ite = find(options_arr.begin(), options_arr.end(), tmp_strArg);
+
+            // not an array
+            if(ite == options_arr.end())
+            {
+                auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(T(value)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
+                return res.second;
+            }
+
+            // the option is an array
+            auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<T>({value})), false)));   // std::pair< map<string, bpo::variable_value>::iterator, bool >
+            return res.second;
+        }
+
+        vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(T(value)), false)));
+        return true;
+    }
+
+//    bool SoftSetArg(const std::string& strArg, const std::string& strValue);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Value (e.g. "1")
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const uint64_t& intValue);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Value (e.g. 1)
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const int32_t& value);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Value (e.g. 1)
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const uint32_t& intValue);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Value (e.g. 1L)
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const int64_t& value);
+//
+//    /**
+//     * Set an argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param strValue Values
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string& strArg, const std::vector< std::string >& value);
+//
+//    /**
+//     * Set a boolean argument if it doesn't already have a value
+//     *
+//     * @param strArg Argument to set (e.g. "--foo")
+//     * @param fValue Value (e.g. false)
+//     * @return true if argument gets set, false if it already had a value
+//     */
+//    bool SoftSetArg(const std::string &strArg, bool fValue);
+
+    void ForceSetArg(const std::string&, const std::string&);
+
+    void ForceSetArg(const std::string&, const unsigned int);
 };
 
 extern ArgsManager gArgs;
@@ -336,6 +485,8 @@ template <typename Callable> void TraceThread(const char* name,  Callable func)
         throw;
     }
 }
+
+void GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char*> &argv_arr);
 
 std::string CopyrightHolders(const std::string& strPrefix);
 

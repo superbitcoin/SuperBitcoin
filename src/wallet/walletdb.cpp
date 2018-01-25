@@ -573,7 +573,7 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
                     if (strType == "tx")
                         // Rescan if there is a bad transaction record:
-                        gArgs.SoftSetBoolArg("-rescan", true);
+                        gArgs.SoftSetArg("-rescan", true);
                 }
             }
             if (!strErr.empty())
@@ -751,7 +751,7 @@ void MaybeCompactWalletDB()
     if (fOneThread.exchange(true)) {
         return;
     }
-    if (!gArgs.GetBoolArg("-flushwallet", DEFAULT_FLUSHWALLET)) {
+    if (!gArgs.GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)) {
         return;
     }
 
