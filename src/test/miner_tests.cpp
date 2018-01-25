@@ -2,21 +2,21 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "chainparams.h"
-#include "coins.h"
-#include "consensus/consensus.h"
-#include "consensus/merkle.h"
-#include "consensus/tx_verify.h"
-#include "consensus/validation.h"
-#include "validation.h"
-#include "miner.h"
-#include "policy/policy.h"
+#include "config/chainparams.h"
+#include "chaincontrol/coins.h"
+#include "config/consensus.h"
+#include "sbtccore/block/merkle.h"
+#include "sbtccore/transaction/tx_verify.h"
+#include "chaincontrol/validation.h"
+#include "block/validation.h"
+#include "miner/miner.h"
+#include "sbtccore/transaction/policy.h"
 #include "pubkey.h"
 #include "script/standard.h"
-#include "txmempool.h"
+#include "mempool/txmempool.h"
 #include "uint256.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
 
 #include "test/test_bitcoin.h"
 

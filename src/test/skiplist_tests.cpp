@@ -2,8 +2,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "chain.h"
-#include "util.h"
+#include "chaincontrol/chain.h"
+#include "utils/util.h"
 #include "test/test_bitcoin.h"
 
 #include <vector>

@@ -8,7 +8,7 @@
 #include "crypto/sha512.h"
 #include "script/script.h"
 #include "script/standard.h"
-#include "util.h"
+#include "utils/util.h"
 
 #include <string>
 #include <vector>

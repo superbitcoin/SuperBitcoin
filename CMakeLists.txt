@@ -150,7 +150,13 @@ INCLUDE_DIRECTORIES(src)
 INCLUDE_DIRECTORIES(src/univalue/include)
 INCLUDE_DIRECTORIES(src/rpc)
 INCLUDE_DIRECTORIES(src/config)
-INCLUDE_DIRECTORIES(src/primitivesls)
+INCLUDE_DIRECTORIES(src/sbtccore)
+INCLUDE_DIRECTORIES(src/sbtccore/block)
+INCLUDE_DIRECTORIES(src/sbtccore/transaction)
+INCLUDE_DIRECTORIES(src/sbtccore/transaction/script)
+INCLUDE_DIRECTORIES(src/utils)
+
+
 
 INCLUDE_DIRECTORIES ("${PROJECT_SOURCE_DIR}/src/secp256k1/contrib" )
 INCLUDE_DIRECTORIES ("${PROJECT_SOURCE_DIR}/src/secp256k1/include" )

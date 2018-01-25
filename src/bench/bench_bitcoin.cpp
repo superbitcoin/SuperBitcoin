@@ -5,9 +5,9 @@
 #include "bench.h"
 
 #include "crypto/sha256.h"
-#include "key.h"
-#include "validation.h"
-#include "util.h"
+#include "wallet/key.h"
+#include "block/validation.h"
+#include "utils/util.h"
 #include "random.h"
 
 int

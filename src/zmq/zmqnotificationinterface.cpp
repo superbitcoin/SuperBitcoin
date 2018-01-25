@@ -5,14 +5,14 @@
 #include "zmqnotificationinterface.h"
 #include "zmqpublishnotifier.h"
 
-#include "version.h"
-#include "validation.h"
-#include "streams.h"
-#include "util.h"
+#include "framwork/version.h"
+#include "block/validation.h"
+#include "sbtccore/streams.h"
+#include "utils/util.h"
 
 void zmqError(const char *str)
 {
-    LogPrint(BCLog::ZMQ, "zmq: Error: %s, errno=%s\n", str, zmq_strerror(errno));
+//    LogPrint(BCLog::ZMQ, "zmq: Error: %s, errno=%s\n", str, zmq_strerror(errno));
 }
 
 CZMQNotificationInterface::CZMQNotificationInterface() : pcontext(nullptr)

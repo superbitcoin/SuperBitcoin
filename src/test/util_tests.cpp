@@ -2,13 +2,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "util.h"
+#include "utils/util.h"
 
-#include "clientversion.h"
-#include "primitives/transaction.h"
-#include "sync.h"
-#include "utilstrencodings.h"
-#include "utilmoneystr.h"
+#include "sbtccore/clientversion.h"
+#include "transaction/transaction.h"
+#include "framwork/sync.h"
+#include "utils/utilstrencodings.h"
+#include "utils/utilmoneystr.h"
 #include "test/test_bitcoin.h"
 
 #include <stdint.h>

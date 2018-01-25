@@ -3,27 +3,27 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "base58.h"
-#include "chain.h"
-#include "clientversion.h"
-#include "core_io.h"
-#include "init.h"
-#include "validation.h"
-#include "httpserver.h"
-#include "net.h"
-#include "netbase.h"
+#include "utils/base58.h"
+#include "chaincontrol/chain.h"
+#include "sbtccore/clientversion.h"
+#include "sbtccore/core_io.h"
+#include "framwork/init.h"
+#include "block/validation.h"
+#include "utils/net/httpserver.h"
+#include "p2p/net.h"
+#include "p2p/netbase.h"
 #include "rpc/blockchain.h"
 #include "rpc/server.h"
 #include "timedata.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
 #include "reverse_iterator.h"
 #ifdef ENABLE_WALLET
 #include "wallet/rpcwallet.h"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
 #endif
-#include "warnings.h"
+#include "framwork/warnings.h"
 
 #include <stdint.h>
 #ifdef HAVE_MALLOC_INFO
@@ -31,9 +31,9 @@
 #endif
 
 #include <univalue.h>
-#include <checkpoints.h>
-#include <consensus/validation.h>
-#include <netmessagemaker.h>
+#include <config/checkpoints.h>
+#include <chaincontrol/validation.h>
+#include <p2p/netmessagemaker.h>
 
 /**
  * @note Do not add or change anything in the information returned by this

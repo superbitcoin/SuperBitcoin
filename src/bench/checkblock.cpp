@@ -4,10 +4,10 @@
 
 #include "bench.h"
 
-#include "chainparams.h"
-#include "validation.h"
-#include "streams.h"
-#include "consensus/validation.h"
+#include "config/chainparams.h"
+#include "block/validation.h"
+#include "sbtccore/streams.h"
+#include "chaincontrol/validation.h"
 
 namespace block_bench {
 #include "bench/data/block413567.raw.h"

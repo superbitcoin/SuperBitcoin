@@ -7,19 +7,19 @@
 #include "config/sbtc-config.h"
 #endif
 
-#include "chainparams.h"
-#include "clientversion.h"
-#include "compat.h"
+#include "config/chainparams.h"
+#include "sbtccore/clientversion.h"
+#include "compat/compat.h"
 #include "fs.h"
 #include "rpc/server.h"
-#include "init.h"
-#include "noui.h"
-#include "scheduler.h"
-#include "util.h"
-#include "httpserver.h"
-#include "httprpc.h"
-#include "utilstrencodings.h"
-#include "checkpoints.h"
+#include "framwork/init.h"
+#include "framwork/noui.h"
+#include "framwork/scheduler.h"
+#include "utils/util.h"
+#include "utils/net/httpserver.h"
+#include "utils/net/httprpc.h"
+#include "utils/utilstrencodings.h"
+#include "config/checkpoints.h"
 
 #include <string>
 #include <vector>
@@ -28,20 +28,20 @@
 #include <boost/program_options/options_description.hpp>
 
 #include <stdio.h>
-#include "txdb.h"
-#include "net_processing.h"
-#include "policy/policy.h"
-#include "validation.h"
-#include "netbase.h"
-#include "torcontrol.h"
+#include "transaction/txdb.h"
+#include "p2p/net_processing.h"
+#include "sbtccore/transaction/policy.h"
+#include "block/validation.h"
+#include "p2p/netbase.h"
+#include "utils/net/torcontrol.h"
 #include "script/sigcache.h"
-#include "utilmoneystr.h"
+#include "utils/utilmoneystr.h"
 #include "script/standard.h"
 #include "rpc/protocol.h"
 #include "wallet/wallet.h"
 #include "wallet/db.h"
 #include "wallet/walletdb.h"
-#include "init.h"
+#include "framwork/init.h"
 #include "rpc/protocol.h"
 
 using std::string;

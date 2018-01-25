@@ -5,11 +5,11 @@
 #include <iostream>
 
 #include "bench.h"
-#include "bloom.h"
+#include "p2p/bloom.h"
 #include "hash.h"
 #include "random.h"
 #include "uint256.h"
-#include "utiltime.h"
+#include "utils/utiltime.h"
 #include "crypto/ripemd160.h"
 #include "crypto/sha1.h"
 #include "crypto/sha256.h"

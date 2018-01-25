@@ -3,11 +3,11 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include <vector>
-#include "prevector.h"
+#include "sbtccore/prevector.h"
 
 #include "reverse_iterator.h"
-#include "serialize.h"
-#include "streams.h"
+#include "sbtccore/serialize.h"
+#include "sbtccore/streams.h"
 
 #include "test/test_bitcoin.h"
 

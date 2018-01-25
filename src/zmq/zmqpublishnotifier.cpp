@@ -2,12 +2,12 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "chain.h"
-#include "chainparams.h"
-#include "streams.h"
+#include "chaincontrol/chain.h"
+#include "config/chainparams.h"
+#include "sbtccore/streams.h"
 #include "zmqpublishnotifier.h"
-#include "validation.h"
-#include "util.h"
+#include "block/validation.h"
+#include "utils/util.h"
 #include "rpc/server.h"
 
 static std::multimap<std::string, CZMQAbstractPublishNotifier*> mapPublishNotifiers;

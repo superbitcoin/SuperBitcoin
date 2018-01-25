@@ -2,10 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "consensus/tx_verify.h"
-#include "consensus/validation.h"
+#include "sbtccore/transaction/tx_verify.h"
+#include "chaincontrol/validation.h"
 #include "pubkey.h"
-#include "key.h"
+#include "wallet/key.h"
 #include "script/script.h"
 #include "script/standard.h"
 #include "uint256.h"

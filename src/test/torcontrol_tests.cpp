@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 //
 #include "test/test_bitcoin.h"
-#include "torcontrol.cpp"
+#include "utils/net/torcontrol.cpp"
 
 #include <boost/test/unit_test.hpp>
 

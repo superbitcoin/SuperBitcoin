@@ -3,10 +3,10 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "bench.h"
-#include "util.h"
-#include "validation.h"
-#include "checkqueue.h"
-#include "prevector.h"
+#include "utils/util.h"
+#include "block/validation.h"
+#include "sbtccore/checkqueue.h"
+#include "sbtccore/prevector.h"
 #include <vector>
 #include <boost/thread/thread.hpp>
 #include "random.h"

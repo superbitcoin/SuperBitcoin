@@ -7,20 +7,20 @@
 #include "config/sbtc-config.h"
 #endif
 
-#include "chainparamsbase.h"
-#include "clientversion.h"
+#include "config/chainparamsbase.h"
+#include "sbtccore/clientversion.h"
 #include "fs.h"
 #include "rpc/client.h"
 #include "rpc/protocol.h"
-#include "util.h"
-#include "utilstrencodings.h"
-#include "init.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
+#include "framwork/init.h"
 
 #include <stdio.h>
 
 #include <event2/buffer.h>
 #include <event2/keyvalq_struct.h>
-#include "support/events.h"
+#include "utils/net/events.h"
 
 #include <univalue.h>
 

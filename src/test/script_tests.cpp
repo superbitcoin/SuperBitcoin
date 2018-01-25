@@ -4,14 +4,14 @@
 
 #include "data/script_tests.json.h"
 
-#include "core_io.h"
-#include "key.h"
-#include "keystore.h"
+#include "sbtccore/core_io.h"
+#include "wallet/key.h"
+#include "wallet/keystore.h"
 #include "script/script.h"
 #include "script/script_error.h"
 #include "script/sign.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
 #include "test/test_bitcoin.h"
 #include "rpc/server.h"
 

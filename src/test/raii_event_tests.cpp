@@ -10,7 +10,7 @@
 #include <map>
 #include <stdlib.h>
 
-#include "support/events.h"
+#include "utils/net/events.h"
 
 #include "test/test_bitcoin.h"
 

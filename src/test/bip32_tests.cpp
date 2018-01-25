@@ -4,11 +4,11 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "base58.h"
-#include "key.h"
+#include "utils/base58.h"
+#include "wallet/key.h"
 #include "uint256.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
 #include "test/test_bitcoin.h"
 
 #include <string>

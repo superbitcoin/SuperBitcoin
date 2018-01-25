@@ -5,15 +5,15 @@
 
 #include "wallet/walletdb.h"
 
-#include "base58.h"
-#include "consensus/tx_verify.h"
-#include "consensus/validation.h"
+#include "utils/base58.h"
+#include "sbtccore/transaction/tx_verify.h"
+#include "chaincontrol/validation.h"
 #include "fs.h"
-#include "protocol.h"
-#include "serialize.h"
-#include "sync.h"
-#include "util.h"
-#include "utiltime.h"
+#include "p2p/protocol.h"
+#include "sbtccore/serialize.h"
+#include "framwork/sync.h"
+#include "utils/util.h"
+#include "utils/utiltime.h"
 #include "wallet/wallet.h"
 
 #include <atomic>

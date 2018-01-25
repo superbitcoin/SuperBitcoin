@@ -2,9 +2,9 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "blockencodings.h"
-#include "consensus/merkle.h"
-#include "chainparams.h"
+#include "block/blockencodings.h"
+#include "sbtccore/block/merkle.h"
+#include "config/chainparams.h"
 #include "random.h"
 
 #include "test/test_bitcoin.h"

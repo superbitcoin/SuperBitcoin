@@ -3,13 +3,13 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "bench.h"
-#include "key.h"
+#include "wallet/key.h"
 #if defined(HAVE_CONSENSUS_LIB)
 #include "script/bitcoinconsensus.h"
 #endif
 #include "script/script.h"
 #include "script/sign.h"
-#include "streams.h"
+#include "sbtccore/streams.h"
 
 #include <array>
 

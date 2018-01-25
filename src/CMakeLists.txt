@@ -1,18 +1,32 @@
 
+
+
+add_subdirectory( chaincontrol )
 add_subdirectory( compat )
-add_subdirectory( consensus )
-add_subdirectory( crypto )
-add_subdirectory( policy )
-add_subdirectory( primitives )
+add_subdirectory( config )
+add_subdirectory( framwork )
+add_subdirectory( mempool )
+add_subdirectory( miner )
+add_subdirectory( p2p )
 add_subdirectory( rpc )
-add_subdirectory( script )
-add_subdirectory( support )
-add_subdirectory( wallet )
+add_subdirectory( sbtccore )
 add_subdirectory( univalue )
+add_subdirectory( utils )
+add_subdirectory( wallet )
+add_subdirectory( zmq )
 
-file(GLOB sources "*.cpp")
-file(GLOB headers "*.h")
 
+#file(GLOB sources "*.cpp" "utils/*.cpp" )
+#file(GLOB headers "*.h" "utils/*.h" )
+
+file(GLOB sources "*.cpp" "chaincontrol/*.cpp" "compat/*.cpp" "config/*.cpp" "framwork/*.cpp"
+        "mempool/*.cpp" "miner/*.cpp" "p2p/*.cpp"  "rpc/*.cpp" "sbtccore/*.cpp" "sbtccore/block/*.cpp" "sbtccore/transaction/*.cpp"
+        "sbtccore/transaction/script/*.cpp" "univalue/*.cpp" "utils/*.cpp" "wallet/*.cpp"   "utils/crypto/*.cpp" "utils/crypto/allocators/*.cpp" "utils/crypto/ctaes/*.c" )
+#"zmq/*.cpp"
+file(GLOB headers "*.h" "chaincontrol/*.h" "compat/*.h" "config/*.h" "framwork/*.h" "mempool/*.h" "miner/*.h" "p2p/*.h" "rpc/*.h" "sbtccore/*.h"
+        "sbtccore/transaction/*.h" "sbtccore/block/*.h" "btccore/transaction/script/*.h" "univalue/*.h" "utils/*.h" "wallet/*.h"
+        "utils/crypto/*.h" "utils/crypto/allocators/*.h" "utils/crypto/ctaes/*.h" )
+#"zmq/*.h"
 
 add_library(base ${sources} ${headers})
 

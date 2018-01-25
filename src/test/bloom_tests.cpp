@@ -2,18 +2,18 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "bloom.h"
+#include "p2p/bloom.h"
 
-#include "base58.h"
-#include "clientversion.h"
-#include "key.h"
+#include "utils/base58.h"
+#include "sbtccore/clientversion.h"
+#include "wallet/key.h"
 #include "merkleblock.h"
 #include "random.h"
-#include "serialize.h"
-#include "streams.h"
+#include "sbtccore/serialize.h"
+#include "sbtccore/streams.h"
 #include "uint256.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
 #include "test/test_bitcoin.h"
 
 #include <vector>

@@ -40,7 +40,7 @@
 #cmakedefine ENABLE_WALLET @ENABLE_WALLET@
 
 /* Define to 1 to enable ZMQ functions */
-#cmakedefine ENABLE_ZMQ @ENABLE_ZMQ@
+#define ENABLE_ZMQ @ENABLE_ZMQ@
 
 /* UPnP support not compiled if undefined, otherwise value (0 or 1) determines
    default state */

@@ -7,12 +7,12 @@
 #define BITCOIN_WALLET_WALLET_H
 
 #include "amount.h"
-#include "policy/feerate.h"
-#include "streams.h"
+#include "feerate.h"
+#include "sbtccore/streams.h"
 #include "tinyformat.h"
-#include "ui_interface.h"
-#include "utilstrencodings.h"
-#include "validationinterface.h"
+#include "framwork/ui_interface.h"
+#include "utils/utilstrencodings.h"
+#include "framwork/validationinterface.h"
 #include "script/ismine.h"
 #include "script/sign.h"
 #include "wallet/crypter.h"

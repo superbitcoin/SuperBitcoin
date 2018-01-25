@@ -2,13 +2,13 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "consensus/merkle.h"
+#include "sbtccore/block/merkle.h"
 #include "merkleblock.h"
-#include "serialize.h"
-#include "streams.h"
+#include "sbtccore/serialize.h"
+#include "sbtccore/streams.h"
 #include "uint256.h"
-#include "arith_uint256.h"
-#include "version.h"
+#include "utils/arith_uint256.h"
+#include "framwork/version.h"
 #include "test/test_bitcoin.h"
 
 #include <vector>

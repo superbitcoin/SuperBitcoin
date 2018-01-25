@@ -5,14 +5,14 @@
 
 #include "rpc/server.h"
 
-#include "base58.h"
+#include "utils/base58.h"
 #include "fs.h"
-#include "init.h"
+#include "framwork/init.h"
 #include "random.h"
-#include "sync.h"
-#include "ui_interface.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "framwork/sync.h"
+#include "framwork/ui_interface.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
 
 #include <univalue.h>
 

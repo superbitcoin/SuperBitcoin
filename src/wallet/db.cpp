@@ -5,12 +5,12 @@
 
 #include "db.h"
 
-#include "addrman.h"
+#include "p2p/addrman.h"
 #include "fs.h"
 #include "hash.h"
-#include "protocol.h"
-#include "util.h"
-#include "utilstrencodings.h"
+#include "p2p/protocol.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
 
 #include <stdint.h>
 

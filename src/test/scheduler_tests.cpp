@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "random.h"
-#include "scheduler.h"
+#include "framwork/scheduler.h"
 
 #include "test/test_bitcoin.h"
 

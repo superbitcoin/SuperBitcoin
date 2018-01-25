@@ -5,9 +5,9 @@
 #include "rpc/server.h"
 #include "rpc/client.h"
 
-#include "base58.h"
-#include "core_io.h"
-#include "netbase.h"
+#include "utils/base58.h"
+#include "sbtccore/core_io.h"
+#include "p2p/netbase.h"
 
 #include "test/test_bitcoin.h"
 

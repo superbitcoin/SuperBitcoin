@@ -4,15 +4,15 @@
 
 // Unit tests for denial-of-service detection/prevention code
 
-#include "chainparams.h"
-#include "keystore.h"
-#include "net.h"
-#include "net_processing.h"
-#include "pow.h"
+#include "config/chainparams.h"
+#include "wallet/keystore.h"
+#include "p2p/net.h"
+#include "p2p/net_processing.h"
+#include "miner/pow.h"
 #include "script/sign.h"
-#include "serialize.h"
-#include "util.h"
-#include "validation.h"
+#include "sbtccore/serialize.h"
+#include "utils/util.h"
+#include "block/validation.h"
 
 #include "test/test_bitcoin.h"
 

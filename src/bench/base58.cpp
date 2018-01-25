@@ -4,8 +4,8 @@
 
 #include "bench.h"
 
-#include "validation.h"
-#include "base58.h"
+#include "block/validation.h"
+#include "utils/base58.h"
 
 #include <array>
 #include <vector>

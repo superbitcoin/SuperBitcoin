@@ -4,7 +4,7 @@
 
 #include "bench.h"
 
-#include "support/lockedpool.h"
+#include "utils/crypto/lockedpool.h"
 
 #include <iostream>
 #include <vector>

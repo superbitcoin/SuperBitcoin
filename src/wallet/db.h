@@ -6,12 +6,12 @@
 #ifndef BITCOIN_WALLET_DB_H
 #define BITCOIN_WALLET_DB_H
 
-#include "clientversion.h"
+#include "sbtccore/clientversion.h"
 #include "fs.h"
-#include "serialize.h"
-#include "streams.h"
-#include "sync.h"
-#include "version.h"
+#include "sbtccore/serialize.h"
+#include "sbtccore/streams.h"
+#include "framwork/sync.h"
+#include "framwork/version.h"
 
 #include <atomic>
 #include <map>

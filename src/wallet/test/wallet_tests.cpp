@@ -9,10 +9,10 @@
 #include <utility>
 #include <vector>
 
-#include "consensus/validation.h"
+#include "chaincontrol/validation.h"
 #include "rpc/server.h"
 #include "test/test_bitcoin.h"
-#include "validation.h"
+#include "block/validation.h"
 #include "wallet/coincontrol.h"
 #include "wallet/test/wallet_test_fixture.h"
 

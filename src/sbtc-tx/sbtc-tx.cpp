@@ -6,21 +6,21 @@
 #include "config/sbtc-config.h"
 #endif
 
-#include "base58.h"
-#include "clientversion.h"
-#include "coins.h"
-#include "consensus/consensus.h"
-#include "core_io.h"
-#include "keystore.h"
-#include "policy/policy.h"
-#include "policy/rbf.h"
-#include "primitives/transaction.h"
+#include "utils/base58.h"
+#include "sbtccore/clientversion.h"
+#include "chaincontrol/coins.h"
+#include "config/consensus.h"
+#include "sbtccore/core_io.h"
+#include "wallet/keystore.h"
+#include "sbtccore/transaction/policy.h"
+#include "wallet/rbf.h"
+#include "transaction/transaction.h"
 #include "script/script.h"
 #include "script/sign.h"
 #include <univalue.h>
-#include "util.h"
-#include "utilmoneystr.h"
-#include "utilstrencodings.h"
+#include "utils/util.h"
+#include "utils/utilmoneystr.h"
+#include "utils/utilstrencodings.h"
 
 #include <stdio.h>
 
