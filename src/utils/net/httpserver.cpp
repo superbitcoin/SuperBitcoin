@@ -10,8 +10,8 @@
 #include "utils/utilstrencodings.h"
 #include "p2p/netbase.h"
 #include "rpc/protocol.h" // For HTTP status codes
-#include "framwork/sync.h"
-#include "framwork/ui_interface.h"
+#include "framework/sync.h"
+#include "framework/ui_interface.h"
 
 #include <stdio.h>
 #include <stdlib.h>

@@ -10,10 +10,10 @@
 #include "rpc/protocol.h"
 #include "rpc/server.h"
 #include "random.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-#include "framwork/ui_interface.h"
+#include "framework/ui_interface.h"
 #include "crypto/hmac_sha256.h"
 #include <stdio.h>
 

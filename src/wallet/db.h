@@ -10,8 +10,8 @@
 #include "fs.h"
 #include "sbtccore/serialize.h"
 #include "sbtccore/streams.h"
-#include "framwork/sync.h"
-#include "framwork/version.h"
+#include "framework/sync.h"
+#include "framework/version.h"
 
 #include <atomic>
 #include <map>

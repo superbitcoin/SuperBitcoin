@@ -11,7 +11,7 @@
 #include "config/params.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/core_io.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include "block/validation.h"
 #include "miner/miner.h"
 #include "p2p/net.h"
@@ -23,8 +23,8 @@
 #include "mempool/txmempool.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-#include "framwork/validationinterface.h"
-#include "framwork/warnings.h"
+#include "framework/validationinterface.h"
+#include "framework/warnings.h"
 
 #include <memory>
 #include <stdint.h>

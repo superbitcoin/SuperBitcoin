@@ -18,7 +18,7 @@
 #include "indirectmap.h"
 #include "wallet/feerate.h"
 #include "transaction/transaction.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "random.h"
 
 #include "boost/multi_index_container.hpp"

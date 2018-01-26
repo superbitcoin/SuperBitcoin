@@ -12,7 +12,7 @@
 #include "config/consensus.h"
 #include "chaincontrol/validation.h"
 #include "fs.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include "key.h"
 #include "keystore.h"
 #include "block/validation.h"
@@ -24,11 +24,11 @@
 #include "transaction/transaction.h"
 #include "script/script.h"
 #include "script/sign.h"
-#include "framwork/scheduler.h"
+#include "framework/scheduler.h"
 #include "timedata.h"
 #include "mempool/txmempool.h"
 #include "utils/util.h"
-#include "framwork/ui_interface.h"
+#include "framework/ui_interface.h"
 #include "utils/utilmoneystr.h"
 
 #include <assert.h>

@@ -13,13 +13,13 @@
 #include "p2p/netbase.h"
 #include "sbtccore/transaction/policy.h"
 #include "protocol.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "timedata.h"
-#include "framwork/ui_interface.h"
+#include "framework/ui_interface.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-#include "framwork/version.h"
-#include "framwork/warnings.h"
+#include "framework/version.h"
+#include "framework/warnings.h"
 
 #include <univalue.h>
 

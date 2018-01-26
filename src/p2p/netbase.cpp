@@ -12,7 +12,7 @@
 #include "netbase.h"
 
 #include "hash.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "uint256.h"
 #include "random.h"
 #include "utils/util.h"

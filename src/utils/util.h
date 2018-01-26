@@ -18,7 +18,7 @@
 
 #include "compat/compat.h"
 #include "fs.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "tinyformat.h"
 #include "utiltime.h"
 
@@ -30,7 +30,7 @@
 #include <vector>
 
 #include <boost/signals2/signal.hpp>
-#include "framwork/init.h"
+#include "framework/init.h"
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/filesystem/path.hpp>

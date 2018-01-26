@@ -18,9 +18,9 @@
 #include "protocol.h"
 #include "random.h"
 #include "sbtccore/streams.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "uint256.h"
-#include "framwork/threadinterrupt.h"
+#include "framework/threadinterrupt.h"
 
 #include <atomic>
 #include <deque>

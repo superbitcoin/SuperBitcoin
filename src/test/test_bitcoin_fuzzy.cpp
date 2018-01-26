@@ -19,7 +19,7 @@
 #include "p2p/protocol.h"
 #include "sbtccore/streams.h"
 #include "block/undo.h"
-#include "framwork/version.h"
+#include "framework/version.h"
 #include "pubkey.h"
 
 #include <stdint.h>

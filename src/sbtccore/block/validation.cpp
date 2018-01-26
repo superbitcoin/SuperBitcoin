@@ -17,7 +17,7 @@
 #include "sbtccore/cuckoocache.h"
 #include "fs.h"
 #include "hash.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include "wallet/fees.h"
 #include "sbtccore/transaction/policy.h"
 #include "wallet/rbf.h"
@@ -33,14 +33,14 @@
 #include "tinyformat.h"
 #include "transaction/txdb.h"
 #include "mempool/txmempool.h"
-#include "framwork/ui_interface.h"
+#include "framework/ui_interface.h"
 #include "undo.h"
 #include "utils/util.h"
 #include "utils/utilmoneystr.h"
 #include "utils/utilstrencodings.h"
-#include "framwork/validationinterface.h"
-#include "framwork/versionbits.h"
-#include "framwork/warnings.h"
+#include "framework/validationinterface.h"
+#include "framework/versionbits.h"
+#include "framework/warnings.h"
 
 #include <atomic>
 #include <sstream>

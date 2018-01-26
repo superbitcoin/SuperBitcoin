@@ -8,7 +8,7 @@
 #include "chaincontrol/chain.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/core_io.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include "utils/net/httpserver.h"
 #include "block/validation.h"
 #include "p2p/net.h"

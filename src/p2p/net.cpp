@@ -20,8 +20,8 @@
 #include "hash.h"
 #include "transaction/transaction.h"
 #include "netbase.h"
-#include "framwork/scheduler.h"
-#include "framwork/ui_interface.h"
+#include "framework/scheduler.h"
+#include "framework/ui_interface.h"
 #include "utils/utilstrencodings.h"
 
 #ifdef WIN32

@@ -93,7 +93,7 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
 #include "sbtccore/clientversion.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include <vector>
 #include <algorithm>
 

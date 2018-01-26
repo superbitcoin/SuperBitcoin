@@ -11,7 +11,7 @@
 #include "sbtccore/prevector.h"
 #include "sbtccore/serialize.h"
 #include "uint256.h"
-#include "framwork/version.h"
+#include "framework/version.h"
 
 #include <vector>
 

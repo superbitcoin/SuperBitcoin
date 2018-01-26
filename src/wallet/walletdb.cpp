@@ -11,7 +11,7 @@
 #include "fs.h"
 #include "p2p/protocol.h"
 #include "sbtccore/serialize.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "utils/util.h"
 #include "utils/utiltime.h"
 #include "wallet/wallet.h"

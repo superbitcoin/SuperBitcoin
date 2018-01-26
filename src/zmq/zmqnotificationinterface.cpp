@@ -5,7 +5,7 @@
 #include "zmqnotificationinterface.h"
 #include "zmqpublishnotifier.h"
 
-#include "framwork/version.h"
+#include "framework/version.h"
 #include "block/validation.h"
 #include "sbtccore/streams.h"
 #include "utils/util.h"

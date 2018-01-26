@@ -11,7 +11,7 @@
 #include "sbtccore/streams.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-#include "framwork/version.h"
+#include "framework/version.h"
 
 #include <leveldb/db.h>
 #include <leveldb/write_batch.h>

@@ -7,10 +7,10 @@
 
 #include "utils/base58.h"
 #include "fs.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include "random.h"
-#include "framwork/sync.h"
-#include "framwork/ui_interface.h"
+#include "framework/sync.h"
+#include "framework/ui_interface.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
 

@@ -12,7 +12,7 @@
 #include <univalue.h>
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-#include "framwork/version.h"
+#include "framework/version.h"
 
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/predicate.hpp>

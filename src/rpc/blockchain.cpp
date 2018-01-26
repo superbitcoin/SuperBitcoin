@@ -18,7 +18,7 @@
 #include "transaction/transaction.h"
 #include "rpc/server.h"
 #include "sbtccore/streams.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "transaction/txdb.h"
 #include "mempool/txmempool.h"
 #include "utils/util.h"

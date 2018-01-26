@@ -10,7 +10,7 @@
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
 #include "utils/utiltime.h"
-#include "framwork/version.h"
+#include "framework/version.h"
 
 #include <stdint.h>
 #include <fstream>

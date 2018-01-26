@@ -4,7 +4,7 @@
 add_subdirectory( chaincontrol )
 add_subdirectory( compat )
 add_subdirectory( config )
-add_subdirectory( framwork )
+add_subdirectory( framework )
 add_subdirectory( mempool )
 add_subdirectory( miner )
 add_subdirectory( p2p )
@@ -19,11 +19,11 @@ add_subdirectory( zmq )
 #file(GLOB sources "*.cpp" "utils/*.cpp" )
 #file(GLOB headers "*.h" "utils/*.h" )
 
-file(GLOB sources "*.cpp" "chaincontrol/*.cpp" "compat/*.cpp" "config/*.cpp" "framwork/*.cpp"
+file(GLOB sources "*.cpp" "chaincontrol/*.cpp" "compat/*.cpp" "config/*.cpp" "framework/*.cpp"
         "mempool/*.cpp" "miner/*.cpp" "p2p/*.cpp"  "rpc/*.cpp" "sbtccore/*.cpp" "sbtccore/block/*.cpp" "sbtccore/transaction/*.cpp"
         "sbtccore/transaction/script/*.cpp" "univalue/*.cpp" "utils/*.cpp" "wallet/*.cpp"   "utils/crypto/*.cpp" "utils/crypto/allocators/*.cpp" "utils/crypto/ctaes/*.c" )
 #"zmq/*.cpp"
-file(GLOB headers "*.h" "chaincontrol/*.h" "compat/*.h" "config/*.h" "framwork/*.h" "mempool/*.h" "miner/*.h" "p2p/*.h" "rpc/*.h" "sbtccore/*.h"
+file(GLOB headers "*.h" "chaincontrol/*.h" "compat/*.h" "config/*.h" "framework/*.h" "mempool/*.h" "miner/*.h" "p2p/*.h" "rpc/*.h" "sbtccore/*.h"
         "sbtccore/transaction/*.h" "sbtccore/block/*.h" "btccore/transaction/script/*.h" "univalue/*.h" "utils/*.h" "wallet/*.h"
         "utils/crypto/*.h" "utils/crypto/allocators/*.h" "utils/crypto/ctaes/*.h" )
 #"zmq/*.h"

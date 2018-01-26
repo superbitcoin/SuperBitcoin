@@ -18,8 +18,8 @@
 #include "p2p/protocol.h" // For CMessageHeader::MessageStartChars
 #include "wallet/feerate.h"
 #include "script/script_error.h"
-#include "framwork/sync.h"
-#include "framwork/versionbits.h"
+#include "framework/sync.h"
+#include "framework/versionbits.h"
 
 #include <algorithm>
 #include <exception>

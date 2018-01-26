@@ -6,7 +6,7 @@
 
 #include "sbtccore/clientversion.h"
 #include "transaction/transaction.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "utils/utilstrencodings.h"
 #include "utils/utilmoneystr.h"
 #include "test/test_bitcoin.h"

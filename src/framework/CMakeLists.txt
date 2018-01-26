@@ -1,4 +1,4 @@
 file(GLOB sources "*.cpp")
 file(GLOB headers "*.h")
 
-add_library(framwork ${sources} ${headers})
+add_library(framework ${sources} ${headers})

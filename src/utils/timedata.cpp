@@ -11,11 +11,11 @@
 #include "timedata.h"
 
 #include "p2p/netaddress.h"
-#include "framwork/sync.h"
-#include "framwork/ui_interface.h"
+#include "framework/sync.h"
+#include "framework/ui_interface.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-#include "framwork/warnings.h"
+#include "framework/warnings.h"
 
 
 static CCriticalSection cs_nTimeOffset;

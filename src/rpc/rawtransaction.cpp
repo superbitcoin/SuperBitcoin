@@ -8,7 +8,7 @@
 #include "chaincontrol/coins.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/core_io.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include "wallet/keystore.h"
 #include "block/validation.h"
 #include "merkleblock.h"

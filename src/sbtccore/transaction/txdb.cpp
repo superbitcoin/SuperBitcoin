@@ -11,8 +11,8 @@
 #include "miner/pow.h"
 #include "uint256.h"
 #include "utils/util.h"
-#include "framwork/ui_interface.h"
-#include "framwork/init.h"
+#include "framework/ui_interface.h"
+#include "framework/init.h"
 
 #include <stdint.h>
 

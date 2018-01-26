@@ -14,9 +14,9 @@
 #include "compat/compat.h"
 #include "fs.h"
 #include "rpc/server.h"
-#include "framwork/init.h"
-#include "framwork/noui.h"
-#include "framwork/scheduler.h"
+#include "framework/init.h"
+#include "framework/noui.h"
+#include "framework/scheduler.h"
 #include "utils/util.h"
 #include "utils/net/httpserver.h"
 #include "utils/net/httprpc.h"
@@ -43,7 +43,7 @@
 #include "wallet/wallet.h"
 #include "wallet/db.h"
 #include "wallet/walletdb.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include "rpc/protocol.h"
 
 using std::string;

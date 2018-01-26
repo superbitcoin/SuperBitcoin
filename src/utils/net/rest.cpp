@@ -13,10 +13,10 @@
 #include "rpc/blockchain.h"
 #include "rpc/server.h"
 #include "sbtccore/streams.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "mempool/txmempool.h"
 #include "utils/utilstrencodings.h"
-#include "framwork/version.h"
+#include "framework/version.h"
 
 #include <boost/algorithm/string.hpp>
 

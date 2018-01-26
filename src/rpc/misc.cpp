@@ -7,7 +7,7 @@
 #include "chaincontrol/chain.h"
 #include "sbtccore/clientversion.h"
 #include "sbtccore/core_io.h"
-#include "framwork/init.h"
+#include "framework/init.h"
 #include "block/validation.h"
 #include "utils/net/httpserver.h"
 #include "p2p/net.h"
@@ -27,7 +27,7 @@
 
 #endif
 
-#include "framwork/warnings.h"
+#include "framework/warnings.h"
 
 #include <stdint.h>
 

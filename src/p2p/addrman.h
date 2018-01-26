@@ -9,7 +9,7 @@
 #include "netaddress.h"
 #include "protocol.h"
 #include "random.h"
-#include "framwork/sync.h"
+#include "framework/sync.h"
 #include "timedata.h"
 #include "utils/util.h"
 
