@@ -57,9 +57,10 @@ public:
 
     ADD_SERIALIZE_METHODS;
 
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(*(CAddress*)this);
+    template<typename Stream, typename Operation>
+    inline void SerializationOp(Stream &s, Operation ser_action)
+    {
+        READWRITE(*(CAddress *)this);
         READWRITE(source);
         READWRITE(nLastSuccess);
         READWRITE(nAttempts);
@@ -90,7 +91,7 @@ public:
     int GetTriedBucket(const uint256 &nKey) const;
 
     //! Calculate in which "new" bucket this entry belongs, given a certain source
-    int GetNewBucket(const uint256 &nKey, const CNetAddr& src) const;
+    int GetNewBucket(const uint256 &nKey, const CNetAddr &src) const;
 
     //! Calculate in which "new" bucket this entry belongs, using its default source
     int GetNewBucket(const uint256 &nKey) const
@@ -220,17 +221,17 @@ protected:
     FastRandomContext insecure_rand;
 
     //! Find an entry.
-    CAddrInfo* Find(const CNetAddr& addr, int *pnId = nullptr);
+    CAddrInfo *Find(const CNetAddr &addr, int *pnId = nullptr);
 
     //! find an entry, creating it if necessary.
     //! nTime and nServices of the found node are updated, if necessary.
-    CAddrInfo* Create(const CAddress &addr, const CNetAddr &addrSource, int *pnId = nullptr);
+    CAddrInfo *Create(const CAddress &addr, const CNetAddr &addrSource, int *pnId = nullptr);
 
     //! Swap two elements in vRandom.
     void SwapRandom(unsigned int nRandomPos1, unsigned int nRandomPos2);
 
     //! Move an entry from the "new" table(s) to the "tried" table
-    void MakeTried(CAddrInfo& info, int nId);
+    void MakeTried(CAddrInfo &info, int nId);
 
     //! Delete an entry. It must not be in tried, and have refcount 0.
     void Delete(int nId);
@@ -242,7 +243,7 @@ protected:
     void Good_(const CService &addr, int64_t nTime);
 
     //! Add an entry to the "new" table.
-    bool Add_(const CAddress &addr, const CNetAddr& source, int64_t nTimePenalty);
+    bool Add_(const CAddress &addr, const CNetAddr &source, int64_t nTimePenalty);
 
     //! Mark an entry as attempted to connect.
     void Attempt_(const CService &addr, bool fCountFailure, int64_t nTime);
@@ -309,37 +310,45 @@ public:
         s << nNew;
         s << nTried;
 
-        int nUBuckets = ADDRMAN_NEW_BUCKET_COUNT ^ (1 << 30);
+        int nUBuckets = ADDRMAN_NEW_BUCKET_COUNT ^(1 << 30);
         s << nUBuckets;
         std::map<int, int> mapUnkIds;
         int nIds = 0;
-        for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
+        for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++)
+        {
             mapUnkIds[(*it).first] = nIds;
             const CAddrInfo &info = (*it).second;
-            if (info.nRefCount) {
+            if (info.nRefCount)
+            {
                 assert(nIds != nNew); // this means nNew was wrong, oh ow
                 s << info;
                 nIds++;
             }
         }
         nIds = 0;
-        for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++) {
+        for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); it++)
+        {
             const CAddrInfo &info = (*it).second;
-            if (info.fInTried) {
+            if (info.fInTried)
+            {
                 assert(nIds != nTried); // this means nTried was wrong, oh ow
                 s << info;
                 nIds++;
             }
         }
-        for (int bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++) {
+        for (int bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++)
+        {
             int nSize = 0;
-            for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++) {
+            for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++)
+            {
                 if (vvNew[bucket][i] != -1)
                     nSize++;
             }
             s << nSize;
-            for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++) {
-                if (vvNew[bucket][i] != -1) {
+            for (int i = 0; i < ADDRMAN_BUCKET_SIZE; i++)
+            {
+                if (vvNew[bucket][i] != -1)
+                {
                     int nIndex = mapUnkIds[vvNew[bucket][i]];
                     s << nIndex;
                 }
@@ -348,7 +357,7 @@ public:
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s)
+    void Unserialize(Stream &s)
     {
         LOCK(cs);
 
@@ -358,37 +367,44 @@ public:
         s >> nVersion;
         unsigned char nKeySize;
         s >> nKeySize;
-        if (nKeySize != 32) throw std::ios_base::failure("Incorrect keysize in addrman deserialization");
+        if (nKeySize != 32)
+            throw std::ios_base::failure("Incorrect keysize in addrman deserialization");
         s >> nKey;
         s >> nNew;
         s >> nTried;
         int nUBuckets = 0;
         s >> nUBuckets;
-        if (nVersion != 0) {
+        if (nVersion != 0)
+        {
             nUBuckets ^= (1 << 30);
         }
 
-        if (nNew > ADDRMAN_NEW_BUCKET_COUNT * ADDRMAN_BUCKET_SIZE) {
+        if (nNew > ADDRMAN_NEW_BUCKET_COUNT * ADDRMAN_BUCKET_SIZE)
+        {
             throw std::ios_base::failure("Corrupt CAddrMan serialization, nNew exceeds limit.");
         }
 
-        if (nTried > ADDRMAN_TRIED_BUCKET_COUNT * ADDRMAN_BUCKET_SIZE) {
+        if (nTried > ADDRMAN_TRIED_BUCKET_COUNT * ADDRMAN_BUCKET_SIZE)
+        {
             throw std::ios_base::failure("Corrupt CAddrMan serialization, nTried exceeds limit.");
         }
 
         // Deserialize entries from the new table.
-        for (int n = 0; n < nNew; n++) {
+        for (int n = 0; n < nNew; n++)
+        {
             CAddrInfo &info = mapInfo[n];
             s >> info;
             mapAddr[info] = n;
             info.nRandomPos = vRandom.size();
             vRandom.push_back(n);
-            if (nVersion != 1 || nUBuckets != ADDRMAN_NEW_BUCKET_COUNT) {
+            if (nVersion != 1 || nUBuckets != ADDRMAN_NEW_BUCKET_COUNT)
+            {
                 // In case the new table data cannot be used (nVersion unknown, or bucket count wrong),
                 // immediately try to give them a reference based on their primary source address.
                 int nUBucket = info.GetNewBucket(nKey);
                 int nUBucketPos = info.GetBucketPosition(nKey, true, nUBucket);
-                if (vvNew[nUBucket][nUBucketPos] == -1) {
+                if (vvNew[nUBucket][nUBucketPos] == -1)
+                {
                     vvNew[nUBucket][nUBucketPos] = n;
                     info.nRefCount++;
                 }
@@ -398,12 +414,14 @@ public:
 
         // Deserialize entries from the tried table.
         int nLost = 0;
-        for (int n = 0; n < nTried; n++) {
+        for (int n = 0; n < nTried; n++)
+        {
             CAddrInfo info;
             s >> info;
             int nKBucket = info.GetTriedBucket(nKey);
             int nKBucketPos = info.GetBucketPosition(nKey, false, nKBucket);
-            if (vvTried[nKBucket][nKBucketPos] == -1) {
+            if (vvTried[nKBucket][nKBucketPos] == -1)
+            {
                 info.nRandomPos = vRandom.size();
                 info.fInTried = true;
                 vRandom.push_back(nIdCount);
@@ -411,23 +429,29 @@ public:
                 mapAddr[info] = nIdCount;
                 vvTried[nKBucket][nKBucketPos] = nIdCount;
                 nIdCount++;
-            } else {
+            } else
+            {
                 nLost++;
             }
         }
         nTried -= nLost;
 
         // Deserialize positions in the new table (if possible).
-        for (int bucket = 0; bucket < nUBuckets; bucket++) {
+        for (int bucket = 0; bucket < nUBuckets; bucket++)
+        {
             int nSize = 0;
             s >> nSize;
-            for (int n = 0; n < nSize; n++) {
+            for (int n = 0; n < nSize; n++)
+            {
                 int nIndex = 0;
                 s >> nIndex;
-                if (nIndex >= 0 && nIndex < nNew) {
+                if (nIndex >= 0 && nIndex < nNew)
+                {
                     CAddrInfo &info = mapInfo[nIndex];
                     int nUBucketPos = info.GetBucketPosition(nKey, true, bucket);
-                    if (nVersion == 1 && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 && info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS) {
+                    if (nVersion == 1 && nUBuckets == ADDRMAN_NEW_BUCKET_COUNT && vvNew[bucket][nUBucketPos] == -1 &&
+                        info.nRefCount < ADDRMAN_NEW_BUCKETS_PER_ADDRESS)
+                    {
                         info.nRefCount++;
                         vvNew[bucket][nUBucketPos] = nIndex;
                     }
@@ -437,16 +461,20 @@ public:
 
         // Prune new entries with refcount 0 (as a result of collisions).
         int nLostUnk = 0;
-        for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end(); ) {
-            if (it->second.fInTried == false && it->second.nRefCount == 0) {
+        for (std::map<int, CAddrInfo>::const_iterator it = mapInfo.begin(); it != mapInfo.end();)
+        {
+            if (it->second.fInTried == false && it->second.nRefCount == 0)
+            {
                 std::map<int, CAddrInfo>::const_iterator itCopy = it++;
                 Delete(itCopy->first);
                 nLostUnk++;
-            } else {
+            } else
+            {
                 it++;
             }
         }
-        if (nLost + nLostUnk > 0) {
+        if (nLost + nLostUnk > 0)
+        {
             LogPrint(BCLog::ADDRMAN, "addrman lost %i new and %i tried addresses due to collisions\n", nLostUnk, nLost);
         }
 
@@ -457,13 +485,17 @@ public:
     {
         std::vector<int>().swap(vRandom);
         nKey = GetRandHash();
-        for (size_t bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++) {
-            for (size_t entry = 0; entry < ADDRMAN_BUCKET_SIZE; entry++) {
+        for (size_t bucket = 0; bucket < ADDRMAN_NEW_BUCKET_COUNT; bucket++)
+        {
+            for (size_t entry = 0; entry < ADDRMAN_BUCKET_SIZE; entry++)
+            {
                 vvNew[bucket][entry] = -1;
             }
         }
-        for (size_t bucket = 0; bucket < ADDRMAN_TRIED_BUCKET_COUNT; bucket++) {
-            for (size_t entry = 0; entry < ADDRMAN_BUCKET_SIZE; entry++) {
+        for (size_t bucket = 0; bucket < ADDRMAN_TRIED_BUCKET_COUNT; bucket++)
+        {
+            for (size_t entry = 0; entry < ADDRMAN_BUCKET_SIZE; entry++)
+            {
                 vvTried[bucket][entry] = -1;
             }
         }
@@ -507,21 +539,23 @@ public:
     }
 
     //! Add a single address.
-    bool Add(const CAddress &addr, const CNetAddr& source, int64_t nTimePenalty = 0)
+    bool Add(const CAddress &addr, const CNetAddr &source, int64_t nTimePenalty = 0)
     {
         LOCK(cs);
         bool fRet = false;
         Check();
         fRet |= Add_(addr, source, nTimePenalty);
         Check();
-        if (fRet) {
-            LogPrint(BCLog::ADDRMAN, "Added %s from %s: %i tried, %i new\n", addr.ToStringIPPort(), source.ToString(), nTried, nNew);
+        if (fRet)
+        {
+            LogPrint(BCLog::ADDRMAN, "Added %s from %s: %i tried, %i new\n", addr.ToStringIPPort(), source.ToString(),
+                     nTried, nNew);
         }
         return fRet;
     }
 
     //! Add multiple addresses.
-    bool Add(const std::vector<CAddress> &vAddr, const CNetAddr& source, int64_t nTimePenalty = 0)
+    bool Add(const std::vector<CAddress> &vAddr, const CNetAddr &source, int64_t nTimePenalty = 0)
     {
         LOCK(cs);
         int nAdd = 0;
@@ -529,8 +563,10 @@ public:
         for (std::vector<CAddress>::const_iterator it = vAddr.begin(); it != vAddr.end(); it++)
             nAdd += Add_(*it, source, nTimePenalty) ? 1 : 0;
         Check();
-        if (nAdd) {
-            LogPrint(BCLog::ADDRMAN, "Added %i addresses from %s: %i tried, %i new\n", nAdd, source.ToString(), nTried, nNew);
+        if (nAdd)
+        {
+            LogPrint(BCLog::ADDRMAN, "Added %i addresses from %s: %i tried, %i new\n", nAdd, source.ToString(), nTried,
+                     nNew);
         }
         return nAdd > 0;
     }

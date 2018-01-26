@@ -10,9 +10,12 @@
 
 #include <string.h>
 
-constexpr static inline uint32_t rotl32(uint32_t v, int c) { return (v << c) | (v >> (32 - c)); }
+constexpr static inline uint32_t rotl32(uint32_t v, int c)
+{
+    return (v << c) | (v >> (32 - c));
+}
 
-#define QUARTERROUND(a,b,c,d) \
+#define QUARTERROUND(a, b, c, d) \
   a += b; d = rotl32(d ^ a, 16); \
   c += d; b = rotl32(b ^ c, 12); \
   a += b; d = rotl32(d ^ a, 8); \
@@ -21,7 +24,7 @@ constexpr static inline uint32_t rotl32(uint32_t v, int c) { return (v << c) | (
 static const unsigned char sigma[] = "expand 32-byte k";
 static const unsigned char tau[] = "expand 16-byte k";
 
-void ChaCha20::SetKey(const unsigned char* k, size_t keylen)
+void ChaCha20::SetKey(const unsigned char *k, size_t keylen)
 {
     const unsigned char *constants;
 
@@ -29,10 +32,12 @@ void ChaCha20::SetKey(const unsigned char* k, size_t keylen)
     input[5] = ReadLE32(k + 4);
     input[6] = ReadLE32(k + 8);
     input[7] = ReadLE32(k + 12);
-    if (keylen == 32) { /* recommended */
+    if (keylen == 32)
+    { /* recommended */
         k += 16;
         constants = sigma;
-    } else { /* keylen == 16 */
+    } else
+    { /* keylen == 16 */
         constants = tau;
     }
     input[8] = ReadLE32(k + 0);
@@ -54,7 +59,7 @@ ChaCha20::ChaCha20()
     memset(input, 0, sizeof(input));
 }
 
-ChaCha20::ChaCha20(const unsigned char* k, size_t keylen)
+ChaCha20::ChaCha20(const unsigned char *k, size_t keylen)
 {
     SetKey(k, keylen);
 }
@@ -71,7 +76,7 @@ void ChaCha20::Seek(uint64_t pos)
     input[13] = pos >> 32;
 }
 
-void ChaCha20::Output(unsigned char* c, size_t bytes)
+void ChaCha20::Output(unsigned char *c, size_t bytes)
 {
     uint32_t x0, x1, x2, x3, x4, x5, x6, x7, x8, x9, x10, x11, x12, x13, x14, x15;
     uint32_t j0, j1, j2, j3, j4, j5, j6, j7, j8, j9, j10, j11, j12, j13, j14, j15;
@@ -79,7 +84,8 @@ void ChaCha20::Output(unsigned char* c, size_t bytes)
     unsigned char tmp[64];
     unsigned int i;
 
-    if (!bytes) return;
+    if (!bytes)
+        return;
 
     j0 = input[0];
     j1 = input[1];
@@ -98,8 +104,10 @@ void ChaCha20::Output(unsigned char* c, size_t bytes)
     j14 = input[14];
     j15 = input[15];
 
-    for (;;) {
-        if (bytes < 64) {
+    for (;;)
+    {
+        if (bytes < 64)
+        {
             ctarget = c;
             c = tmp;
         }
@@ -119,15 +127,16 @@ void ChaCha20::Output(unsigned char* c, size_t bytes)
         x13 = j13;
         x14 = j14;
         x15 = j15;
-        for (i = 20;i > 0;i -= 2) {
-            QUARTERROUND( x0, x4, x8,x12)
-            QUARTERROUND( x1, x5, x9,x13)
-            QUARTERROUND( x2, x6,x10,x14)
-            QUARTERROUND( x3, x7,x11,x15)
-            QUARTERROUND( x0, x5,x10,x15)
-            QUARTERROUND( x1, x6,x11,x12)
-            QUARTERROUND( x2, x7, x8,x13)
-            QUARTERROUND( x3, x4, x9,x14)
+        for (i = 20; i > 0; i -= 2)
+        {
+            QUARTERROUND(x0, x4, x8, x12)
+            QUARTERROUND(x1, x5, x9, x13)
+            QUARTERROUND(x2, x6, x10, x14)
+            QUARTERROUND(x3, x7, x11, x15)
+            QUARTERROUND(x0, x5, x10, x15)
+            QUARTERROUND(x1, x6, x11, x12)
+            QUARTERROUND(x2, x7, x8, x13)
+            QUARTERROUND(x3, x4, x9, x14)
         }
         x0 += j0;
         x1 += j1;
@@ -147,7 +156,8 @@ void ChaCha20::Output(unsigned char* c, size_t bytes)
         x15 += j15;
 
         ++j12;
-        if (!j12) ++j13;
+        if (!j12)
+            ++j13;
 
         WriteLE32(c + 0, x0);
         WriteLE32(c + 4, x1);
@@ -166,9 +176,12 @@ void ChaCha20::Output(unsigned char* c, size_t bytes)
         WriteLE32(c + 56, x14);
         WriteLE32(c + 60, x15);
 
-        if (bytes <= 64) {
-            if (bytes < 64) {
-                for (i = 0;i < bytes;++i) ctarget[i] = c[i];
+        if (bytes <= 64)
+        {
+            if (bytes < 64)
+            {
+                for (i = 0; i < bytes; ++i)
+                    ctarget[i] = c[i];
             }
             input[12] = j12;
             input[13] = j13;

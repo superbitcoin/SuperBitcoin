@@ -7,7 +7,9 @@
 #define BITCOIN_VALIDATION_H
 
 #if defined(HAVE_CONFIG_H)
+
 #include "config/sbtc-config.h"
+
 #endif
 
 #include "wallet/amount.h"
@@ -31,15 +33,25 @@
 #include <atomic>
 
 class CBlockIndex;
+
 class CBlockTreeDB;
+
 class CChainParams;
+
 class CCoinsViewDB;
+
 class CInv;
+
 class CConnman;
+
 class CScriptCheck;
+
 class CBlockPolicyEstimator;
+
 class CTxMemPool;
+
 class CValidationState;
+
 struct ChainTxData;
 
 struct PrecomputedTransactionData;
@@ -151,14 +163,17 @@ static const int DEFAULT_STOPATHEIGHT = 0;
 
 struct BlockHasher
 {
-    size_t operator()(const uint256& hash) const { return hash.GetCheapHash(); }
+    size_t operator()(const uint256 &hash) const
+    {
+        return hash.GetCheapHash();
+    }
 };
 
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
 extern CBlockPolicyEstimator feeEstimator;
 extern CTxMemPool mempool;
-typedef std::unordered_map<uint256, CBlockIndex*, BlockHasher> BlockMap;
+typedef std::unordered_map<uint256, CBlockIndex *, BlockHasher> BlockMap;
 extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockWeight;
@@ -236,7 +251,8 @@ static const uint64_t MIN_DISK_SPACE_FOR_BLOCK_FILES = 550 * 1024 * 1024;
  * @param[out]  fNewBlock A boolean which is set to indicate if the block was first received via this call
  * @return True if state.IsValid()
  */
-bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool* fNewBlock);
+bool ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing,
+                     bool *fNewBlock);
 
 /**
  * Process incoming block headers.
@@ -249,43 +265,59 @@ bool ProcessNewBlock(const CChainParams& chainparams, const std::shared_ptr<cons
  * @param[out] ppindex If set, the pointer will be set to point to the last new block index object for the given headers
  * @param[out] first_invalid First header that fails validation, if one exists
  */
-bool ProcessNewBlockHeaders(const std::vector<CBlockHeader>& block, CValidationState& state, const CChainParams& chainparams, const CBlockIndex** ppindex=nullptr, CBlockHeader *first_invalid=nullptr);
+bool
+ProcessNewBlockHeaders(const std::vector<CBlockHeader> &block, CValidationState &state, const CChainParams &chainparams,
+                       const CBlockIndex **ppindex = nullptr, CBlockHeader *first_invalid = nullptr);
 
 /** Check whether enough disk space is available for an incoming block */
 bool CheckDiskSpace(uint64_t nAdditionalBytes = 0);
+
 /** Open a block file (blk?????.dat) */
-FILE* OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+
 /** Translation to a filesystem path */
 fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
+
 /** Import blocks from an external file */
-bool LoadExternalBlockFile(const CChainParams& chainparams, FILE* fileIn, CDiskBlockPos *dbp = nullptr);
+bool LoadExternalBlockFile(const CChainParams &chainparams, FILE *fileIn, CDiskBlockPos *dbp = nullptr);
+
 /** Ensures we have a genesis block in the block tree, possibly writing one to disk. */
-bool LoadGenesisBlock(const CChainParams& chainparams);
+bool LoadGenesisBlock(const CChainParams &chainparams);
+
 /** Load the block tree and coins database from disk,
  * initializing state if we're running with -reindex. */
-bool LoadBlockIndex(const CChainParams& chainparams);
+bool LoadBlockIndex(const CChainParams &chainparams);
+
 /** Update the chain tip based on database information. */
-bool LoadChainTip(const CChainParams& chainparams);
+bool LoadChainTip(const CChainParams &chainparams);
+
 /** Unload database information */
 void UnloadBlockIndex();
+
 /** Run an instance of the script checking thread */
 void ThreadScriptCheck();
+
 /** Check whether we are doing an initial block download (synchronizing from disk or network) */
 bool IsInitialBlockDownload();
+
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
-bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::Params& params, uint256 &hashBlock, bool fAllowSlow = false);
+bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::Params &params, uint256 &hashBlock,
+                    bool fAllowSlow = false);
+
 /** Find the best known block, and make it the tip of the block chain */
-bool ActivateBestChain(CValidationState& state, const CChainParams& chainparams, std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
-CAmount GetBlockSubsidy(int nHeight, const Consensus::Params& consensusParams);
+bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
+                       std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
 
-bool IsAgainstCheckPoint(const CChainParams& chainparams, const CBlockIndex* pindex);
+CAmount GetBlockSubsidy(int nHeight, const Consensus::Params &consensusParams);
 
-bool IsAgainstCheckPoint(const CChainParams& chainparams, const int &nHeight, const uint256 &hash);
+bool IsAgainstCheckPoint(const CChainParams &chainparams, const CBlockIndex *pindex);
 
-bool CheckActiveChain(CValidationState &state, const CChainParams& chainparams);
+bool IsAgainstCheckPoint(const CChainParams &chainparams, const int &nHeight, const uint256 &hash);
+
+bool CheckActiveChain(CValidationState &state, const CChainParams &chainparams);
 
 /** Guess verification progress (as a fraction between 0.0=genesis and 1.0=current tip). */
-double GuessVerificationProgress(const ChainTxData& data, CBlockIndex* pindex);
+double GuessVerificationProgress(const ChainTxData &data, CBlockIndex *pindex);
 
 /**
  *  Mark one block file as pruned.
@@ -295,44 +327,49 @@ void PruneOneBlockFile(const int fileNumber);
 /**
  *  Actually unlink the specified files
  */
-void UnlinkPrunedFiles(const std::set<int>& setFilesToPrune);
+void UnlinkPrunedFiles(const std::set<int> &setFilesToPrune);
 
 /** Create a new block index entry for a given block hash */
-CBlockIndex * InsertBlockIndex(uint256 hash);
+CBlockIndex *InsertBlockIndex(uint256 hash);
+
 /** Flush all state, indexes and buffers to disk. */
 void FlushStateToDisk();
+
 /** Prune block files and flush state to disk. */
 void PruneAndFlush();
+
 /** Prune block files up to a given height */
 void PruneBlockFilesManual(int nManualPruneHeight);
 
 /** (try to) add transaction to memory pool
  * plTxnReplaced will be appended to with all transactions replaced from mempool **/
-bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                        bool* pfMissingInputs, std::list<CTransactionRef>* plTxnReplaced = nullptr,
-                        bool fOverrideMempoolLimit=false, const CAmount nAbsurdFee=0);
+bool AcceptToMemoryPool(CTxMemPool &pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
+                        bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced = nullptr,
+                        bool fOverrideMempoolLimit = false, const CAmount nAbsurdFee = 0);
 
 /** Convert CValidationState to a human-readable message for logging */
 std::string FormatStateMessage(const CValidationState &state);
 
 /** Get the BIP9 state for a given deployment at the current tip. */
-ThresholdState VersionBitsTipState(const Consensus::Params& params, Consensus::DeploymentPos pos);
+ThresholdState VersionBitsTipState(const Consensus::Params &params, Consensus::DeploymentPos pos);
 
 /** Get the numerical statistics for the BIP9 state for a given deployment at the current tip. */
-BIP9Stats VersionBitsTipStatistics(const Consensus::Params& params, Consensus::DeploymentPos pos);
+BIP9Stats VersionBitsTipStatistics(const Consensus::Params &params, Consensus::DeploymentPos pos);
 
 /** Get the block height at which the BIP9 deployment switched into the state for the block building on the current tip. */
-int VersionBitsTipStateSinceHeight(const Consensus::Params& params, Consensus::DeploymentPos pos);
+int VersionBitsTipStateSinceHeight(const Consensus::Params &params, Consensus::DeploymentPos pos);
 
 
 /** Check is SBTC  has activated. */
-bool IsSBTCForkEnabled(const Consensus::Params& params,  const CBlockIndex *pindex);
-bool IsSBTCForkEnabled(const Consensus::Params& params, const int height);
+bool IsSBTCForkEnabled(const Consensus::Params &params, const CBlockIndex *pindex);
+
+bool IsSBTCForkEnabled(const Consensus::Params &params, const int height);
+
 /** check whether is check point height */
-bool IsSBTCForkHeight(const Consensus::Params& params, const int &height);
+bool IsSBTCForkHeight(const Consensus::Params &params, const int &height);
 
 /** Apply the effects of this transaction on the UTXO set represented by view */
-void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
+void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight);
 
 /** Transaction validation functions */
 
@@ -348,7 +385,7 @@ bool CheckFinalTx(const CTransaction &tx, int flags = -1);
 /**
  * Test whether the LockPoints height and time are still valid on the current chain
  */
-bool TestLockPointValidity(const LockPoints* lp);
+bool TestLockPointValidity(const LockPoints *lp);
 
 /**
  * Check if transaction will be BIP 68 final in the next block to be created.
@@ -361,7 +398,8 @@ bool TestLockPointValidity(const LockPoints* lp);
  *
  * See consensus/consensus.h for flag definitions.
  */
-bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints* lp = nullptr, bool useExistingLockPoints = false);
+bool
+CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
 
 /**
  * Closure representing one script verification
@@ -380,14 +418,22 @@ private:
     PrecomputedTransactionData *txdata;
 
 public:
-    CScriptCheck(): amount(0), ptxTo(0), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR) {}
-    CScriptCheck(const CScript& scriptPubKeyIn, const CAmount amountIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, bool cacheIn, PrecomputedTransactionData* txdataIn) :
-        scriptPubKey(scriptPubKeyIn), amount(amountIn),
-        ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR), txdata(txdataIn) { }
+    CScriptCheck() : amount(0), ptxTo(0), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR)
+    {
+    }
+
+    CScriptCheck(const CScript &scriptPubKeyIn, const CAmount amountIn, const CTransaction &txToIn, unsigned int nInIn,
+                 unsigned int nFlagsIn, bool cacheIn, PrecomputedTransactionData *txdataIn) :
+            scriptPubKey(scriptPubKeyIn), amount(amountIn),
+            ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR),
+            txdata(txdataIn)
+    {
+    }
 
     bool operator()();
 
-    void swap(CScriptCheck &check) {
+    void swap(CScriptCheck &check)
+    {
         scriptPubKey.swap(check.scriptPubKey);
         std::swap(ptxTo, check.ptxTo);
         std::swap(amount, check.amount);
@@ -398,7 +444,10 @@ public:
         std::swap(txdata, check.txdata);
     }
 
-    ScriptError GetScriptError() const { return error; }
+    ScriptError GetScriptError() const
+    {
+        return error;
+    }
 };
 
 /** Initializes the script-execution cache */
@@ -406,48 +455,56 @@ void InitScriptExecutionCache();
 
 
 /** Functions for disk access for blocks */
-bool ReadBlockFromDisk(CBlock& block, const CDiskBlockPos& pos, const Consensus::Params& consensusParams);
-bool ReadBlockFromDisk(CBlock& block, const CBlockIndex* pindex, const Consensus::Params& consensusParams);
+bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus::Params &consensusParams);
+
+bool ReadBlockFromDisk(CBlock &block, const CBlockIndex *pindex, const Consensus::Params &consensusParams);
 
 /** Functions for validating blocks and updating the block tree */
 
 /** Context-independent validity checks */
-bool CheckBlock(const CBlock& block, CValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
+bool CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams,
+                bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 
 /** Check a block is completely valid from start to finish (only works on top of our current best block, with cs_main held) */
-bool TestBlockValidity(CValidationState& state, const CChainParams& chainparams, const CBlock& block, CBlockIndex* pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
+bool TestBlockValidity(CValidationState &state, const CChainParams &chainparams, const CBlock &block,
+                       CBlockIndex *pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
 
 /** Check whether witness commitments are required for block. */
-bool IsWitnessEnabled(const CBlockIndex* pindexPrev, const Consensus::Params& params);
+bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
 
 /** When there are blocks in the active chain with missing data, rewind the chainstate and remove them from the block index */
-bool RewindBlockIndex(const CChainParams& params);
+bool RewindBlockIndex(const CChainParams &params);
 
 /** Update uncommitted block structures (currently: only the witness nonce). This is safe for submitted blocks. */
-void UpdateUncommittedBlockStructures(CBlock& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
+void UpdateUncommittedBlockStructures(CBlock &block, const CBlockIndex *pindexPrev,
+                                      const Consensus::Params &consensusParams);
 
 /** Produce the necessary coinbase commitment for a block (modifies the hash, don't call for mined blocks). */
-std::vector<unsigned char> GenerateCoinbaseCommitment(CBlock& block, const CBlockIndex* pindexPrev, const Consensus::Params& consensusParams);
+std::vector<unsigned char>
+GenerateCoinbaseCommitment(CBlock &block, const CBlockIndex *pindexPrev, const Consensus::Params &consensusParams);
 
 /** RAII wrapper for VerifyDB: Verify consistency of the block and coin databases */
-class CVerifyDB {
+class CVerifyDB
+{
 public:
     CVerifyDB();
+
     ~CVerifyDB();
-    bool VerifyDB(const CChainParams& chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth);
+
+    bool VerifyDB(const CChainParams &chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth);
 };
 
 /** Replay blocks that aren't fully applied to the database. */
-bool ReplayBlocks(const CChainParams& params, CCoinsView* view);
+bool ReplayBlocks(const CChainParams &params, CCoinsView *view);
 
 /** Find the last common block between the parameter chain and a locator. */
-CBlockIndex* FindForkInGlobalIndex(const CChain& chain, const CBlockLocator& locator);
+CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator);
 
 /** Mark a block as precious and reorganize. */
-bool PreciousBlock(CValidationState& state, const CChainParams& params, CBlockIndex *pindex);
+bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex);
 
 /** Mark a block as invalid. */
-bool InvalidateBlock(CValidationState& state, const CChainParams& chainparams, CBlockIndex *pindex);
+bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex);
 
 /** Remove invalidity status from a block and its descendants. */
 bool ResetBlockFailureFlags(CBlockIndex *pindex);
@@ -469,14 +526,14 @@ extern CBlockTreeDB *pblocktree;
  * While checking, GetBestBlock() refers to the parent block. (protected by cs_main)
  * This is also true for mempool checks.
  */
-int GetSpendHeight(const CCoinsViewCache& inputs);
+int GetSpendHeight(const CCoinsViewCache &inputs);
 
 extern VersionBitsCache versionbitscache;
 
 /**
  * Determine what nVersion a new block should use.
  */
-int32_t ComputeBlockVersion(const CBlockIndex* pindexPrev, const Consensus::Params& params);
+int32_t ComputeBlockVersion(const CBlockIndex *pindexPrev, const Consensus::Params &params);
 
 /** Reject codes greater or equal to this can be returned by AcceptToMemPool
  * for transactions, to signal internal conditions. They cannot and should not
@@ -487,7 +544,7 @@ static const unsigned int REJECT_INTERNAL = 0x100;
 static const unsigned int REJECT_HIGHFEE = 0x100;
 
 /** Get block file info entry for one block file */
-CBlockFileInfo* GetBlockFileInfo(size_t n);
+CBlockFileInfo *GetBlockFileInfo(size_t n);
 
 /** Dump the mempool to disk. */
 void DumpMempool();

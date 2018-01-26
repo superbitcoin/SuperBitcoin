@@ -16,15 +16,22 @@
 static const bool DEFAULT_ACCEPT_DATACARRIER = true;
 
 class CKeyID;
+
 class CScript;
 
 /** A reference to a CScript: the Hash160 of its serialization (see script.h) */
 class CScriptID : public uint160
 {
 public:
-    CScriptID() : uint160() {}
-    CScriptID(const CScript& in);
-    CScriptID(const uint160& in) : uint160(in) {}
+    CScriptID() : uint160()
+    {
+    }
+
+    CScriptID(const CScript &in);
+
+    CScriptID(const uint160 &in) : uint160(in)
+    {
+    }
 };
 
 static const unsigned int MAX_OP_RETURN_RELAY = 83; //!< bytes (+1 for OP_RETURN, +2 for the pushdata opcodes)
@@ -40,13 +47,14 @@ extern unsigned nMaxDatacarrierBytes;
  * Failing one of these tests may trigger a DoS ban - see CheckInputs() for
  * details.
  */
-static const unsigned int MANDATORY_SCRIPT_VERIFY_FLAGS = SCRIPT_VERIFY_P2SH|SCRIPT_VERIFY_STRICTENC|SCRIPT_ENABLE_SIGHASH_SBTC_FORK;
+static const unsigned int MANDATORY_SCRIPT_VERIFY_FLAGS =
+        SCRIPT_VERIFY_P2SH | SCRIPT_VERIFY_STRICTENC | SCRIPT_ENABLE_SIGHASH_SBTC_FORK;
 
 enum txnouttype
 {
     TX_NONSTANDARD,
     // 'standard' transaction types:
-    TX_PUBKEY,
+            TX_PUBKEY,
     TX_PUBKEYHASH,
     TX_SCRIPTHASH,
     TX_MULTISIG,
@@ -55,10 +63,18 @@ enum txnouttype
     TX_WITNESS_V0_KEYHASH,
 };
 
-class CNoDestination {
+class CNoDestination
+{
 public:
-    friend bool operator==(const CNoDestination &a, const CNoDestination &b) { return true; }
-    friend bool operator<(const CNoDestination &a, const CNoDestination &b) { return true; }
+    friend bool operator==(const CNoDestination &a, const CNoDestination &b)
+    {
+        return true;
+    }
+
+    friend bool operator<(const CNoDestination &a, const CNoDestination &b)
+    {
+        return true;
+    }
 };
 
 /** 
@@ -70,15 +86,21 @@ public:
  */
 typedef boost::variant<CNoDestination, CKeyID, CScriptID> CTxDestination;
 
-const char* GetTxnOutputType(txnouttype t);
+const char *GetTxnOutputType(txnouttype t);
 
-bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<std::vector<unsigned char> >& vSolutionsRet);
-bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet);
-bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, std::vector<CTxDestination>& addressRet, int& nRequiredRet);
+bool Solver(const CScript &scriptPubKey, txnouttype &typeRet, std::vector<std::vector<unsigned char> > &vSolutionsRet);
 
-CScript GetScriptForDestination(const CTxDestination& dest);
-CScript GetScriptForRawPubKey(const CPubKey& pubkey);
-CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey>& keys);
-CScript GetScriptForWitness(const CScript& redeemscript);
+bool ExtractDestination(const CScript &scriptPubKey, CTxDestination &addressRet);
+
+bool ExtractDestinations(const CScript &scriptPubKey, txnouttype &typeRet, std::vector<CTxDestination> &addressRet,
+                         int &nRequiredRet);
+
+CScript GetScriptForDestination(const CTxDestination &dest);
+
+CScript GetScriptForRawPubKey(const CPubKey &pubkey);
+
+CScript GetScriptForMultisig(int nRequired, const std::vector<CPubKey> &keys);
+
+CScript GetScriptForWitness(const CScript &redeemscript);
 
 #endif // BITCOIN_SCRIPT_STANDARD_H

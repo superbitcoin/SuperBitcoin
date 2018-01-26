@@ -3,13 +3,17 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
+
 #include "config/sbtc-config.h"
+
 #endif
 
 #include <cstddef>
 
 #if defined(HAVE_SYS_SELECT_H)
+
 #include <sys/select.h>
+
 #endif
 
 //// Prior to GLIBC_2.14, memcpy was aliased to memmove.

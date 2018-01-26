@@ -10,15 +10,15 @@
 #include "utils/util.h"
 #include "rpc/server.h"
 
-static std::multimap<std::string, CZMQAbstractPublishNotifier*> mapPublishNotifiers;
+static std::multimap<std::string, CZMQAbstractPublishNotifier *> mapPublishNotifiers;
 
 static const char *MSG_HASHBLOCK = "hashblock";
-static const char *MSG_HASHTX    = "hashtx";
-static const char *MSG_RAWBLOCK  = "rawblock";
-static const char *MSG_RAWTX     = "rawtx";
+static const char *MSG_HASHTX = "hashtx";
+static const char *MSG_RAWBLOCK = "rawblock";
+static const char *MSG_RAWTX = "rawtx";
 
 // Internal function to send multipart message
-static int zmq_send_multipart(void *sock, const void* data, size_t size, ...)
+static int zmq_send_multipart(void *sock, const void *data, size_t size, ...)
 {
     va_list args;
     va_start(args, size);
@@ -65,9 +65,9 @@ bool CZMQAbstractPublishNotifier::Initialize(void *pcontext)
     assert(!psocket);
 
     // check if address is being used by other publish notifier
-    std::multimap<std::string, CZMQAbstractPublishNotifier*>::iterator i = mapPublishNotifiers.find(address);
+    std::multimap<std::string, CZMQAbstractPublishNotifier *>::iterator i = mapPublishNotifiers.find(address);
 
-    if (i==mapPublishNotifiers.end())
+    if (i == mapPublishNotifiers.end())
     {
         psocket = zmq_socket(pcontext, ZMQ_PUB);
         if (!psocket)
@@ -77,7 +77,7 @@ bool CZMQAbstractPublishNotifier::Initialize(void *pcontext)
         }
 
         int rc = zmq_bind(psocket, address.c_str());
-        if (rc!=0)
+        if (rc != 0)
         {
             zmqError("Failed to bind address");
             zmq_close(psocket);
@@ -87,8 +87,7 @@ bool CZMQAbstractPublishNotifier::Initialize(void *pcontext)
         // register this notifier for the address, so it can be reused for other publish notifier
         mapPublishNotifiers.insert(std::make_pair(address, this));
         return true;
-    }
-    else
+    } else
     {
         LogPrint(BCLog::ZMQ, "zmq: Reusing socket for address %s\n", address);
 
@@ -106,12 +105,12 @@ void CZMQAbstractPublishNotifier::Shutdown()
     int count = mapPublishNotifiers.count(address);
 
     // remove this notifier from the list of publishers using this address
-    typedef std::multimap<std::string, CZMQAbstractPublishNotifier*>::iterator iterator;
+    typedef std::multimap<std::string, CZMQAbstractPublishNotifier *>::iterator iterator;
     std::pair<iterator, iterator> iterpair = mapPublishNotifiers.equal_range(address);
 
     for (iterator it = iterpair.first; it != iterpair.second; ++it)
     {
-        if (it->second==this)
+        if (it->second == this)
         {
             mapPublishNotifiers.erase(it);
             break;
@@ -129,14 +128,15 @@ void CZMQAbstractPublishNotifier::Shutdown()
     psocket = 0;
 }
 
-bool CZMQAbstractPublishNotifier::SendMessage(const char *command, const void* data, size_t size)
+bool CZMQAbstractPublishNotifier::SendMessage(const char *command, const void *data, size_t size)
 {
     assert(psocket);
 
     /* send three parts, command & data & a LE 4byte sequence number */
     unsigned char msgseq[sizeof(uint32_t)];
     WriteLE32(&msgseq[0], nSequence);
-    int rc = zmq_send_multipart(psocket, command, strlen(command), data, size, msgseq, (size_t)sizeof(uint32_t), (void*)0);
+    int rc = zmq_send_multipart(psocket, command, strlen(command), data, size, msgseq, (size_t)sizeof(uint32_t),
+                                (void *)0);
     if (rc == -1)
         return false;
 
@@ -170,12 +170,12 @@ bool CZMQPublishRawBlockNotifier::NotifyBlock(const CBlockIndex *pindex)
 {
     LogPrint(BCLog::ZMQ, "zmq: Publish rawblock %s\n", pindex->GetBlockHash().GetHex());
 
-    const Consensus::Params& consensusParams = Params().GetConsensus();
+    const Consensus::Params &consensusParams = Params().GetConsensus();
     CDataStream ss(SER_NETWORK, PROTOCOL_VERSION | RPCSerializationFlags());
     {
         LOCK(cs_main);
         CBlock block;
-        if(!ReadBlockFromDisk(block, pindex, consensusParams))
+        if (!ReadBlockFromDisk(block, pindex, consensusParams))
         {
             zmqError("Can't read block from disk");
             return false;

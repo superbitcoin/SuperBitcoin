@@ -15,7 +15,7 @@
 #include "utils/utilstrencodings.h"
 
 
-CAmount GetDustThreshold(const CTxOut& txout, const CFeeRate& dustRelayFeeIn)
+CAmount GetDustThreshold(const CTxOut &txout, const CFeeRate &dustRelayFeeIn)
 {
     // "Dust" is defined in terms of dustRelayFee,
     // which has units satoshis-per-kilobyte.
@@ -38,40 +38,42 @@ CAmount GetDustThreshold(const CTxOut& txout, const CFeeRate& dustRelayFeeIn)
     int witnessversion = 0;
     std::vector<unsigned char> witnessprogram;
 
-    if (txout.scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram)) {
+    if (txout.scriptPubKey.IsWitnessProgram(witnessversion, witnessprogram))
+    {
         // sum the sizes of the parts of a transaction input
         // with 75% segwit discount applied to the script size.
         nSize += (32 + 4 + 1 + (107 / WITNESS_SCALE_FACTOR) + 4);
-    } else {
+    } else
+    {
         nSize += (32 + 4 + 1 + 107 + 4); // the 148 mentioned above
     }
 
     return dustRelayFeeIn.GetFee(nSize);
 }
 
-bool IsDust(const CTxOut& txout, const CFeeRate& dustRelayFeeIn)
+bool IsDust(const CTxOut &txout, const CFeeRate &dustRelayFeeIn)
 {
     return (txout.nValue < GetDustThreshold(txout, dustRelayFeeIn));
 }
 
-    /**
-     * Check transaction inputs to mitigate two
-     * potential denial-of-service attacks:
-     * 
-     * 1. scriptSigs with extra data stuffed into them,
-     *    not consumed by scriptPubKey (or P2SH script)
-     * 2. P2SH scripts with a crazy number of expensive
-     *    CHECKSIG/CHECKMULTISIG operations
-     *
-     * Why bother? To avoid denial-of-service attacks; an attacker
-     * can submit a standard HASH... OP_EQUAL transaction,
-     * which will get accepted into blocks. The redemption
-     * script can be anything; an attacker could use a very
-     * expensive-to-check-upon-redemption script like:
-     *   DUP CHECKSIG DROP ... repeated 100 times... OP_1
-     */
+/**
+ * Check transaction inputs to mitigate two
+ * potential denial-of-service attacks:
+ *
+ * 1. scriptSigs with extra data stuffed into them,
+ *    not consumed by scriptPubKey (or P2SH script)
+ * 2. P2SH scripts with a crazy number of expensive
+ *    CHECKSIG/CHECKMULTISIG operations
+ *
+ * Why bother? To avoid denial-of-service attacks; an attacker
+ * can submit a standard HASH... OP_EQUAL transaction,
+ * which will get accepted into blocks. The redemption
+ * script can be anything; an attacker could use a very
+ * expensive-to-check-upon-redemption script like:
+ *   DUP CHECKSIG DROP ... repeated 100 times... OP_1
+ */
 
-bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType, const bool witnessEnabled)
+bool IsStandard(const CScript &scriptPubKey, txnouttype &whichType, const bool witnessEnabled)
 {
     std::vector<std::vector<unsigned char> > vSolutions;
     if (!Solver(scriptPubKey, whichType, vSolutions))
@@ -88,7 +90,7 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType, const bool w
             return false;
     } else if (whichType == TX_NULL_DATA &&
                (!fAcceptDatacarrier || scriptPubKey.size() > nMaxDatacarrierBytes))
-          return false;
+        return false;
 
     else if (!witnessEnabled && (whichType == TX_WITNESS_V0_KEYHASH || whichType == TX_WITNESS_V0_SCRIPTHASH))
         return false;
@@ -96,9 +98,10 @@ bool IsStandard(const CScript& scriptPubKey, txnouttype& whichType, const bool w
     return whichType != TX_NONSTANDARD;
 }
 
-bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnessEnabled)
+bool IsStandardTx(const CTransaction &tx, std::string &reason, const bool witnessEnabled)
 {
-    if (tx.nVersion > CTransaction::MAX_STANDARD_VERSION || tx.nVersion < 1) {
+    if (tx.nVersion > CTransaction::MAX_STANDARD_VERSION || tx.nVersion < 1)
+    {
         reason = "version";
         return false;
     }
@@ -108,12 +111,13 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnes
     // computing signature hashes is O(ninputs*txsize). Limiting transactions
     // to MAX_STANDARD_TX_WEIGHT mitigates CPU exhaustion attacks.
     unsigned int sz = GetTransactionWeight(tx);
-    if (sz >= MAX_STANDARD_TX_WEIGHT) {
+    if (sz >= MAX_STANDARD_TX_WEIGHT)
+    {
         reason = "tx-size";
         return false;
     }
 
-    for (const CTxIn& txin : tx.vin)
+    for (const CTxIn &txin : tx.vin)
     {
         // Biggest 'standard' txin is a 15-of-15 P2SH multisig with compressed
         // keys (remember the 520 byte limit on redeemScript size). That works
@@ -122,11 +126,13 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnes
         // future-proofing. That's also enough to spend a 20-of-20
         // CHECKMULTISIG scriptPubKey, though such a scriptPubKey is not
         // considered standard.
-        if (txin.scriptSig.size() > 1650) {
+        if (txin.scriptSig.size() > 1650)
+        {
             reason = "scriptsig-size";
             return false;
         }
-        if (!txin.scriptSig.IsPushOnly()) {
+        if (!txin.scriptSig.IsPushOnly())
+        {
             reason = "scriptsig-not-pushonly";
             return false;
         }
@@ -134,25 +140,30 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnes
 
     unsigned int nDataOut = 0;
     txnouttype whichType;
-    for (const CTxOut& txout : tx.vout) {
-        if (!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled)) {
+    for (const CTxOut &txout : tx.vout)
+    {
+        if (!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))
+        {
             reason = "scriptpubkey";
             return false;
         }
 
         if (whichType == TX_NULL_DATA)
             nDataOut++;
-        else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd)) {
+        else if ((whichType == TX_MULTISIG) && (!fIsBareMultisigStd))
+        {
             reason = "bare-multisig";
             return false;
-        } else if (IsDust(txout, ::dustRelayFee)) {
+        } else if (IsDust(txout, ::dustRelayFee))
+        {
             reason = "dust";
             return false;
         }
     }
 
     // only one OP_RETURN txout is permitted
-    if (nDataOut > 1) {
+    if (nDataOut > 1)
+    {
         reason = "multi-op-return";
         return false;
     }
@@ -160,19 +171,19 @@ bool IsStandardTx(const CTransaction& tx, std::string& reason, const bool witnes
     return true;
 }
 
-bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
+bool AreInputsStandard(const CTransaction &tx, const CCoinsViewCache &mapInputs)
 {
     if (tx.IsCoinBase())
         return true; // Coinbases don't use vin normally
 
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
-        const CTxOut& prev = mapInputs.AccessCoin(tx.vin[i].prevout).out;
+        const CTxOut &prev = mapInputs.AccessCoin(tx.vin[i].prevout).out;
 
         std::vector<std::vector<unsigned char> > vSolutions;
         txnouttype whichType;
         // get the scriptPubKey corresponding to this input:
-        const CScript& prevScript = prev.scriptPubKey;
+        const CScript &prevScript = prev.scriptPubKey;
         if (!Solver(prevScript, whichType, vSolutions))
             return false;
 
@@ -185,7 +196,8 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
             if (stack.empty())
                 return false;
             CScript subscript(stack.back().begin(), stack.back().end());
-            if (subscript.GetSigOpCount(true) > MAX_P2SH_SIGOPS) {
+            if (subscript.GetSigOpCount(true) > MAX_P2SH_SIGOPS)
+            {
                 return false;
             }
         }
@@ -194,7 +206,7 @@ bool AreInputsStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
     return true;
 }
 
-bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
+bool IsWitnessStandard(const CTransaction &tx, const CCoinsViewCache &mapInputs)
 {
     if (tx.IsCoinBase())
         return true; // Coinbases are skipped
@@ -211,8 +223,9 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
         // get the scriptPubKey corresponding to this input:
         CScript prevScript = prev.scriptPubKey;
 
-        if (prevScript.IsPayToScriptHash()) {
-            std::vector <std::vector<unsigned char> > stack;
+        if (prevScript.IsPayToScriptHash())
+        {
+            std::vector<std::vector<unsigned char> > stack;
             // If the scriptPubKey is P2SH, we try to extract the redeemScript casually by converting the scriptSig
             // into a stack. We do not check IsPushOnly nor compare the hash as these will be done later anyway.
             // If the check fails at this stage, we know that this txid must be a bad one.
@@ -231,13 +244,15 @@ bool IsWitnessStandard(const CTransaction& tx, const CCoinsViewCache& mapInputs)
             return false;
 
         // Check P2WSH standard limits
-        if (witnessversion == 0 && witnessprogram.size() == 32) {
+        if (witnessversion == 0 && witnessprogram.size() == 32)
+        {
             if (tx.vin[i].scriptWitness.stack.back().size() > MAX_STANDARD_P2WSH_SCRIPT_SIZE)
                 return false;
             size_t sizeWitnessStack = tx.vin[i].scriptWitness.stack.size() - 1;
             if (sizeWitnessStack > MAX_STANDARD_P2WSH_STACK_ITEMS)
                 return false;
-            for (unsigned int j = 0; j < sizeWitnessStack; j++) {
+            for (unsigned int j = 0; j < sizeWitnessStack; j++)
+            {
                 if (tx.vin[i].scriptWitness.stack[j].size() > MAX_STANDARD_P2WSH_STACK_ITEM_SIZE)
                     return false;
             }
@@ -255,7 +270,7 @@ int64_t GetVirtualTransactionSize(int64_t nWeight, int64_t nSigOpCost)
     return (std::max(nWeight, nSigOpCost * nBytesPerSigOp) + WITNESS_SCALE_FACTOR - 1) / WITNESS_SCALE_FACTOR;
 }
 
-int64_t GetVirtualTransactionSize(const CTransaction& tx, int64_t nSigOpCost)
+int64_t GetVirtualTransactionSize(const CTransaction &tx, int64_t nSigOpCost)
 {
     return GetVirtualTransactionSize(GetTransactionWeight(tx), nSigOpCost);
 }

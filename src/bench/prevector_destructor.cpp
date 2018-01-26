@@ -5,10 +5,12 @@
 #include "bench.h"
 #include "sbtccore/prevector.h"
 
-static void PrevectorDestructor(benchmark::State& state)
+static void PrevectorDestructor(benchmark::State &state)
 {
-    while (state.KeepRunning()) {
-        for (auto x = 0; x < 1000; ++x) {
+    while (state.KeepRunning())
+    {
+        for (auto x = 0; x < 1000; ++x)
+        {
             prevector<28, unsigned char> t0;
             prevector<28, unsigned char> t1;
             t0.resize(28);
@@ -17,11 +19,13 @@ static void PrevectorDestructor(benchmark::State& state)
     }
 }
 
-static void PrevectorClear(benchmark::State& state)
+static void PrevectorClear(benchmark::State &state)
 {
 
-    while (state.KeepRunning()) {
-        for (auto x = 0; x < 1000; ++x) {
+    while (state.KeepRunning())
+    {
+        for (auto x = 0; x < 1000; ++x)
+        {
             prevector<28, unsigned char> t0;
             prevector<28, unsigned char> t1;
             t0.resize(28);

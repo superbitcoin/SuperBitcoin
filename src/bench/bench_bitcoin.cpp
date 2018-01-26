@@ -11,7 +11,7 @@
 #include "random.h"
 
 int
-main(int argc, char** argv)
+main(int argc, char **argv)
 {
     SHA256AutoDetect();
     RandomInit();

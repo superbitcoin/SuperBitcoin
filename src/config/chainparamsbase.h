@@ -21,11 +21,20 @@ public:
     static const std::string TESTNET;
     static const std::string REGTEST;
 
-    const std::string& DataDir() const { return strDataDir; }
-    int RPCPort() const { return nRPCPort; }
+    const std::string &DataDir() const
+    {
+        return strDataDir;
+    }
+
+    int RPCPort() const
+    {
+        return nRPCPort;
+    }
 
 protected:
-    CBaseChainParams() {}
+    CBaseChainParams()
+    {
+    }
 
     int nRPCPort;
     std::string strDataDir;
@@ -36,22 +45,22 @@ protected:
  * @returns a CBaseChainParams* of the chosen chain.
  * @throws a std::runtime_error if the chain is not supported.
  */
-std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string& chain);
+std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string &chain);
 
 /**
  * Append the help messages for the chainparams options to the
  * parameter string.
  */
-void AppendParamsHelpMessages(std::string& strUsage, bool debugHelp=true);
+void AppendParamsHelpMessages(std::string &strUsage, bool debugHelp = true);
 
 /**
  * Return the currently selected parameters. This won't change after app
  * startup, except for unit tests.
  */
-const CBaseChainParams& BaseParams();
+const CBaseChainParams &BaseParams();
 
 /** Sets the params returned by Params() to those for the given network. */
-void SelectBaseParams(const std::string& chain);
+void SelectBaseParams(const std::string &chain);
 
 /**
  * Looks for -regtest, -testnet and returns the appropriate BIP70 chain name.

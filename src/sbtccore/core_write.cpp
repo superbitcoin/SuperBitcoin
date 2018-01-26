@@ -16,41 +16,49 @@
 #include "utils/utilmoneystr.h"
 #include "utils/utilstrencodings.h"
 
-UniValue ValueFromAmount(const CAmount& amount)
+UniValue ValueFromAmount(const CAmount &amount)
 {
     bool sign = amount < 0;
     int64_t n_abs = (sign ? -amount : amount);
     int64_t quotient = n_abs / COIN;
     int64_t remainder = n_abs % COIN;
     return UniValue(UniValue::VNUM,
-            strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
+                    strprintf("%s%d.%08d", sign ? "-" : "", quotient, remainder));
 }
 
-std::string FormatScript(const CScript& script)
+std::string FormatScript(const CScript &script)
 {
     std::string ret;
     CScript::const_iterator it = script.begin();
     opcodetype op;
-    while (it != script.end()) {
+    while (it != script.end())
+    {
         CScript::const_iterator it2 = it;
         std::vector<unsigned char> vch;
-        if (script.GetOp2(it, op, &vch)) {
-            if (op == OP_0) {
+        if (script.GetOp2(it, op, &vch))
+        {
+            if (op == OP_0)
+            {
                 ret += "0 ";
                 continue;
-            } else if ((op >= OP_1 && op <= OP_16) || op == OP_1NEGATE) {
+            } else if ((op >= OP_1 && op <= OP_16) || op == OP_1NEGATE)
+            {
                 ret += strprintf("%i ", op - OP_1NEGATE - 1);
                 continue;
-            } else if (op >= OP_NOP && op <= OP_NOP10) {
+            } else if (op >= OP_NOP && op <= OP_NOP10)
+            {
                 std::string str(GetOpName(op));
-                if (str.substr(0, 3) == std::string("OP_")) {
+                if (str.substr(0, 3) == std::string("OP_"))
+                {
                     ret += str.substr(3, std::string::npos) + " ";
                     continue;
                 }
             }
-            if (vch.size() > 0) {
+            if (vch.size() > 0)
+            {
                 ret += strprintf("0x%x 0x%x ", HexStr(it2, it - vch.size()), HexStr(it - vch.size(), it));
-            } else {
+            } else
+            {
                 ret += strprintf("0x%x ", HexStr(it2, it));
             }
             continue;
@@ -62,15 +70,21 @@ std::string FormatScript(const CScript& script)
 }
 
 const std::map<unsigned char, std::string> mapSigHashTypes = {
-    {static_cast<unsigned char>(SIGHASH_ALL), std::string("ALL")},
-    {static_cast<unsigned char>(SIGHASH_ALL|SIGHASH_SBTC_FORK), std::string("ALL|SBTC_FORK")},
-    {static_cast<unsigned char>(SIGHASH_ALL|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY), std::string("ALL|SBTC_FORK|ANYONECANPAY")},
-    {static_cast<unsigned char>(SIGHASH_NONE), std::string("NONE")},
-    {static_cast<unsigned char>(SIGHASH_NONE|SIGHASH_SBTC_FORK), std::string("NONE|SBTC_FORK")},
-    {static_cast<unsigned char>(SIGHASH_NONE|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY), std::string("NONE|SBTC_FORK|ANYONECANPAY")},
-    {static_cast<unsigned char>(SIGHASH_SINGLE), std::string("SINGLE")},
-    {static_cast<unsigned char>(SIGHASH_SINGLE|SIGHASH_SBTC_FORK), std::string("SINGLE|SBTC_FORK")},
-    {static_cast<unsigned char>(SIGHASH_SINGLE|SIGHASH_SBTC_FORK|SIGHASH_ANYONECANPAY), std::string("SINGLE|SBTC_FORK|ANYONECANPAY")},
+        {static_cast<unsigned char>(SIGHASH_ALL),                                               std::string("ALL")},
+        {static_cast<unsigned char>(SIGHASH_ALL | SIGHASH_SBTC_FORK),                           std::string(
+                "ALL|SBTC_FORK")},
+        {static_cast<unsigned char>(SIGHASH_ALL | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY),    std::string(
+                "ALL|SBTC_FORK|ANYONECANPAY")},
+        {static_cast<unsigned char>(SIGHASH_NONE),                                              std::string("NONE")},
+        {static_cast<unsigned char>(SIGHASH_NONE | SIGHASH_SBTC_FORK),                          std::string(
+                "NONE|SBTC_FORK")},
+        {static_cast<unsigned char>(SIGHASH_NONE | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY),   std::string(
+                "NONE|SBTC_FORK|ANYONECANPAY")},
+        {static_cast<unsigned char>(SIGHASH_SINGLE),                                            std::string("SINGLE")},
+        {static_cast<unsigned char>(SIGHASH_SINGLE | SIGHASH_SBTC_FORK),                        std::string(
+                "SINGLE|SBTC_FORK")},
+        {static_cast<unsigned char>(SIGHASH_SINGLE | SIGHASH_SBTC_FORK | SIGHASH_ANYONECANPAY), std::string(
+                "SINGLE|SBTC_FORK|ANYONECANPAY")},
 };
 
 /**
@@ -80,66 +94,78 @@ const std::map<unsigned char, std::string> mapSigHashTypes = {
  *                                     of a signature. Only pass true for scripts you believe could contain signatures. For example,
  *                                     pass false, or omit the this argument (defaults to false), for scriptPubKeys.
  */
-std::string ScriptToAsmStr(const CScript& script, const bool fAttemptSighashDecode)
+std::string ScriptToAsmStr(const CScript &script, const bool fAttemptSighashDecode)
 {
     std::string str;
     opcodetype opcode;
     std::vector<unsigned char> vch;
     CScript::const_iterator pc = script.begin();
-    while (pc < script.end()) {
-        if (!str.empty()) {
+    while (pc < script.end())
+    {
+        if (!str.empty())
+        {
             str += " ";
         }
-        if (!script.GetOp(pc, opcode, vch)) {
+        if (!script.GetOp(pc, opcode, vch))
+        {
             str += "[error]";
             return str;
         }
-        if (0 <= opcode && opcode <= OP_PUSHDATA4) {
-            if (vch.size() <= static_cast<std::vector<unsigned char>::size_type>(4)) {
+        if (0 <= opcode && opcode <= OP_PUSHDATA4)
+        {
+            if (vch.size() <= static_cast<std::vector<unsigned char>::size_type>(4))
+            {
                 str += strprintf("%d", CScriptNum(vch, false).getint());
-            } else {
+            } else
+            {
                 // the IsUnspendable check makes sure not to try to decode OP_RETURN data that may match the format of a signature
-                if (fAttemptSighashDecode && !script.IsUnspendable()) {
+                if (fAttemptSighashDecode && !script.IsUnspendable())
+                {
                     std::string strSigHashDecode;
                     // goal: only attempt to decode a defined sighash type from data that looks like a signature within a scriptSig.
                     // this won't decode correctly formatted public keys in Pubkey or Multisig scripts due to
                     // the restrictions on the pubkey formats (see IsCompressedOrUncompressedPubKey) being incongruous with the
                     // checks in CheckSignatureEncoding.
                     uint32_t flags = SCRIPT_VERIFY_STRICTENC;
-                    if (vch.back() & SIGHASH_SBTC_FORK) {
+                    if (vch.back() & SIGHASH_SBTC_FORK)
+                    {
                         // If the transaction is using SIGHASH_FORKID, we need
                         // to set the apropriate flag.
                         // TODO: Remove after the Hard Fork.
                         flags |= SCRIPT_ENABLE_SIGHASH_SBTC_FORK;
                     }
-                    if (CheckSignatureEncoding(vch,flags , nullptr)) {
+                    if (CheckSignatureEncoding(vch, flags, nullptr))
+                    {
                         const unsigned char chSigHashType = vch.back();
-                        if (mapSigHashTypes.count(chSigHashType)) {
+                        if (mapSigHashTypes.count(chSigHashType))
+                        {
                             strSigHashDecode = "[" + mapSigHashTypes.find(chSigHashType)->second + "]";
                             vch.pop_back(); // remove the sighash type byte. it will be replaced by the decode.
                         }
                     }
                     str += HexStr(vch) + strSigHashDecode;
-                } else {
+                } else
+                {
                     str += HexStr(vch);
                 }
             }
-        } else {
+        } else
+        {
             str += GetOpName(opcode);
         }
     }
     return str;
 }
 
-std::string EncodeHexTx(const CTransaction& tx, const int serializeFlags)
+std::string EncodeHexTx(const CTransaction &tx, const int serializeFlags)
 {
     CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION | serializeFlags);
     ssTx << tx;
     return HexStr(ssTx.begin(), ssTx.end());
 }
 
-void ScriptPubKeyToUniv(const CScript& scriptPubKey,
-                        UniValue& out, bool fIncludeHex)
+void ScriptPubKeyToUniv(const CScript &scriptPubKey,
+                        UniValue &out, bool fIncludeHex)
 {
     txnouttype type;
     std::vector<CTxDestination> addresses;
@@ -149,7 +175,8 @@ void ScriptPubKeyToUniv(const CScript& scriptPubKey,
     if (fIncludeHex)
         out.pushKV("hex", HexStr(scriptPubKey.begin(), scriptPubKey.end()));
 
-    if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired)) {
+    if (!ExtractDestinations(scriptPubKey, type, addresses, nRequired))
+    {
         out.pushKV("type", GetTxnOutputType(type));
         return;
     }
@@ -158,12 +185,12 @@ void ScriptPubKeyToUniv(const CScript& scriptPubKey,
     out.pushKV("type", GetTxnOutputType(type));
 
     UniValue a(UniValue::VARR);
-    for (const CTxDestination& addr : addresses)
+    for (const CTxDestination &addr : addresses)
         a.push_back(CBitcoinAddress(addr).ToString());
     out.pushKV("addresses", a);
 }
 
-void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry, bool include_hex, int serialize_flags)
+void TxToUniv(const CTransaction &tx, const uint256 &hashBlock, UniValue &entry, bool include_hex, int serialize_flags)
 {
     entry.pushKV("txid", tx.GetHash().GetHex());
     entry.pushKV("hash", tx.GetWitnessHash().GetHex());
@@ -173,21 +200,25 @@ void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry,
     entry.pushKV("locktime", (int64_t)tx.nLockTime);
 
     UniValue vin(UniValue::VARR);
-    for (unsigned int i = 0; i < tx.vin.size(); i++) {
-        const CTxIn& txin = tx.vin[i];
+    for (unsigned int i = 0; i < tx.vin.size(); i++)
+    {
+        const CTxIn &txin = tx.vin[i];
         UniValue in(UniValue::VOBJ);
         if (tx.IsCoinBase())
             in.pushKV("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
-        else {
+        else
+        {
             in.pushKV("txid", txin.prevout.hash.GetHex());
             in.pushKV("vout", (int64_t)txin.prevout.n);
             UniValue o(UniValue::VOBJ);
             o.pushKV("asm", ScriptToAsmStr(txin.scriptSig, true));
             o.pushKV("hex", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
             in.pushKV("scriptSig", o);
-            if (!tx.vin[i].scriptWitness.IsNull()) {
+            if (!tx.vin[i].scriptWitness.IsNull())
+            {
                 UniValue txinwitness(UniValue::VARR);
-                for (const auto& item : tx.vin[i].scriptWitness.stack) {
+                for (const auto &item : tx.vin[i].scriptWitness.stack)
+                {
                     txinwitness.push_back(HexStr(item.begin(), item.end()));
                 }
                 in.pushKV("txinwitness", txinwitness);
@@ -199,8 +230,9 @@ void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry,
     entry.pushKV("vin", vin);
 
     UniValue vout(UniValue::VARR);
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        const CTxOut& txout = tx.vout[i];
+    for (unsigned int i = 0; i < tx.vout.size(); i++)
+    {
+        const CTxOut &txout = tx.vout[i];
 
         UniValue out(UniValue::VOBJ);
 
@@ -217,7 +249,9 @@ void TxToUniv(const CTransaction& tx, const uint256& hashBlock, UniValue& entry,
     if (!hashBlock.IsNull())
         entry.pushKV("blockhash", hashBlock.GetHex());
 
-    if (include_hex) {
-        entry.pushKV("hex", EncodeHexTx(tx, serialize_flags)); // the hex-encoded transaction. used the name "hex" to be consistent with the verbose output of "getrawtransaction".
+    if (include_hex)
+    {
+        entry.pushKV("hex", EncodeHexTx(tx,
+                                        serialize_flags)); // the hex-encoded transaction. used the name "hex" to be consistent with the verbose output of "getrawtransaction".
     }
 }

@@ -20,11 +20,12 @@ struct CCheckpointData;
  * Block-chain checkpoints are compiled-in sanity checks.
  * They are updated every release or three.
  */
-namespace Checkpoints {
+namespace Checkpoints
+{
 
 
-
-    class CCheckData {
+    class CCheckData
+    {
     public:
         CCheckData();
 
@@ -32,7 +33,7 @@ namespace Checkpoints {
 
         virtual ~CCheckData();
 
-        bool CheckSignature(const CPubKey &cPubKey) const ;
+        bool CheckSignature(const CPubKey &cPubKey) const;
 
 
         bool Sign(const CKey &cPriKey);
@@ -43,7 +44,8 @@ namespace Checkpoints {
         ADD_SERIALIZE_METHODS;
 
         template<typename Stream, typename Operation>
-        inline void SerializationOp(Stream &s, Operation ser_action) {
+        inline void SerializationOp(Stream &s, Operation ser_action)
+        {
             READWRITE(VARINT(height));
             READWRITE(hash);
             READWRITE(m_vchSig);
@@ -66,28 +68,31 @@ namespace Checkpoints {
         uint256 hash;
         std::vector<unsigned char> m_vchSig;
     };
-    class CCheckPointDB {
+
+    class CCheckPointDB
+    {
     public:
         CCheckPointDB();
 
-        bool WriteCheckpoint(int height, const CCheckData& data);
-        bool ReadCheckpoint(int height, CCheckData& data);
+        bool WriteCheckpoint(int height, const CCheckData &data);
+
+        bool ReadCheckpoint(int height, CCheckData &data);
+
         bool ExistCheckpoint(int height);
-        bool LoadCheckPoint(std::map<int, CCheckData>& values);
+
+        bool LoadCheckPoint(std::map<int, CCheckData> &values);
 
     protected:
         CDBWrapper db;
     };
 
 
-
-
-//! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
+    //! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
     CBlockIndex *GetLastCheckpoint(const CCheckpointData &data);
 
     bool GetCheckpointByHeight(const int nHeight, std::vector<CCheckData> &vnCheckPoints);
 
-    CBlockIndex const * GetLastCheckPointBlockIndex(const CCheckpointData& data);
+    CBlockIndex const *GetLastCheckPointBlockIndex(const CCheckpointData &data);
 
 } //namespace Checkpoints
 

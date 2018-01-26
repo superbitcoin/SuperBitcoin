@@ -10,17 +10,17 @@
 
 std::unique_ptr<CConnman> g_connman;
 
-void Shutdown(void* parg)
+void Shutdown(void *parg)
 {
-  exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
 
 void StartShutdown()
 {
-  exit(EXIT_SUCCESS);
+    exit(EXIT_SUCCESS);
 }
 
 bool ShutdownRequested()
 {
-  return false;
+    return false;
 }

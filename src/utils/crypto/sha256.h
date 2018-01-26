@@ -21,9 +21,12 @@ public:
     static const size_t OUTPUT_SIZE = 32;
 
     CSHA256();
-    CSHA256& Write(const unsigned char* data, size_t len);
+
+    CSHA256 &Write(const unsigned char *data, size_t len);
+
     void Finalize(unsigned char hash[OUTPUT_SIZE]);
-    CSHA256& Reset();
+
+    CSHA256 &Reset();
 };
 
 /** Autodetect the best available SHA256 implementation.

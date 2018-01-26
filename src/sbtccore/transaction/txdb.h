@@ -16,7 +16,9 @@
 #include <vector>
 
 class CBlockIndex;
+
 class CCoinsViewDBCursor;
+
 class uint256;
 
 //! No need to periodic flush if at least this much space still available.
@@ -26,7 +28,7 @@ static const int64_t nDefaultDbCache = 450;
 //! -dbbatchsize default (bytes)
 static const int64_t nDefaultDbBatchSize = 16 << 20;
 //! max. -dbcache (MiB)
-static const int64_t nMaxDbCache = sizeof(void*) > 4 ? 16384 : 1024;
+static const int64_t nMaxDbCache = sizeof(void *) > 4 ? 16384 : 1024;
 //! min. -dbcache (MiB)
 static const int64_t nMinDbCache = 4;
 //! Max memory allocated to block tree DB specific cache, if no -txindex (MiB)
@@ -44,20 +46,25 @@ struct CDiskTxPos : public CDiskBlockPos
 
     ADD_SERIALIZE_METHODS;
 
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        READWRITE(*(CDiskBlockPos*)this);
+    template<typename Stream, typename Operation>
+    inline void SerializationOp(Stream &s, Operation ser_action)
+    {
+        READWRITE(*(CDiskBlockPos *)this);
         READWRITE(VARINT(nTxOffset));
     }
 
-    CDiskTxPos(const CDiskBlockPos &blockIn, unsigned int nTxOffsetIn) : CDiskBlockPos(blockIn.nFile, blockIn.nPos), nTxOffset(nTxOffsetIn) {
+    CDiskTxPos(const CDiskBlockPos &blockIn, unsigned int nTxOffsetIn) : CDiskBlockPos(blockIn.nFile, blockIn.nPos),
+                                                                         nTxOffset(nTxOffsetIn)
+    {
     }
 
-    CDiskTxPos() {
+    CDiskTxPos()
+    {
         SetNull();
     }
 
-    void SetNull() {
+    void SetNull()
+    {
         CDiskBlockPos::SetNull();
         nTxOffset = 0;
     }
@@ -72,33 +79,47 @@ public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
     bool GetCoin(const COutPoint &outpoint, Coin &coin) const override;
+
     bool HaveCoin(const COutPoint &outpoint) const override;
+
     uint256 GetBestBlock() const override;
+
     std::vector<uint256> GetHeadBlocks() const override;
+
     bool BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock) override;
+
     CCoinsViewCursor *Cursor() const override;
 
     //! Attempt to update from an older database format. Returns whether an error occurred.
     bool Upgrade();
+
     size_t EstimateSize() const override;
 };
 
 /** Specialization of CCoinsViewCursor to iterate over a CCoinsViewDB */
-class CCoinsViewDBCursor: public CCoinsViewCursor
+class CCoinsViewDBCursor : public CCoinsViewCursor
 {
 public:
-    ~CCoinsViewDBCursor() {}
+    ~CCoinsViewDBCursor()
+    {
+    }
 
     bool GetKey(COutPoint &key) const override;
+
     bool GetValue(Coin &coin) const override;
+
     unsigned int GetValueSize() const override;
 
     bool Valid() const override;
+
     void Next() override;
 
 private:
-    CCoinsViewDBCursor(CDBIterator* pcursorIn, const uint256 &hashBlockIn):
-        CCoinsViewCursor(hashBlockIn), pcursor(pcursorIn) {}
+    CCoinsViewDBCursor(CDBIterator *pcursorIn, const uint256 &hashBlockIn) :
+            CCoinsViewCursor(hashBlockIn), pcursor(pcursorIn)
+    {
+    }
+
     std::unique_ptr<CDBIterator> pcursor;
     std::pair<char, COutPoint> keyTmp;
 
@@ -110,20 +131,34 @@ class CBlockTreeDB : public CDBWrapper
 {
 public:
     CBlockTreeDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
+
 private:
-    CBlockTreeDB(const CBlockTreeDB&);
-    void operator=(const CBlockTreeDB&);
+    CBlockTreeDB(const CBlockTreeDB &);
+
+    void operator=(const CBlockTreeDB &);
+
 public:
-    bool WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo*> >& fileInfo, int nLastFile, const std::vector<const CBlockIndex*>& blockinfo);
+    bool WriteBatchSync(const std::vector<std::pair<int, const CBlockFileInfo *> > &fileInfo, int nLastFile,
+                        const std::vector<const CBlockIndex *> &blockinfo);
+
     bool ReadBlockFileInfo(int nFile, CBlockFileInfo &fileinfo);
+
     bool ReadLastBlockFile(int &nFile);
+
     bool WriteReindexing(bool fReindex);
+
     bool ReadReindexing(bool &fReindex);
+
     bool ReadTxIndex(const uint256 &txid, CDiskTxPos &pos);
+
     bool WriteTxIndex(const std::vector<std::pair<uint256, CDiskTxPos> > &list);
+
     bool WriteFlag(const std::string &name, bool fValue);
+
     bool ReadFlag(const std::string &name, bool &fValue);
-    bool LoadBlockIndexGuts(const Consensus::Params& consensusParams, std::function<CBlockIndex*(const uint256&)> insertBlockIndex);
+
+    bool LoadBlockIndexGuts(const Consensus::Params &consensusParams,
+                            std::function<CBlockIndex *(const uint256 &)> insertBlockIndex);
 };
 
 #endif // BITCOIN_TXDB_H

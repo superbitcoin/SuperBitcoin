@@ -27,7 +27,8 @@ void CThreadInterrupt::operator()()
 bool CThreadInterrupt::sleep_for(std::chrono::milliseconds rel_time)
 {
     std::unique_lock<std::mutex> lock(mut);
-    return !cond.wait_for(lock, rel_time, [this]() { return flag.load(std::memory_order_acquire); });
+    return !cond.wait_for(lock, rel_time, [this]()
+    { return flag.load(std::memory_order_acquire); });
 }
 
 bool CThreadInterrupt::sleep_for(std::chrono::seconds rel_time)

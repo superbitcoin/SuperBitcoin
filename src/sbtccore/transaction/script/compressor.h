@@ -11,7 +11,9 @@
 #include "sbtccore/serialize.h"
 
 class CKeyID;
+
 class CPubKey;
+
 class CScriptID;
 
 /** Compact serializer for scripts.
@@ -46,19 +48,28 @@ protected:
      * form).
      */
     bool IsToKeyID(CKeyID &hash) const;
+
     bool IsToScriptID(CScriptID &hash) const;
+
     bool IsToPubKey(CPubKey &pubkey) const;
 
     bool Compress(std::vector<unsigned char> &out) const;
+
     unsigned int GetSpecialSize(unsigned int nSize) const;
+
     bool Decompress(unsigned int nSize, const std::vector<unsigned char> &out);
+
 public:
-    CScriptCompressor(CScript &scriptIn) : script(scriptIn) { }
+    CScriptCompressor(CScript &scriptIn) : script(scriptIn)
+    {
+    }
 
     template<typename Stream>
-    void Serialize(Stream &s) const {
+    void Serialize(Stream &s) const
+    {
         std::vector<unsigned char> compr;
-        if (Compress(compr)) {
+        if (Compress(compr))
+        {
             s << CFlatData(compr);
             return;
         }
@@ -68,21 +79,25 @@ public:
     }
 
     template<typename Stream>
-    void Unserialize(Stream &s) {
+    void Unserialize(Stream &s)
+    {
         unsigned int nSize = 0;
         s >> VARINT(nSize);
-        if (nSize < nSpecialScripts) {
+        if (nSize < nSpecialScripts)
+        {
             std::vector<unsigned char> vch(GetSpecialSize(nSize), 0x00);
             s >> REF(CFlatData(vch));
             Decompress(nSize, vch);
             return;
         }
         nSize -= nSpecialScripts;
-        if (nSize > MAX_SCRIPT_SIZE) {
+        if (nSize > MAX_SCRIPT_SIZE)
+        {
             // Overly long script, replace with a short invalid one
             script << OP_RETURN;
             s.ignore(nSize);
-        } else {
+        } else
+        {
             script.resize(nSize);
             s >> REF(CFlatData(script));
         }
@@ -97,18 +112,24 @@ private:
 
 public:
     static uint64_t CompressAmount(uint64_t nAmount);
+
     static uint64_t DecompressAmount(uint64_t nAmount);
 
-    CTxOutCompressor(CTxOut &txoutIn) : txout(txoutIn) { }
+    CTxOutCompressor(CTxOut &txoutIn) : txout(txoutIn)
+    {
+    }
 
     ADD_SERIALIZE_METHODS;
 
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
-        if (!ser_action.ForRead()) {
+    template<typename Stream, typename Operation>
+    inline void SerializationOp(Stream &s, Operation ser_action)
+    {
+        if (!ser_action.ForRead())
+        {
             uint64_t nVal = CompressAmount(txout.nValue);
             READWRITE(VARINT(nVal));
-        } else {
+        } else
+        {
             uint64_t nVal = 0;
             READWRITE(VARINT(nVal));
             txout.nValue = DecompressAmount(nVal);

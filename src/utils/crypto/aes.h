@@ -23,7 +23,9 @@ private:
 
 public:
     AES128Encrypt(const unsigned char key[16]);
+
     ~AES128Encrypt();
+
     void Encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]) const;
 };
 
@@ -35,7 +37,9 @@ private:
 
 public:
     AES128Decrypt(const unsigned char key[16]);
+
     ~AES128Decrypt();
+
     void Decrypt(unsigned char plaintext[16], const unsigned char ciphertext[16]) const;
 };
 
@@ -47,7 +51,9 @@ private:
 
 public:
     AES256Encrypt(const unsigned char key[32]);
+
     ~AES256Encrypt();
+
     void Encrypt(unsigned char ciphertext[16], const unsigned char plaintext[16]) const;
 };
 
@@ -59,7 +65,9 @@ private:
 
 public:
     AES256Decrypt(const unsigned char key[32]);
+
     ~AES256Decrypt();
+
     void Decrypt(unsigned char plaintext[16], const unsigned char ciphertext[16]) const;
 };
 
@@ -67,8 +75,10 @@ class AES256CBCEncrypt
 {
 public:
     AES256CBCEncrypt(const unsigned char key[AES256_KEYSIZE], const unsigned char ivIn[AES_BLOCKSIZE], bool padIn);
+
     ~AES256CBCEncrypt();
-    int Encrypt(const unsigned char* data, int size, unsigned char* out) const;
+
+    int Encrypt(const unsigned char *data, int size, unsigned char *out) const;
 
 private:
     const AES256Encrypt enc;
@@ -80,8 +90,10 @@ class AES256CBCDecrypt
 {
 public:
     AES256CBCDecrypt(const unsigned char key[AES256_KEYSIZE], const unsigned char ivIn[AES_BLOCKSIZE], bool padIn);
+
     ~AES256CBCDecrypt();
-    int Decrypt(const unsigned char* data, int size, unsigned char* out) const;
+
+    int Decrypt(const unsigned char *data, int size, unsigned char *out) const;
 
 private:
     const AES256Decrypt dec;
@@ -93,8 +105,10 @@ class AES128CBCEncrypt
 {
 public:
     AES128CBCEncrypt(const unsigned char key[AES128_KEYSIZE], const unsigned char ivIn[AES_BLOCKSIZE], bool padIn);
+
     ~AES128CBCEncrypt();
-    int Encrypt(const unsigned char* data, int size, unsigned char* out) const;
+
+    int Encrypt(const unsigned char *data, int size, unsigned char *out) const;
 
 private:
     const AES128Encrypt enc;
@@ -106,8 +120,10 @@ class AES128CBCDecrypt
 {
 public:
     AES128CBCDecrypt(const unsigned char key[AES128_KEYSIZE], const unsigned char ivIn[AES_BLOCKSIZE], bool padIn);
+
     ~AES128CBCDecrypt();
-    int Decrypt(const unsigned char* data, int size, unsigned char* out) const;
+
+    int Decrypt(const unsigned char *data, int size, unsigned char *out) const;
 
 private:
     const AES128Decrypt dec;

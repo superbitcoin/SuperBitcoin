@@ -55,17 +55,17 @@ public:
         return (setSelected.size() > 0);
     }
 
-    bool IsSelected(const COutPoint& output) const
+    bool IsSelected(const COutPoint &output) const
     {
         return (setSelected.count(output) > 0);
     }
 
-    void Select(const COutPoint& output)
+    void Select(const COutPoint &output)
     {
         setSelected.insert(output);
     }
 
-    void UnSelect(const COutPoint& output)
+    void UnSelect(const COutPoint &output)
     {
         setSelected.erase(output);
     }
@@ -75,7 +75,7 @@ public:
         setSelected.clear();
     }
 
-    void ListSelected(std::vector<COutPoint>& vOutpoints) const
+    void ListSelected(std::vector<COutPoint> &vOutpoints) const
     {
         vOutpoints.assign(setSelected.begin(), setSelected.end());
     }

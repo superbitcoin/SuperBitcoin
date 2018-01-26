@@ -9,7 +9,8 @@
 
 static const uint32_t MAX_BIP125_RBF_SEQUENCE = 0xfffffffd;
 
-enum RBFTransactionState {
+enum RBFTransactionState
+{
     RBF_TRANSACTIONSTATE_UNKNOWN,
     RBF_TRANSACTIONSTATE_REPLACEABLE_BIP125,
     RBF_TRANSACTIONSTATE_FINAL

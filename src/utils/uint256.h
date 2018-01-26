@@ -19,7 +19,10 @@ template<unsigned int BITS>
 class base_blob
 {
 protected:
-    enum { WIDTH=BITS/8 };
+    enum
+    {
+        WIDTH = BITS / 8
+    };
     uint8_t data[WIDTH];
 public:
     base_blob()
@@ -27,7 +30,7 @@ public:
         memset(data, 0, sizeof(data));
     }
 
-    explicit base_blob(const std::vector<unsigned char>& vch);
+    explicit base_blob(const std::vector<unsigned char> &vch);
 
     bool IsNull() const
     {
@@ -42,33 +45,50 @@ public:
         memset(data, 0, sizeof(data));
     }
 
-    inline int Compare(const base_blob& other) const { return memcmp(data, other.data, sizeof(data)); }
+    inline int Compare(const base_blob &other) const
+    {
+        return memcmp(data, other.data, sizeof(data));
+    }
 
-    friend inline bool operator==(const base_blob& a, const base_blob& b) { return a.Compare(b) == 0; }
-    friend inline bool operator!=(const base_blob& a, const base_blob& b) { return a.Compare(b) != 0; }
-    friend inline bool operator<(const base_blob& a, const base_blob& b) { return a.Compare(b) < 0; }
+    friend inline bool operator==(const base_blob &a, const base_blob &b)
+    {
+        return a.Compare(b) == 0;
+    }
+
+    friend inline bool operator!=(const base_blob &a, const base_blob &b)
+    {
+        return a.Compare(b) != 0;
+    }
+
+    friend inline bool operator<(const base_blob &a, const base_blob &b)
+    {
+        return a.Compare(b) < 0;
+    }
 
     std::string GetHex() const;
-    void SetHex(const char* psz);
-    void SetHex(const std::string& str);
+
+    void SetHex(const char *psz);
+
+    void SetHex(const std::string &str);
+
     std::string ToString() const;
 
-    unsigned char* begin()
+    unsigned char *begin()
     {
         return &data[0];
     }
 
-    unsigned char* end()
+    unsigned char *end()
     {
         return &data[WIDTH];
     }
 
-    const unsigned char* begin() const
+    const unsigned char *begin() const
     {
         return &data[0];
     }
 
-    const unsigned char* end() const
+    const unsigned char *end() const
     {
         return &data[WIDTH];
     }
@@ -80,7 +100,7 @@ public:
 
     uint64_t GetUint64(int pos) const
     {
-        const uint8_t* ptr = data + pos * 8;
+        const uint8_t *ptr = data + pos * 8;
         return ((uint64_t)ptr[0]) | \
                ((uint64_t)ptr[1]) << 8 | \
                ((uint64_t)ptr[2]) << 16 | \
@@ -92,15 +112,15 @@ public:
     }
 
     template<typename Stream>
-    void Serialize(Stream& s) const
+    void Serialize(Stream &s) const
     {
-        s.write((char*)data, sizeof(data));
+        s.write((char *)data, sizeof(data));
     }
 
     template<typename Stream>
-    void Unserialize(Stream& s)
+    void Unserialize(Stream &s)
     {
-        s.read((char*)data, sizeof(data));
+        s.read((char *)data, sizeof(data));
     }
 };
 
@@ -108,11 +128,20 @@ public:
  * @note This type is called uint160 for historical reasons only. It is an opaque
  * blob of 160 bits and has no integer operations.
  */
-class uint160 : public base_blob<160> {
+class uint160 : public base_blob<160>
+{
 public:
-    uint160() {}
-    uint160(const base_blob<160>& b) : base_blob<160>(b) {}
-    explicit uint160(const std::vector<unsigned char>& vch) : base_blob<160>(vch) {}
+    uint160()
+    {
+    }
+
+    uint160(const base_blob<160> &b) : base_blob<160>(b)
+    {
+    }
+
+    explicit uint160(const std::vector<unsigned char> &vch) : base_blob<160>(vch)
+    {
+    }
 };
 
 /** 256-bit opaque blob.
@@ -120,11 +149,20 @@ public:
  * opaque blob of 256 bits and has no integer operations. Use arith_uint256 if
  * those are required.
  */
-class uint256 : public base_blob<256> {
+class uint256 : public base_blob<256>
+{
 public:
-    uint256() {}
-    uint256(const base_blob<256>& b) : base_blob<256>(b) {}
-    explicit uint256(const std::vector<unsigned char>& vch) : base_blob<256>(vch) {}
+    uint256()
+    {
+    }
+
+    uint256(const base_blob<256> &b) : base_blob<256>(b)
+    {
+    }
+
+    explicit uint256(const std::vector<unsigned char> &vch) : base_blob<256>(vch)
+    {
+    }
 
     /** A cheap hash function that just returns 64 bits from the result, it can be
      * used when the contents are considered uniformly random. It is not appropriate
@@ -147,11 +185,12 @@ inline uint256 uint256S(const char *str)
     rv.SetHex(str);
     return rv;
 }
+
 /* uint256 from std::string.
  * This is a separate function because the constructor uint256(const std::string &str) can result
  * in dangerously catching uint256(0) via std::string(const char*).
  */
-inline uint256 uint256S(const std::string& str)
+inline uint256 uint256S(const std::string &str)
 {
     uint256 rv;
     rv.SetHex(str);

@@ -18,7 +18,7 @@ class CNetAddr;
  * Median filter over a stream of values.
  * Returns the median of the last N numbers
  */
-template <typename T>
+template<typename T>
 class CMedianFilter
 {
 private:
@@ -36,7 +36,8 @@ public:
 
     void input(T value)
     {
-        if (vValues.size() == nSize) {
+        if (vValues.size() == nSize)
+        {
             vValues.erase(vValues.begin());
         }
         vValues.push_back(value);
@@ -72,7 +73,9 @@ public:
 
 /** Functions to keep track of adjusted P2P time */
 int64_t GetTimeOffset();
+
 int64_t GetAdjustedTime();
-void AddTimeData(const CNetAddr& ip, int64_t nTime);
+
+void AddTimeData(const CNetAddr &ip, int64_t nTime);
 
 #endif // BITCOIN_TIMEDATA_H

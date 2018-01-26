@@ -19,10 +19,15 @@ class CThreadInterrupt
 {
 public:
     explicit operator bool() const;
+
     void operator()();
+
     void reset();
+
     bool sleep_for(std::chrono::milliseconds rel_time);
+
     bool sleep_for(std::chrono::seconds rel_time);
+
     bool sleep_for(std::chrono::minutes rel_time);
 
 private:

@@ -4,7 +4,9 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #if defined(HAVE_CONFIG_H)
+
 #include "config/sbtc-config.h"
+
 #endif
 
 #include "util.h"
@@ -69,11 +71,15 @@
 #endif
 
 #ifdef HAVE_SYS_PRCTL_H
+
 #include <sys/prctl.h>
+
 #endif
 
 #ifdef HAVE_MALLOPT_ARENA_MAX
+
 #include <malloc.h>
+
 #endif
 
 #include <boost/algorithm/string/case_conv.hpp> // for to_lower()
@@ -96,8 +102,8 @@ using std::map;
 // Application startup time (used for uptime calculation)
 const int64_t nStartupTime = GetTime();
 
-const char * const BITCOIN_CONF_FILENAME = "sbtc.conf";
-const char * const BITCOIN_PID_FILENAME = "sbtc.pid";
+const char *const BITCOIN_CONF_FILENAME = "sbtc.conf";
+const char *const BITCOIN_PID_FILENAME = "sbtc.pid";
 
 ArgsManager gArgs;
 bool fPrintToConsole = false;
@@ -114,11 +120,14 @@ std::atomic<uint32_t> logCategories(0);
 
 /** Init OpenSSL library multithreading support */
 static std::unique_ptr<CCriticalSection[]> ppmutexOpenSSL;
-void locking_callback(int mode, int i, const char* file, int line) NO_THREAD_SAFETY_ANALYSIS
+
+void locking_callback(int mode, int i, const char *file, int line) NO_THREAD_SAFETY_ANALYSIS
 {
-    if (mode & CRYPTO_LOCK) {
+    if (mode & CRYPTO_LOCK)
+    {
         ENTER_CRITICAL_SECTION(ppmutexOpenSSL[i]);
-    } else {
+    } else
+    {
         LEAVE_CRITICAL_SECTION(ppmutexOpenSSL[i]);
     }
 }
@@ -148,6 +157,7 @@ public:
         // Seed OpenSSL PRNG with performance counter
         RandAddSeed();
     }
+
     ~CInit()
     {
         // Securely erase the memory used by the PRNG
@@ -158,7 +168,7 @@ public:
         ppmutexOpenSSL.reset();
     }
 }
-instance_of_cinit;
+        instance_of_cinit;
 
 /**
  * LogPrintf() has been broken a couple of times now
@@ -182,9 +192,9 @@ static boost::once_flag debugPrintInitFlag = BOOST_ONCE_INIT;
  * the OS/libc. When the shutdown sequence is fully audited and
  * tested, explicit destruction of these objects can be implemented.
  */
-static FILE* fileout = nullptr;
-static boost::mutex* mutexDebugLog = nullptr;
-static std::list<std::string>* vMsgsBeforeOpenLog;
+static FILE *fileout = nullptr;
+static boost::mutex *mutexDebugLog = nullptr;
+static std::list<std::string> *vMsgsBeforeOpenLog;
 
 static int FileWriteStr(const std::string &str, FILE *fp)
 {
@@ -207,10 +217,12 @@ void OpenDebugLog()
     assert(vMsgsBeforeOpenLog);
     fs::path pathDebug = GetDataDir() / "debug.log";
     fileout = fsbridge::fopen(pathDebug, "a");
-    if (fileout) {
+    if (fileout)
+    {
         setbuf(fileout, nullptr); // unbuffered
         // dump buffered messages from before we opened the log
-        while (!vMsgsBeforeOpenLog->empty()) {
+        while (!vMsgsBeforeOpenLog->empty())
+        {
             FileWriteStr(vMsgsBeforeOpenLog->front(), fileout);
             vMsgsBeforeOpenLog->pop_front();
         }
@@ -227,42 +239,46 @@ struct CLogCategoryDesc
 };
 
 const CLogCategoryDesc LogCategories[] =
-{
-    {BCLog::NONE, "0"},
-    {BCLog::NET, "net"},
-    {BCLog::TOR, "tor"},
-    {BCLog::MEMPOOL, "mempool"},
-    {BCLog::HTTP, "http"},
-    {BCLog::BENCH, "bench"},
-    {BCLog::ZMQ, "zmq"},
-    {BCLog::DB, "db"},
-    {BCLog::RPC, "rpc"},
-    {BCLog::ESTIMATEFEE, "estimatefee"},
-    {BCLog::ADDRMAN, "addrman"},
-    {BCLog::SELECTCOINS, "selectcoins"},
-    {BCLog::REINDEX, "reindex"},
-    {BCLog::CMPCTBLOCK, "cmpctblock"},
-    {BCLog::RAND, "rand"},
-    {BCLog::PRUNE, "prune"},
-    {BCLog::PROXY, "proxy"},
-    {BCLog::MEMPOOLREJ, "mempoolrej"},
-    {BCLog::LIBEVENT, "libevent"},
-    {BCLog::COINDB, "coindb"},
-    {BCLog::QT, "qt"},
-    {BCLog::LEVELDB, "leveldb"},
-    {BCLog::ALL, "1"},
-    {BCLog::ALL, "all"},
-};
+        {
+                {BCLog::NONE,        "0"},
+                {BCLog::NET,         "net"},
+                {BCLog::TOR,         "tor"},
+                {BCLog::MEMPOOL,     "mempool"},
+                {BCLog::HTTP,        "http"},
+                {BCLog::BENCH,       "bench"},
+                {BCLog::ZMQ,         "zmq"},
+                {BCLog::DB,          "db"},
+                {BCLog::RPC,         "rpc"},
+                {BCLog::ESTIMATEFEE, "estimatefee"},
+                {BCLog::ADDRMAN,     "addrman"},
+                {BCLog::SELECTCOINS, "selectcoins"},
+                {BCLog::REINDEX,     "reindex"},
+                {BCLog::CMPCTBLOCK,  "cmpctblock"},
+                {BCLog::RAND,        "rand"},
+                {BCLog::PRUNE,       "prune"},
+                {BCLog::PROXY,       "proxy"},
+                {BCLog::MEMPOOLREJ,  "mempoolrej"},
+                {BCLog::LIBEVENT,    "libevent"},
+                {BCLog::COINDB,      "coindb"},
+                {BCLog::QT,          "qt"},
+                {BCLog::LEVELDB,     "leveldb"},
+                {BCLog::ALL,         "1"},
+                {BCLog::ALL,         "all"},
+        };
 
 bool GetLogCategory(uint32_t *f, const std::string *str)
 {
-    if (f && str) {
-        if (*str == "") {
+    if (f && str)
+    {
+        if (*str == "")
+        {
             *f = BCLog::ALL;
             return true;
         }
-        for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++) {
-            if (LogCategories[i].category == *str) {
+        for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++)
+        {
+            if (LogCategories[i].category == *str)
+            {
                 *f = LogCategories[i].flag;
                 return true;
             }
@@ -275,10 +291,13 @@ std::string ListLogCategories()
 {
     std::string ret;
     int outcount = 0;
-    for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++) {
+    for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++)
+    {
         // Omit the special cases.
-        if (LogCategories[i].flag != BCLog::NONE && LogCategories[i].flag != BCLog::ALL) {
-            if (outcount != 0) ret += ", ";
+        if (LogCategories[i].flag != BCLog::NONE && LogCategories[i].flag != BCLog::ALL)
+        {
+            if (outcount != 0)
+                ret += ", ";
             ret += LogCategories[i].category;
             outcount++;
         }
@@ -289,9 +308,11 @@ std::string ListLogCategories()
 std::vector<CLogCategoryActive> ListActiveLogCategories()
 {
     std::vector<CLogCategoryActive> ret;
-    for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++) {
+    for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++)
+    {
         // Omit the special cases.
-        if (LogCategories[i].flag != BCLog::NONE && LogCategories[i].flag != BCLog::ALL) {
+        if (LogCategories[i].flag != BCLog::NONE && LogCategories[i].flag != BCLog::ALL)
+        {
             CLogCategoryActive catActive;
             catActive.category = LogCategories[i].category;
             catActive.active = LogAcceptCategory(LogCategories[i].flag);
@@ -313,20 +334,22 @@ static std::string LogTimestampStr(const std::string &str, std::atomic_bool *fSt
     if (!fLogTimestamps)
         return str;
 
-    if (*fStartedNewLine) {
+    if (*fStartedNewLine)
+    {
         int64_t nTimeMicros = GetTimeMicros();
-        strStamped = DateTimeStrFormat("%Y-%m-%d %H:%M:%S", nTimeMicros/1000000);
+        strStamped = DateTimeStrFormat("%Y-%m-%d %H:%M:%S", nTimeMicros / 1000000);
         if (fLogTimeMicros)
-            strStamped += strprintf(".%06d", nTimeMicros%1000000);
+            strStamped += strprintf(".%06d", nTimeMicros % 1000000);
         int64_t mocktime = GetMockTime();
-        if (mocktime) {
+        if (mocktime)
+        {
             strStamped += " (mocktime: " + DateTimeStrFormat("%Y-%m-%d %H:%M:%S", mocktime) + ")";
         }
         strStamped += ' ' + str;
     } else
         strStamped = str;
 
-    if (!str.empty() && str[str.size()-1] == '\n')
+    if (!str.empty() && str[str.size() - 1] == '\n')
         *fStartedNewLine = true;
     else
         *fStartedNewLine = false;
@@ -346,25 +369,25 @@ int LogPrintStr(const std::string &str)
         // print to console
         ret = fwrite(strTimestamped.data(), 1, strTimestamped.size(), stdout);
         fflush(stdout);
-    }
-    else if (fPrintToDebugLog)
+    } else if (fPrintToDebugLog)
     {
         boost::call_once(&DebugPrintInit, debugPrintInitFlag);
         boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
 
         // buffer if we haven't opened the log yet
-        if (fileout == nullptr) {
+        if (fileout == nullptr)
+        {
             assert(vMsgsBeforeOpenLog);
             ret = strTimestamped.length();
             vMsgsBeforeOpenLog->push_back(strTimestamped);
-        }
-        else
+        } else
         {
             // reopen the log file, if requested
-            if (fReopenDebugLog) {
+            if (fReopenDebugLog)
+            {
                 fReopenDebugLog = false;
                 fs::path pathDebug = GetDataDir() / "debug.log";
-                if (fsbridge::freopen(pathDebug,"a",fileout) != nullptr)
+                if (fsbridge::freopen(pathDebug, "a", fileout) != nullptr)
                     setbuf(fileout, nullptr); // unbuffered
             }
 
@@ -375,7 +398,7 @@ int LogPrintStr(const std::string &str)
 }
 
 /** Interpret string as boolean, for argument parsing */
-bool ArgsManager::InterpretBool(const std::string& strValue)
+bool ArgsManager::InterpretBool(const std::string &strValue)
 {
     if (strValue.empty())
         return true;
@@ -387,9 +410,9 @@ bool ArgsManager::InterpretBool(const std::string& strValue)
 }
 
 /** Turn -noX into -X=0 */
-static void InterpretNegativeSetting(std::string& strKey, std::string& strValue)
+static void InterpretNegativeSetting(std::string &strKey, std::string &strValue)
 {
-    if (strKey.length()>3 && strKey[0]=='-' && strKey[1]=='n' && strKey[2]=='o')
+    if (strKey.length() > 3 && strKey[0] == '-' && strKey[1] == 'n' && strKey[2] == 'o')
     {
         strKey = "-" + strKey.substr(3);
         strValue = ArgsManager::InterpretBool(strValue) ? "0" : "1";
@@ -397,10 +420,11 @@ static void InterpretNegativeSetting(std::string& strKey, std::string& strValue)
 }
 
 bool ArgsManager::InitPromOptions(std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc,
-                                         const char **argv, HelpMessageMode mode)> callback, bpo::options_description *app, int argc, const char **argv, HelpMessageMode mode)
+                                                     const char **argv, HelpMessageMode mode)> callback,
+                                  bpo::options_description *app, int argc, const char **argv, HelpMessageMode mode)
 {
     LOCK(cs_args);
-    if(callback == nullptr || argv == nullptr || app == nullptr)
+    if (callback == nullptr || argv == nullptr || app == nullptr)
     {
         return false;
     }
@@ -411,7 +435,7 @@ bool ArgsManager::InitPromOptions(std::function<void(bpo::options_description *a
     return true;
 }
 
-void ArgsManager::ParseParameters(int argc, const char* const argv[])
+void ArgsManager::ParseParameters(int argc, const char *const argv[])
 {
     LOCK(cs_args);
     mapArgs.clear();
@@ -424,7 +448,7 @@ void ArgsManager::ParseParameters(int argc, const char* const argv[])
         size_t is_index = str.find('=');
         if (is_index != std::string::npos)
         {
-            strValue = str.substr(is_index+1);
+            strValue = str.substr(is_index + 1);
             str = str.substr(0, is_index);
         }
 #ifdef WIN32
@@ -447,17 +471,17 @@ void ArgsManager::ParseParameters(int argc, const char* const argv[])
     }
 }
 
-std::vector<std::string> ArgsManager::GetArgs(const std::string& strArg)
+std::vector<std::string> ArgsManager::GetArgs(const std::string &strArg)
 {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
 
     if (IsArgSet(tmp_strArg))
-        return vm.at(tmp_strArg).as< vector<string> >();
+        return vm.at(tmp_strArg).as<vector<string> >();
     return {};
 }
 
-bool ArgsManager::IsArgSet(const std::string& strArg)
+bool ArgsManager::IsArgSet(const std::string &strArg)
 {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
@@ -568,31 +592,32 @@ bool ArgsManager::IsArgSet(const std::string& strArg)
 //    return true;
 //}
 
-void ArgsManager::ForceSetArg(const std::string& strArg, const std::string& strValue)
+void ArgsManager::ForceSetArg(const std::string &strArg, const std::string &strValue)
 {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
 
     vector<string>::const_iterator ite_options_arr = find(options_arr.begin(), options_arr.end(), tmp_strArg);
 
-    if(ite_options_arr == options_arr.end())
+    if (ite_options_arr == options_arr.end())
     {
         vm.erase(tmp_strArg);
-        vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)), false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
+        vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(std::string(strValue)),
+                                                                 false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
 
         return;
     }
 
-    vector<string> &tmp_value_arr = vm.at(tmp_strArg).as< vector<string> >();
+    vector<string> &tmp_value_arr = vm.at(tmp_strArg).as<vector<string> >();
     tmp_value_arr.insert(tmp_value_arr.end(), strValue);
 }
 
-void ArgsManager::ForceSetArg(const std::string& strArg, const unsigned int value)
+void ArgsManager::ForceSetArg(const std::string &strArg, const unsigned int value)
 {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
 
-    if(vm.count(tmp_strArg))
+    if (vm.count(tmp_strArg))
     {
         vm.erase(tmp_strArg);
     }
@@ -602,21 +627,20 @@ void ArgsManager::ForceSetArg(const std::string& strArg, const unsigned int valu
 
 bool ArgsManager::PrintHelpMessage(std::function<void(void)> callback)
 {
-    if(vm.count("help"))
+    if (vm.count("help"))
     {
         std::cout << *app << std::endl;
 
         return true;
     }
 
-    if(vm.count("version"))
+    if (vm.count("version"))
     {
-        if(callback)
+        if (callback)
         {
             callback();
             return true;
-        }
-        else
+        } else
         {
             return false;
         }
@@ -629,34 +653,37 @@ static const int screenWidth = 79;
 static const int optIndent = 2;
 static const int msgIndent = 7;
 
-std::string HelpMessageGroup(const std::string &message) {
+std::string HelpMessageGroup(const std::string &message)
+{
     return std::string(message) + std::string("\n\n");
 }
 
-std::string HelpMessageOpt(const std::string &option, const std::string &message) {
-    return std::string(optIndent,' ') + std::string(option) +
-           std::string("\n") + std::string(msgIndent,' ') +
+std::string HelpMessageOpt(const std::string &option, const std::string &message)
+{
+    return std::string(optIndent, ' ') + std::string(option) +
+           std::string("\n") + std::string(msgIndent, ' ') +
            FormatParagraph(message, screenWidth - msgIndent, msgIndent) +
            std::string("\n\n");
 }
 
-static std::string FormatException(const std::exception* pex, const char* pszThread)
+static std::string FormatException(const std::exception *pex, const char *pszThread)
 {
 #ifdef WIN32
     char pszModule[MAX_PATH] = "";
     GetModuleFileNameA(nullptr, pszModule, sizeof(pszModule));
 #else
-    const char* pszModule = "bitcoin";
+    const char *pszModule = "bitcoin";
 #endif
     if (pex)
         return strprintf(
-            "EXCEPTION: %s       \n%s       \n%s in %s       \n", typeid(*pex).name(), pex->what(), pszModule, pszThread);
+                "EXCEPTION: %s       \n%s       \n%s in %s       \n", typeid(*pex).name(), pex->what(), pszModule,
+                pszThread);
     else
         return strprintf(
-            "UNKNOWN EXCEPTION       \n%s in %s       \n", pszModule, pszThread);
+                "UNKNOWN EXCEPTION       \n%s in %s       \n", pszModule, pszThread);
 }
 
-void PrintExceptionContinue(const std::exception* pex, const char* pszThread)
+void PrintExceptionContinue(const std::exception *pex, const char *pszThread)
 {
     std::string message = FormatException(pex, pszThread);
     LogPrintf("\n\n************************\n%s\n", message);
@@ -674,7 +701,7 @@ fs::path GetDefaultDataDir()
     return GetSpecialFolderPath(CSIDL_APPDATA) / "SuperBitcoin";
 #else
     fs::path pathRet;
-    char* pszHome = getenv("HOME");
+    char *pszHome = getenv("HOME");
     if (pszHome == nullptr || strlen(pszHome) == 0)
         pathRet = fs::path("/");
     else
@@ -705,14 +732,17 @@ const fs::path &GetDataDir(bool fNetSpecific)
     if (!path.empty())
         return path;
 
-    if (gArgs.IsArgSet("-datadir")) {
+    if (gArgs.IsArgSet("-datadir"))
+    {
         std::string tmp = gArgs.GetArg<std::string>("-datadir", "");
         path = fs::system_complete(gArgs.GetArg<std::string>("-datadir", ""));
-        if (!fs::is_directory(path)) {
+        if (!fs::is_directory(path))
+        {
             path = "";
             return path;
         }
-    } else {
+    } else
+    {
         path = GetDefaultDataDir();
     }
     if (fNetSpecific)
@@ -731,7 +761,7 @@ void ClearDatadirCache()
     pathCachedNetSpecific = fs::path();
 }
 
-fs::path GetConfigFile(const std::string& confPath)
+fs::path GetConfigFile(const std::string &confPath)
 {
     fs::path pathConfigFile(confPath);
     if (!pathConfigFile.is_complete())
@@ -743,31 +773,32 @@ fs::path GetConfigFile(const std::string& confPath)
 bool ArgsManager::merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source)
 {
     LOCK(cs_args);
-    for(bpo::variables_map::iterator ite_src = source.begin(); ite_src != source.end(); ite_src++)
+    for (bpo::variables_map::iterator ite_src = source.begin(); ite_src != source.end(); ite_src++)
     {
         bpo::variables_map::iterator ite_desc = desc.find(ite_src->first);
-        if(ite_desc != desc.end())  // find
+        if (ite_desc != desc.end())  // find
         {
-            vector<string>::const_iterator ite_options_arr = find(options_arr.begin(), options_arr.end(), ite_src->first);
-            if(ite_options_arr != options_arr.end())    // value is array
+            vector<string>::const_iterator ite_options_arr = find(options_arr.begin(), options_arr.end(),
+                                                                  ite_src->first);
+            if (ite_options_arr != options_arr.end())    // value is array
             {
-                vector<string> &desc_value = desc.at(ite_src->first).as< vector<string> >();
-                desc_value.insert(desc_value.end(), ite_src->second.as< vector<string> >().begin(), ite_src->second.as< vector<string> >().end());
+                vector<string> &desc_value = desc.at(ite_src->first).as<vector<string> >();
+                desc_value.insert(desc_value.end(), ite_src->second.as<vector<string> >().begin(),
+                                  ite_src->second.as<vector<string> >().end());
 
                 // delete mutiple parameters
                 sort(desc_value.begin(), desc_value.end());
                 desc_value.erase(unique(desc_value.begin(), desc_value.end()), desc_value.end());
-            }
-            else
+            } else
             {
                 //value is basic data type, pass(use parameter from commond line)
             }
-        }
-        else    // not find
+        } else    // not find
         {
             bpo::variable_value tmp_value = ite_src->second;
-            auto res = desc.insert(std::make_pair(ite_src->first, tmp_value)); // return type of insert is std::pair< map<string, bpo::variable_value>::iterator, bool >
-            if(!res.second)
+            auto res = desc.insert(std::make_pair(ite_src->first,
+                                                  tmp_value)); // return type of insert is std::pair< map<string, bpo::variable_value>::iterator, bool >
+            if (!res.second)
             {
                 return false;
             }
@@ -777,7 +808,7 @@ bool ArgsManager::merge_variable_map(bpo::variables_map &desc, bpo::variables_ma
     return true;
 }
 
-void ArgsManager::ReadConfigFile(const std::string& confPath)
+void ArgsManager::ReadConfigFile(const std::string &confPath)
 {
     bpo::variables_map vm_tmp;
     bfs::path config_file_name(GetConfigFile(confPath));
@@ -785,14 +816,14 @@ void ArgsManager::ReadConfigFile(const std::string& confPath)
     merge_variable_map(vm, vm_tmp);
 }
 
-const std::string ArgsManager::SubPrefix(std::string str) {
+const std::string ArgsManager::SubPrefix(std::string str)
+{
 
     std::string tmp_strArg;
-    if(str[0] == '-')
+    if (str[0] == '-')
     {
         tmp_strArg = str.substr(1);
-    }
-    else
+    } else
     {
         tmp_strArg = str;
     }
@@ -833,22 +864,25 @@ const std::string ArgsManager::SubPrefix(std::string str) {
 
 
 #ifndef WIN32
+
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(gArgs.GetArg<std::string>("-pid",BITCOIN_PID_FILENAME));
-    if (!pathPidFile.is_complete()) pathPidFile = GetDataDir() / pathPidFile;
+    fs::path pathPidFile(gArgs.GetArg<std::string>("-pid", BITCOIN_PID_FILENAME));
+    if (!pathPidFile.is_complete())
+        pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;
 }
 
 void CreatePidFile(const fs::path &path, pid_t pid)
 {
-    FILE* file = fsbridge::fopen(path, "w");
+    FILE *file = fsbridge::fopen(path, "w");
     if (file)
     {
         fprintf(file, "%d\n", pid);
         fclose(file);
     }
 }
+
 #endif
 
 bool RenameOver(fs::path src, fs::path dest)
@@ -867,12 +901,13 @@ bool RenameOver(fs::path src, fs::path dest)
  * Specifically handles case where path p exists, but it wasn't possible for the user to
  * write to the parent directory.
  */
-bool TryCreateDirectories(const fs::path& p)
+bool TryCreateDirectories(const fs::path &p)
 {
     try
     {
         return fs::create_directories(p);
-    } catch (const fs::filesystem_error&) {
+    } catch (const fs::filesystem_error &)
+    {
         if (!fs::exists(p) || !fs::is_directory(p))
             throw;
     }
@@ -888,17 +923,18 @@ void FileCommit(FILE *file)
     HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(file));
     FlushFileBuffers(hFile);
 #else
-    #if defined(__linux__) || defined(__NetBSD__)
+#if defined(__linux__) || defined(__NetBSD__)
     fdatasync(fileno(file));
-    #elif defined(__APPLE__) && defined(F_FULLFSYNC)
+#elif defined(__APPLE__) && defined(F_FULLFSYNC)
     fcntl(fileno(file), F_FULLFSYNC, 0);
-    #else
+#else
     fsync(fileno(file));
-    #endif
+#endif
 #endif
 }
 
-bool TruncateFile(FILE *file, unsigned int length) {
+bool TruncateFile(FILE *file, unsigned int length)
+{
 #if defined(WIN32)
     return _chsize(_fileno(file), length) == 0;
 #else
@@ -910,13 +946,16 @@ bool TruncateFile(FILE *file, unsigned int length) {
  * this function tries to raise the file descriptor limit to the requested number.
  * It returns the actual file descriptor limit (which may be more or less than nMinFD)
  */
-int RaiseFileDescriptorLimit(int nMinFD) {
+int RaiseFileDescriptorLimit(int nMinFD)
+{
 #if defined(WIN32)
     return 2048;
 #else
     struct rlimit limitFD;
-    if (getrlimit(RLIMIT_NOFILE, &limitFD) != -1) {
-        if (limitFD.rlim_cur < (rlim_t)nMinFD) {
+    if (getrlimit(RLIMIT_NOFILE, &limitFD) != -1)
+    {
+        if (limitFD.rlim_cur < (rlim_t)nMinFD)
+        {
             limitFD.rlim_cur = nMinFD;
             if (limitFD.rlim_cur > limitFD.rlim_max)
                 limitFD.rlim_cur = limitFD.rlim_max;
@@ -933,7 +972,8 @@ int RaiseFileDescriptorLimit(int nMinFD) {
  * this function tries to make a particular range of a file allocated (corresponding to disk space)
  * it is advisory, and the range specified in the arguments will never contain live data
  */
-void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length) {
+void AllocateFileRange(FILE *file, unsigned int offset, unsigned int length)
+{
 #if defined(WIN32)
     // Windows-specific version
     HANDLE hFile = (HANDLE)_get_osfhandle(_fileno(file));
@@ -981,7 +1021,7 @@ void ShrinkDebugFile()
     constexpr size_t RECENT_DEBUG_HISTORY_SIZE = 10 * 1000000;
     // Scroll debug.log if it's getting too big
     fs::path pathLog = GetDataDir() / "debug.log";
-    FILE* file = fsbridge::fopen(pathLog, "r");
+    FILE *file = fsbridge::fopen(pathLog, "r");
     // If debug.log file is more than 10% bigger the RECENT_DEBUG_HISTORY_SIZE
     // trim it down by saving only the last RECENT_DEBUG_HISTORY_SIZE bytes
     if (file && fs::file_size(pathLog) > 11 * (RECENT_DEBUG_HISTORY_SIZE / 10))
@@ -998,8 +1038,7 @@ void ShrinkDebugFile()
             fwrite(vch.data(), 1, nBytes, file);
             fclose(file);
         }
-    }
-    else if (file != nullptr)
+    } else if (file != nullptr)
         fclose(file);
 }
 
@@ -1018,14 +1057,14 @@ fs::path GetSpecialFolderPath(int nFolder, bool fCreate)
 }
 #endif
 
-void runCommand(const std::string& strCommand)
+void runCommand(const std::string &strCommand)
 {
     int nErr = ::system(strCommand.c_str());
     if (nErr)
         LogPrintf("runCommand error: system(%s) returned %d\n", strCommand, nErr);
 }
 
-void RenameThread(const char* name)
+void RenameThread(const char *name)
 {
 #if defined(PR_SET_NAME)
     // Only the first 15 characters are used (16 - NUL terminator)
@@ -1049,16 +1088,19 @@ void SetupEnvironment()
     // arenas per core. This is known to cause excessive virtual address space
     // usage in our usage. Work around it by setting the maximum number of
     // arenas to 1.
-    if (sizeof(void*) == 4) {
+    if (sizeof(void *) == 4)
+    {
         mallopt(M_ARENA_MAX, 1);
     }
 #endif
     // On most POSIX systems (e.g. Linux, but not BSD) the environment's locale
     // may be invalid, in which case the "C" locale is used as fallback.
 #if !defined(WIN32) && !defined(MAC_OSX) && !defined(__FreeBSD__) && !defined(__OpenBSD__)
-    try {
+    try
+    {
         std::locale(""); // Raises a runtime error if current locale is invalid
-    } catch (const std::runtime_error&) {
+    } catch (const std::runtime_error &)
+    {
         setenv("LC_ALL", "C", 1);
     }
 #endif
@@ -1091,12 +1133,13 @@ int GetNumCores()
 #endif
 }
 
-std::string CopyrightHolders(const std::string& strPrefix)
+std::string CopyrightHolders(const std::string &strPrefix)
 {
     std::string strCopyrightHolders = strPrefix + strprintf(_(COPYRIGHT_HOLDERS), _(COPYRIGHT_HOLDERS_SUBSTITUTION));
 
     // Check for untranslated substitution to make sure Super Bitcoin Core copyright is not removed by accident
-    if (strprintf(COPYRIGHT_HOLDERS, COPYRIGHT_HOLDERS_SUBSTITUTION).find("Super Bitcoin Core") == std::string::npos) {
+    if (strprintf(COPYRIGHT_HOLDERS, COPYRIGHT_HOLDERS_SUBSTITUTION).find("Super Bitcoin Core") == std::string::npos)
+    {
         strCopyrightHolders += "\n" + strPrefix + "The Super Bitcoin Core developers";
     }
     return strCopyrightHolders;
@@ -1109,11 +1152,11 @@ int64_t GetStartupTime()
 }
 
 
-void GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char*> &argv_arr)
+void GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char *> &argv_arr)
 {
-    for(int i = 0; i != argc; i++)
+    for (int i = 0; i != argc; i++)
     {
-        if(strlen(argv[i]) > 2 && argv[i][0] == '-' && argv[i][1] != '-')
+        if (strlen(argv[i]) > 2 && argv[i][0] == '-' && argv[i][1] != '-')
         {
             argv_arr_tmp.push_back("-" + string(argv[i]));
             continue;
@@ -1121,7 +1164,7 @@ void GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_
 
         argv_arr_tmp.push_back(string(argv[i]));
     }
-    for(string &s : argv_arr_tmp)
+    for (string &s : argv_arr_tmp)
     {
         argv_arr.push_back(s.c_str());
     }

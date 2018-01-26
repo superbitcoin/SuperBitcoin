@@ -13,20 +13,22 @@
 #include <map>
 
 class CSubNet;
+
 class CAddrMan;
+
 class CDataStream;
 
 typedef enum BanReason
 {
-    BanReasonUnknown          = 0,
-    BanReasonNodeMisbehaving  = 1,
-    BanReasonManuallyAdded    = 2
+    BanReasonUnknown = 0,
+    BanReasonNodeMisbehaving = 1,
+    BanReasonManuallyAdded = 2
 } BanReason;
 
 class CBanEntry
 {
 public:
-    static const int CURRENT_VERSION=1;
+    static const int CURRENT_VERSION = 1;
     int nVersion;
     int64_t nCreateTime;
     int64_t nBanUntil;
@@ -45,8 +47,9 @@ public:
 
     ADD_SERIALIZE_METHODS;
 
-    template <typename Stream, typename Operation>
-    inline void SerializationOp(Stream& s, Operation ser_action) {
+    template<typename Stream, typename Operation>
+    inline void SerializationOp(Stream &s, Operation ser_action)
+    {
         READWRITE(this->nVersion);
         READWRITE(nCreateTime);
         READWRITE(nBanUntil);
@@ -63,13 +66,14 @@ public:
 
     std::string banReasonToString()
     {
-        switch (banReason) {
-        case BanReasonNodeMisbehaving:
-            return "node misbehaving";
-        case BanReasonManuallyAdded:
-            return "manually added";
-        default:
-            return "unknown";
+        switch (banReason)
+        {
+            case BanReasonNodeMisbehaving:
+                return "node misbehaving";
+            case BanReasonManuallyAdded:
+                return "manually added";
+            default:
+                return "unknown";
         }
     }
 };
@@ -83,9 +87,12 @@ private:
     fs::path pathAddr;
 public:
     CAddrDB();
-    bool Write(const CAddrMan& addr);
-    bool Read(CAddrMan& addr);
-    static bool Read(CAddrMan& addr, CDataStream& ssPeers);
+
+    bool Write(const CAddrMan &addr);
+
+    bool Read(CAddrMan &addr);
+
+    static bool Read(CAddrMan &addr, CDataStream &ssPeers);
 };
 
 /** Access to the banlist database (banlist.dat) */
@@ -95,8 +102,10 @@ private:
     fs::path pathBanlist;
 public:
     CBanDB();
-    bool Write(const banmap_t& banSet);
-    bool Read(banmap_t& banSet);
+
+    bool Write(const banmap_t &banSet);
+
+    bool Read(banmap_t &banSet);
 };
 
 #endif // BITCOIN_ADDRDB_H

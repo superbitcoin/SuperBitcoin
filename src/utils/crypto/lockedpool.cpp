@@ -6,7 +6,9 @@
 #include "cleanse.h"
 
 #if defined(HAVE_CONFIG_H)
+
 #include "config/sbtc-config.h"
+
 #endif
 
 #ifdef WIN32
@@ -20,15 +22,17 @@
 #endif
 #include <windows.h>
 #else
+
 #include <sys/mman.h> // for mmap
 #include <sys/resource.h> // for getrlimit
 #include <limits.h> // for PAGESIZE
 #include <unistd.h> // for sysconf
+
 #endif
 
 #include <algorithm>
 
-LockedPoolManager* LockedPoolManager::_instance = nullptr;
+LockedPoolManager *LockedPoolManager::_instance = nullptr;
 std::once_flag LockedPoolManager::init_flag;
 
 /*******************************************************************************/
@@ -43,8 +47,8 @@ static inline size_t align_up(size_t x, size_t align)
 /*******************************************************************************/
 // Implementation: Arena
 
-Arena::Arena(void *base_in, size_t size_in, size_t alignment_in):
-    base(static_cast<char*>(base_in)), end(static_cast<char*>(base_in) + size_in), alignment(alignment_in)
+Arena::Arena(void *base_in, size_t size_in, size_t alignment_in) :
+        base(static_cast<char *>(base_in)), end(static_cast<char *>(base_in) + size_in), alignment(alignment_in)
 {
     // Start with one free chunk that covers the entire arena
     chunks_free.emplace(base, size_in);
@@ -54,7 +58,7 @@ Arena::~Arena()
 {
 }
 
-void* Arena::alloc(size_t size)
+void *Arena::alloc(size_t size)
 {
     // Round to next multiple of alignment
     size = align_up(size, alignment);
@@ -65,7 +69,8 @@ void* Arena::alloc(size_t size)
 
     // Pick a large enough free-chunk
     auto it = std::find_if(chunks_free.begin(), chunks_free.end(),
-        [=](const std::map<char*, size_t>::value_type& chunk){ return chunk.second >= size; });
+                           [=](const std::map<char *, size_t>::value_type &chunk)
+                           { return chunk.second >= size; });
     if (it == chunks_free.end())
         return nullptr;
 
@@ -73,12 +78,15 @@ void* Arena::alloc(size_t size)
     auto alloced = chunks_used.emplace(it->first + it->second - size, size).first;
     if (!(it->second -= size))
         chunks_free.erase(it);
-    return reinterpret_cast<void*>(alloced->first);
+    return reinterpret_cast<void *>(alloced->first);
 }
 
 /* extend the Iterator if other begins at its end */
-template <class Iterator, class Pair> bool extend(Iterator it, const Pair& other) {
-    if (it->first + it->second == other.first) {
+template<class Iterator, class Pair>
+bool extend(Iterator it, const Pair &other)
+{
+    if (it->first + it->second == other.first)
+    {
         it->second += other.second;
         return true;
     }
@@ -88,13 +96,15 @@ template <class Iterator, class Pair> bool extend(Iterator it, const Pair& other
 void Arena::free(void *ptr)
 {
     // Freeing the nullptr pointer is OK.
-    if (ptr == nullptr) {
+    if (ptr == nullptr)
+    {
         return;
     }
 
     // Remove chunk from used map
-    auto i = chunks_used.find(static_cast<char*>(ptr));
-    if (i == chunks_used.end()) {
+    auto i = chunks_used.find(static_cast<char *>(ptr));
+    if (i == chunks_used.end())
+    {
         throw std::runtime_error("Arena: invalid or double free");
     }
     auto freed = *i;
@@ -111,10 +121,10 @@ void Arena::free(void *ptr)
 
 Arena::Stats Arena::stats() const
 {
-    Arena::Stats r{ 0, 0, 0, chunks_used.size(), chunks_free.size() };
-    for (const auto& chunk: chunks_used)
+    Arena::Stats r{0, 0, 0, chunks_used.size(), chunks_free.size()};
+    for (const auto &chunk: chunks_used)
         r.used += chunk.second;
-    for (const auto& chunk: chunks_free)
+    for (const auto &chunk: chunks_free)
         r.free += chunk.second;
     r.total = r.used + r.free;
     return r;
@@ -193,16 +203,21 @@ size_t Win32LockedPageAllocator::GetLimit()
 // Implementation: PosixLockedPageAllocator
 
 #ifndef WIN32
+
 /** LockedPageAllocator specialized for OSes that don't try to be
  * special snowflakes.
  */
-class PosixLockedPageAllocator: public LockedPageAllocator
+class PosixLockedPageAllocator : public LockedPageAllocator
 {
 public:
     PosixLockedPageAllocator();
-    void* AllocateLocked(size_t len, bool *lockingSuccess) override;
-    void FreeLocked(void* addr, size_t len) override;
+
+    void *AllocateLocked(size_t len, bool *lockingSuccess) override;
+
+    void FreeLocked(void *addr, size_t len) override;
+
     size_t GetLimit() override;
+
 private:
     size_t page_size;
 };
@@ -227,45 +242,52 @@ void *PosixLockedPageAllocator::AllocateLocked(size_t len, bool *lockingSuccess)
 {
     void *addr;
     len = align_up(len, page_size);
-    addr = mmap(nullptr, len, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    if (addr) {
+    addr = mmap(nullptr, len, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (addr)
+    {
         *lockingSuccess = mlock(addr, len) == 0;
     }
     return addr;
 }
-void PosixLockedPageAllocator::FreeLocked(void* addr, size_t len)
+
+void PosixLockedPageAllocator::FreeLocked(void *addr, size_t len)
 {
     len = align_up(len, page_size);
     memory_cleanse(addr, len);
     munlock(addr, len);
     munmap(addr, len);
 }
+
 size_t PosixLockedPageAllocator::GetLimit()
 {
 #ifdef RLIMIT_MEMLOCK
     struct rlimit rlim;
-    if (getrlimit(RLIMIT_MEMLOCK, &rlim) == 0) {
-        if (rlim.rlim_cur != RLIM_INFINITY) {
+    if (getrlimit(RLIMIT_MEMLOCK, &rlim) == 0)
+    {
+        if (rlim.rlim_cur != RLIM_INFINITY)
+        {
             return rlim.rlim_cur;
         }
     }
 #endif
     return std::numeric_limits<size_t>::max();
 }
+
 #endif
 
 /*******************************************************************************/
 // Implementation: LockedPool
 
-LockedPool::LockedPool(std::unique_ptr<LockedPageAllocator> allocator_in, LockingFailed_Callback lf_cb_in):
-    allocator(std::move(allocator_in)), lf_cb(lf_cb_in), cumulative_bytes_locked(0)
+LockedPool::LockedPool(std::unique_ptr<LockedPageAllocator> allocator_in, LockingFailed_Callback lf_cb_in) :
+        allocator(std::move(allocator_in)), lf_cb(lf_cb_in), cumulative_bytes_locked(0)
 {
 }
 
 LockedPool::~LockedPool()
 {
 }
-void* LockedPool::alloc(size_t size)
+
+void *LockedPool::alloc(size_t size)
 {
     std::lock_guard<std::mutex> lock(mutex);
 
@@ -274,14 +296,17 @@ void* LockedPool::alloc(size_t size)
         return nullptr;
 
     // Try allocating from each current arena
-    for (auto &arena: arenas) {
+    for (auto &arena: arenas)
+    {
         void *addr = arena.alloc(size);
-        if (addr) {
+        if (addr)
+        {
             return addr;
         }
     }
     // If that fails, create a new one
-    if (new_arena(ARENA_SIZE, ARENA_ALIGN)) {
+    if (new_arena(ARENA_SIZE, ARENA_ALIGN))
+    {
         return arenas.back().alloc(size);
     }
     return nullptr;
@@ -292,8 +317,10 @@ void LockedPool::free(void *ptr)
     std::lock_guard<std::mutex> lock(mutex);
     // TODO we can do better than this linear search by keeping a map of arena
     // extents to arena, and looking up the address.
-    for (auto &arena: arenas) {
-        if (arena.addressInArena(ptr)) {
+    for (auto &arena: arenas)
+    {
+        if (arena.addressInArena(ptr))
+        {
             arena.free(ptr);
             return;
         }
@@ -305,7 +332,8 @@ LockedPool::Stats LockedPool::stats() const
 {
     std::lock_guard<std::mutex> lock(mutex);
     LockedPool::Stats r{0, 0, 0, cumulative_bytes_locked, 0, 0};
-    for (const auto &arena: arenas) {
+    for (const auto &arena: arenas)
+    {
         Arena::Stats i = arena.stats();
         r.used += i.used;
         r.free += i.free;
@@ -323,20 +351,26 @@ bool LockedPool::new_arena(size_t size, size_t align)
     // by the process limit. This makes sure that the first arena will at least
     // be locked. An exception to this is if the process limit is 0:
     // in this case no memory can be locked at all so we'll skip past this logic.
-    if (arenas.empty()) {
+    if (arenas.empty())
+    {
         size_t limit = allocator->GetLimit();
-        if (limit > 0) {
+        if (limit > 0)
+        {
             size = std::min(size, limit);
         }
     }
     void *addr = allocator->AllocateLocked(size, &locked);
-    if (!addr) {
+    if (!addr)
+    {
         return false;
     }
-    if (locked) {
+    if (locked)
+    {
         cumulative_bytes_locked += size;
-    } else if (lf_cb) { // Call the locking-failed callback if locking failed
-        if (!lf_cb()) { // If the callback returns false, free the memory and fail, otherwise consider the user warned and proceed.
+    } else if (lf_cb)
+    { // Call the locking-failed callback if locking failed
+        if (!lf_cb())
+        { // If the callback returns false, free the memory and fail, otherwise consider the user warned and proceed.
             allocator->FreeLocked(addr, size);
             return false;
         }
@@ -345,10 +379,12 @@ bool LockedPool::new_arena(size_t size, size_t align)
     return true;
 }
 
-LockedPool::LockedPageArena::LockedPageArena(LockedPageAllocator *allocator_in, void *base_in, size_t size_in, size_t align_in):
-    Arena(base_in, size_in, align_in), base(base_in), size(size_in), allocator(allocator_in)
+LockedPool::LockedPageArena::LockedPageArena(LockedPageAllocator *allocator_in, void *base_in, size_t size_in,
+                                             size_t align_in) :
+        Arena(base_in, size_in, align_in), base(base_in), size(size_in), allocator(allocator_in)
 {
 }
+
 LockedPool::LockedPageArena::~LockedPageArena()
 {
     allocator->FreeLocked(base, size);
@@ -357,8 +393,8 @@ LockedPool::LockedPageArena::~LockedPageArena()
 /*******************************************************************************/
 // Implementation: LockedPoolManager
 //
-LockedPoolManager::LockedPoolManager(std::unique_ptr<LockedPageAllocator> allocator_in):
-    LockedPool(std::move(allocator_in), &LockedPoolManager::LockingFailed)
+LockedPoolManager::LockedPoolManager(std::unique_ptr<LockedPageAllocator> allocator_in) :
+        LockedPool(std::move(allocator_in), &LockedPoolManager::LockingFailed)
 {
 }
 

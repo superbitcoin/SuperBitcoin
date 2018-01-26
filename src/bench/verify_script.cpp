@@ -4,9 +4,11 @@
 
 #include "bench.h"
 #include "wallet/key.h"
+
 #if defined(HAVE_CONSENSUS_LIB)
 #include "script/bitcoinconsensus.h"
 #endif
+
 #include "script/script.h"
 #include "script/sign.h"
 #include "sbtccore/streams.h"
@@ -14,7 +16,7 @@
 #include <array>
 
 // FIXME: Dedup with BuildCreditingTransaction in test/script_tests.cpp.
-static CMutableTransaction BuildCreditingTransaction(const CScript& scriptPubKey)
+static CMutableTransaction BuildCreditingTransaction(const CScript &scriptPubKey)
 {
     CMutableTransaction txCredit;
     txCredit.nVersion = 1;
@@ -31,7 +33,7 @@ static CMutableTransaction BuildCreditingTransaction(const CScript& scriptPubKey
 }
 
 // FIXME: Dedup with BuildSpendingTransaction in test/script_tests.cpp.
-static CMutableTransaction BuildSpendingTransaction(const CScript& scriptSig, const CMutableTransaction& txCredit)
+static CMutableTransaction BuildSpendingTransaction(const CScript &scriptSig, const CMutableTransaction &txCredit)
 {
     CMutableTransaction txSpend;
     txSpend.nVersion = 1;
@@ -50,7 +52,7 @@ static CMutableTransaction BuildSpendingTransaction(const CScript& scriptSig, co
 
 // Microbenchmark for verification of a basic P2WPKH script. Can be easily
 // modified to measure performance of other types of scripts.
-static void VerifyScriptBench(benchmark::State& state)
+static void VerifyScriptBench(benchmark::State &state)
 {
     const int flags = SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_P2SH;
     const int witnessversion = 0;
@@ -58,9 +60,9 @@ static void VerifyScriptBench(benchmark::State& state)
     // Keypair.
     CKey key;
     static const std::array<unsigned char, 32> vchKey = {
-        {
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
-        }
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1
+            }
     };
     key.Set(vchKey.begin(), vchKey.end(), false);
     CPubKey pubkey = key.GetPubKey();
@@ -70,25 +72,28 @@ static void VerifyScriptBench(benchmark::State& state)
     // Script.
     CScript scriptPubKey = CScript() << witnessversion << ToByteVector(pubkeyHash);
     CScript scriptSig;
-    CScript witScriptPubkey = CScript() << OP_DUP << OP_HASH160 << ToByteVector(pubkeyHash) << OP_EQUALVERIFY << OP_CHECKSIG;
+    CScript witScriptPubkey =
+            CScript() << OP_DUP << OP_HASH160 << ToByteVector(pubkeyHash) << OP_EQUALVERIFY << OP_CHECKSIG;
     CTransaction txCredit = BuildCreditingTransaction(scriptPubKey);
     CMutableTransaction txSpend = BuildSpendingTransaction(scriptSig, txCredit);
-    CScriptWitness& witness = txSpend.vin[0].scriptWitness;
+    CScriptWitness &witness = txSpend.vin[0].scriptWitness;
     witness.stack.emplace_back();
-    key.Sign(SignatureHash(witScriptPubkey, txSpend, 0, SIGHASH_ALL, txCredit.vout[0].nValue, SIGVERSION_WITNESS_V0), witness.stack.back(), 0);
+    key.Sign(SignatureHash(witScriptPubkey, txSpend, 0, SIGHASH_ALL, txCredit.vout[0].nValue, SIGVERSION_WITNESS_V0),
+             witness.stack.back(), 0);
     witness.stack.back().push_back(static_cast<unsigned char>(SIGHASH_ALL));
     witness.stack.push_back(ToByteVector(pubkey));
 
     // Benchmark.
-    while (state.KeepRunning()) {
+    while (state.KeepRunning())
+    {
         ScriptError err;
         bool success = VerifyScript(
-            txSpend.vin[0].scriptSig,
-            txCredit.vout[0].scriptPubKey,
-            &txSpend.vin[0].scriptWitness,
-            flags,
-            MutableTransactionSignatureChecker(&txSpend, 0, txCredit.vout[0].nValue),
-            &err);
+                txSpend.vin[0].scriptSig,
+                txCredit.vout[0].scriptPubKey,
+                &txSpend.vin[0].scriptWitness,
+                flags,
+                MutableTransactionSignatureChecker(&txSpend, 0, txCredit.vout[0].nValue),
+                &err);
         assert(err == SCRIPT_ERR_OK);
         assert(success);
 

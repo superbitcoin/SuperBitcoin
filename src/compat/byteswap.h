@@ -6,13 +6,17 @@
 #define BITCOIN_COMPAT_BYTESWAP_H
 
 #if defined(HAVE_CONFIG_H)
+
 #include "config/sbtc-config.h"
+
 #endif
 
 #include <stdint.h>
 
 #if defined(HAVE_BYTESWAP_H)
+
 #include <byteswap.h>
+
 #endif
 
 #if defined(__APPLE__)

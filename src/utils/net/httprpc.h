@@ -12,9 +12,11 @@
  * Precondition; HTTP and RPC has been started.
  */
 bool StartHTTPRPC();
+
 /** Interrupt HTTP RPC subsystem.
  */
 void InterruptHTTPRPC();
+
 /** Stop HTTP RPC subsystem.
  * Precondition; HTTP and RPC has been stopped.
  */
@@ -24,9 +26,11 @@ void StopHTTPRPC();
  * Precondition; HTTP and RPC has been started.
  */
 bool StartREST();
+
 /** Interrupt RPC REST subsystem.
  */
 void InterruptREST();
+
 /** Stop HTTP REST subsystem.
  * Precondition; HTTP and RPC has been stopped.
  */

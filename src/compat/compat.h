@@ -7,7 +7,9 @@
 #define BITCOIN_COMPAT_H
 
 #if defined(HAVE_CONFIG_H)
+
 #include "config/sbtc-config.h"
+
 #endif
 
 #ifdef WIN32
@@ -32,6 +34,7 @@
 #include <windows.h>
 #include <ws2tcpip.h>
 #else
+
 #include <sys/fcntl.h>
 #include <sys/mman.h>
 #include <sys/select.h>
@@ -45,11 +48,14 @@
 #include <limits.h>
 #include <netdb.h>
 #include <unistd.h>
+
 #endif
 
 #ifndef WIN32
 typedef unsigned int SOCKET;
+
 #include "errno.h"
+
 #define WSAGetLastError()   errno
 #define WSAEINVAL           EINVAL
 #define WSAEALREADY         EALREADY
@@ -76,7 +82,8 @@ typedef unsigned int SOCKET;
 size_t strnlen( const char *start, size_t max_len);
 #endif // HAVE_DECL_STRNLEN
 
-bool static inline IsSelectableSocket(const SOCKET& s) {
+bool static inline IsSelectableSocket(const SOCKET &s)
+{
 #ifdef WIN32
     return true;
 #else

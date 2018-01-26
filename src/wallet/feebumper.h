@@ -8,9 +8,13 @@
 #include <transaction/transaction.h>
 
 class CWallet;
+
 class CWalletTx;
+
 class uint256;
+
 class CCoinControl;
+
 enum class FeeEstimateMode;
 
 enum class BumpFeeResult
@@ -26,12 +30,32 @@ enum class BumpFeeResult
 class CFeeBumper
 {
 public:
-    CFeeBumper(const CWallet *pWalletIn, const uint256 txidIn, const CCoinControl& coin_control, CAmount totalFee);
-    BumpFeeResult getResult() const { return currentResult; }
-    const std::vector<std::string>& getErrors() const { return vErrors; }
-    CAmount getOldFee() const { return nOldFee; }
-    CAmount getNewFee() const { return nNewFee; }
-    uint256 getBumpedTxId() const { return bumpedTxid; }
+    CFeeBumper(const CWallet *pWalletIn, const uint256 txidIn, const CCoinControl &coin_control, CAmount totalFee);
+
+    BumpFeeResult getResult() const
+    {
+        return currentResult;
+    }
+
+    const std::vector<std::string> &getErrors() const
+    {
+        return vErrors;
+    }
+
+    CAmount getOldFee() const
+    {
+        return nOldFee;
+    }
+
+    CAmount getNewFee() const
+    {
+        return nNewFee;
+    }
+
+    uint256 getBumpedTxId() const
+    {
+        return bumpedTxid;
+    }
 
     /* signs the new transaction,
      * returns false if the tx couldn't be found or if it was
@@ -47,7 +71,7 @@ public:
     bool commit(CWallet *pWalletNonConst);
 
 private:
-    bool preconditionChecks(const CWallet *pWallet, const CWalletTx& wtx);
+    bool preconditionChecks(const CWallet *pWallet, const CWalletTx &wtx);
 
     const uint256 txid;
     uint256 bumpedTxid;

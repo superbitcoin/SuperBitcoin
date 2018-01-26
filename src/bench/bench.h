@@ -34,10 +34,12 @@ static void CODE_TO_TIME(benchmark::State& state)
 BENCHMARK(CODE_TO_TIME);
 
  */
- 
-namespace benchmark {
 
-    class State {
+namespace benchmark
+{
+
+    class State
+    {
         std::string name;
         double maxElapsed;
         double beginTime;
@@ -49,28 +51,31 @@ namespace benchmark {
         uint64_t minCycles;
         uint64_t maxCycles;
     public:
-        State(std::string _name, double _maxElapsed) : name(_name), maxElapsed(_maxElapsed), count(0) {
+        State(std::string _name, double _maxElapsed) : name(_name), maxElapsed(_maxElapsed), count(0)
+        {
             minTime = std::numeric_limits<double>::max();
             maxTime = std::numeric_limits<double>::min();
             minCycles = std::numeric_limits<uint64_t>::max();
             maxCycles = std::numeric_limits<uint64_t>::min();
             countMask = 1;
-            countMaskInv = 1./(countMask + 1);
+            countMaskInv = 1. / (countMask + 1);
         }
+
         bool KeepRunning();
     };
 
-    typedef std::function<void(State&)> BenchFunction;
+    typedef std::function<void(State &)> BenchFunction;
 
     class BenchRunner
     {
         typedef std::map<std::string, BenchFunction> BenchmarkMap;
+
         static BenchmarkMap &benchmarks();
 
     public:
         BenchRunner(std::string name, BenchFunction func);
 
-        static void RunAll(double elapsedTimeForOne=1.0);
+        static void RunAll(double elapsedTimeForOne = 1.0);
     };
 }
 

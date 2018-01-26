@@ -19,7 +19,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/algorithm/string/split.hpp>
 
-CScript ParseScript(const std::string& s)
+CScript ParseScript(const std::string &s)
 {
     CScript result;
 
@@ -33,7 +33,7 @@ CScript ParseScript(const std::string& s)
             if (op < OP_NOP && op != OP_RESERVED)
                 continue;
 
-            const char* name = GetOpName((opcodetype)op);
+            const char *name = GetOpName((opcodetype)op);
             if (strcmp(name, "OP_UNKNOWN") == 0)
                 continue;
             std::string strName(name);
@@ -52,33 +52,30 @@ CScript ParseScript(const std::string& s)
         if (w->empty())
         {
             // Empty string, ignore. (boost::split given '' will return one word)
-        }
-        else if (all(*w, boost::algorithm::is_digit()) ||
-            (boost::algorithm::starts_with(*w, "-") && all(std::string(w->begin()+1, w->end()), boost::algorithm::is_digit())))
+        } else if (all(*w, boost::algorithm::is_digit()) ||
+                   (boost::algorithm::starts_with(*w, "-") &&
+                    all(std::string(w->begin() + 1, w->end()), boost::algorithm::is_digit())))
         {
             // Number
             int64_t n = atoi64(*w);
             result << n;
-        }
-        else if (boost::algorithm::starts_with(*w, "0x") && (w->begin()+2 != w->end()) && IsHex(std::string(w->begin()+2, w->end())))
+        } else if (boost::algorithm::starts_with(*w, "0x") && (w->begin() + 2 != w->end()) &&
+                   IsHex(std::string(w->begin() + 2, w->end())))
         {
             // Raw hex data, inserted NOT pushed onto stack:
-            std::vector<unsigned char> raw = ParseHex(std::string(w->begin()+2, w->end()));
+            std::vector<unsigned char> raw = ParseHex(std::string(w->begin() + 2, w->end()));
             result.insert(result.end(), raw.begin(), raw.end());
-        }
-        else if (w->size() >= 2 && boost::algorithm::starts_with(*w, "'") && boost::algorithm::ends_with(*w, "'"))
+        } else if (w->size() >= 2 && boost::algorithm::starts_with(*w, "'") && boost::algorithm::ends_with(*w, "'"))
         {
             // Single-quoted string, pushed as data. NOTE: this is poor-man's
             // parsing, spaces/tabs/newlines in single-quoted strings won't work.
-            std::vector<unsigned char> value(w->begin()+1, w->end()-1);
+            std::vector<unsigned char> value(w->begin() + 1, w->end() - 1);
             result << value;
-        }
-        else if (mapOpNames.count(*w))
+        } else if (mapOpNames.count(*w))
         {
             // opcode, e.g. OP_ADD or ADD:
             result << mapOpNames[*w];
-        }
-        else
+        } else
         {
             throw std::runtime_error("script parse error");
         }
@@ -88,79 +85,94 @@ CScript ParseScript(const std::string& s)
 }
 
 // Check that all of the input and output scripts of a transaction contains valid opcodes
-bool CheckTxScriptsSanity(const CMutableTransaction& tx)
+bool CheckTxScriptsSanity(const CMutableTransaction &tx)
 {
     // Check input scripts for non-coinbase txs
-    if (!CTransaction(tx).IsCoinBase()) {
-        for (unsigned int i = 0; i < tx.vin.size(); i++) {
-            if (!tx.vin[i].scriptSig.HasValidOps() || tx.vin[i].scriptSig.size() > MAX_SCRIPT_SIZE) {
+    if (!CTransaction(tx).IsCoinBase())
+    {
+        for (unsigned int i = 0; i < tx.vin.size(); i++)
+        {
+            if (!tx.vin[i].scriptSig.HasValidOps() || tx.vin[i].scriptSig.size() > MAX_SCRIPT_SIZE)
+            {
                 return false;
             }
         }
     }
     // Check output scripts
-    for (unsigned int i = 0; i < tx.vout.size(); i++) {
-        if (!tx.vout[i].scriptPubKey.HasValidOps() || tx.vout[i].scriptPubKey.size() > MAX_SCRIPT_SIZE) {
+    for (unsigned int i = 0; i < tx.vout.size(); i++)
+    {
+        if (!tx.vout[i].scriptPubKey.HasValidOps() || tx.vout[i].scriptPubKey.size() > MAX_SCRIPT_SIZE)
+        {
             return false;
         }
     }
-    
+
     return true;
 }
 
-bool DecodeHexTx(CMutableTransaction& tx, const std::string& strHexTx, bool fTryNoWitness)
+bool DecodeHexTx(CMutableTransaction &tx, const std::string &strHexTx, bool fTryNoWitness)
 {
-    if (!IsHex(strHexTx)) {
+    if (!IsHex(strHexTx))
+    {
         return false;
     }
 
     std::vector<unsigned char> txData(ParseHex(strHexTx));
 
-    if (fTryNoWitness) {
+    if (fTryNoWitness)
+    {
         CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS);
-        try {
+        try
+        {
             ssData >> tx;
-            if (ssData.eof() && CheckTxScriptsSanity(tx)) {
+            if (ssData.eof() && CheckTxScriptsSanity(tx))
+            {
                 return true;
             }
         }
-        catch (const std::exception&) {
+        catch (const std::exception &)
+        {
             // Fall through.
         }
     }
 
     CDataStream ssData(txData, SER_NETWORK, PROTOCOL_VERSION);
-    try {
+    try
+    {
         ssData >> tx;
-        if (!ssData.empty()) {
+        if (!ssData.empty())
+        {
             return false;
         }
     }
-    catch (const std::exception&) {
+    catch (const std::exception &)
+    {
         return false;
     }
 
     return true;
 }
 
-bool DecodeHexBlk(CBlock& block, const std::string& strHexBlk)
+bool DecodeHexBlk(CBlock &block, const std::string &strHexBlk)
 {
     if (!IsHex(strHexBlk))
         return false;
 
     std::vector<unsigned char> blockData(ParseHex(strHexBlk));
     CDataStream ssBlock(blockData, SER_NETWORK, PROTOCOL_VERSION);
-    try {
+    try
+    {
         ssBlock >> block;
     }
-    catch (const std::exception&) {
+    catch (const std::exception &)
+    {
         return false;
     }
 
     return true;
 }
 
-uint256 ParseHashUV(const UniValue& v, const std::string& strName)
+uint256 ParseHashUV(const UniValue &v, const std::string &strName)
 {
     std::string strHex;
     if (v.isStr())
@@ -168,7 +180,7 @@ uint256 ParseHashUV(const UniValue& v, const std::string& strName)
     return ParseHashStr(strHex, strName);  // Note: ParseHashStr("") throws a runtime_error
 }
 
-uint256 ParseHashStr(const std::string& strHex, const std::string& strName)
+uint256 ParseHashStr(const std::string &strHex, const std::string &strName)
 {
     if (!IsHex(strHex)) // Note: IsHex("") is false
         throw std::runtime_error(strName + " must be hexadecimal string (not '" + strHex + "')");
@@ -178,7 +190,7 @@ uint256 ParseHashStr(const std::string& strHex, const std::string& strName)
     return result;
 }
 
-std::vector<unsigned char> ParseHexUV(const UniValue& v, const std::string& strName)
+std::vector<unsigned char> ParseHexUV(const UniValue &v, const std::string &strName)
 {
     std::string strHex;
     if (v.isStr())

@@ -38,14 +38,20 @@ public:
     mutable CCriticalSection cs_db;
     DbEnv *dbenv;
     std::map<std::string, int> mapFileUseCount;
-    std::map<std::string, Db*> mapDb;
+    std::map<std::string, Db *> mapDb;
 
     CDBEnv();
+
     ~CDBEnv();
+
     void Reset();
 
     void MakeMock();
-    bool IsMock() const { return fMockDb; }
+
+    bool IsMock() const
+    {
+        return fMockDb;
+    }
 
     /**
      * Verify that database file strFile is OK. If it is not,
@@ -53,11 +59,17 @@ public:
      * This must be called BEFORE strFile is opened.
      * Returns true if strFile is OK.
      */
-    enum VerifyResult { VERIFY_OK,
-                        RECOVER_OK,
-                        RECOVER_FAIL };
-    typedef bool (*recoverFunc_type)(const std::string& strFile, std::string& out_backup_filename);
-    VerifyResult Verify(const std::string& strFile, recoverFunc_type recoverFunc, std::string& out_backup_filename);
+    enum VerifyResult
+    {
+        VERIFY_OK,
+        RECOVER_OK,
+        RECOVER_FAIL
+    };
+
+    typedef bool (*recoverFunc_type)(const std::string &strFile, std::string &out_backup_filename);
+
+    VerifyResult Verify(const std::string &strFile, recoverFunc_type recoverFunc, std::string &out_backup_filename);
+
     /**
      * Salvage data from a file that Verify says is bad.
      * fAggressive sets the DB_AGGRESSIVE flag (see berkeley DB->verify() method documentation).
@@ -66,18 +78,22 @@ public:
      * for huge databases.
      */
     typedef std::pair<std::vector<unsigned char>, std::vector<unsigned char> > KeyValPair;
-    bool Salvage(const std::string& strFile, bool fAggressive, std::vector<KeyValPair>& vResult);
 
-    bool Open(const fs::path& path);
+    bool Salvage(const std::string &strFile, bool fAggressive, std::vector<KeyValPair> &vResult);
+
+    bool Open(const fs::path &path);
+
     void Close();
+
     void Flush(bool fShutdown);
-    void CheckpointLSN(const std::string& strFile);
 
-    void CloseDb(const std::string& strFile);
+    void CheckpointLSN(const std::string &strFile);
 
-    DbTxn* TxnBegin(int flags = DB_TXN_WRITE_NOSYNC)
+    void CloseDb(const std::string &strFile);
+
+    DbTxn *TxnBegin(int flags = DB_TXN_WRITE_NOSYNC)
     {
-        DbTxn* ptxn = nullptr;
+        DbTxn *ptxn = nullptr;
         int ret = dbenv->txn_begin(nullptr, &ptxn, flags);
         if (!ptxn || ret != 0)
             return nullptr;
@@ -93,6 +109,7 @@ extern CDBEnv bitdb;
 class CWalletDBWrapper
 {
     friend class CDB;
+
 public:
     /** Create dummy DB handle */
     CWalletDBWrapper() : nUpdateCounter(0), nLastSeen(0), nLastFlushed(0), nLastWalletUpdate(0), env(nullptr)
@@ -101,21 +118,24 @@ public:
 
     /** Create DB handle to real database */
     CWalletDBWrapper(CDBEnv *env_in, const std::string &strFile_in) :
-        nUpdateCounter(0), nLastSeen(0), nLastFlushed(0), nLastWalletUpdate(0), env(env_in), strFile(strFile_in)
+            nUpdateCounter(0), nLastSeen(0), nLastFlushed(0), nLastWalletUpdate(0), env(env_in), strFile(strFile_in)
     {
     }
 
     /** Rewrite the entire database on disk, with the exception of key pszSkip if non-zero
      */
-    bool Rewrite(const char* pszSkip=nullptr);
+    bool Rewrite(const char *pszSkip = nullptr);
 
     /** Back up the entire database to a file.
      */
-    bool Backup(const std::string& strDest);
+    bool Backup(const std::string &strDest);
 
     /** Get a name for this database, for debugging etc.
      */
-    std::string GetName() const { return strFile; }
+    std::string GetName() const
+    {
+        return strFile;
+    }
 
     /** Make sure all changes are flushed to disk.
      */
@@ -137,7 +157,10 @@ private:
      * Only to be used at a low level, application should ideally not care
      * about this.
      */
-    bool IsDummy() { return env == nullptr; }
+    bool IsDummy()
+    {
+        return env == nullptr;
+    }
 };
 
 
@@ -145,36 +168,48 @@ private:
 class CDB
 {
 protected:
-    Db* pdb;
+    Db *pdb;
     std::string strFile;
-    DbTxn* activeTxn;
+    DbTxn *activeTxn;
     bool fReadOnly;
     bool fFlushOnClose;
     CDBEnv *env;
 
 public:
-    explicit CDB(CWalletDBWrapper& dbw, const char* pszMode = "r+", bool fFlushOnCloseIn=true);
-    ~CDB() { Close(); }
+    explicit CDB(CWalletDBWrapper &dbw, const char *pszMode = "r+", bool fFlushOnCloseIn = true);
+
+    ~CDB()
+    {
+        Close();
+    }
 
     void Flush();
+
     void Close();
-    static bool Recover(const std::string& filename, void *callbackDataIn, bool (*recoverKVcallback)(void* callbackData, CDataStream ssKey, CDataStream ssValue), std::string& out_backup_filename);
+
+    static bool Recover(const std::string &filename, void *callbackDataIn,
+                        bool (*recoverKVcallback)(void *callbackData, CDataStream ssKey, CDataStream ssValue),
+                        std::string &out_backup_filename);
 
     /* flush the wallet passively (TRY_LOCK)
        ideal to be called periodically */
-    static bool PeriodicFlush(CWalletDBWrapper& dbw);
+    static bool PeriodicFlush(CWalletDBWrapper &dbw);
+
     /* verifies the database environment */
-    static bool VerifyEnvironment(const std::string& walletFile, const fs::path& dataDir, std::string& errorStr);
+    static bool VerifyEnvironment(const std::string &walletFile, const fs::path &dataDir, std::string &errorStr);
+
     /* verifies the database file */
-    static bool VerifyDatabaseFile(const std::string& walletFile, const fs::path& dataDir, std::string& warningStr, std::string& errorStr, CDBEnv::recoverFunc_type recoverFunc);
+    static bool VerifyDatabaseFile(const std::string &walletFile, const fs::path &dataDir, std::string &warningStr,
+                                   std::string &errorStr, CDBEnv::recoverFunc_type recoverFunc);
 
 private:
-    CDB(const CDB&);
-    void operator=(const CDB&);
+    CDB(const CDB &);
+
+    void operator=(const CDB &);
 
 public:
-    template <typename K, typename T>
-    bool Read(const K& key, T& value)
+    template<typename K, typename T>
+    bool Read(const K &key, T &value)
     {
         if (!pdb)
             return false;
@@ -191,13 +226,17 @@ public:
         int ret = pdb->get(activeTxn, &datKey, &datValue, 0);
         memory_cleanse(datKey.get_data(), datKey.get_size());
         bool success = false;
-        if (datValue.get_data() != nullptr) {
+        if (datValue.get_data() != nullptr)
+        {
             // Unserialize value
-            try {
-                CDataStream ssValue((char*)datValue.get_data(), (char*)datValue.get_data() + datValue.get_size(), SER_DISK, CLIENT_VERSION);
+            try
+            {
+                CDataStream ssValue((char *)datValue.get_data(), (char *)datValue.get_data() + datValue.get_size(),
+                                    SER_DISK, CLIENT_VERSION);
                 ssValue >> value;
                 success = true;
-            } catch (const std::exception&) {
+            } catch (const std::exception &)
+            {
                 // In this case success remains 'false'
             }
 
@@ -208,8 +247,8 @@ public:
         return ret == 0 && success;
     }
 
-    template <typename K, typename T>
-    bool Write(const K& key, const T& value, bool fOverwrite = true)
+    template<typename K, typename T>
+    bool Write(const K &key, const T &value, bool fOverwrite = true)
     {
         if (!pdb)
             return true;
@@ -237,8 +276,8 @@ public:
         return (ret == 0);
     }
 
-    template <typename K>
-    bool Erase(const K& key)
+    template<typename K>
+    bool Erase(const K &key)
     {
         if (!pdb)
             return false;
@@ -259,8 +298,8 @@ public:
         return (ret == 0 || ret == DB_NOTFOUND);
     }
 
-    template <typename K>
-    bool Exists(const K& key)
+    template<typename K>
+    bool Exists(const K &key)
     {
         if (!pdb)
             return false;
@@ -279,23 +318,24 @@ public:
         return (ret == 0);
     }
 
-    Dbc* GetCursor()
+    Dbc *GetCursor()
     {
         if (!pdb)
             return nullptr;
-        Dbc* pcursor = nullptr;
+        Dbc *pcursor = nullptr;
         int ret = pdb->cursor(nullptr, &pcursor, 0);
         if (ret != 0)
             return nullptr;
         return pcursor;
     }
 
-    int ReadAtCursor(Dbc* pcursor, CDataStream& ssKey, CDataStream& ssValue, bool setRange = false)
+    int ReadAtCursor(Dbc *pcursor, CDataStream &ssKey, CDataStream &ssValue, bool setRange = false)
     {
         // Read at cursor
         Dbt datKey;
         unsigned int fFlags = DB_NEXT;
-        if (setRange) {
+        if (setRange)
+        {
             datKey.set_data(ssKey.data());
             datKey.set_size(ssKey.size());
             fFlags = DB_SET_RANGE;
@@ -312,10 +352,10 @@ public:
         // Convert to streams
         ssKey.SetType(SER_DISK);
         ssKey.clear();
-        ssKey.write((char*)datKey.get_data(), datKey.get_size());
+        ssKey.write((char *)datKey.get_data(), datKey.get_size());
         ssValue.SetType(SER_DISK);
         ssValue.clear();
-        ssValue.write((char*)datValue.get_data(), datValue.get_size());
+        ssValue.write((char *)datValue.get_data(), datValue.get_size());
 
         // Clear and free memory
         memory_cleanse(datKey.get_data(), datKey.get_size());
@@ -330,7 +370,7 @@ public:
     {
         if (!pdb || activeTxn)
             return false;
-        DbTxn* ptxn = bitdb.TxnBegin();
+        DbTxn *ptxn = bitdb.TxnBegin();
         if (!ptxn)
             return false;
         activeTxn = ptxn;
@@ -355,7 +395,7 @@ public:
         return (ret == 0);
     }
 
-    bool ReadVersion(int& nVersion)
+    bool ReadVersion(int &nVersion)
     {
         nVersion = 0;
         return Read(std::string("version"), nVersion);
@@ -366,7 +406,7 @@ public:
         return Write(std::string("version"), nVersion);
     }
 
-    bool static Rewrite(CWalletDBWrapper& dbw, const char* pszSkip = nullptr);
+    bool static Rewrite(CWalletDBWrapper &dbw, const char *pszSkip = nullptr);
 };
 
 #endif // BITCOIN_WALLET_DB_H

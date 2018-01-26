@@ -20,9 +20,12 @@ public:
     static const size_t OUTPUT_SIZE = 20;
 
     CSHA1();
-    CSHA1& Write(const unsigned char* data, size_t len);
+
+    CSHA1 &Write(const unsigned char *data, size_t len);
+
     void Finalize(unsigned char hash[OUTPUT_SIZE]);
-    CSHA1& Reset();
+
+    CSHA1 &Reset();
 };
 
 #endif // BITCOIN_CRYPTO_SHA1_H

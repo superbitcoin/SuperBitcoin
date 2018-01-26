@@ -18,7 +18,10 @@
 class LockedPageAllocator
 {
 public:
-    virtual ~LockedPageAllocator() {}
+    virtual ~LockedPageAllocator()
+    {
+    }
+
     /** Allocate and lock memory pages.
      * If len is not a multiple of the system page size, it is rounded up.
      * Returns 0 in case of allocation failure.
@@ -27,12 +30,12 @@ public:
      * return the memory, however the lockingSuccess flag will be false.
      * lockingSuccess is undefined if the allocation fails.
      */
-    virtual void* AllocateLocked(size_t len, bool *lockingSuccess) = 0;
+    virtual void *AllocateLocked(size_t len, bool *lockingSuccess) = 0;
 
     /** Unlock and free memory pages.
      * Clear the memory before unlocking.
      */
-    virtual void FreeLocked(void* addr, size_t len) = 0;
+    virtual void FreeLocked(void *addr, size_t len) = 0;
 
     /** Get the total limit on the amount of memory that may be locked by this
      * process, in bytes. Return size_t max if there is no limit or the limit
@@ -48,6 +51,7 @@ class Arena
 {
 public:
     Arena(void *base, size_t size, size_t alignment);
+
     virtual ~Arena();
 
     /** Memory statistics. */
@@ -64,7 +68,7 @@ public:
      * Returns pointer on success, or 0 if memory is full or
      * the application tried to allocate 0 bytes.
      */
-    void* alloc(size_t size);
+    void *alloc(size_t size);
 
     /** Free a previously allocated chunk of memory.
      * Freeing the zero pointer has no effect.
@@ -83,20 +87,24 @@ public:
      * This returns base <= ptr < (base+size) so only use it for (inclusive)
      * chunk starting addresses.
      */
-    bool addressInArena(void *ptr) const { return ptr >= base && ptr < end; }
+    bool addressInArena(void *ptr) const
+    {
+        return ptr >= base && ptr < end;
+    }
+
 private:
-    Arena(const Arena& other) = delete; // non construction-copyable
-    Arena& operator=(const Arena&) = delete; // non copyable
+    Arena(const Arena &other) = delete; // non construction-copyable
+    Arena &operator=(const Arena &) = delete; // non copyable
 
     /** Map of chunk address to chunk information. This class makes use of the
      * sorted order to merge previous and next chunks during deallocation.
      */
-    std::map<char*, size_t> chunks_free;
-    std::map<char*, size_t> chunks_used;
+    std::map<char *, size_t> chunks_free;
+    std::map<char *, size_t> chunks_used;
     /** Base address of arena */
-    char* base;
+    char *base;
     /** End address of arena */
-    char* end;
+    char *end;
     /** Minimum chunk alignment */
     size_t alignment;
 };
@@ -122,7 +130,7 @@ public:
      * allocation and deallocation overhead. Setting it too high allocates
      * more locked memory from the OS than strictly necessary.
      */
-    static const size_t ARENA_SIZE = 256*1024;
+    static const size_t ARENA_SIZE = 256 * 1024;
     /** Chunk alignment. Another compromise. Setting this too high will waste
      * memory, setting it too low will facilitate fragmentation.
      */
@@ -151,13 +159,14 @@ public:
      * it returns true the allocation proceeds, but it could warn.
      */
     LockedPool(std::unique_ptr<LockedPageAllocator> allocator, LockingFailed_Callback lf_cb_in = 0);
+
     ~LockedPool();
 
     /** Allocate size bytes from this arena.
      * Returns pointer on success, or 0 if memory is full or
      * the application tried to allocate 0 bytes.
      */
-    void* alloc(size_t size);
+    void *alloc(size_t size);
 
     /** Free a previously allocated chunk of memory.
      * Freeing the zero pointer has no effect.
@@ -167,18 +176,21 @@ public:
 
     /** Get pool usage statistics */
     Stats stats() const;
+
 private:
-    LockedPool(const LockedPool& other) = delete; // non construction-copyable
-    LockedPool& operator=(const LockedPool&) = delete; // non copyable
+    LockedPool(const LockedPool &other) = delete; // non construction-copyable
+    LockedPool &operator=(const LockedPool &) = delete; // non copyable
 
     std::unique_ptr<LockedPageAllocator> allocator;
 
     /** Create an arena from locked pages */
-    class LockedPageArena: public Arena
+    class LockedPageArena : public Arena
     {
     public:
         LockedPageArena(LockedPageAllocator *alloc_in, void *base_in, size_t size, size_t align);
+
         ~LockedPageArena();
+
     private:
         void *base;
         size_t size;
@@ -210,7 +222,7 @@ class LockedPoolManager : public LockedPool
 {
 public:
     /** Return the current instance, or create it once */
-    static LockedPoolManager& Instance()
+    static LockedPoolManager &Instance()
     {
         std::call_once(LockedPoolManager::init_flag, LockedPoolManager::CreateInstance);
         return *LockedPoolManager::_instance;
@@ -221,10 +233,11 @@ private:
 
     /** Create a new LockedPoolManager specialized to the OS */
     static void CreateInstance();
+
     /** Called when locking fails, warn the user here */
     static bool LockingFailed();
 
-    static LockedPoolManager* _instance;
+    static LockedPoolManager *_instance;
     static std::once_flag init_flag;
 };
 

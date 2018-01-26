@@ -9,8 +9,13 @@
 /* These architectures support querying the cycle counter
  * from user space, no need for any syscall overhead.
  */
-void perf_init(void) { }
-void perf_fini(void) { }
+void perf_init(void)
+{
+}
+
+void perf_fini(void)
+{
+}
 
 #elif defined(__linux__)
 

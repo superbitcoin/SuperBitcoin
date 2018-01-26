@@ -38,12 +38,13 @@ class CScheduler
 {
 public:
     CScheduler();
+
     ~CScheduler();
 
     typedef std::function<void(void)> Function;
 
     // Call func at/after time t
-    void schedule(Function f, boost::chrono::system_clock::time_point t=boost::chrono::system_clock::now());
+    void schedule(Function f, boost::chrono::system_clock::time_point t = boost::chrono::system_clock::now());
 
     // Convenience method: call f once deltaSeconds from now
     void scheduleFromNow(Function f, int64_t deltaMilliSeconds);
@@ -64,7 +65,7 @@ public:
     // Tell any threads running serviceQueue to stop as soon as they're
     // done servicing whatever task they're currently servicing (drain=false)
     // or when there is no work left to be done (drain=true)
-    void stop(bool drain=false);
+    void stop(bool drain = false);
 
     // Returns number of tasks waiting to be serviced,
     // and first and last task times
@@ -81,7 +82,11 @@ private:
     int nThreadsServicingQueue;
     bool stopRequested;
     bool stopWhenEmpty;
-    bool shouldStop() { return stopRequested || (stopWhenEmpty && taskQueue.empty()); }
+
+    bool shouldStop()
+    {
+        return stopRequested || (stopWhenEmpty && taskQueue.empty());
+    }
 };
 
 /**
@@ -90,20 +95,25 @@ private:
  * to be executed on the same thread, but no two jobs will be executed
  * at the same time.
  */
-class SingleThreadedSchedulerClient {
+class SingleThreadedSchedulerClient
+{
 private:
     CScheduler *m_pscheduler;
 
     CCriticalSection m_cs_callbacks_pending;
-    std::list<std::function<void (void)>> m_callbacks_pending;
+    std::list<std::function<void(void)>> m_callbacks_pending;
     bool m_are_callbacks_running = false;
 
     void MaybeScheduleProcessQueue();
+
     void ProcessQueue();
 
 public:
-    SingleThreadedSchedulerClient(CScheduler *pschedulerIn) : m_pscheduler(pschedulerIn) {}
-    void AddToProcessQueue(std::function<void (void)> func);
+    SingleThreadedSchedulerClient(CScheduler *pschedulerIn) : m_pscheduler(pschedulerIn)
+    {
+    }
+
+    void AddToProcessQueue(std::function<void(void)> func);
 
     // Processes all remaining queue members on the calling thread, blocking until queue is empty
     // Must be called after the CScheduler has no remaining processing threads!

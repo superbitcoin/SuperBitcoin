@@ -15,24 +15,33 @@
 #include <memory>
 #include <vector>
 
-struct CDNSSeedData {
+struct CDNSSeedData
+{
     std::string host;
     bool supportsServiceBitsFiltering;
-    CDNSSeedData(const std::string &strHost, bool supportsServiceBitsFilteringIn) : host(strHost), supportsServiceBitsFiltering(supportsServiceBitsFilteringIn) {}
+
+    CDNSSeedData(const std::string &strHost, bool supportsServiceBitsFilteringIn) : host(strHost),
+                                                                                    supportsServiceBitsFiltering(
+                                                                                            supportsServiceBitsFilteringIn)
+    {
+    }
 };
 
-struct SeedSpec6 {
+struct SeedSpec6
+{
     uint8_t addr[16];
     uint16_t port;
 };
 
 typedef std::map<int, uint256> MapCheckpoints;
 
-struct CCheckpointData {
+struct CCheckpointData
+{
     MapCheckpoints mapCheckpoints;
 };
 
-struct ChainTxData {
+struct ChainTxData
+{
     int64_t nTime;
     int64_t nTxCount;
     double dTxRate;
@@ -48,7 +57,8 @@ struct ChainTxData {
 class CChainParams
 {
 public:
-    enum Base58Type {
+    enum Base58Type
+    {
         PUBKEY_ADDRESS,
         SCRIPT_ADDRESS,
         SECRET_KEY,
@@ -59,31 +69,93 @@ public:
     };
 
 
-    const Consensus::Params& GetConsensus() const { return consensus; }
-    const CMessageHeader::MessageStartChars& MessageStart() const { return pchMessageStart; }
-    int GetDefaultPort() const { return nDefaultPort; }
+    const Consensus::Params &GetConsensus() const
+    {
+        return consensus;
+    }
 
-    const CBlock& GenesisBlock() const { return genesis; }
+    const CMessageHeader::MessageStartChars &MessageStart() const
+    {
+        return pchMessageStart;
+    }
+
+    int GetDefaultPort() const
+    {
+        return nDefaultPort;
+    }
+
+    const CBlock &GenesisBlock() const
+    {
+        return genesis;
+    }
+
     /** Default value for -checkmempool and -checkblockindex argument */
-    bool DefaultConsistencyChecks() const { return fDefaultConsistencyChecks; }
+    bool DefaultConsistencyChecks() const
+    {
+        return fDefaultConsistencyChecks;
+    }
+
     /** Policy: Filter transactions that do not match well-defined patterns */
-    bool RequireStandard() const { return fRequireStandard; }
-    uint64_t PruneAfterHeight() const { return nPruneAfterHeight; }
+    bool RequireStandard() const
+    {
+        return fRequireStandard;
+    }
+
+    uint64_t PruneAfterHeight() const
+    {
+        return nPruneAfterHeight;
+    }
+
     /** Make miner stop after a block is found. In RPC, don't return until nGenProcLimit blocks are generated */
-    bool MineBlocksOnDemand() const { return fMineBlocksOnDemand; }
+    bool MineBlocksOnDemand() const
+    {
+        return fMineBlocksOnDemand;
+    }
+
     /** Return the BIP70 network string (main, test or regtest) */
-    std::string NetworkIDString() const { return strNetworkID; }
-    const std::vector<CDNSSeedData>& DNSSeeds() const { return vSeeds; }
-    const std::vector<unsigned char>& Base58Prefix(Base58Type type) const { return base58Prefixes[type]; }
-    const std::vector<SeedSpec6>& FixedSeeds() const { return vFixedSeeds; }
-    const CCheckpointData& Checkpoints() const { return checkpointData; }
-    bool  AddCheckPoint(int const height, const uint256 hash) const;
-    const ChainTxData& TxData() const { return chainTxData; }
+    std::string NetworkIDString() const
+    {
+        return strNetworkID;
+    }
+
+    const std::vector<CDNSSeedData> &DNSSeeds() const
+    {
+        return vSeeds;
+    }
+
+    const std::vector<unsigned char> &Base58Prefix(Base58Type type) const
+    {
+        return base58Prefixes[type];
+    }
+
+    const std::vector<SeedSpec6> &FixedSeeds() const
+    {
+        return vFixedSeeds;
+    }
+
+    const CCheckpointData &Checkpoints() const
+    {
+        return checkpointData;
+    }
+
+    bool AddCheckPoint(int const height, const uint256 hash) const;
+
+    const ChainTxData &TxData() const
+    {
+        return chainTxData;
+    }
+
     void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout);
-    const CPubKey& GetCheckPointPKey()const{ return std::move(cCheckPointPubKey);}
+
+    const CPubKey &GetCheckPointPKey() const
+    {
+        return std::move(cCheckPointPubKey);
+    }
 
 protected:
-    CChainParams() {}
+    CChainParams()
+    {
+    }
 
     Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
@@ -107,7 +179,7 @@ protected:
  * @returns a CChainParams* of the chosen chain.
  * @throws a std::runtime_error if the chain is not supported.
  */
-std::unique_ptr<CChainParams> CreateChainParams(const std::string& chain);
+std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain);
 
 /**
  * Return the currently selected parameters. This won't change after app
@@ -119,7 +191,7 @@ const CChainParams &Params();
  * Sets the params returned by Params() to those for the given BIP70 chain name.
  * @throws std::runtime_error when the chain is not supported.
  */
-void SelectParams(const std::string& chain);
+void SelectParams(const std::string &chain);
 
 /**
  * Allows modifying the Version Bits regtest parameters.
