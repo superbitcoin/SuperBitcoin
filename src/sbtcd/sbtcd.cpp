@@ -1,13 +1,37 @@
-// Copyright (c) 2009-2010 Satoshi Nakamoto
-// Copyright (c) 2009-2016 The Bitcoin Core developers
-// Distributed under the MIT software license, see the accompanying
-// file COPYING or http://www.opensource.org/licenses/mit-license.php.
+//
+//int main(int argc, char *argv[])
+//{
+//    SetupEnvironment();
+//
+//    // Connect bitcoind signal handlers
+//    noui_connect();
+//
+//    return (AppInit(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE);
+//}
 
+
+/*************************************************
+ * File name:		// sbtcd.cpp
+ * Author:
+ * Date: 		    //  2018.01.26
+ * Description:		// Superbitcoin program framework master logic
+
+ * Others:		    //
+ * History:		    // 2018.01.26
+
+ * 1. Date:
+ * Author:
+ * Modification:
+*************************************************/
 #if defined(HAVE_CONFIG_H)
 
 #include "config/sbtc-config.h"
 
 #endif
+
+
+
+
 
 #include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
@@ -590,12 +614,52 @@ bool AppInit(int argc, char *argv[])
     return fRet;
 }
 
-int main(int argc, char *argv[])
+
+#include "base.hpp"
+#include <iostream>
+#include <boost/exception/diagnostic_information.hpp>
+#include "framework/netcomponent.hpp"
+#include "framework/chaincomponent.hpp"
+using bpo::options_description;
+using bpo::variables_map;
+using std::string;
+using std::vector;
+
+typedef struct
 {
-    SetupEnvironment();
+    bool exit_flag;
+}RUN_CONTEXT;
 
-    // Connect bitcoind signal handlers
-    noui_connect();
+RUN_CONTEXT* run_ctx = NULL;
 
-    return (AppInit(argc, argv) ? EXIT_SUCCESS : EXIT_FAILURE);
+void term_handler(int signum)
+{
+    if (run_ctx)
+        run_ctx->exit_flag = true;
+}
+
+void reload_handler(int signum)
+{
+    std::cout<<"reload_config\n";
+}
+
+
+using namespace appbase;
+
+int main( int argc, char** argv )
+{
+    signal(SIGTERM, (sighandler_t)term_handler);
+    signal(SIGUSR1, (sighandler_t)reload_handler);
+    // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
+    signal(SIGPIPE, SIG_IGN);
+
+    CBase::Instance().RegisterComponent<CNetComponent>();
+    CBase::Instance().RegisterComponent<CChainCommonent>();
+    if( !CBase::Instance().Initialize<CNetComponent/*, CChainCommonent*/>( argc, argv ) )
+        return -1;
+    CBase::Instance().Startup();
+    CBase::Instance().Run();
+
+    std::cout << "exited cleanly\n";
+    return 0;
 }

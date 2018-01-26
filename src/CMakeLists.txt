@@ -23,7 +23,7 @@ file(GLOB sources "*.cpp" "chaincontrol/*.cpp" "compat/*.cpp" "config/*.cpp" "fr
         "mempool/*.cpp" "miner/*.cpp" "p2p/*.cpp"  "rpc/*.cpp" "sbtccore/*.cpp" "sbtccore/block/*.cpp" "sbtccore/transaction/*.cpp"
         "sbtccore/transaction/script/*.cpp" "univalue/*.cpp" "utils/*.cpp" "wallet/*.cpp"   "utils/crypto/*.cpp" "utils/crypto/allocators/*.cpp" "utils/crypto/ctaes/*.c" )
 #"zmq/*.cpp"
-file(GLOB headers "*.h" "chaincontrol/*.h" "compat/*.h" "config/*.h" "framework/*.h" "mempool/*.h" "miner/*.h" "p2p/*.h" "rpc/*.h" "sbtccore/*.h"
+file(GLOB headers "*.h" "chaincontrol/*.h" "compat/*.h" "config/*.h" "framework/*.h" "framework/*.hpp" "mempool/*.h" "miner/*.h" "p2p/*.h" "rpc/*.h" "sbtccore/*.h"
         "sbtccore/transaction/*.h" "sbtccore/block/*.h" "btccore/transaction/script/*.h" "univalue/*.h" "utils/*.h" "wallet/*.h"
         "utils/crypto/*.h" "utils/crypto/allocators/*.h" "utils/crypto/ctaes/*.h" )
 #"zmq/*.h"
