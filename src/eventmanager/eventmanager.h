@@ -76,7 +76,7 @@ public:
             handler.priority = -prior;
             handler.receiver = receiver;
 
-            std::function<R(TArgs...)> fn = [receiver, memfun](TArgs... args){ return (receiver->*memfun)(std::forward<TArgs>(args)...); };
+            std::function<void(TArgs...)> fn = [receiver, memfun](TArgs... args){ (receiver->*memfun)(std::forward<TArgs>(args)...); };
             handler.handler = std::move(fn);
 
             EVENT_LOCK_GUARD(mutex)
@@ -104,7 +104,7 @@ public:
             handler.flags = flags;
             handler.priority = -prior;
             handler.receiver = nullptr;
-            handler.handler = std::function<R(TArgs...)>(func);
+            handler.handler = std::function<void(TArgs...)>(func);
 
             EVENT_LOCK_GUARD(mutex)
             auto& handlers = mapEventHandlers[eventID];
