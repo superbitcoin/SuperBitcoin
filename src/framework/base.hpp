@@ -150,5 +150,7 @@ namespace appbase {
         uint64_t                _version;
     };
 
+
+
     CBase &app();
 }
