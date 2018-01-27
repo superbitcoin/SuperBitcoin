@@ -68,13 +68,13 @@ void CBase::SetProgramOptions()
    options_description app_cfg_opts( "base Config Options" );
    options_description app_cli_opts( "base Command Line Options" );
    app_cfg_opts.add_options()
-         ("component", boost::program_options::value< vector<string> >()->composing(), "Plugin(s) to enable, may be specified multiple times");
+         ("component", boost::program_options::value< vector<string> >()->composing(), "component(s) to enable, may be specified multiple times");
 
    app_cli_opts.add_options()
          ("help,h", "Print this help message and exit.")
          ("version,v", "Print version information.")
          ("data-dir,d", boost::program_options::value<bfs::path>()->default_value( "data-dir" ), "Directory containing configuration file config.ini")
-         ("config,c", boost::program_options::value<bfs::path>()->default_value( "config.ini" ), "Configuration file name relative to data-dir")
+         ("baseconfig,c", boost::program_options::value<bfs::path>()->default_value( "baseconfig.ini" ), "Configuration file name relative to data-dir")
          ("logconf,l", boost::program_options::value<bfs::path>()->default_value( "logging.json" ), "Logging configuration file name/path for library users");
 
    m_app_impl->_cfg_options.add(app_cfg_opts);
@@ -115,9 +115,9 @@ bool CBase::InitializeImpl(int argc, char** argv, vector<CBaseComponent*> autost
    }
    m_app_impl->_logging_conf = logconf;
 
-   bfs::path config_file_name = data_dir / "config.ini";
-   if( options.count( "config" ) ) {
-      auto config_file_name = options["config"].as<bfs::path>();
+   bfs::path config_file_name = data_dir / "baseconfig.ini";
+   if( options.count( "baseconfig" ) ) {
+      auto config_file_name = options["baseconfig"].as<bfs::path>();
       if( config_file_name.is_relative() )
          config_file_name = data_dir / config_file_name;
    }
@@ -147,7 +147,6 @@ bool CBase::InitializeImpl(int argc, char** argv, vector<CBaseComponent*> autost
    {
       if (component != nullptr && component->GetState() == CBaseComponent::registered)
       {
-         std::cout<<"initialize component name:"<<component->Name()<<std::endl;
          component->Initialize(options);
       }
    }

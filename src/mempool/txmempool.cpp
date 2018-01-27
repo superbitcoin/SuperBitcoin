@@ -61,6 +61,28 @@ size_t CTxMemPoolEntry::GetTxSize() const
     return GetVirtualTransactionSize(nTxWeight, sigOpCost);
 }
 
+//CTxMemPool::CTxMemPool()
+//{
+//}
+
+CTxMemPool::~CTxMemPool()
+{
+}
+
+void CTxMemPool::ComponentInitialize( const variables_map& options )
+{
+    std::cout << "initialize CTxMemPool component\n";
+    //LoadMempool();
+}
+void CTxMemPool::ComponentStartup()
+{
+    std::cout << "starting CTxMemPool component \n";
+}
+void CTxMemPool::ComponentShutdown()
+{
+    std::cout << "shutdown CTxMemPool component \n";
+}
+
 // Update the given tx for any in-mempool descendants.
 // Assumes that setMemPoolChildren is correct for the given tx and all
 // descendants.

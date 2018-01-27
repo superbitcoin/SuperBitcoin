@@ -517,8 +517,29 @@ public:
  * prevent these calculations from being too CPU intensive.
  *
  */
-class CTxMemPool
+#include "component.hpp"
+using namespace appbase;
+
+class CTxMemPool  : public CComponent<CTxMemPool>
 {
+public:
+//    CTxMemPool();
+    ~CTxMemPool();
+    virtual void SetProgramOptions( options_description& cli, options_description& cfg ) override
+    {
+        cfg.add_options()
+                ("readonly", "open the database in read only mode")
+                ("basedbsize", boost::program_options::value<uint64_t>()->default_value( 8*1024 ), "Minimum size MB of database shared memory file")
+                ;
+        cli.add_options()
+                ("replay", "clear chain database and replay all blocks" )
+                ("reset", "clear chain database and block log" )
+                ;
+    }
+
+    void ComponentInitialize( const variables_map& options );
+    void ComponentStartup() ;
+    void ComponentShutdown() ;
 private:
     uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.
     unsigned int nTransactionsUpdated; //!< Used by getblocktemplate to trigger CreateNewBlock() invocation

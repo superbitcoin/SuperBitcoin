@@ -5,12 +5,10 @@
 #include "netcomponent.hpp"
 CChainCommonent::CChainCommonent()
 {
-    std::cout <<" structure net component\n";
 }
 
 CChainCommonent::~CChainCommonent()
 {
-    std::cout <<"destructure net component\n";
 }
 void CChainCommonent::ComponentInitialize( const variables_map& options )
 {

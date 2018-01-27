@@ -2,12 +2,10 @@
 #include "chaincomponent.hpp"
 CNetComponent::CNetComponent()
 {
-    std::cout <<" structure net component\n";
 }
 
 CNetComponent::~CNetComponent()
 {
-    std::cout <<"destructure net component\n";
 }
 
 void CNetComponent::ComponentInitialize( const variables_map& options )

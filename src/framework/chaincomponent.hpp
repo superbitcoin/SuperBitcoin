@@ -16,7 +16,7 @@ public:
     {
         cfg.add_options()
                 ("readonly", "open the database in read only mode")
-                ("dbsize", boost::program_options::value<uint64_t>()->default_value( 8*1024 ), "Minimum size MB of database shared memory file")
+                ("basedbsize", boost::program_options::value<uint64_t>()->default_value( 8*1024 ), "Minimum size MB of database shared memory file")
                 ;
         cli.add_options()
                 ("replay", "clear chain database and replay all blocks" )

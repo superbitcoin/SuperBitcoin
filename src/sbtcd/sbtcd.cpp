@@ -620,6 +620,7 @@ bool AppInit(int argc, char *argv[])
 #include <boost/exception/diagnostic_information.hpp>
 #include "framework/netcomponent.hpp"
 #include "framework/chaincomponent.hpp"
+#include "mempool/txmempool.h"
 using bpo::options_description;
 using bpo::variables_map;
 using std::string;
@@ -655,7 +656,8 @@ int main( int argc, char** argv )
 
     CBase::Instance().RegisterComponent<CNetComponent>();
     CBase::Instance().RegisterComponent<CChainCommonent>();
-    if( !CBase::Instance().Initialize<CNetComponent/*, CChainCommonent*/>( argc, argv ) )
+    CBase::Instance().RegisterComponent<CTxMemPool>();
+    if( !CBase::Instance().Initialize<CNetComponent, CTxMemPool>( argc, argv ) )
         return -1;
     CBase::Instance().Startup();
     CBase::Instance().Run();
