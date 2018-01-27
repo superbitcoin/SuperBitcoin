@@ -92,22 +92,6 @@ public:
     int RegisterEventHandler(int eventID, C* receiver, R(C::*memfun)(TArgs...) const, int prior = EHP_MEDIAN, int flags = EHF_NOTHING)
     {
         return RegisterEventHandler(eventID, receiver, (R(C::*)(TArgs...))memfun, prior, flags);
-//        if (receiver)
-//        {
-//            EventHandleItem handler;
-//            handler.flags = flags;
-//            handler.priority = -prior;
-//            handler.receiver = receiver;
-//
-//            std::function<R(TArgs...)> fn = [receiver, memfun](TArgs... args){ return (receiver->*memfun)(std::forward<TArgs>(args)...); };
-//            handler.handler = std::move(fn);
-//
-//            EVENT_LOCK_GUARD(mutex)
-//            auto& handlers = mapEventHandlers[eventID];
-//            handlers.emplace(handler.priority, std::move(handler));
-//            return 0;
-//        }
-//        return -1;
     };
 
     // register event handler with non-member func. or class static member func.
@@ -128,6 +112,22 @@ public:
             return 0;
         }
         return -1;
+    };
+
+    // register event handler with a functor  or function object.
+    // notice that caller need to specify template type arguments list because compiler cannot deduce those type arguments.
+    template<typename... TArgs, typename TFunctor>
+    void RegisterEventHandler(int eventID, const TFunctor& functor, int prior = EHP_MEDIAN, int flags = EHF_NOTHING)
+    {
+        EventHandleItem handler;
+        handler.flags = flags;
+        handler.priority = -prior;
+        handler.receiver = nullptr;
+        handler.handler = std::function<void(TArgs...)>([functor](TArgs... args){ (const_cast<TFunctor&>(functor))(std::forward<TArgs>(args)...); });
+
+        EVENT_LOCK_GUARD(mutex)
+        auto& handlers = mapEventHandlers[eventID];
+        handlers.emplace(handler.priority, std::move(handler));
     };
 
 #ifndef EVENT_UNLOCK_MODE
