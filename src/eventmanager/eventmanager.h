@@ -2,6 +2,7 @@
 #define __SBTC_EVENTMANAGER_H__
 
 #include <map>
+#include <vector>
 #include <unordered_map>
 #include <functional>
 #include <thread>
@@ -24,8 +25,8 @@
 //#define EVENT_UNLOCK_MODE
 
 // In this mode, the accessing to CEventManager's data will be protected by unique mutex,
-// but mutex would be release during the invoking of event handler, therefore one caller
-// can send another event in the current event handler at the same thread without deadlock.
+// but mutex would be release during the invoking of event handler, therefore another event
+// can be sent in the current event handler at the same thread without deadlock.
 #define EVENT_WEAKLOCK_MODE
 
 // In this mode, the whole accessing to CEventManager's data as well as the invoking of event handler
@@ -92,6 +93,18 @@ public:
     int RegisterEventHandler(int eventID, C* receiver, R(C::*memfun)(TArgs...) const, int prior = EHP_MEDIAN, int flags = EHF_NOTHING)
     {
         return RegisterEventHandler(eventID, receiver, (R(C::*)(TArgs...))memfun, prior, flags);
+    };
+
+    template<typename C, typename R, typename... TArgs>
+    int RegisterEventHandler(int eventID, C& receiver, R(C::*memfun)(TArgs...), int prior = EHP_MEDIAN, int flags = EHF_NOTHING)
+    {
+        return RegisterEventHandler(eventID, &receiver, memfun, prior, flags);
+    };
+
+    template<typename C, typename R, typename... TArgs>
+    int RegisterEventHandler(int eventID, C& receiver, R(C::*memfun)(TArgs...) const, int prior = EHP_MEDIAN, int flags = EHF_NOTHING)
+    {
+        return RegisterEventHandler(eventID, &receiver, (R(C::*)(TArgs...))memfun, prior, flags);
     };
 
     // register event handler with non-member func. or class static member func.

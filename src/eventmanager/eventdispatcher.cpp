@@ -13,6 +13,11 @@ CEventDispatcher::~CEventDispatcher()
     WaitExit();
 }
 
+std::thread::id CEventDispatcher::GetThreadID() const
+{
+    return dispID;
+}
+
 int CEventDispatcher::AddAsyncEvent(std::unique_ptr<EventQueuedItem> item)
 {
     std::unique_lock<std::mutex> lock(mutex);
@@ -37,11 +42,6 @@ void CEventDispatcher::Interrupt(bool rude)
         rudeInterrupted = rude;
         cond.notify_all();
     }
-}
-
-std::thread::id CEventDispatcher::GetThreadID() const
-{
-    return dispID;
 }
 
 void CEventDispatcher::WaitExit()

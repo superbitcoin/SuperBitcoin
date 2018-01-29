@@ -16,18 +16,18 @@ public:
 
     ~CEventDispatcher();
 
+    std::thread::id GetThreadID() const;
+
     int AddAsyncEvent(std::unique_ptr<EventQueuedItem> item);
 
     void Interrupt(bool rude = false);
 
-    std::thread::id GetThreadID() const;
+    void WaitExit();
 
 private:
-    void WaitExit();
 
     void Dispatch();
 
-private:
     bool interrupted;
     bool rudeInterrupted;
     std::thread dispThread;

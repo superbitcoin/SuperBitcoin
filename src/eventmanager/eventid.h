@@ -7,7 +7,7 @@ enum SBTCEventID
     EID_STARTUP     = 1,
 
     //NOTE:
-    EID_DESTORY     = 2,
+    EID_DESTROY     = 2,
 
     //NOTE:
     EID_TRANSACTION = 3,

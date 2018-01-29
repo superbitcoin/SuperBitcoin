@@ -34,10 +34,27 @@ int CEventManager::Uninit(bool refined)
     EVENT_LOCK_GUARD(mutex)
     if (!mapEventDispatchers.empty())
     {
+        std::vector<CEventDispatcher*> dispatchers;
         for (auto& dispatcher : mapEventDispatchers)
         {
-            dispatcher.second->Interrupt(!refined);
+            dispatchers.push_back(dispatcher.second.get());
         }
+
+        // In order to avoid deadlock, we unlock mutex first before waiting for thread exit.
+        {
+            EVENT_UNLOCK_GUARD(mutex)
+
+            for (auto& dispatcher : dispatchers)
+            {
+                dispatcher->Interrupt(!refined);
+            }
+
+            for (auto& dispatcher : dispatchers)
+            {
+                dispatcher->WaitExit();
+            }
+        }
+
         mapEventDispatchers.clear();
         mapEventHandlers.clear();
         mapObjModules.clear();
