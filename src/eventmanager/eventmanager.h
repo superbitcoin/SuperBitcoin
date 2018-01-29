@@ -45,6 +45,8 @@
 # define EVENT_UNLOCK_GUARD(m)
 #endif
 
+//#define ENABLE_EVENT_SIGNATURE_VERIFY
+
 class CEventManager
 {
 public:
@@ -60,6 +62,12 @@ private:
 
     ~CEventManager();
 
+    template<typename... TArgs>
+    bool MatchEventSignature(int eventID)
+    {
+        auto it = mapEventSignature.find(eventID);
+        return it == mapEventSignature.end() || it->second == EventSignature<TArgs...>();
+    }
 
 public:
     int Init();
@@ -72,6 +80,10 @@ public:
     {
         if (receiver)
         {
+#ifdef ENABLE_EVENT_SIGNATURE_VERIFY
+            if (!MatchEventSignature<TArgs...>(eventID))
+                return ERC_BADSIGNATURE;
+#endif
             EventHandleItem handler;
             handler.flags = flags;
             handler.priority = -prior;
@@ -113,6 +125,10 @@ public:
     {
         if (func)
         {
+#ifdef ENABLE_EVENT_SIGNATURE_VERIFY
+            if (!MatchEventSignature<TArgs...>(eventID))
+                return ERC_BADSIGNATURE;
+#endif
             EventHandleItem handler;
             handler.flags = flags;
             handler.priority = -prior;
@@ -130,8 +146,12 @@ public:
     // register event handler with a functor  or function object.
     // notice that caller need to specify template type arguments list because compiler cannot deduce those type arguments.
     template<typename... TArgs, typename TFunctor>
-    void RegisterEventHandler(int eventID, const TFunctor& functor, int prior = EHP_MEDIAN, int flags = EHF_NOTHING)
+    int RegisterEventHandler(int eventID, const TFunctor& functor, int prior = EHP_MEDIAN, int flags = EHF_NOTHING)
     {
+#ifdef ENABLE_EVENT_SIGNATURE_VERIFY
+        if (!MatchEventSignature<TArgs...>(eventID))
+            return ERC_BADSIGNATURE;
+#endif
         EventHandleItem handler;
         handler.flags = flags;
         handler.priority = -prior;
@@ -141,6 +161,7 @@ public:
         EVENT_LOCK_GUARD(mutex)
         auto& handlers = mapEventHandlers[eventID];
         handlers.emplace(handler.priority, std::move(handler));
+        return 0;
     };
 
 #ifndef EVENT_UNLOCK_MODE
@@ -182,6 +203,10 @@ public:
     template<typename... TArgs>
     int SendEvent(int eventID, TArgs... args)
     {
+#ifdef ENABLE_EVENT_SIGNATURE_VERIFY
+        if (!MatchEventSignature<TArgs...>(eventID))
+            return ERC_BADSIGNATURE;
+#endif
         EVENT_LOCK_GUARD(mutex)
         auto it = mapEventHandlers.find(eventID);
         if (it != mapEventHandlers.end())
@@ -210,6 +235,10 @@ public:
     template<typename... TArgs>
     int PostEvent(int eventID, TArgs... args)
     {
+#ifdef ENABLE_EVENT_SIGNATURE_VERIFY
+        if (!MatchEventSignature<TArgs...>(eventID))
+            return ERC_BADSIGNATURE;
+#endif
         EVENT_LOCK_GUARD(mutex)
         auto it = mapEventHandlers.find(eventID);
         if (it != mapEventHandlers.end())
@@ -253,6 +282,10 @@ public:
     template<typename... TArgs>
     int PostEventAndWait(int eventID, TArgs... args)
     {
+#ifdef ENABLE_EVENT_SIGNATURE_VERIFY
+        if (!MatchEventSignature<TArgs...>(eventID))
+            return ERC_BADSIGNATURE;
+#endif
         std::unique_lock<std::mutex> lock(mutex);
         auto it = mapEventHandlers.find(eventID);
         if (it != mapEventHandlers.end())
@@ -310,6 +343,7 @@ public:
 private:
     std::mutex mutex;
     std::unordered_map<void*, int> mapObjModules;
+    std::unordered_map<int, std::string> mapEventSignature;
     std::unordered_map<int, std::multimap<int, EventHandleItem>> mapEventHandlers;
     std::map<uint32, std::unique_ptr<CEventDispatcher>> mapEventDispatchers;
 };

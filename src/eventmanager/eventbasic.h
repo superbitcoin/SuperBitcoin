@@ -8,6 +8,13 @@
 
 typedef uint32_t uint32;
 
+enum EventRetCode
+{
+    ERC_SUCCESS =  0,
+    ERC_FAILURE = -1,
+    ERC_BADSIGNATURE = -999,
+};
+
 enum EventHandleFlags
 {
     EHF_NOTHING     = 0,

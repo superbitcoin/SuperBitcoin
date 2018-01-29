@@ -1,6 +1,8 @@
 #ifndef __SBTC_EVENTAUX_H__
 #define __SBTC_EVENTAUX_H__
 
+#include <typeinfo>
+#include <string>
 #include <mutex>
 #include <condition_variable>
 
@@ -69,5 +71,33 @@ private:
     std::mutex mutex;
     std::condition_variable cond;
 };
+
+
+template <typename... TArgs>
+struct EventFoo;
+
+template <typename TFirst, typename... TArgs>
+struct EventFoo<TFirst, TArgs...>
+{
+    static std::string name()
+    {
+        return std::string(typeid(TFirst).name()) + " " + EventFoo<TArgs...>::name();
+    }
+};
+
+template <>
+struct EventFoo<>
+{
+    static std::string name()
+    {
+        return "";
+    }
+};
+
+template <typename... TArgs>
+std::string EventSignature()
+{
+    return EventFoo<TArgs...>::name();
+}
 
 #endif //__SBTC_EVENTAUX_H__

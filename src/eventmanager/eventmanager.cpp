@@ -1,7 +1,6 @@
 
 #include "eventmanager.h"
 
-
 CEventManager& CEventManager::Instance()
 {
     static CEventManager eventMgr;
@@ -10,6 +9,11 @@ CEventManager& CEventManager::Instance()
 
 CEventManager::CEventManager()
 {
+#ifdef ENABLE_EVENT_SIGNATURE_VERIFY
+    //mapEventSignature.emplace(EID_BLOCK, EventSignature<int, std::string, bool>());
+    //mapEventSignature.emplace(EID_TRANSACTION, EventSignature<std::vector<int>, int*>());
+    // ...
+#endif
     Init();
 }
 
