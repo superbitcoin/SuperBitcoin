@@ -29,10 +29,10 @@ namespace appbase {
         virtual const std::string &Name() const override { return _name; }
 
 
-        virtual void Initialize(const variables_map &options) override {
+        virtual void Initialize() override {
             if (_state == registered) {
                 _state = initialized;
-                static_cast<Impl *>(this)->ComponentInitialize(options);
+                static_cast<Impl *>(this)->ComponentInitialize();
                 //ilog( "initializing CComponent ${name}", ("name",name()) );
                 CBase::Instance().ComponentInitialized(*this);
             }

@@ -10,7 +10,7 @@ CChainCommonent::CChainCommonent()
 CChainCommonent::~CChainCommonent()
 {
 }
-void CChainCommonent::ComponentInitialize( const variables_map& options )
+void CChainCommonent::ComponentInitialize()
 {
     std::cout << "initialize chain component\n";
     CNetComponent& chain = (CNetComponent&)CBase::Instance().GetComponent("CNetComponent");

@@ -69,7 +69,7 @@ CTxMemPool::~CTxMemPool()
 {
 }
 
-void CTxMemPool::ComponentInitialize( const variables_map& options )
+void CTxMemPool::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
     //LoadMempool();

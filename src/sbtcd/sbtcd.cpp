@@ -125,10 +125,10 @@ bool LoadCheckPoint()
     return true;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-//
-// Start
-//
+////////////////////////////////////////////////////////////////////////////////
+////
+//// Start
+////
 void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv,
                      HelpMessageMode mode)
 {
@@ -494,6 +494,7 @@ void PrintVersion()
     std::cout << strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" +
                  FormatParagraph(LicenseInfo()) << std::endl;
 }
+
 
 bool AppInit(int argc, char *argv[])
 {

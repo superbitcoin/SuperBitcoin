@@ -87,10 +87,6 @@ bool CChainParams::AddCheckPoint(int const height, const uint256 hash) const
 
 }
 
-
-
-
-
 /**
  * Main network
  */

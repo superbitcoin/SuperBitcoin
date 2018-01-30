@@ -30,9 +30,9 @@ public:
                 ("public-endpoint", boost::program_options::value<string>()->default_value( "0.0.0.0:9876" ), "The public IP address and port that should be advertized to peers.")
                 ;
     };
-    void ComponentInitialize( const variables_map& options );
+    void ComponentInitialize();
     void ComponentStartup();
     void ComponentShutdown();
-    const char* whoru(){ return "I am CChainCommonent\n";}
+    const char* whoru(){ return "I am CNetComponent\n";}
 
 };

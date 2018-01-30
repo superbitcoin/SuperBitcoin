@@ -12,6 +12,10 @@
  * Modification:
 *************************************************/
 #pragma once
+
+#ifndef BITCOIN_BASE_H
+#define BITCOIN_BASE_H
+
 #include <iostream>
 #include <fstream>
 #include "basecomponent.hpp"
@@ -19,14 +23,23 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/core/demangle.hpp>
 #include <boost/asio.hpp>
-namespace appbase {
-//    namespace bpo = boost::program_options;
-    namespace bfs = boost::filesystem;
+#include <boost/thread/once.hpp>
+
+#include "config/argmanager.h"
+#include "config/chainparamsbase.h"
+#include "config/chainparams.h"
+
+namespace appbase
+{
+    //    namespace bpo = boost::program_options;
+    //    namespace bfs = boost::filesystem;
 
     using boost::program_options::options_description;
     using boost::program_options::variables_map;
     using std::cout;
-    class CBase {
+
+    class CBase
+    {
     public:
         ~CBase();
 
@@ -56,9 +69,12 @@ namespace appbase {
          * @return true if the CBase and plugins were initialized, false or exception on error
          */
         template<typename... Component>
-        bool Initialize(int argc, char **argv) {
+        bool Initialize(int argc, char **argv)
+        {
             return InitializeImpl(argc, argv, {FindComponent<Component>()...});
         }
+
+        bool initParams(int argc, char *argv[]);
 
         void Startup();
 
@@ -78,7 +94,7 @@ namespace appbase {
         CBaseComponent &GetComponent(const string &name) const;
 
         template<typename Component>
-        Component& RegisterComponent()
+        Component &RegisterComponent()
         {
             auto existing = FindComponent < Component > ();
             if (existing)
@@ -90,20 +106,24 @@ namespace appbase {
         };
 
         template<typename Component>
-        Component* FindComponent() const
+        Component *FindComponent() const
         {
             string name = boost::core::demangle(typeid(Component).name());
             return dynamic_cast<Component *>(FindComponent(name));
         };
 
         template<typename Component>
-        Component& GetComponent() const
+        Component &GetComponent() const
         {
             auto ptr = FindComponent<Component>();
             return *ptr;
         };
 
         bfs::path data_dir() const;
+
+        CArgsManager cArgs;
+        std::unique_ptr<class CChainParams> cChainParams;
+        std::unique_ptr<class CBaseChainParams> cBaseChainParams;
 
     protected:
         template<typename Impl>
@@ -116,9 +136,15 @@ namespace appbase {
          * the CBase can call shutdown in the reverse order.
          */
         ///@{
-        void ComponentInitialized(CBaseComponent &component) { m_vecInitializedComponents.push_back(&component); }
+        void ComponentInitialized(CBaseComponent &component)
+        {
+            m_vecInitializedComponents.push_back(&component);
+        }
 
-        void ComponentStarted(CBaseComponent &component) { m_vecRunningComponents.push_back(&component); }
+        void ComponentStarted(CBaseComponent &component)
+        {
+            m_vecRunningComponents.push_back(&component);
+        }
         ///@}
 
     private:
@@ -131,26 +157,34 @@ namespace appbase {
 
         void WriteDefaultConfig(const bfs::path &cfg_file);
 
+        std::string ChainNameFromCommandLine();
+
+        void SelectParams(const std::string &network);
+
         std::unique_ptr<class CBaseImpl> m_app_impl;
 
     };
 
-    class CBaseImpl {
+    class CBaseImpl
+    {
     public:
-        CBaseImpl():_app_options("Base Options")
+        CBaseImpl() : _app_options("Base Options")
         {
         }
-        const variables_map*    _options = nullptr;
-        options_description     _app_options;
-        options_description     _cfg_options;
 
-        bfs::path               _data_dir;
-        bfs::path               _logging_conf{"logging.json"};
+        const variables_map *_options = nullptr;
+        options_description _app_options;
+        options_description _cfg_options;
 
-        uint64_t                _version;
+        bfs::path _data_dir;
+        bfs::path _logging_conf{"logging.json"};
+
+        uint64_t _version;
     };
-
 
 
     CBase &app();
 }
+
+
+#endif // !defined(BITCOIN_BASE_H)

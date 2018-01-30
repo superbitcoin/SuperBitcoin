@@ -537,7 +537,7 @@ public:
                 ;
     }
 
-    void ComponentInitialize( const variables_map& options );
+    void ComponentInitialize();
     void ComponentStartup() ;
     void ComponentShutdown() ;
 private:
