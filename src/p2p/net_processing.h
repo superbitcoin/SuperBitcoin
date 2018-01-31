@@ -22,9 +22,7 @@ static const unsigned int DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN = 100;
  *  Timeout = base + per_header * (expected number of headers) */
 static constexpr int64_t HEADERS_DOWNLOAD_TIMEOUT_BASE = 15 * 60 * 1000000; // 15 minutes
 static constexpr int64_t HEADERS_DOWNLOAD_TIMEOUT_PER_HEADER = 1000; // 1ms/header
-/** Protect at least this many outbound peers from disconnection due to slow/
- * behind headers chain.
- */
+/** Protect at least this many outbound peers from disconnection due to slow behind headers chain. */
 static constexpr int32_t MAX_OUTBOUND_PEERS_TO_PROTECT_FROM_DISCONNECT = 4;
 /** Timeout for (unprotected) outbound peers to sync to our chainwork, in seconds */
 static constexpr int64_t CHAIN_SYNC_TIMEOUT = 20 * 60; // 20 minutes
@@ -35,14 +33,14 @@ static constexpr int64_t EXTRA_PEER_CHECK_INTERVAL = 45;
 /** Minimum time an outbound-peer-eviction candidate must be connected for, in order to evict, in seconds */
 static constexpr int64_t MINIMUM_CONNECT_TIME = 30;
 
+
 class PeerLogicValidation : public CValidationInterface, public NetEventsInterface
 {
-private:
-    CConnman *const connman;
-
 public:
     explicit PeerLogicValidation(CConnman *connman, CScheduler &scheduler);
 
+
+    // Notifies listeners inherit from CValidationInterface
     void BlockConnected(const std::shared_ptr<const CBlock> &pblock, const CBlockIndex *pindexConnected,
                         const std::vector<CTransactionRef> &vtxConflicted) override;
 
@@ -53,21 +51,80 @@ public:
     void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock> &pblock) override;
 
 
+    // Interface for message handling inherit from NetEventsInterface
+    bool ProcessMessages(CNode *pfrom, std::atomic<bool> &interrupt) override;
+
+    bool SendMessages(CNode *pto, std::atomic<bool> &interrupt) override;
+
     void InitializeNode(CNode *pnode) override;
 
     void FinalizeNode(NodeId nodeid, bool &fUpdateConnectionTime) override;
 
-    /** Process protocol messages received from a given node */
-    bool ProcessMessages(CNode *pfrom, std::atomic<bool> &interrupt) override;
 
-    /**
-    * Send queued protocol messages to be sent to a give node.
-    *
-    * @param[in]   pto             The node which we are sending messages to.
-    * @param[in]   interrupt       Interrupt condition for processing threads
-    * @return                      True if there is more work to be done
-    */
-    bool SendMessages(CNode *pto, std::atomic<bool> &interrupt) override;
+
+private:
+
+    bool ProcessMessage(CNode *pfrom, const std::string &strCommand, CDataStream &vRecv,
+                        int64_t nTimeReceived, const std::atomic<bool> &interruptMsgProc);
+
+    bool ProcessRejectMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessVersionMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessVerAckMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessGetAddrMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessAddrMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc);
+
+    bool ProcessSendHeadersMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessSendCmpctMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessPingMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessPongMsg(CNode *pfrom, CDataStream &vRecv, int64_t nTimeReceived);
+
+    bool ProcessFilterLoadMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessFilterAddMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessFilterClearMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessFeeFilterMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessCheckPointMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessGetCheckPointMsg(CNode *pfrom, CDataStream &vRecv);
+
+
+
+    bool ProcessMemPoolMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessGetBlocksMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc);
+
+    bool ProcessGetHeadersMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessHeadersMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessGetDataMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc);
+
+    bool ProcessBlockMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessTxMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessGetBlockTxnMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc);
+
+    bool ProcessBlockTxnMsg(CNode *pfrom, CDataStream &vRecv);
+
+    bool ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv, int64_t nTimeReceived, const std::atomic<bool> &interruptMsgProc);
+
+
+    void ProcessGetData(CNode *pfrom, const std::atomic<bool> &interruptMsgProc);
+
+    bool SendRejectsAndCheckIfBanned(CNode *pnode);
 
     void ConsiderEviction(CNode *pto, int64_t time_in_seconds);
 
@@ -75,9 +132,13 @@ public:
 
     void EvictExtraOutboundPeers(int64_t time_in_seconds);
 
+
 private:
+    CConnman *const connman;
     int64_t m_stale_tip_check_time; //! Next time to check for stale tip
 };
+
+
 
 struct CNodeStateStats
 {
