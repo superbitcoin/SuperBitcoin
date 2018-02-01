@@ -107,7 +107,7 @@ bool CBase::InitParams(int argc, char *argv[])
     return true;
 }
 
-static boost::once_flag onceFlag = BOOST_ONCE_INIT;
+//static boost::once_flag onceFlag = BOOST_ONCE_INIT;
 
 bool CBase::Initialize(int argc, char **argv)
 {
@@ -150,7 +150,7 @@ void CBase::Startup()
 
 void CBase::Shutdown()
 {
-    for (auto it = m_mapComponents.begin(); it != m_mapComponents.end(); ++it)
+    for (auto it = m_mapComponents.rbegin(); it != m_mapComponents.rend(); ++it)
     {
         if (CBaseComponent* component = it->second.get())
         {
