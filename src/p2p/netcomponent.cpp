@@ -1,5 +1,5 @@
 #include <iostream>
-#include "netcomponent.hpp"
+#include "netcomponent.h"
 
 CNetComponent::CNetComponent()
 {
@@ -11,12 +11,13 @@ CNetComponent::~CNetComponent()
 
 bool CNetComponent::ComponentInitialize()
 {
+    std::cout << "initialize net component \n";
     return true;
 }
 
 bool CNetComponent::ComponentStartup()
 {
-    std::cout << "starting net component \n";
+    std::cout << "startup net component \n";
     return true;
 }
 

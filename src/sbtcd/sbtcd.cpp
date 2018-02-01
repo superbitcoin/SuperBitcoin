@@ -617,15 +617,11 @@ bool AppInit(int argc, char *argv[])
 
 
 #include "base.hpp"
-#include <iostream>
-#include <boost/exception/diagnostic_information.hpp>
-#include "framework/netcomponent.hpp"
-#include "framework/chaincomponent.hpp"
+#include "p2p/netcomponent.h"
+#include "chaincontrol/chaincomponent.h"
 #include "mempool/txmempool.h"
-using bpo::options_description;
-using bpo::variables_map;
-using std::string;
-using std::vector;
+
+using namespace appbase;
 
 typedef struct
 {
@@ -642,11 +638,9 @@ void term_handler(int signum)
 
 void reload_handler(int signum)
 {
-    std::cout<<"reload_config\n";
+    std::cout << "reload_config\n";
 }
 
-
-using namespace appbase;
 
 int main( int argc, char** argv )
 {
