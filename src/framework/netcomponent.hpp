@@ -22,14 +22,6 @@ public:
     CNetComponent();
     ~CNetComponent();
 
-    virtual void SetProgramOptions( options_description& cli, options_description& cfg ) override
-    {
-        cfg.add_options()
-                ("listen-endpoint", boost::program_options::value<string>()->default_value( "127.0.0.1:9876" ), "The local IP address and port to listen for incoming connections.")
-                ("remote-endpoint", boost::program_options::value< vector<string> >()->composing(), "The IP address and port of a remote peer to sync with.")
-                ("public-endpoint", boost::program_options::value<string>()->default_value( "0.0.0.0:9876" ), "The public IP address and port that should be advertized to peers.")
-                ;
-    };
     void ComponentInitialize();
     void ComponentStartup();
     void ComponentShutdown();

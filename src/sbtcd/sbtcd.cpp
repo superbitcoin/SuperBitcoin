@@ -32,7 +32,6 @@
 
 
 
-
 #include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
 #include "compat/compat.h"
@@ -47,6 +46,7 @@
 #include "utils/utilstrencodings.h"
 #include "config/checkpoints.h"
 
+#include <csignal>
 #include <string>
 #include <vector>
 #include <boost/thread.hpp>
@@ -662,6 +662,7 @@ int main( int argc, char** argv )
         return -1;
     CBase::Instance().Startup();
     CBase::Instance().Run();
+    CBase::Instance().Quit();
 
     std::cout << "exited cleanly\n";
     return 0;
