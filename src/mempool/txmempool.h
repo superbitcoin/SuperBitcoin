@@ -537,9 +537,11 @@ public:
 //                ;
 //    }
 
-    void ComponentInitialize();
+    void ComponentInitialize( );
     void ComponentStartup() ;
     void ComponentShutdown() ;
+    void OnNetMessageTx(int node_id, CDataStream& vRecv);
+
 private:
     uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.
     unsigned int nTransactionsUpdated; //!< Used by getblocktemplate to trigger CreateNewBlock() invocation

@@ -17,6 +17,7 @@
 #include "utils/util.h"
 #include "utils/utilmoneystr.h"
 #include "utils/utiltime.h"
+#include "net_processing.h"
 
 CTxMemPoolEntry::CTxMemPoolEntry(const CTransactionRef &_tx, const CAmount &_nFee,
                                  int64_t _nTime, unsigned int _entryHeight,
@@ -72,7 +73,7 @@ CTxMemPool::~CTxMemPool()
 void CTxMemPool::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
-    //LoadMempool();
+    LoadMempool();
 }
 void CTxMemPool::ComponentStartup()
 {
@@ -83,6 +84,10 @@ void CTxMemPool::ComponentShutdown()
     std::cout << "shutdown CTxMemPool component \n";
 }
 
+void CTxMemPool::OnNetMessageTx(int node_id, CDataStream& vRecv)
+{
+    //HandleNetTx(node_id, vRecv);
+}
 // Update the given tx for any in-mempool descendants.
 // Assumes that setMemPoolChildren is correct for the given tx and all
 // descendants.
