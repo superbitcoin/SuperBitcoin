@@ -5,11 +5,6 @@
 
 using namespace appbase;
 
-CBase &app()
-{
-    return CBase::Instance();
-}
-
 CBase &CBase::Instance()
 {
     static CBase _app;

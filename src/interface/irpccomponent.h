@@ -21,3 +21,5 @@ public:
 
 };
 
+#define GET_RPC_INTERFACE(ifObj) \
+    auto ifObj = appbase::CBase::Instance().FindComponent<IHttpRpcComponent>()

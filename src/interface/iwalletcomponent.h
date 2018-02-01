@@ -21,3 +21,6 @@ public:
 
 };
 
+#define GET_WALLET_INTERFACE(ifObj) \
+    auto ifObj = appbase::CBase::Instance().FindComponent<IWalletComponent>()
+

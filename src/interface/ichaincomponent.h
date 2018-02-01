@@ -20,3 +20,6 @@ public:
     //add other interface methods here ...
 
 };
+
+#define GET_CHAIN_INTERFACE(ifObj) \
+    auto ifObj = appbase::CBase::Instance().FindComponent<IChainComponent>()

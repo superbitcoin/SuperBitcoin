@@ -83,7 +83,10 @@ namespace appbase
         std::map<int, std::unique_ptr<CBaseComponent>> m_mapComponents; ///< all registered plugins ordered by id.
     };
 
-    CBase &app();
+    inline CBase &app()
+    {
+        return CBase::Instance();
+    }
 }
 
 
