@@ -30,6 +30,10 @@ namespace appbase
 
         virtual bool Initialize() override
         {
+            if (_state == initialized)
+            {
+                return true;
+            }
             if (_state == registered)
             {
                 _state = initialized;
@@ -40,6 +44,10 @@ namespace appbase
 
         virtual bool Startup() override
         {
+            if (_state == started)
+            {
+                return true;
+            }
             if (_state == initialized)
             {
                 _state = started;
@@ -50,6 +58,10 @@ namespace appbase
 
         virtual bool Shutdown() override
         {
+            if (_state == stopped)
+            {
+                return true;
+            }
             if (_state == started)
             {
                 _state = stopped;

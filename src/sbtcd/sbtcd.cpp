@@ -655,15 +655,19 @@ int main( int argc, char** argv )
     // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
     signal(SIGPIPE, SIG_IGN);
 
-    CBase::Instance().RegisterComponent(new CNetComponent);
-    CBase::Instance().RegisterComponent(new CChainCommonent);
-    CBase::Instance().RegisterComponent(new CTxMemPool);
-    if (!CBase::Instance().Initialize(argc, argv))
-        return -1;
-    CBase::Instance().Startup();
-    CBase::Instance().Run();
-    CBase::Instance().Quit();
+    app().RegisterComponent(new CNetComponent);
+    app().RegisterComponent(new CChainCommonent);
+    app().RegisterComponent(new CTxMemPool);
 
-    std::cout << "exited cleanly\n";
+    if (!app().Initialize(argc, argv))
+        return -1;
+
+    if (!app().Startup())
+        return -1;
+
+    app().Run();
+
+    app().Quit();
+
     return 0;
 }

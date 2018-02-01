@@ -35,9 +35,9 @@ namespace appbase
 
         bool Initialize(int argc, char **argv);
 
-        void Startup();
+        bool Startup();
 
-        void Shutdown();
+        bool Shutdown();
 
         void Run();
 
@@ -45,8 +45,6 @@ namespace appbase
 
 
         bool RegisterComponent(CBaseComponent* component);
-
-        CBaseComponent* FindComponent(int componentID) const;
 
         template<typename Component>
         Component* FindComponent() const
@@ -72,6 +70,8 @@ namespace appbase
 
         bool InitParams(int argc, char *argv[]);
 
+        CBaseComponent* FindComponent(int componentID) const;
+
     private:
 
         uint64_t nVersion;
@@ -80,7 +80,7 @@ namespace appbase
         std::unique_ptr<CChainParams> cChainParams;
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
 
-        std::map<int, std::unique_ptr<CBaseComponent>> m_mapComponents; ///< all registered plugins
+        std::map<int, std::unique_ptr<CBaseComponent>> m_mapComponents; ///< all registered plugins ordered by id.
     };
 
     CBase &app();

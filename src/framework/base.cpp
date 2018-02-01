@@ -125,7 +125,7 @@ bool CBase::Initialize(int argc, char **argv)
             if (!component->Initialize())
             {
                 fprintf(stderr, "failed to initialize component, ID = %d\n", component->GetID());
-                // throw ...
+                return false;
             }
         }
     }
@@ -133,7 +133,7 @@ bool CBase::Initialize(int argc, char **argv)
     return true;
 }
 
-void CBase::Startup()
+bool CBase::Startup()
 {
     for (auto it = m_mapComponents.begin(); it != m_mapComponents.end(); ++it)
     {
@@ -142,14 +142,17 @@ void CBase::Startup()
             if (!component->Startup())
             {
                 fprintf(stderr, "failed to startup component, ID = %d\n", component->GetID());
-                // throw ...
+                return false;
             }
         }
     }
+
+    return true;
 }
 
-void CBase::Shutdown()
+bool CBase::Shutdown()
 {
+    bool ret = true;
     for (auto it = m_mapComponents.rbegin(); it != m_mapComponents.rend(); ++it)
     {
         if (CBaseComponent* component = it->second.get())
@@ -157,11 +160,13 @@ void CBase::Shutdown()
             if (!component->Shutdown())
             {
                 fprintf(stderr, "failed to shutdown component, ID = %d\n", component->GetID());
+                ret = false;
             }
         }
     }
 
     m_mapComponents.clear();
+    return ret;
 }
 
 void CBase::Run()
