@@ -69,18 +69,21 @@ CTxMemPool::~CTxMemPool()
 {
 }
 
-void CTxMemPool::ComponentInitialize()
+bool CTxMemPool::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
     //LoadMempool();
+    return true;
 }
-void CTxMemPool::ComponentStartup()
+bool CTxMemPool::ComponentStartup()
 {
     std::cout << "starting CTxMemPool component \n";
+    return true;
 }
-void CTxMemPool::ComponentShutdown()
+bool CTxMemPool::ComponentShutdown()
 {
     std::cout << "shutdown CTxMemPool component \n";
+    return true;
 }
 
 // Update the given tx for any in-mempool descendants.

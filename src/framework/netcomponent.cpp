@@ -9,15 +9,19 @@ CNetComponent::~CNetComponent()
 {
 }
 
-void CNetComponent::ComponentInitialize()
+bool CNetComponent::ComponentInitialize()
 {
-
+    return true;
 }
-void CNetComponent::ComponentStartup()
+
+bool CNetComponent::ComponentStartup()
 {
     std::cout << "starting net component \n";
+    return true;
 }
-void CNetComponent::ComponentShutdown()
+
+bool CNetComponent::ComponentShutdown()
 {
     std::cout << "shutdown net component \n";
+    return true;
 }

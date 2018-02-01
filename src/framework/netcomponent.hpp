@@ -13,18 +13,18 @@
 *************************************************/
 #pragma once
 
-#include "component.hpp"
+#include "../interface/inetcomponent.h"
 
 using namespace appbase;
-class CNetComponent : public CComponent<CNetComponent>
+class CNetComponent : public INetComponent
 {
 public:
     CNetComponent();
     ~CNetComponent();
 
-    void ComponentInitialize();
-    void ComponentStartup();
-    void ComponentShutdown();
-    const char* whoru(){ return "I am CNetComponent\n";}
+    bool ComponentInitialize() override;
+    bool ComponentStartup() override;
+    bool ComponentShutdown() override;
+    const char* whoru() const override { return "I am CNetComponent\n";}
 
 };

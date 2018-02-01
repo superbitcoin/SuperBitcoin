@@ -655,10 +655,10 @@ int main( int argc, char** argv )
     // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
     signal(SIGPIPE, SIG_IGN);
 
-    CBase::Instance().RegisterComponent<CNetComponent>();
-    CBase::Instance().RegisterComponent<CChainCommonent>();
-    CBase::Instance().RegisterComponent<CTxMemPool>();
-    if( !CBase::Instance().Initialize<CNetComponent, CTxMemPool>( argc, argv ) )
+    CBase::Instance().RegisterComponent(new CNetComponent);
+    CBase::Instance().RegisterComponent(new CChainCommonent);
+    CBase::Instance().RegisterComponent(new CTxMemPool);
+    if (!CBase::Instance().Initialize(argc, argv))
         return -1;
     CBase::Instance().Startup();
     CBase::Instance().Run();

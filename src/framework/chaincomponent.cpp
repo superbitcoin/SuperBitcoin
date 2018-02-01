@@ -3,7 +3,6 @@
 //
 #include <iostream>
 #include "chaincomponent.hpp"
-#include "netcomponent.hpp"
 CChainCommonent::CChainCommonent()
 {
 }
@@ -11,16 +10,22 @@ CChainCommonent::CChainCommonent()
 CChainCommonent::~CChainCommonent()
 {
 }
-void CChainCommonent::ComponentInitialize()
+
+bool CChainCommonent::ComponentInitialize()
 {
     std::cout << "initialize chain component\n";
-
+    return true;
 }
-void CChainCommonent::ComponentStartup()
+
+bool CChainCommonent::ComponentStartup()
 {
     std::cout << "starting chain component \n";
+    return true;
 }
-void CChainCommonent::ComponentShutdown()
+
+bool CChainCommonent::ComponentShutdown()
 {
     std::cout << "shutdown chain component \n";
+    return true;
 }
+

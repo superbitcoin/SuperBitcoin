@@ -2,22 +2,22 @@
 //
 // Created by root1 on 18-1-25.
 //
-#include "component.hpp"
+#include "../interface/ichaincomponent.h"
 
 using namespace appbase;
 struct database { };
 
-class CChainCommonent : public CComponent<CChainCommonent>
+class CChainCommonent : public IChainComponent
 {
 public:
     CChainCommonent();
     ~CChainCommonent();
-    void ComponentInitialize();
-    void ComponentStartup() ;
-    void ComponentShutdown() ;
+    bool ComponentInitialize() override;
+    bool ComponentStartup() override;
+    bool ComponentShutdown() override;
 
     database& db() { return _db; }
-    const char* whoru(){ return "I am CChainCommonent\n";}
+    const char* whoru() const override { return "I am CChainCommonent\n";}
 
 private:
     database _db;

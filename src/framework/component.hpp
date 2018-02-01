@@ -13,19 +13,14 @@
 *************************************************/
 #pragma once
 
-#include <cassert>
-#include <boost/core/demangle.hpp>
 #include "basecomponent.hpp"
 
 namespace appbase
 {
-
     template<typename Impl>
     class CComponent : public CBaseComponent
     {
     public:
-        CComponent() : _name(boost::core::demangle(typeid(Impl).name())) {}
-
         virtual ~CComponent() {}
 
         virtual state GetState() const override
@@ -33,48 +28,37 @@ namespace appbase
             return _state;
         }
 
-        virtual const std::string &Name() const override
-        {
-            return _name;
-        }
-
         virtual bool Initialize() override
         {
-            if (_state == registered) {
+            if (_state == registered)
+            {
                 _state = initialized;
-                static_cast<Impl*>(this)->ComponentInitialize();
-                return true;
+                return static_cast<Impl*>(this)->ComponentInitialize();
             }
-            assert(_state == initialized); /// if initial state was not registered, final state cannot be initiaized
-            return false; // means initialized repeatly.
+            return false;
         }
 
         virtual bool Startup() override
         {
-            if (_state == initialized) {
+            if (_state == initialized)
+            {
                 _state = started;
-                static_cast<Impl*>(this)->ComponentStartup();
-                return true;
+                return static_cast<Impl*>(this)->ComponentStartup();
             }
-            assert(_state == started); // if initial state was not initialized, final state cannot be started
             return false;
         }
 
         virtual bool Shutdown() override
         {
-            if (_state == started) {
+            if (_state == started)
+            {
                 _state = stopped;
-                static_cast<Impl*>(this)->ComponentShutdown();
-                return true;
+                return static_cast<Impl*>(this)->ComponentShutdown();
             }
             return false;
         }
 
-    protected:
-        CComponent(const std::string &name) : _name(name) {}
-
     private:
         state _state = CBaseComponent::registered;
-        std::string _name;
     };
 }
