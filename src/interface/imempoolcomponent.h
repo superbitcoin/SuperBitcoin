@@ -3,7 +3,7 @@
 #include "componentid.h"
 #include "framework/component.hpp"
 
-class ITxMempoolComponent : public appbase::CComponent<ITxMempoolComponent>
+class ITxMempoolComponent : public appbase::TComponent<ITxMempoolComponent>
 {
 public:
     virtual ~ITxMempoolComponent() {}

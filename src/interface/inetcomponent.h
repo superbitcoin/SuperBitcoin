@@ -3,7 +3,7 @@
 #include "componentid.h"
 #include "framework/component.hpp"
 
-class INetComponent : public appbase::CComponent<INetComponent>
+class INetComponent : public appbase::TComponent<INetComponent>
 {
 public:
     virtual ~INetComponent()

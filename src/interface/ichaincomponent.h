@@ -3,7 +3,7 @@
 #include "componentid.h"
 #include "framework/component.hpp"
 
-class IChainComponent : public appbase::CComponent<IChainComponent>
+class IChainComponent : public appbase::TComponent<IChainComponent>
 {
 public:
     virtual ~IChainComponent() {}

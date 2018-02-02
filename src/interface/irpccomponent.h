@@ -4,7 +4,7 @@
 #include "framework/component.hpp"
 
 using namespace appbase;
-class IHttpRpcComponent : public appbase::CComponent<IHttpRpcComponent>
+class IHttpRpcComponent : public appbase::TComponent<IHttpRpcComponent>
 {
 public:
     virtual ~IHttpRpcComponent() {}

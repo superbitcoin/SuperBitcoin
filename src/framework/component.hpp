@@ -5,10 +5,10 @@
 namespace appbase
 {
     template<typename Impl>
-    class CComponent : public IComponent
+    class TComponent : public IComponent
     {
     public:
-        virtual ~CComponent() {}
+        virtual ~TComponent() {}
 
         virtual state GetState() const override
         {

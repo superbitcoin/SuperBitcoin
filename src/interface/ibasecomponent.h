@@ -7,7 +7,7 @@ class CScheduler;
 class CEventManager;
 class CClientUIInterface;
 
-class IBaseComponent : public appbase::CComponent<IBaseComponent>
+class IBaseComponent : public appbase::TComponent<IBaseComponent>
 {
 public:
     virtual ~IBaseComponent() {}

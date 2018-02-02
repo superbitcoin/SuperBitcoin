@@ -3,7 +3,7 @@
 #include "componentid.h"
 #include "framework/component.hpp"
 
-class IWalletComponent : public appbase::CComponent<IWalletComponent>
+class IWalletComponent : public appbase::TComponent<IWalletComponent>
 {
 public:
     virtual ~IWalletComponent() {}
