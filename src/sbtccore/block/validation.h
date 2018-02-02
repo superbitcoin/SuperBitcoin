@@ -341,12 +341,6 @@ void PruneAndFlush();
 /** Prune block files up to a given height */
 void PruneBlockFilesManual(int nManualPruneHeight);
 
-/** (try to) add transaction to memory pool
- * plTxnReplaced will be appended to with all transactions replaced from mempool **/
-bool AcceptToMemoryPool(CTxMemPool &pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                        bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced = nullptr,
-                        bool fOverrideMempoolLimit = false, const CAmount nAbsurdFee = 0);
-
 /** Convert CValidationState to a human-readable message for logging */
 std::string FormatStateMessage(const CValidationState &state);
 
@@ -401,6 +395,9 @@ bool TestLockPointValidity(const LockPoints *lp);
 bool
 CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
 
+bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
+                 unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
+                 std::vector<CScriptCheck> *pvChecks = nullptr);
 /**
  * Closure representing one script verification
  * Note that this stores references to the spending transaction 

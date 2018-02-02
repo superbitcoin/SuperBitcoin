@@ -9,6 +9,7 @@
 #include "chaincontrol/validation.h"
 #include "sbtccore/core_io.h"
 #include "framework/init.h"
+#include "framework/base.hpp"
 #include "wallet/keystore.h"
 #include "block/validation.h"
 #include "merkleblock.h"
@@ -1007,6 +1008,7 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         const Coin &existingCoin = view.AccessCoin(COutPoint(hashTx, o));
         fHaveChain = !existingCoin.IsSpent();
     }
+    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
     bool fHaveMempool = mempool.exists(hashTx);
     if (!fHaveMempool && !fHaveChain)
     {
@@ -1014,7 +1016,7 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         CValidationState state;
         bool fMissingInputs;
         bool fLimitFree = true;
-        if (!AcceptToMemoryPool(mempool, state, std::move(tx), fLimitFree, &fMissingInputs, nullptr, false,
+        if (!txmempool->AcceptToMemoryPool(mempool, state, std::move(tx), fLimitFree, &fMissingInputs, nullptr, false,
                                 nMaxRawTxFee))
         {
             if (state.IsInvalid())

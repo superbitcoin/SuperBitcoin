@@ -32,6 +32,7 @@
 #include "utils/utilstrencodings.h"
 #include "framework/validationinterface.h"
 #include "config/checkpoints.h"
+#include "framework/base.hpp"
 
 #if defined(NDEBUG)
 # error "Super Bitcoin cannot be compiled without assertions."
@@ -3366,6 +3367,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
         return true;
     }
 
+    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
     CTransactionRef ptx;
     vRecv >> ptx;
     const CTransaction &tx = *ptx;
@@ -3386,7 +3388,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 
     std::list<CTransactionRef> lRemovedTxn;
 
-    if (!AlreadyHave(inv) && AcceptToMemoryPool(mempool, state, ptx, true, &fMissingInputs, &lRemovedTxn))
+    if (!AlreadyHave(inv) && txmempool->AcceptToMemoryPool(mempool, state, ptx, true, &fMissingInputs, &lRemovedTxn))
     {
         mempool.check(pcoinsTip);
         RelayTransaction(tx, connman);
@@ -3427,7 +3429,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 
                 if (setMisbehaving.count(fromPeer))
                     continue;
-                if (AcceptToMemoryPool(mempool, stateDummy, porphanTx, true, &fMissingInputs2, &lRemovedTxn))
+                if (txmempool->AcceptToMemoryPool(mempool, stateDummy, porphanTx, true, &fMissingInputs2, &lRemovedTxn))
                 {
                     LogPrint(BCLog::MEMPOOL, "   accepted orphan tx %s\n", orphanHash.ToString());
                     RelayTransaction(orphanTx, connman);
