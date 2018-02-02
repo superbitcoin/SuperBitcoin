@@ -5,6 +5,8 @@
 #ifndef BITCOIN_WALLET_RPCWALLET_H
 #define BITCOIN_WALLET_RPCWALLET_H
 
+#include "wallet.h"
+
 class CRPCTable;
 
 class JSONRPCRequest;

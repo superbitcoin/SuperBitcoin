@@ -1,6 +1,8 @@
 #pragma once
 
 #include "interface/ichaincomponent.h"
+#include "blockindexmanager.h"
+#include "viewmanager.h"
 
 struct database
 {
@@ -33,4 +35,8 @@ public:
 
 private:
     database _db;
+    CBlockIndexManager cIndexManager;
+    CViewManager cViewManager;
+
+    bool ReplayBlocks();
 };

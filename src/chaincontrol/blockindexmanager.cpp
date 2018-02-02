@@ -17,16 +17,46 @@ CBlockIndexManager::~CBlockIndexManager()
 
 }
 
-int CBlockIndexManager::FindMostWorkIndex()
+CBlockIndex *CBlockIndexManager::FindMostWorkIndex()
 {
 
-    return 0;
+    return nullptr;
 }
 
 CBlockIndex *CBlockIndexManager::AddToBlockIndex(const CBlockHeader &block)
 {
+    // Check for duplicate
+    uint256 hash = block.GetHash();
+    BlockMap::iterator it = mBlockIndex.find(hash);
+    if (it != mBlockIndex.end())
+        return it->second;
 
-    return NULL;
+    // Construct new block index object
+    CBlockIndex *pIndexNew = new CBlockIndex(block);
+    assert(pIndexNew);
+    // We assign the sequence id to blocks only when the full data is available,
+    // to avoid miners withholding blocks but broadcasting headers, to get a
+    // competitive advantage.
+    pIndexNew->nSequenceId = 0;
+    BlockMap::iterator mi = mBlockIndex.insert(std::make_pair(hash, pIndexNew)).first;
+    pIndexNew->phashBlock = &((*mi).first);
+    BlockMap::iterator miPrev = mBlockIndex.find(block.hashPrevBlock);
+    if (miPrev != mBlockIndex.end())
+    {
+        pIndexNew->pprev = (*miPrev).second;
+        pIndexNew->nHeight = pIndexNew->pprev->nHeight + 1;
+        pIndexNew->BuildSkip();
+    }
+    pIndexNew->nTimeMax = (pIndexNew->pprev ? std::max(pIndexNew->pprev->nTimeMax, pIndexNew->nTime)
+                                            : pIndexNew->nTime);
+    pIndexNew->nChainWork = (pIndexNew->pprev ? pIndexNew->pprev->nChainWork : 0) + GetBlockProof(*pIndexNew);
+    pIndexNew->RaiseValidity(BLOCK_VALID_TREE);
+    if (pIndexBestHeader == nullptr || pIndexBestHeader->nChainWork < pIndexNew->nChainWork)
+        pIndexBestHeader = pIndexNew;
+
+    setDirtyBlockIndex.insert(pIndexNew);
+
+    return pIndexNew;
 }
 
 
@@ -90,20 +120,18 @@ void CBlockIndexManager::SortBlockIndex()
     }
 }
 
-bool CBlockIndexManager::Init()
+bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex)
 {
+    std::cout << "initialize index manager \n";
+
     UnLoadBlockIndex();
 
-    CArgsManager *cArgs = app().GetArgsManager();
-    bReIndex = cArgs->GetArg<bool>("-reindex", false);
-    int64_t iTotalCache = (cArgs->GetArg<int64_t>("-dbcache", nDefaultDbCache)) << 20;
-    iTotalCache = std::max(iTotalCache, nMinDbCache << 20); // total cache cannot be less than nMinDbCache
-    iTotalCache = std::min(iTotalCache, nMaxDbCache << 20); // total cache cannot be greater than nMaxDbcache
-    int64_t iBlockTreeDBCache = iTotalCache / 8;
-    iBlockTreeDBCache = std::min(iBlockTreeDBCache,
-                                 (cArgs->GetArg<bool>("-txindex", DEFAULT_TXINDEX) ? nMaxBlockDBAndTxIndexCache
-                                                                                   : nMaxBlockDBCache) << 20);
     pBlcokTreee = std::unique_ptr<CBlockTreeDB>(new CBlockTreeDB(iBlockTreeDBCache, false, bReIndex));
+
+    if (bReIndex)
+    {
+        pBlcokTreee->WriteReindexing(true);
+    }
 
     LoadBlockIndex();
 
@@ -132,8 +160,6 @@ CBlockIndex *CBlockIndexManager::InsertBlockIndex(uint256 hash)
 
 bool CBlockIndexManager::LoadBlockIndex()
 {
-    CArgsManager *cArgs = app().GetArgsManager();
-    bReIndex = cArgs->GetArg<bool>("-reindex", false);
     if (!bReIndex)
     {
         bool ret = LoadBlockIndexDB();
@@ -145,6 +171,7 @@ bool CBlockIndexManager::LoadBlockIndex()
 
     if (bReIndex || mBlockIndex.empty())
     {
+        CArgsManager *cArgs = app().GetArgsManager();
         bTxIndex = cArgs->GetArg<bool>("-txindex", DEFAULT_TXINDEX);
         pBlcokTreee->WriteFlag("txindex", bTxIndex);
     }
@@ -249,8 +276,68 @@ bool CBlockIndexManager::LoadBlockIndexDB()
     return true;
 }
 
-
 void CBlockIndexManager::PruneBlockIndexCandidates()
 {
 
+}
+
+/** Find the last common ancestor two blocks have.
+ *  Both pa and pb must be non-nullptr. */
+const CBlockIndex *CBlockIndexManager::LastCommonAncestor(const CBlockIndex *pa, const CBlockIndex *pb)
+{
+    if (pa->nHeight > pb->nHeight)
+    {
+        pa = pa->GetAncestor(pb->nHeight);
+    } else if (pb->nHeight > pa->nHeight)
+    {
+        pb = pb->GetAncestor(pa->nHeight);
+    }
+
+    while (pa != pb && pa && pb)
+    {
+        pa = pa->pprev;
+        pb = pb->pprev;
+    }
+
+    // Eventually all chain branches meet at the genesis block.
+    assert(pa == pb);
+    return pa;
+}
+
+/** Find the last common ancestor two blocks have.
+ *
+ * @param hasha
+ * @param hashb
+ * @return
+ */
+const CBlockIndex *CBlockIndexManager::LastCommonAncestor(const uint256 hashA, const uint256 hashB)
+{
+    const CBlockIndex *pIndexA;
+    const CBlockIndex *pIndexB;
+    const CBlockIndex *pIndexFork;
+
+    if (mBlockIndex.count(hashA) == 0 || mBlockIndex.count(hashB) == 0)
+    {
+        error("LastCommonAncestor(): reorganization to unknown block requested");
+        return nullptr;
+    }
+
+    pIndexA = mBlockIndex[hashA];
+    pIndexB = mBlockIndex[hashB];
+    pIndexFork = LastCommonAncestor(pIndexA, pIndexB);
+
+    assert(pIndexFork != nullptr);
+
+    return pIndexFork;
+}
+
+const CBlockIndex *CBlockIndexManager::getBlockIndex(const uint256 hash)
+{
+    if (mBlockIndex.count(hash) == 0)
+    {
+        error("LastCommonAncestor(): reorganization to unknown block requested");
+        return nullptr;
+    }
+
+    return mBlockIndex[hash];
 }

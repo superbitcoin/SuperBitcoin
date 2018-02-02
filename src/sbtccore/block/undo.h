@@ -124,4 +124,7 @@ public:
     }
 };
 
+bool UndoReadFromDisk(CBlockUndo& blockundo, const CDiskBlockPos& pos, const uint256& hashBlock);
+int ApplyTxInUndo(Coin &&undo, CCoinsViewCache &view, const COutPoint &out);
+
 #endif // BITCOIN_UNDO_H

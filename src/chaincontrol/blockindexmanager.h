@@ -25,6 +25,7 @@
 #include "config/argmanager.h"
 
 using namespace appbase;
+
 struct CBlockIndexWorkComparator
 {
     bool operator()(const CBlockIndex *pa, const CBlockIndex *pb) const
@@ -63,11 +64,17 @@ public:
 
     CBlockIndex *AddToBlockIndex(const CBlockHeader &block);
 
-    int FindMostWorkIndex();
+    CBlockIndex *FindMostWorkIndex();
 
-    bool Init();
+    bool Init(int64_t iBlockTreeDBCache, bool bReIndex);
 
     void PruneBlockIndexCandidates();
+
+    const CBlockIndex *LastCommonAncestor(const uint256 hasha, const uint256 hashb);
+
+    const CBlockIndex *LastCommonAncestor(const CBlockIndex *pa, const CBlockIndex *pb);
+    
+    const CBlockIndex *getBlockIndex(const uint256 hash);
 
 private:
     bool bReIndex = false;
