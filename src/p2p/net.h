@@ -517,6 +517,7 @@ private:
 
 extern std::unique_ptr<CConnman> g_connman;
 
+void Discover();
 void Discover(boost::thread_group &threadGroup);
 
 void MapPort(bool fUseUPnP);

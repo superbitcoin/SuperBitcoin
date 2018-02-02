@@ -1,10 +1,12 @@
 #pragma once
 
 #include "componentid.h"
-#include "../framework/component.hpp"
+#include "framework/component.hpp"
 
 class CScheduler;
 class CEventManager;
+class CClientUIInterface;
+
 class IBaseComponent : public appbase::CComponent<IBaseComponent>
 {
 public:
@@ -20,6 +22,7 @@ public:
 
     virtual CScheduler* GetScheduler() const = 0;
     virtual CEventManager* GetEventManager() const = 0;
+    virtual CClientUIInterface* GetUIInterface() const = 0;
 
 };
 

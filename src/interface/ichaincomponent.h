@@ -1,10 +1,9 @@
 #pragma once
 
 #include "componentid.h"
-#include "../framework/component.hpp"
+#include "framework/component.hpp"
 
-using namespace appbase;
-class IChainComponent : public CComponent<IChainComponent>
+class IChainComponent : public appbase::CComponent<IChainComponent>
 {
 public:
     virtual ~IChainComponent() {}
@@ -19,6 +18,7 @@ public:
 
     //add other interface methods here ...
 
+    virtual int GetActiveChainHeight() const = 0;
 };
 
 #define GET_CHAIN_INTERFACE(ifObj) \

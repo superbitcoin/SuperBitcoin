@@ -1,10 +1,10 @@
 #pragma once
 
 #include "componentid.h"
-#include "../framework/component.hpp"
+#include "framework/component.hpp"
 
 using namespace appbase;
-class IHttpRpcComponent : public CComponent<IHttpRpcComponent>
+class IHttpRpcComponent : public appbase::CComponent<IHttpRpcComponent>
 {
 public:
     virtual ~IHttpRpcComponent() {}

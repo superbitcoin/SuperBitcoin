@@ -843,6 +843,11 @@ static void TorControlThread()
 
 void StartTorControl(boost::thread_group &threadGroup, CScheduler &scheduler)
 {
+    StartTorControl();
+}
+
+void StartTorControl()
+{
     assert(!gBase);
 #ifdef WIN32
     evthread_use_windows_threads();

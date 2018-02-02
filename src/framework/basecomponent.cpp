@@ -1,7 +1,8 @@
 #include <iostream>
 #include "basecomponent.hpp"
 #include "scheduler.h"
-#include "../eventmanager/eventmanager.h"
+#include "ui_interface.h"
+#include "eventmanager/eventmanager.h"
 
 CBaseComponent::CBaseComponent()
 {
@@ -19,8 +20,9 @@ bool CBaseComponent::ComponentInitialize()
 
     scheduler.reset(new CScheduler);
     eventManager.reset(new CEventManager);
+    uiInterface.reset(new CClientUIInterface);
 
-    return scheduler.get() && eventManager.get();
+    return scheduler && eventManager;
 }
 
 bool CBaseComponent::ComponentStartup()
@@ -71,3 +73,10 @@ CEventManager* CBaseComponent::GetEventManager() const
 {
     return eventManager.get();
 }
+
+CClientUIInterface* CBaseComponent::GetUIInterface() const
+{
+    return uiInterface.get();
+}
+
+

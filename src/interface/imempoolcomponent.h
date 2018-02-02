@@ -1,10 +1,9 @@
 #pragma once
 
 #include "componentid.h"
-#include "../framework/component.hpp"
+#include "framework/component.hpp"
 
-using namespace appbase;
-class ITxMempoolComponent : public CComponent<ITxMempoolComponent>
+class ITxMempoolComponent : public appbase::CComponent<ITxMempoolComponent>
 {
 public:
     virtual ~ITxMempoolComponent() {}

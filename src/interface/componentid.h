@@ -1,7 +1,7 @@
 #ifndef __SBTC_COMPONENTID_H__
 #define __SBTC_COMPONENTID_H__
 
-#include "../eventmanager/moduleid.h"
+#include "eventmanager/moduleid.h"
 
 enum SBTCComponentID
 {

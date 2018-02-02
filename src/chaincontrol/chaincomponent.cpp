@@ -27,3 +27,9 @@ bool CChainCommonent::ComponentShutdown()
     return true;
 }
 
+int CChainCommonent::GetActiveChainHeight() const
+{
+    //TODO:
+    return 0;
+}
+

@@ -1,11 +1,9 @@
 #pragma once
 
 #include "componentid.h"
-#include "../framework/component.hpp"
+#include "framework/component.hpp"
 
-using namespace appbase;
-
-class INetComponent : public CComponent<INetComponent>
+class INetComponent : public appbase::CComponent<INetComponent>
 {
 public:
     virtual ~INetComponent()

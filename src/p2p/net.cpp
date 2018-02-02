@@ -2284,6 +2284,11 @@ bool CConnman::BindListenPort(const CService &addrBind, std::string &strError, b
 
 void Discover(boost::thread_group &threadGroup)
 {
+    Discover();
+}
+
+void Discover()
+{
     if (!fDiscover)
         return;
 

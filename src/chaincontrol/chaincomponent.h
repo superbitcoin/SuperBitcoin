@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../interface/ichaincomponent.h"
+#include "interface/ichaincomponent.h"
 
 struct database
 {
@@ -28,6 +28,8 @@ public:
     {
         return "I am CChainCommonent\n";
     }
+
+    int GetActiveChainHeight() const override;
 
 private:
     database _db;

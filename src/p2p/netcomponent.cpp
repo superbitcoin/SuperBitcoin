@@ -9,6 +9,8 @@
 #include "net_processing.h"
 #include "torcontrol.h"
 #include "config/argmanager.h"
+#include "interface/ibasecomponent.h"
+#include "interface/ichaincomponent.h"
 
 CNetComponent::CNetComponent()
 {
@@ -22,12 +24,20 @@ bool CNetComponent::ComponentInitialize()
 {
     std::cout << "initialize net component \n";
 
+    GET_BASE_INTERFACE(ifBaseObj);
+    GET_CHAIN_INTERFACE(ifChainObj);
+
+    CScheduler* scheduler = ifBaseObj->GetScheduler();
+    if (!scheduler)
+    {
+        return false;
+    }
+
     netConnMgr.reset(new CConnman(GetRand(std::numeric_limits<uint64_t>::max()),
                                   GetRand(std::numeric_limits<uint64_t>::max())));
 
-    CScheduler scheduler;
-    peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), scheduler));
-    /// RegisterValidationInterface(peerLogic.get());
+    peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), *scheduler));
+    RegisterValidationInterface(peerLogic.get());
 
     CArgsManager& cmdlineArgs = *appbase::CBase::Instance().GetArgsManager();
 
@@ -149,13 +159,13 @@ bool CNetComponent::ComponentInitialize()
     ///netConnOptions.nLocalServices = nLocalServices;
     ///netConnOptions.nRelevantServices = nRelevantServices;
     ///netConnOptions.nMaxConnections = nMaxConnections;
-    ///netConnOptions.nMaxOutbound = std::min(MAX_OUTBOUND_CONNECTIONS, netConnOptions.nMaxConnections);
+    netConnOptions.nMaxOutbound = std::min(MAX_OUTBOUND_CONNECTIONS, netConnOptions.nMaxConnections);
     netConnOptions.nMaxAddnode = MAX_ADDNODE_CONNECTIONS;
     netConnOptions.nMaxOutboundTimeframe = nMaxOutboundTimeframe;
     netConnOptions.nMaxOutboundLimit = nMaxOutboundLimit;
     netConnOptions.nMaxFeeler = 1;
-    /// netConnOptions.nBestHeight = chainActive.Height();
-    /// netConnOptions.uiInterface = &uiInterface;
+    netConnOptions.nBestHeight = ifChainObj->GetActiveChainHeight();
+    netConnOptions.uiInterface = ifBaseObj->GetUIInterface();
     netConnOptions.m_msgproc = peerLogic.get();
     netConnOptions.nSendBufferMaxSize = 1000 * cmdlineArgs.GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
     netConnOptions.nReceiveFloodSize = 1000 * cmdlineArgs.GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
@@ -204,20 +214,34 @@ bool CNetComponent::ComponentStartup()
 {
     std::cout << "startup net component \n";
 
+    if (!netConnMgr || !peerLogic)
+    {
+        return false;
+    }
+
+    GET_BASE_INTERFACE(ifbase);
+    CScheduler* scheduler = ifbase->GetScheduler();
+    if (!scheduler)
+    {
+        return false;
+    }
+
     CArgsManager& cmdlineArgs = *appbase::CBase::Instance().GetArgsManager();
 
     if (cmdlineArgs.GetArg<bool>("listenonion", DEFAULT_LISTEN_ONION))
-        ///StartTorControl(threadGroup, scheduler);
+    {
+        StartTorControl();
+    }
 
-    ///Discover(threadGroup);
+    Discover();
 
     // Map ports with UPnP
     MapPort(cmdlineArgs.GetArg<bool>("upnp", DEFAULT_UPNP));
 
-//    if (!netConnMgr->Start(scheduler, netConnOptions))
-//    {
-//        return false;
-//    }
+    if (!netConnMgr->Start(*scheduler, netConnOptions))
+    {
+        return false;
+    }
 
     return true;
 }

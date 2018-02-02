@@ -1,7 +1,7 @@
 #pragma once
 
 #include <memory>
-#include "../interface/inetcomponent.h"
+#include "interface/inetcomponent.h"
 #include "net.h"
 
 class PeerLogicValidation;

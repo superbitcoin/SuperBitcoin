@@ -1,10 +1,9 @@
 #pragma once
 
 #include "componentid.h"
-#include "../framework/component.hpp"
+#include "framework/component.hpp"
 
-using namespace appbase;
-class IWalletComponent : public CComponent<IWalletComponent>
+class IWalletComponent : public appbase::CComponent<IWalletComponent>
 {
 public:
     virtual ~IWalletComponent() {}
