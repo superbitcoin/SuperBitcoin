@@ -653,15 +653,14 @@ int main( int argc, char** argv )
     app().RegisterComponent(new CChainCommonent);
     app().RegisterComponent(new CTxMemPool);
 
-    if (!app().Initialize(argc, argv))
-        return -1;
-
-    if (!app().Startup())
-        return -1;
-
-    app().Run();
+    if (app().Initialize(argc, argv))
+    {
+        if (app().Startup())
+        {
+            app().Run();
+        }
+    }
 
     app().Quit();
-
     return 0;
 }

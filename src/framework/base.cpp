@@ -1,3 +1,5 @@
+#include <thread>
+#include <chrono>
 #include "base.hpp"
 #include "config/argmanager.h"
 #include "config/chainparamsbase.h"
@@ -12,7 +14,7 @@ CBase &CBase::Instance()
 }
 
 CBase::CBase()
-        : nVersion(1), cArgs(new CArgsManager)
+    : nVersion(1), bShutdown(false), cArgs(new CArgsManager)
 {
 }
 
@@ -166,11 +168,10 @@ bool CBase::Shutdown()
 
 void CBase::Run()
 {
-    /*while (1)
+    while (!bShutdown)
     {
-        std::cout<<"loop...\n";
-        sleep(100);
-    }*/
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
 }
 
 void CBase::Quit()

@@ -15,6 +15,7 @@
 #define BITCOIN_BASE_H
 
 #include <map>
+#include <atomic>
 #include <memory>
 #include "basecomponent.hpp"
 
@@ -58,6 +59,8 @@ namespace appbase
 
         CBaseChainParams* GetBaseChainParams() { return cBaseChainParams.get(); }
 
+        void RequestShutdown() { bShutdown = true; }
+
     private:
 
         CBase(); ///< private because CBase is a singleton that should be accessed via instance()
@@ -73,9 +76,8 @@ namespace appbase
         CBaseComponent* FindComponent(int componentID) const;
 
     private:
-
         uint64_t nVersion;
-
+        std::atomic<bool> bShutdown;
         std::unique_ptr<CArgsManager> cArgs;
         std::unique_ptr<CChainParams> cChainParams;
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
