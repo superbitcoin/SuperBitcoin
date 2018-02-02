@@ -1,24 +1,9 @@
-//#include <application.hpp>
 #include "base.hpp"
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/asio/signal_set.hpp>
-#include <boost/thread/once.hpp>
-
 #include "config/argmanager.h"
 #include "config/chainparamsbase.h"
 #include "config/chainparams.h"
 
-//#include <iostream>
-//#include <fstream>
-
-
 using namespace appbase;
-
-CBase &app()
-{
-    return CBase::Instance();
-}
 
 CBase &CBase::Instance()
 {
@@ -27,7 +12,7 @@ CBase &CBase::Instance()
 }
 
 CBase::CBase()
-        : cArgs(new CArgsManager), nVersion(1)
+        : nVersion(1), cArgs(new CArgsManager)
 {
 }
 
@@ -45,7 +30,7 @@ void CBase::SetVersion(uint64_t version)
     nVersion = version;
 }
 
-bool CBase::initParams(int argc, char *argv[])
+bool CBase::InitParams(int argc, char *argv[])
 {
     if (!cArgs->Init(argc, argv))
     {
@@ -117,70 +102,66 @@ bool CBase::initParams(int argc, char *argv[])
     return true;
 }
 
-static boost::once_flag onceFlag = BOOST_ONCE_INIT;
+//static boost::once_flag onceFlag = BOOST_ONCE_INIT;
 
-bool CBase::InitializeImpl(int argc, char **argv, vector<CBaseComponent*> autostart_components)
+bool CBase::Initialize(int argc, char **argv)
 {
-    boost::call_once(onceFlag, &CBase::initParams, this, argc, argv);
-
-#ifdef ENABLE_COMPONENT_ARG
-    if (cArgs->IsArgSet("component"))
+    if (!InitParams(argc, argv))
     {
-        auto vComponent = cArgs->GetArgs("component");
-        for (auto &arg : vComponent)
-        {
-            vector<string> names;
-            boost::split(names, arg, boost::is_any_of(" \t,"));
-            for (const std::string &name : names)
-            {
-                CBaseComponent* comp = FindComponent(name);
-                if (comp)
-                {
-                    autostart_components.push_back(comp);
-                }
-            }
-        }
+        return false;
     }
-#endif
 
-    for (auto component : autostart_components)
+    // boost::call_once(onceFlag, &CBase::InitParams, this, argc, argv);
+
+    for (auto it = m_mapComponents.begin(); it != m_mapComponents.end(); ++it)
     {
-        if (component && component->Initialize())
+        if (CBaseComponent* component = it->second.get())
         {
-            m_vecInitializedComponents.push_back(component);
+            if (!component->Initialize())
+            {
+                fprintf(stderr, "failed to initialize component, ID = %d\n", component->GetID());
+                return false;
+            }
         }
     }
 
     return true;
 }
 
-void CBase::Startup()
+bool CBase::Startup()
 {
-    for (auto component : m_vecInitializedComponents)
+    for (auto it = m_mapComponents.begin(); it != m_mapComponents.end(); ++it)
     {
-        if (component->Startup())
+        if (CBaseComponent* component = it->second.get())
         {
-            m_vecRunningComponents.push_back(component);
+            if (!component->Startup())
+            {
+                fprintf(stderr, "failed to startup component, ID = %d\n", component->GetID());
+                return false;
+            }
         }
     }
+
+    return true;
 }
 
-void CBase::Shutdown()
+bool CBase::Shutdown()
 {
-    for (auto ritr = m_vecRunningComponents.rbegin();
-         ritr != m_vecRunningComponents.rend(); ++ritr)
+    bool ret = true;
+    for (auto it = m_mapComponents.rbegin(); it != m_mapComponents.rend(); ++it)
     {
-        (*ritr)->Shutdown();
+        if (CBaseComponent* component = it->second.get())
+        {
+            if (!component->Shutdown())
+            {
+                fprintf(stderr, "failed to shutdown component, ID = %d\n", component->GetID());
+                ret = false;
+            }
+        }
     }
 
-    for (auto ritr = m_vecRunningComponents.rbegin();
-         ritr != m_vecRunningComponents.rend(); ++ritr)
-    {
-        m_mapComponents.erase((*ritr)->Name());
-    }
-    m_vecRunningComponents.clear();
-    m_vecInitializedComponents.clear();
     m_mapComponents.clear();
+    return ret;
 }
 
 void CBase::Run()
@@ -197,8 +178,23 @@ void CBase::Quit()
     Shutdown();
 }
 
-CBaseComponent *CBase::FindComponent(const string &name) const
+bool CBase::RegisterComponent(CBaseComponent* component)
 {
-    auto itr = m_mapComponents.find(name);
-    return itr != m_mapComponents.end() ? itr->second.get() : nullptr;
+    if (component)
+    {
+        int id = component->GetID();
+        if (m_mapComponents.find(id) == m_mapComponents.end())
+        {
+            m_mapComponents.emplace(id, component);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+CBaseComponent* CBase::FindComponent(int componentID) const
+{
+    auto it = m_mapComponents.find(componentID);
+    return it != m_mapComponents.end() ? it->second.get() : nullptr;
 }

@@ -73,18 +73,21 @@ CTxMemPool::~CTxMemPool()
 {
 }
 
-void CTxMemPool::ComponentInitialize()
+bool CTxMemPool::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
     LoadMempool();
+    return true;
 }
-void CTxMemPool::ComponentStartup()
+bool CTxMemPool::ComponentStartup()
 {
     std::cout << "starting CTxMemPool component \n";
+    return true;
 }
-void CTxMemPool::ComponentShutdown()
+bool CTxMemPool::ComponentShutdown()
 {
     std::cout << "shutdown CTxMemPool component \n";
+    return true;
 }
 
 bool CTxMemPool::AcceptToMemoryPool(CTxMemPool &pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,

@@ -21,11 +21,11 @@ add_subdirectory( zmq )
 
 file(GLOB sources "*.cpp" "chaincontrol/*.cpp" "compat/*.cpp" "config/*.cpp" "framework/*.cpp"
         "mempool/*.cpp" "miner/*.cpp" "p2p/*.cpp"  "rpc/*.cpp" "sbtccore/*.cpp" "sbtccore/block/*.cpp" "sbtccore/transaction/*.cpp"
-        "sbtccore/transaction/script/*.cpp" "univalue/*.cpp" "eventmanager/*.cpp" "utils/*.cpp" "wallet/*.cpp"   "utils/crypto/*.cpp" "utils/crypto/allocators/*.cpp" "utils/crypto/ctaes/*.c" )
+        "sbtccore/transaction/script/*.cpp" "univalue/*.cpp" "eventmanager/*.cpp" "interface/*.cpp" "utils/*.cpp" "wallet/*.cpp"   "utils/crypto/*.cpp" "utils/crypto/allocators/*.cpp" "utils/crypto/ctaes/*.c" )
 #"zmq/*.cpp"
 file(GLOB headers "*.h" "chaincontrol/*.h" "compat/*.h" "config/*.h" "framework/*.h" "framework/*.hpp" "mempool/*.h" "miner/*.h" "p2p/*.h" "rpc/*.h" "sbtccore/*.h"
         "sbtccore/transaction/*.h" "sbtccore/block/*.h" "btccore/transaction/script/*.h" "univalue/*.h" "utils/*.h" "wallet/*.h"
-        "utils/crypto/*.h" "utils/crypto/allocators/*.h" "eventmanager/*.h" "utils/crypto/ctaes/*.h" )
+        "utils/crypto/*.h" "utils/crypto/allocators/*.h" "eventmanager/*.h" "interface/*.h" "utils/crypto/ctaes/*.h" )
 #"zmq/*.h"
 
 add_library(base ${sources} ${headers})

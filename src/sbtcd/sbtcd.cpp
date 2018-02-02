@@ -617,15 +617,11 @@ bool AppInit(int argc, char *argv[])
 
 
 #include "base.hpp"
-#include <iostream>
-#include <boost/exception/diagnostic_information.hpp>
-#include "framework/netcomponent.hpp"
-#include "framework/chaincomponent.hpp"
+#include "p2p/netcomponent.h"
+#include "chaincontrol/chaincomponent.h"
 #include "mempool/txmempool.h"
-using bpo::options_description;
-using bpo::variables_map;
-using std::string;
-using std::vector;
+
+using namespace appbase;
 
 typedef struct
 {
@@ -642,11 +638,9 @@ void term_handler(int signum)
 
 void reload_handler(int signum)
 {
-    std::cout<<"reload_config\n";
+    std::cout << "reload_config\n";
 }
 
-
-using namespace appbase;
 
 int main( int argc, char** argv )
 {
@@ -655,15 +649,19 @@ int main( int argc, char** argv )
     // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
     signal(SIGPIPE, SIG_IGN);
 
-    CBase::Instance().RegisterComponent<CNetComponent>();
-    CBase::Instance().RegisterComponent<CChainCommonent>();
-    CBase::Instance().RegisterComponent<CTxMemPool>();
-    if( !CBase::Instance().Initialize<CNetComponent, CTxMemPool>( argc, argv ) )
-        return -1;
-    CBase::Instance().Startup();
-    CBase::Instance().Run();
-    CBase::Instance().Quit();
+    app().RegisterComponent(new CNetComponent);
+    app().RegisterComponent(new CChainCommonent);
+    app().RegisterComponent(new CTxMemPool);
 
-    std::cout << "exited cleanly\n";
+    if (!app().Initialize(argc, argv))
+        return -1;
+
+    if (!app().Startup())
+        return -1;
+
+    app().Run();
+
+    app().Quit();
+
     return 0;
 }

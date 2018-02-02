@@ -624,10 +624,10 @@ struct DisconnectedBlockTransactions
  * prevent these calculations from being too CPU intensive.
  *
  */
-#include "component.hpp"
+#include "../interface/imempoolcomponent.h"
 using namespace appbase;
 
-class CTxMemPool  : public CComponent<CTxMemPool>
+class CTxMemPool  : public ITxMempoolComponent
 {
     enum FlushStateMode
     {
@@ -639,21 +639,15 @@ class CTxMemPool  : public CComponent<CTxMemPool>
 public:
 //    CTxMemPool();
     ~CTxMemPool();
-//    virtual void SetProgramOptions( options_description& cli, options_description& cfg ) override
-//    {
-//        cfg.add_options()
-//                ("readonly", "open the database in read only mode")
-//                ("basedbsize", boost::program_options::value<uint64_t>()->default_value( 8*1024 ), "Minimum size MB of database shared memory file")
-//                ;
-//        cli.add_options()
-//                ("replay", "clear chain database and replay all blocks" )
-//                ("reset", "clear chain database and block log" )
-//                ;
-//    }
 
-    void ComponentInitialize( );
-    void ComponentStartup() ;
-    void ComponentShutdown() ;
+
+
+
+    bool ComponentInitialize() override;
+    bool ComponentStartup() override;
+    bool ComponentShutdown() override;
+    const char* whoru() const override { return "I am CTxMemPoolCommonent\n"; };
+
     void OnNetMessageTx(int node_id, const char* vRecv);
 
 private:

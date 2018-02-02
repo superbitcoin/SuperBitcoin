@@ -13,8 +13,6 @@
 *************************************************/
 #pragma once
 
-#include <string>
-
 namespace appbase
 {
     class CBaseComponent
@@ -30,9 +28,9 @@ namespace appbase
 
         virtual ~CBaseComponent() {}
 
-        virtual state GetState() const = 0;
+        virtual int GetID() const = 0;
 
-        virtual const std::string &Name() const = 0;
+        virtual state GetState() const = 0;
 
         virtual bool Initialize() = 0;
 
