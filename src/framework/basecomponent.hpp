@@ -1,41 +1,32 @@
-/*************************************************
- * File name:		// basecomponent.hpp
- * Author:
- * Date: 		    //2018.01.26
- * Description:		// The base class of a component, and all components are derived from this class
-
- * Others:		    //
- * History:		    // 2018.01.26
-
- * 1. Date:
- * Author:
- * Modification:
-*************************************************/
 #pragma once
 
-namespace appbase
+#include <memory>
+#include <thread>
+#include "../interface/ibasecomponent.h"
+
+class CBaseComponent : public IBaseComponent
 {
-    class CBaseComponent
-    {
-    public:
-        enum state
-        {
-            registered,     ///< the plugin is constructed but doesn't do anything
-            initialized,    ///< the plugin has initialized any state required but is idle
-            started,        ///< the plugin is actively running
-            stopped         ///< the plugin is no longer running
-        };
+public:
+    CBaseComponent();
 
-        virtual ~CBaseComponent() {}
+    ~CBaseComponent();
 
-        virtual int GetID() const = 0;
+    bool ComponentInitialize() override;
 
-        virtual state GetState() const = 0;
+    bool ComponentStartup() override;
 
-        virtual bool Initialize() = 0;
+    bool ComponentShutdown() override;
 
-        virtual bool Startup() = 0;
+    const char *whoru() const override;
 
-        virtual bool Shutdown() = 0;
-    };
-}
+
+    CScheduler* GetScheduler() const override;
+
+    CEventManager* GetEventManager() const override;
+
+
+private:
+    std::thread schedulerThread;
+    std::unique_ptr<CScheduler>    scheduler;
+    std::unique_ptr<CEventManager> eventManager;
+};

@@ -104,8 +104,6 @@ bool CBase::InitParams(int argc, char *argv[])
     return true;
 }
 
-//static boost::once_flag onceFlag = BOOST_ONCE_INIT;
-
 bool CBase::Initialize(int argc, char **argv)
 {
     if (!InitParams(argc, argv))
@@ -113,11 +111,9 @@ bool CBase::Initialize(int argc, char **argv)
         return false;
     }
 
-    // boost::call_once(onceFlag, &CBase::InitParams, this, argc, argv);
-
     for (auto it = m_mapComponents.begin(); it != m_mapComponents.end(); ++it)
     {
-        if (CBaseComponent* component = it->second.get())
+        if (IComponent* component = it->second.get())
         {
             if (!component->Initialize())
             {
@@ -134,7 +130,7 @@ bool CBase::Startup()
 {
     for (auto it = m_mapComponents.begin(); it != m_mapComponents.end(); ++it)
     {
-        if (CBaseComponent* component = it->second.get())
+        if (IComponent* component = it->second.get())
         {
             if (!component->Startup())
             {
@@ -152,7 +148,7 @@ bool CBase::Shutdown()
     bool ret = true;
     for (auto it = m_mapComponents.rbegin(); it != m_mapComponents.rend(); ++it)
     {
-        if (CBaseComponent* component = it->second.get())
+        if (IComponent* component = it->second.get())
         {
             if (!component->Shutdown())
             {
@@ -179,7 +175,7 @@ void CBase::Quit()
     Shutdown();
 }
 
-bool CBase::RegisterComponent(CBaseComponent* component)
+bool CBase::RegisterComponent(IComponent* component)
 {
     if (component)
     {
@@ -194,7 +190,7 @@ bool CBase::RegisterComponent(CBaseComponent* component)
     return false;
 }
 
-CBaseComponent* CBase::FindComponent(int componentID) const
+IComponent* CBase::FindComponent(int componentID) const
 {
     auto it = m_mapComponents.find(componentID);
     return it != m_mapComponents.end() ? it->second.get() : nullptr;

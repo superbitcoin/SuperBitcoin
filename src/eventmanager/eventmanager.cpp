@@ -1,11 +1,11 @@
 
 #include "eventmanager.h"
 
-CEventManager& CEventManager::Instance()
-{
-    static CEventManager eventMgr;
-    return eventMgr;
-}
+//CEventManager& CEventManager::Instance()
+//{
+//    static CEventManager eventMgr;
+//    return eventMgr;
+//}
 
 CEventManager::CEventManager()
 {

@@ -1,23 +1,9 @@
-/*************************************************
- * File name:		// base.hpp
- * Author:
- * Date: 		    //2018.01.26
- * Description:		// Startup of the SBTC framework and the management of the components
-
- * Others:		    //
- * History:		    // 2018.01.26
-
- * 1. Date:
- * Author:
- * Modification:
-*************************************************/
-#ifndef BITCOIN_BASE_H
-#define BITCOIN_BASE_H
+#pragma once
 
 #include <map>
 #include <atomic>
 #include <memory>
-#include "basecomponent.hpp"
+#include "icomponent.h"
 
 class CArgsManager;
 class CChainParams;
@@ -45,7 +31,7 @@ namespace appbase
         void Quit();
 
 
-        bool RegisterComponent(CBaseComponent* component);
+        bool RegisterComponent(IComponent* component);
 
         template<typename Component>
         Component* FindComponent() const
@@ -73,7 +59,7 @@ namespace appbase
 
         bool InitParams(int argc, char *argv[]);
 
-        CBaseComponent* FindComponent(int componentID) const;
+        IComponent* FindComponent(int componentID) const;
 
     private:
         uint64_t nVersion;
@@ -82,7 +68,7 @@ namespace appbase
         std::unique_ptr<CChainParams> cChainParams;
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
 
-        std::map<int, std::unique_ptr<CBaseComponent>> m_mapComponents; ///< all registered plugins ordered by id.
+        std::map<int, std::unique_ptr<IComponent>> m_mapComponents; ///< all registered plugins ordered by id.
     };
 
     inline CBase &app()
@@ -91,5 +77,3 @@ namespace appbase
     }
 }
 
-
-#endif // !defined(BITCOIN_BASE_H)

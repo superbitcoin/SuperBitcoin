@@ -1,24 +1,11 @@
-/*************************************************
- * File name:		// basecomponent.hpp
- * Author:
- * Date: 		    //2018.01.26
- * Description:		// The base class of component implementation
-
- * Others:		    //
- * History:		    // 2018.01.26
-
- * 1. Date:
- * Author:
- * Modification:
-*************************************************/
 #pragma once
 
-#include "basecomponent.hpp"
+#include "icomponent.h"
 
 namespace appbase
 {
     template<typename Impl>
-    class CComponent : public CBaseComponent
+    class CComponent : public IComponent
     {
     public:
         virtual ~CComponent() {}
@@ -71,6 +58,6 @@ namespace appbase
         }
 
     private:
-        state _state = CBaseComponent::registered;
+        state _state = IComponent::registered;
     };
 }

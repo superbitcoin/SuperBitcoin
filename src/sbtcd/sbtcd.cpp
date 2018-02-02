@@ -618,6 +618,7 @@ bool AppInit(int argc, char *argv[])
 
 #include "base.hpp"
 #include "p2p/netcomponent.h"
+#include "framework/basecomponent.hpp"
 #include "chaincontrol/chaincomponent.h"
 #include "mempool/txmempool.h"
 
@@ -649,6 +650,7 @@ int main( int argc, char** argv )
     // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
     signal(SIGPIPE, SIG_IGN);
 
+    app().RegisterComponent(new CBaseComponent);
     app().RegisterComponent(new CNetComponent);
     app().RegisterComponent(new CChainCommonent);
     app().RegisterComponent(new CTxMemPool);

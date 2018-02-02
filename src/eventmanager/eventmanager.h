@@ -50,9 +50,9 @@
 class CEventManager
 {
 public:
-    static CEventManager& Instance();
+    //static CEventManager& Instance();
 
-private:
+//private:
 
     CEventManager();
 
