@@ -622,6 +622,10 @@ bool AppInit(int argc, char *argv[])
 #include "chaincontrol/chaincomponent.h"
 #include "mempool/txmempool.h"
 
+#ifdef ENABLE_WALLET
+#include "walletcomponent.h"
+#endif
+
 using namespace appbase;
 
 typedef struct
@@ -654,6 +658,10 @@ int main( int argc, char** argv )
     app().RegisterComponent(new CNetComponent);
     app().RegisterComponent(new CChainCommonent);
     app().RegisterComponent(new CTxMemPool);
+
+#ifdef ENABLE_WALLET
+    app().RegisterComponent(new CWalletComponent);
+#endif
 
     if (app().Initialize(argc, argv))
     {
