@@ -618,59 +618,36 @@ bool AppInit(int argc, char *argv[])
 
 #include "base.hpp"
 #include "p2p/netcomponent.h"
+#include "rpc/rpccomponent.h"
 #include "framework/basecomponent.hpp"
 #include "chaincontrol/chaincomponent.h"
 #include "mempool/txmempool.h"
 
 #ifdef ENABLE_WALLET
-#include "walletcomponent.h"
+# include "walletcomponent.h"
 #endif
-
-using namespace appbase;
-
-typedef struct
-{
-    bool exit_flag;
-}RUN_CONTEXT;
-
-RUN_CONTEXT* run_ctx = NULL;
-
-void term_handler(int signum)
-{
-    if (run_ctx)
-        run_ctx->exit_flag = true;
-}
-
-void reload_handler(int signum)
-{
-    std::cout << "reload_config\n";
-}
-
 
 int main( int argc, char** argv )
 {
-    signal(SIGTERM, (sighandler_t)term_handler);
-    signal(SIGUSR1, (sighandler_t)reload_handler);
-    // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
-    signal(SIGPIPE, SIG_IGN);
-
-    app().RegisterComponent(new CBaseComponent);
-    app().RegisterComponent(new CNetComponent);
-    app().RegisterComponent(new CChainCommonent);
-    app().RegisterComponent(new CTxMemPool);
+    CBase& app = appbase::CBase::Instance();
+    app.RegisterComponent(new CBaseComponent);
+    app.RegisterComponent(new CChainCommonent);
+    app.RegisterComponent(new CTxMemPool);
+    app.RegisterComponent(new CHttpRpcComponent);
+    app.RegisterComponent(new CNetComponent);
 
 #ifdef ENABLE_WALLET
-    app().RegisterComponent(new CWalletComponent);
+    app.RegisterComponent(new CWalletComponent);
 #endif
 
-    if (app().Initialize(argc, argv))
+    if (app.Initialize(argc, argv))
     {
-        if (app().Startup())
+        if (app.Startup())
         {
-            app().Run();
+            app.Run();
         }
     }
 
-    app().Quit();
+    app.Quit();
     return 0;
 }
