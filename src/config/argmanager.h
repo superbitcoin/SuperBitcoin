@@ -123,7 +123,7 @@ public:
 
     void ReadConfigFile(const std::string &confPath);
 
-    const fs::path &GetDataDir(bool fNetSpecific);
+    const fs::path &GetDataDir(bool fNetSpecific = true);
 
     template<class T>
     bool SoftSetArg(const std::string &strArg, const T &value)

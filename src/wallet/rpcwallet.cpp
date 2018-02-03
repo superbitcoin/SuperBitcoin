@@ -26,6 +26,8 @@
 #include "wallet/feebumper.h"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
+#include "base.hpp"
+#include "argmanager.h"
 
 #include <stdint.h>
 
@@ -3464,7 +3466,7 @@ static const CRPCCommand commands[] =
 
 void RegisterWalletRPCCommands(CRPCTable &t)
 {
-    if (gArgs.GetArg("-disablewallet", false))
+    if (appbase::CBase::Instance().GetArgsManager()->GetArg("-disablewallet", false))
         return;
 
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)
