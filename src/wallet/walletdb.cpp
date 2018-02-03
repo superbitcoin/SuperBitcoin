@@ -15,6 +15,8 @@
 #include "utils/util.h"
 #include "utils/utiltime.h"
 #include "wallet/wallet.h"
+#include "base.hpp"
+#include "argmanager.h"
 
 #include <atomic>
 
@@ -574,7 +576,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
                     if (strType == "tx")
                         // Rescan if there is a bad transaction record:
-                        gArgs.SoftSetArg("-rescan", true);
+                        appbase::CBase::Instance().GetArgsManager()->SoftSetArg("-rescan", true);
                 }
             }
             if (!strErr.empty())
@@ -768,7 +770,7 @@ void MaybeCompactWalletDB()
     {
         return;
     }
-    if (!gArgs.GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET))
+    if (!(appbase::CBase::Instance().GetArgsManager()->GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
     {
         return;
     }

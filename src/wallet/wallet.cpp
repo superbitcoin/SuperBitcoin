@@ -4464,13 +4464,14 @@ CWallet *CWallet::CreateWalletFromFile(const std::string walletFile)
 
 bool CWallet::InitLoadWallet()
 {
-    if (gArgs.GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
+
+    if (appbase::CBase::Instance().GetArgsManager()->GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
     {
         LogPrintf("Wallet disabled!\n");
         return true;
     }
 
-    for (const std::string &walletFile : gArgs.GetArgs("-wallet"))
+    for (const std::string &walletFile : appbase::CBase::Instance().GetArgsManager()->GetArgs("-wallet"))
     {
         CWallet *const pwallet = CreateWalletFromFile(walletFile);
         if (!pwallet)
