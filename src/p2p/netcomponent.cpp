@@ -9,6 +9,7 @@
 #include "net_processing.h"
 #include "torcontrol.h"
 #include "config/argmanager.h"
+#include "utils/util.h"
 #include "interface/ibasecomponent.h"
 #include "interface/ichaincomponent.h"
 
@@ -23,6 +24,11 @@ CNetComponent::~CNetComponent()
 bool CNetComponent::ComponentInitialize()
 {
     std::cout << "initialize net component \n";
+
+    if (!SetupNetworking())
+    {
+        return InitError("Initializing networking failed");
+    }
 
     GET_BASE_INTERFACE(ifBaseObj);
     GET_CHAIN_INTERFACE(ifChainObj);
@@ -39,11 +45,11 @@ bool CNetComponent::ComponentInitialize()
     peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), *scheduler));
     RegisterValidationInterface(peerLogic.get());
 
-    CArgsManager& cmdlineArgs = *appbase::CBase::Instance().GetArgsManager();
+    CArgsManager& appArgs = *appbase::CBase::Instance().GetArgsManager();
 
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
-    for (const std::string &cmt : cmdlineArgs.GetArgs("-uacomment"))
+    for (const std::string &cmt : appArgs.GetArgs("-uacomment"))
     {
         if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
             return InitError(strprintf(_("User Agent comment (%s) contains unsafe characters."), cmt));
@@ -57,10 +63,10 @@ bool CNetComponent::ComponentInitialize()
                 strSubVersion.size(), MAX_SUBVERSION_LENGTH));
     }
 
-    if (cmdlineArgs.IsArgSet("-onlynet"))
+    if (appArgs.IsArgSet("-onlynet"))
     {
         std::set<enum Network> nets;
-        for (const std::string &snet : cmdlineArgs.GetArgs("-onlynet"))
+        for (const std::string &snet : appArgs.GetArgs("-onlynet"))
         {
             enum Network net = ParseNetwork(snet);
             if (net == NET_UNROUTABLE)
@@ -76,12 +82,12 @@ bool CNetComponent::ComponentInitialize()
     }
 
     // Check for host lookup allowed before parsing any network related parameters
-    fNameLookup = cmdlineArgs.GetArg("-dns", DEFAULT_NAME_LOOKUP);
+    fNameLookup = appArgs.GetArg("-dns", DEFAULT_NAME_LOOKUP);
 
-    bool proxyRandomize = cmdlineArgs.GetArg<int>("-proxyrandomize", DEFAULT_PROXYRANDOMIZE);
+    bool proxyRandomize = appArgs.GetArg<int>("-proxyrandomize", DEFAULT_PROXYRANDOMIZE);
     // -proxy sets a proxy for all outgoing network traffic
     // -noproxy (or -proxy=0) as well as the empty string can be used to not set a proxy, this is the default
-    std::string proxyArg = cmdlineArgs.GetArg<std::string>("-proxy", "");
+    std::string proxyArg = appArgs.GetArg<std::string>("-proxy", "");
     SetLimited(NET_TOR);
     if (proxyArg != "" && proxyArg != "0")
     {
@@ -105,7 +111,7 @@ bool CNetComponent::ComponentInitialize()
     // -onion can be used to set only a proxy for .onion, or override normal proxy for .onion addresses
     // -noonion (or -onion=0) disables connecting to .onion entirely
     // An empty string is used to not override the onion proxy (in which case it defaults to -proxy set above, or none)
-    std::string onionArg = cmdlineArgs.GetArg<std::string>("-onion", "");
+    std::string onionArg = appArgs.GetArg<std::string>("-onion", "");
     if (onionArg != "")
     {
         if (onionArg == "0")
@@ -127,11 +133,11 @@ bool CNetComponent::ComponentInitialize()
     }
 
     // see Step 2: parameter interactions for more information about these
-    fListen = cmdlineArgs.GetArg<bool>("-listen", DEFAULT_LISTEN);
-    fDiscover = cmdlineArgs.GetArg<bool>("-discover", true);
-    fRelayTxes = !cmdlineArgs.GetArg<bool>("-blocksonly", DEFAULT_BLOCKSONLY);
+    fListen = appArgs.GetArg<bool>("-listen", DEFAULT_LISTEN);
+    fDiscover = appArgs.GetArg<bool>("-discover", true);
+    fRelayTxes = !appArgs.GetArg<bool>("-blocksonly", DEFAULT_BLOCKSONLY);
 
-    for (const std::string &strAddr : cmdlineArgs.GetArgs("-externalip"))
+    for (const std::string &strAddr : appArgs.GetArgs("-externalip"))
     {
         CService addrLocal;
         if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
@@ -151,9 +157,9 @@ bool CNetComponent::ComponentInitialize()
     uint64_t nMaxOutboundLimit = 0; //unlimited unless -maxuploadtarget is set
     uint64_t nMaxOutboundTimeframe = MAX_UPLOAD_TIMEFRAME;
 
-    if (cmdlineArgs.IsArgSet("-maxuploadtarget"))
+    if (appArgs.IsArgSet("-maxuploadtarget"))
     {
-        nMaxOutboundLimit = cmdlineArgs.GetArg("maxuploadtarget", DEFAULT_MAX_UPLOAD_TARGET) * 1024 * 1024;
+        nMaxOutboundLimit = appArgs.GetArg("maxuploadtarget", DEFAULT_MAX_UPLOAD_TARGET) * 1024 * 1024;
     }
 
     ///netConnOptions.nLocalServices = nLocalServices;
@@ -167,10 +173,10 @@ bool CNetComponent::ComponentInitialize()
     netConnOptions.nBestHeight = ifChainObj->GetActiveChainHeight();
     netConnOptions.uiInterface = ifBaseObj->GetUIInterface();
     netConnOptions.m_msgproc = peerLogic.get();
-    netConnOptions.nSendBufferMaxSize = 1000 * cmdlineArgs.GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
-    netConnOptions.nReceiveFloodSize = 1000 * cmdlineArgs.GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
+    netConnOptions.nSendBufferMaxSize = 1000 * appArgs.GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
+    netConnOptions.nReceiveFloodSize = 1000 * appArgs.GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
 
-    for (const std::string &strBind : cmdlineArgs.GetArgs("-bind"))
+    for (const std::string &strBind : appArgs.GetArgs("-bind"))
     {
         CService addrBind;
         if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
@@ -179,7 +185,7 @@ bool CNetComponent::ComponentInitialize()
         }
         netConnOptions.vBinds.push_back(addrBind);
     }
-    for (const std::string &strBind : cmdlineArgs.GetArgs("-whitebind"))
+    for (const std::string &strBind : appArgs.GetArgs("-whitebind"))
     {
         CService addrBind;
         if (!Lookup(strBind.c_str(), addrBind, 0, false))
@@ -193,7 +199,7 @@ bool CNetComponent::ComponentInitialize()
         netConnOptions.vWhiteBinds.push_back(addrBind);
     }
 
-    for (const auto &net : cmdlineArgs.GetArgs("-whitelist"))
+    for (const auto &net : appArgs.GetArgs("-whitelist"))
     {
         CSubNet subnet;
         LookupSubNet(net.c_str(), subnet);
@@ -202,9 +208,9 @@ bool CNetComponent::ComponentInitialize()
         netConnOptions.vWhitelistedRange.push_back(subnet);
     }
 
-    if (cmdlineArgs.IsArgSet("-seednode"))
+    if (appArgs.IsArgSet("-seednode"))
     {
-        netConnOptions.vSeedNodes = cmdlineArgs.GetArgs("-seednode");
+        netConnOptions.vSeedNodes = appArgs.GetArgs("-seednode");
     }
 
     return true;
@@ -226,9 +232,9 @@ bool CNetComponent::ComponentStartup()
         return false;
     }
 
-    CArgsManager& cmdlineArgs = *appbase::CBase::Instance().GetArgsManager();
+    CArgsManager& appArgs = *appbase::CBase::Instance().GetArgsManager();
 
-    if (cmdlineArgs.GetArg<bool>("listenonion", DEFAULT_LISTEN_ONION))
+    if (appArgs.GetArg<bool>("listenonion", DEFAULT_LISTEN_ONION))
     {
         StartTorControl();
     }
@@ -236,7 +242,7 @@ bool CNetComponent::ComponentStartup()
     Discover();
 
     // Map ports with UPnP
-    MapPort(cmdlineArgs.GetArg<bool>("upnp", DEFAULT_UPNP));
+    MapPort(appArgs.GetArg<bool>("upnp", DEFAULT_UPNP));
 
     if (!netConnMgr->Start(*scheduler, netConnOptions))
     {

@@ -1,8 +1,14 @@
 #include <iostream>
+#include <csignal>
+#include "base.hpp"
 #include "basecomponent.hpp"
 #include "scheduler.h"
 #include "ui_interface.h"
 #include "eventmanager/eventmanager.h"
+#include "config/argmanager.h"
+#ifndef WIN32
+# include <sys/stat.h>
+#endif
 
 CBaseComponent::CBaseComponent()
 {
@@ -14,9 +20,34 @@ CBaseComponent::~CBaseComponent()
 
 }
 
+static void HandleSIGTERM(int)
+{
+    appbase::app().RequestShutdown();
+}
+
 bool CBaseComponent::ComponentInitialize()
 {
     std::cout << "initialize base component \n";
+
+#ifndef WIN32
+    CArgsManager& appArgs = *appbase::app().GetArgsManager();
+    if (!appArgs.GetArg<bool>("sysperms", false))
+        umask(077);
+
+    // Clean shutdown on SIGTERM
+    signal(SIGTERM, (sighandler_t)HandleSIGTERM);
+    signal(SIGINT, (sighandler_t)HandleSIGTERM);
+
+    // Reopen debug.log on SIGHUP
+    // signal(SIGHUP, (sighandler_t)HandleSIGHUP);
+
+    // signal(SIGUSR1, (sighandler_t)reload_handler);
+
+    // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
+    signal(SIGPIPE, SIG_IGN);
+#endif
+
+    // std::set_new_handler(new_handler_terminate);
 
     scheduler.reset(new CScheduler);
     eventManager.reset(new CEventManager);
