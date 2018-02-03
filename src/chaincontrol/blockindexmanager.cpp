@@ -171,8 +171,8 @@ bool CBlockIndexManager::LoadBlockIndex()
 
     if (bReIndex || mBlockIndex.empty())
     {
-        CArgsManager *cArgs = app().GetArgsManager();
-        bTxIndex = cArgs->GetArg<bool>("-txindex", DEFAULT_TXINDEX);
+        const CArgsManager& cArgs = app().GetArgsManager();
+        bTxIndex = cArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX);
         pBlcokTreee->WriteFlag("txindex", bTxIndex);
     }
 

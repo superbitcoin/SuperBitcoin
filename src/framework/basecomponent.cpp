@@ -30,7 +30,7 @@ bool CBaseComponent::ComponentInitialize()
     std::cout << "initialize base component \n";
 
 #ifndef WIN32
-    CArgsManager& appArgs = *appbase::app().GetArgsManager();
+    const CArgsManager& appArgs = appbase::app().GetArgsManager();
     if (!appArgs.GetArg<bool>("sysperms", false))
         umask(077);
 

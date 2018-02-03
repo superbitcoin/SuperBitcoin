@@ -45,7 +45,7 @@ bool CNetComponent::ComponentInitialize()
     peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), *scheduler));
     RegisterValidationInterface(peerLogic.get());
 
-    CArgsManager& appArgs = *appbase::CBase::Instance().GetArgsManager();
+    const CArgsManager& appArgs = appbase::app().GetArgsManager();
 
     // sanitize comments per BIP-0014, format user agent and check total size
     std::vector<std::string> uacomments;
@@ -232,7 +232,7 @@ bool CNetComponent::ComponentStartup()
         return false;
     }
 
-    CArgsManager& appArgs = *appbase::CBase::Instance().GetArgsManager();
+   const CArgsManager& appArgs = appbase::app().GetArgsManager();
 
     if (appArgs.GetArg<bool>("listenonion", DEFAULT_LISTEN_ONION))
     {

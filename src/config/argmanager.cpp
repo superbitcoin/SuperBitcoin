@@ -47,7 +47,7 @@ void CArgsManager::ForceSetArg(const std::string &strArg, const unsigned int val
 }
 
 
-std::vector<std::string> CArgsManager::GetArgs(const std::string &strArg)
+const std::vector<std::string> CArgsManager::GetArgs(const std::string &strArg)const
 {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
@@ -486,7 +486,7 @@ bool CArgsManager::InterpretBool(const std::string &strValue)
 }
 
 
-bool CArgsManager::IsArgSet(const std::string &strArg)
+bool CArgsManager::IsArgSet(const std::string &strArg) const
 {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
@@ -582,7 +582,7 @@ void CArgsManager::ReadConfigFile(const std::string &confPath)
 }
 
 
-const std::string CArgsManager::SubPrefix(std::string str)
+const std::string CArgsManager::SubPrefix(std::string str) const
 {
     std::string tmp_strArg;
     if (str[0] == '-')
@@ -599,7 +599,7 @@ static fs::path pathCached;
 static fs::path pathCachedNetSpecific;
 static CCriticalSection csPathCached;
 
-const fs::path &CArgsManager::GetDataDir(bool fNetSpecific)
+const fs::path &CArgsManager::GetDataDir(bool fNetSpecific) const
 {
 
     LOCK(csPathCached);

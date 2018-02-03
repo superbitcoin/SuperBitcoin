@@ -575,8 +575,9 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                     // Leave other errors alone, if we try to fix them we might make things worse.
                     fNoncriticalErrors = true; // ... but do warn the user there is something wrong.
                     if (strType == "tx")
+                        ;
                         // Rescan if there is a bad transaction record:
-                        appbase::CBase::Instance().GetArgsManager()->SoftSetArg("-rescan", true);
+                        //TODO: appbase::app().GetArgsManager().SoftSetArg("-rescan", true);
                 }
             }
             if (!strErr.empty())
@@ -770,7 +771,7 @@ void MaybeCompactWalletDB()
     {
         return;
     }
-    if (!(appbase::CBase::Instance().GetArgsManager()->GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
+    if (!(appbase::app().GetArgsManager().GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
     {
         return;
     }

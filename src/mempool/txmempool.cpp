@@ -143,9 +143,9 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         return state.DoS(100, false, REJECT_INVALID, "coinbase");
 
     // Reject transactions with witness before segregated witness activates (override with -prematurewitness)
-    CArgsManager *pArgs = appbase::CBase::Instance().GetArgsManager();
+    const CArgsManager &mArgs = appbase::app().GetArgsManager();
     bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), chainparams.GetConsensus());
-    if (!pArgs->GetArg<bool>("-prematurewitness", false) && tx.HasWitness() && !witnessEnabled)
+    if (!mArgs.GetArg<bool>("-prematurewitness", false) && tx.HasWitness() && !witnessEnabled)
     {
         return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
     }
@@ -312,7 +312,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
                              strprintf("%d", nSigOpsCost));
 
         CAmount mempoolRejectFee = this->GetMinFee(
-                pArgs->GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
+                mArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
         if (mempoolRejectFee > 0 && nModifiedFees < mempoolRejectFee)
         {
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool min fee not met", false,
@@ -332,11 +332,11 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
 
         // Calculate in-mempool ancestors, up to a limit.
         CTxMemPool::setEntries setAncestors;
-        size_t nLimitAncestors = pArgs->GetArg<uint32_t>("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT);
-        size_t nLimitAncestorSize = pArgs->GetArg<uint32_t>("-limitancestorsize", DEFAULT_ANCESTOR_SIZE_LIMIT) * 1000;
-        size_t nLimitDescendants = pArgs->GetArg<uint32_t>("-limitdescendantcount", DEFAULT_DESCENDANT_LIMIT);
+        size_t nLimitAncestors = mArgs.GetArg<uint32_t>("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT);
+        size_t nLimitAncestorSize = mArgs.GetArg<uint32_t>("-limitancestorsize", DEFAULT_ANCESTOR_SIZE_LIMIT) * 1000;
+        size_t nLimitDescendants = mArgs.GetArg<uint32_t>("-limitdescendantcount", DEFAULT_DESCENDANT_LIMIT);
         size_t nLimitDescendantSize =
-                pArgs->GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000;
+                mArgs.GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000;
         std::string errString;
         if (!this->CalculateMemPoolAncestors(entry, setAncestors, nLimitAncestors, nLimitAncestorSize, nLimitDescendants,
                                             nLimitDescendantSize, errString))
@@ -495,7 +495,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         unsigned int scriptVerifyFlags = STANDARD_SCRIPT_VERIFY_FLAGS;
         if (!chainparams.RequireStandard())
         {
-            scriptVerifyFlags = pArgs->GetArg<uint32_t>("-promiscuousmempoolflags", scriptVerifyFlags);
+            scriptVerifyFlags = mArgs.GetArg<uint32_t>("-promiscuousmempoolflags", scriptVerifyFlags);
         }
 
         // Check against previous transactions
@@ -586,8 +586,8 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         // trim mempool and check if tx was trimmed
         if (!fOverrideMempoolLimit)
         {
-            LimitMempoolSize(pArgs->GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
-                             pArgs->GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
+            LimitMempoolSize(mArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
+                             mArgs.GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
             if (!this->exists(hash))
                 return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "mempool full");
         }

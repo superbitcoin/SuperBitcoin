@@ -14,6 +14,7 @@
 bool CWalletComponent::ComponentInitialize()
 {
     RegisterWalletRPCCommands(tableRPC);
+
     if (!CWallet::ParameterInteraction())
     {
         return false;

@@ -77,7 +77,7 @@ public:
     void ForceSetArg(const std::string &prm1, const unsigned int prm2);
 
     template<class T>
-    const T GetArg(const std::string &strArg, const T &tDefault)
+    const T GetArg(const std::string &strArg, const T &tDefault) const
     {
         LOCK(cs_args);
         std::string tmp_strArg = SubPrefix(strArg);
@@ -97,7 +97,7 @@ public:
         return tDefault;
     }
 
-    std::vector<std::string> GetArgs(const std::string &strArg);
+    const std::vector<std::string> GetArgs(const std::string &strArg) const ;
 
     void
     GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char *> &argv_arr);
@@ -111,7 +111,7 @@ public:
 
     static bool InterpretBool(const std::string &strValue);
 
-    bool IsArgSet(const std::string &strArg);
+    bool IsArgSet(const std::string &strArg) const;
 
     void ParseParameters(int argc, const char *const argv[]);
 
@@ -123,12 +123,11 @@ public:
 
     void ReadConfigFile(const std::string &confPath);
 
-    const fs::path &GetDataDir(bool fNetSpecific = true);
+    const fs::path &GetDataDir(bool fNetSpecific = true) const;
 
     template<class T>
     bool SoftSetArg(const std::string &strArg, const T &value)
     {
-
         return false;
     }
 
@@ -137,7 +136,7 @@ protected:
      * reconfiguration
      */
     bpo::options_description *app;
-    CCriticalSection cs_args;
+    mutable CCriticalSection cs_args;
     std::map<std::string, std::string> mapArgs;
     std::map<std::string, std::vector<std::string> > mapMultiArgs;
     bpo::variables_map vm;
@@ -150,7 +149,7 @@ private:
 
     bool merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source);
 
-    const std::string SubPrefix(std::string str);
+    const std::string SubPrefix(std::string str) const;
 
 };
 

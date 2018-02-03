@@ -30,7 +30,7 @@ bool CHttpRpcComponent::ComponentStartup()
 {
     std::cout << "startup http rpc component \n";
 
-    CArgsManager& appArgs = *appbase::app().GetArgsManager();
+    const CArgsManager& appArgs = appbase::app().GetArgsManager();
 
     if (!appArgs.GetArg<bool>("-server", false))
         return true;

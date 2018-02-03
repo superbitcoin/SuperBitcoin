@@ -62,7 +62,7 @@ namespace appbase
             return isOk;
         }
 
-        CArgsManager* GetArgsManager() { return cArgs.get(); }
+         const  CArgsManager& GetArgsManager() const { return *cArgs.get(); }
 
         CChainParams* GetChainParams() { return cChainParams.get(); }
 
