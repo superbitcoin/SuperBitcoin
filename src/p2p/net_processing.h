@@ -10,12 +10,7 @@
 #include "framework/validationinterface.h"
 #include "config/params.h"
 
-/** Default for -maxorphantx, maximum number of orphan transactions kept in memory */
-static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
-/** Expiration time for orphan transactions in seconds */
-static const int64_t ORPHAN_TX_EXPIRE_TIME = 20 * 60;
-/** Minimum time between orphan transactions expire time checks in seconds */
-static const int64_t ORPHAN_TX_EXPIRE_INTERVAL = 5 * 60;
+
 /** Default number of orphan+recently-replaced txn to keep around for block reconstruction */
 static const unsigned int DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN = 100;
 /** Headers download timeout expressed in microseconds
@@ -153,5 +148,7 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
 
 /** Increase a node's misbehavior score. */
 void Misbehaving(NodeId nodeid, int howmuch);
+
+void AddToCompactExtraTransactions(const CTransactionRef &tx);
 
 #endif // BITCOIN_NET_PROCESSING_H

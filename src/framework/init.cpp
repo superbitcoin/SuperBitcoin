@@ -44,6 +44,7 @@
 #include "utils/util.h"
 #include "utils/utilmoneystr.h"
 #include "validationinterface.h"
+#include "mempool/orphantx.h"
 
 #ifdef ENABLE_WALLET
 

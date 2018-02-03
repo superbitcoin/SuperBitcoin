@@ -5,6 +5,7 @@
 //  Original author: marco
 ///////////////////////////////////////////////////////////
 
+#include "base.hpp"
 #include "argmanager.h"
 
 CArgsManager::~CArgsManager()
@@ -624,7 +625,7 @@ const fs::path &CArgsManager::GetDataDir(bool fNetSpecific)
         path = GetDefaultDataDir();
     }
     if (fNetSpecific)
-        path /= BaseParams().DataDir();
+        path /= appbase::app().GetBaseChainParams()->DataDir();
 
     fs::create_directories(path);
 
