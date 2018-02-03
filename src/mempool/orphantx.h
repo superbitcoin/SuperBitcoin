@@ -35,12 +35,12 @@ class COrphanTx
 {
 public:
     static COrphanTx &Instance();
-    bool AddOrphanTx(const CTransactionRef &tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-    int EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-    unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-    void EraseOrphansFor(NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-    void Clear() GUARDED_BY(cs_main);
-    bool Exists(uint256 hash) GUARDED_BY(cs_main);
+    bool AddOrphanTx(const CTransactionRef &tx, NodeId peer);
+    int EraseOrphanTx(uint256 hash);
+    unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans);
+    void EraseOrphansFor(NodeId peer);
+    void Clear();
+    bool Exists(uint256 hash);
 private:
     COrphanTx();
     ~COrphanTx();
