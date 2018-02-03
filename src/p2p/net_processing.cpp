@@ -3257,9 +3257,9 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 
     std::list<CTransactionRef> lRemovedTxn;
 
-    if (!AlreadyHave(inv) && txmempool->AcceptToMemoryPool(mempool, state, ptx, true, &fMissingInputs, &lRemovedTxn))
+    if (!AlreadyHave(inv) && txmempool->AcceptToMemoryPool(state, ptx, true, &fMissingInputs, &lRemovedTxn))
     {
-        mempool.check(pcoinsTip);
+        txmempool->check(pcoinsTip);
         RelayTransaction(tx, connman);
         for (unsigned int i = 0; i < tx.vout.size(); i++)
         {
@@ -3271,7 +3271,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
         LogPrint(BCLog::MEMPOOL, "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)\n",
                  pfrom->GetId(),
                  tx.GetHash().ToString(),
-                 mempool.size(), mempool.DynamicMemoryUsage() / 1000);
+                 txmempool->size(), txmempool->DynamicMemoryUsage() / 1000);
 
         // Recursively process any orphan transactions that depended on this one
         std::set<NodeId> setMisbehaving;
@@ -3298,7 +3298,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 
                 if (setMisbehaving.count(fromPeer))
                     continue;
-                if (txmempool->AcceptToMemoryPool(mempool, stateDummy, porphanTx, true, &fMissingInputs2, &lRemovedTxn))
+                if (txmempool->AcceptToMemoryPool(stateDummy, porphanTx, true, &fMissingInputs2, &lRemovedTxn))
                 {
                     LogPrint(BCLog::MEMPOOL, "   accepted orphan tx %s\n", orphanHash.ToString());
                     RelayTransaction(orphanTx, connman);
@@ -3331,7 +3331,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
                         recentRejects->insert(orphanHash);
                     }
                 }
-                mempool.check(pcoinsTip);
+                txmempool->check(pcoinsTip);
             }
         }
 
@@ -4044,7 +4044,8 @@ void PeerLogicValidation::ProcessGetData(CNode *pfrom, const std::atomic<bool> &
                     push = true;
                 } else if (pfrom->timeLastMempoolReq)
                 {
-                    auto txinfo = mempool.info(inv.hash);
+                    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+                    auto txinfo = txmempool->info(inv.hash);
                     // To protect privacy, do not answer getdata using the mempool when
                     // that TX couldn't have been INVed in reply to a MEMPOOL request.
                     if (txinfo.tx && txinfo.nTime <= pfrom->timeLastMempoolReq)

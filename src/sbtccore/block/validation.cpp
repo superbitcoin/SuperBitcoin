@@ -4535,7 +4535,7 @@ bool LoadMempool(void)
             {
                 LOCK(cs_main);
                 CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
-                txmempool->AcceptToMemoryPoolWithTime(chainparams, mempool, state, tx, true, nullptr, nTime, nullptr, false, 0);
+                txmempool->AcceptToMemoryPoolWithTime(chainparams, state, tx, true, nullptr, nTime, nullptr, false, 0);
                 if (state.IsValid())
                 {
                     ++count;

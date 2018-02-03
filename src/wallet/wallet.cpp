@@ -4697,6 +4697,6 @@ int CMerkleTx::GetBlocksToMaturity() const
 
 bool CMerkleTx::AcceptToMemoryPool(const CAmount &nAbsurdFee, CValidationState &state)
 {
-    //return ::AcceptToMemoryPool(mempool, state, tx, true, nullptr, nullptr, false, nAbsurdFee);//modified by sky
-    return false;
+    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    return txmempool->AcceptToMemoryPool(state, tx, true, nullptr, nullptr, false, nAbsurdFee);//modified by sky
 }

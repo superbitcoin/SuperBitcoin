@@ -41,6 +41,7 @@ public:
     void EraseOrphansFor(NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
     void Clear() GUARDED_BY(cs_main);
     bool Exists(uint256 hash) GUARDED_BY(cs_main);
+
 private:
     COrphanTx();
     ~COrphanTx();

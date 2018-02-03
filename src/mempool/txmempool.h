@@ -722,7 +722,7 @@ public:
     /*--------------------------------------------------------------------------------------------*/
     /** (try to) add transaction to memory pool
         * plTxnReplaced will be appended to with all transactions replaced from mempool **/
-    bool AcceptToMemoryPool(CTxMemPool &pool, CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
+    bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
                                         bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced = nullptr,
                                         bool fOverrideMempoolLimit = false, const CAmount nAbsurdFee = 0);
 
@@ -731,24 +731,23 @@ public:
 //                            bool bypass_limits, const CAmount nAbsurdFee);
 
     /** (try to) add transaction to memory pool with a specified acceptance time **/
-    bool AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CTxMemPool &pool, CValidationState &state,
+    bool AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CValidationState &state,
                                                 const CTransactionRef &tx, bool fLimitFree,
                                                 bool *pfMissingInputs, int64_t nAcceptTime,
                                                 std::list<CTransactionRef> *plTxnReplaced,
                                                 bool fOverrideMempoolLimit, const CAmount nAbsurdFee);
 
-    bool AcceptToMemoryPoolWorker(const CChainParams &chainparams, CTxMemPool &pool, CValidationState &state,
+    bool AcceptToMemoryPoolWorker(const CChainParams &chainparams, CValidationState &state,
                                               const CTransactionRef &ptx, bool fLimitFree,
                                               bool *pfMissingInputs, int64_t nAcceptTime,
                                               std::list<CTransactionRef> *plTxnReplaced,
                                               bool fOverrideMempoolLimit, const CAmount &nAbsurdFee,
                                               std::vector<COutPoint> &coins_to_uncache);
 
-    void LimitMempoolSize(CTxMemPool &pool, size_t limit, unsigned long age);
+    void LimitMempoolSize(size_t limit, unsigned long age);
     // Used to avoid mempool polluting consensus critical paths if CCoinsViewMempool
     // were somehow broken and returning the wrong scriptPubKeys
     bool CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &view,
-                                        CTxMemPool &pool,
                                         unsigned int flags, bool cacheSigStore, PrecomputedTransactionData &txdata);
 
     void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool fAddToMempool);
