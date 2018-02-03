@@ -8,6 +8,7 @@
 #include "utils/base58.h"
 #include "fs.h"
 #include "framework/init.h"
+#include "framework/base.hpp"
 #include "random.h"
 #include "framework/sync.h"
 #include "framework/ui_interface.h"
@@ -253,7 +254,8 @@ UniValue stop(const JSONRPCRequest &jsonRequest)
                         "\nStop SuperBitcoin server.");
     // Event loop will exit after current HTTP requests have been handled, so
     // this reply will get back to the client.
-    StartShutdown();
+    // StartShutdown();
+    appbase::app().RequestShutdown();
     return "SuperBitcoin server stopping";
 }
 

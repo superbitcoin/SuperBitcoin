@@ -48,7 +48,7 @@ bool CHttpRpcComponent::ComponentStartup()
     if (!StartHTTPRPC())
         return InitError(_("Unable to start HTTP RPC server. See debug log for details."));
 
-    if (gArgs.GetArg<bool>("-rest", DEFAULT_REST_ENABLE) && !StartREST())
+    if (appArgs.GetArg<bool>("-rest", DEFAULT_REST_ENABLE) && !StartREST())
         return InitError(_("Unable to start REST server. See debug log for details."));
 
     if (!StartHTTPServer())

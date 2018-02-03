@@ -1,5 +1,6 @@
 #include <thread>
 #include <chrono>
+#include <functional>
 #include "base.hpp"
 #include "config/argmanager.h"
 #include "config/chainparamsbase.h"
@@ -106,60 +107,17 @@ bool CBase::InitParams(int argc, char *argv[])
 
 bool CBase::Initialize(int argc, char **argv)
 {
-    if (!InitParams(argc, argv))
-    {
-        return false;
-    }
-
-    for (auto it = m_mapComponents.begin(); it != m_mapComponents.end(); ++it)
-    {
-        if (IComponent* component = it->second.get())
-        {
-            if (!component->Initialize())
-            {
-                fprintf(stderr, "failed to initialize component, ID = %d\n", component->GetID());
-                return false;
-            }
-        }
-    }
-
-    return true;
+    return InitParams(argc, argv) && ForEachComponent(true, [](IComponent* component){ return component->Initialize(); });
 }
 
 bool CBase::Startup()
 {
-    for (auto it = m_mapComponents.begin(); it != m_mapComponents.end(); ++it)
-    {
-        if (IComponent* component = it->second.get())
-        {
-            if (!component->Startup())
-            {
-                fprintf(stderr, "failed to startup component, ID = %d\n", component->GetID());
-                return false;
-            }
-        }
-    }
-
-    return true;
+    return ForEachComponent(true, [](IComponent* component){ return component->Startup(); });
 }
 
 bool CBase::Shutdown()
 {
-    bool ret = true;
-    for (auto it = m_mapComponents.rbegin(); it != m_mapComponents.rend(); ++it)
-    {
-        if (IComponent* component = it->second.get())
-        {
-            if (!component->Shutdown())
-            {
-                fprintf(stderr, "failed to shutdown component, ID = %d\n", component->GetID());
-                ret = false;
-            }
-        }
-    }
-
-    m_mapComponents.clear();
-    return ret;
+    return ForEachComponent<std::function<bool(IComponent*)>, ReverseContainerIterator>(false, [](IComponent* component){ return component->Shutdown(); });
 }
 
 void CBase::Run()

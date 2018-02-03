@@ -4,6 +4,7 @@
 #include <atomic>
 #include <memory>
 #include "icomponent.h"
+#include "utils/iterator.h"
 
 class CArgsManager;
 class CChainParams;
@@ -30,6 +31,7 @@ namespace appbase
 
         void Quit();
 
+        void RequestShutdown() { bShutdown = true; }
 
         bool RegisterComponent(IComponent* component);
 
@@ -39,13 +41,32 @@ namespace appbase
             return static_cast<Component*>(FindComponent(Component::ID));
         };
 
+        template<typename F, template<typename C> class CI = ContainerIterator>
+        bool ForEachComponent(bool breakIfFailed, F&& func)
+        {
+            bool isOk = true;
+            auto it = MakeContainerIterator<CI>(m_mapComponents);
+            for (; !it.IsEnd(); it.Next())
+            {
+                if (IComponent* component = it->second.get())
+                {
+                    if (!func(component))
+                    {
+                        isOk = false;
+                        if (breakIfFailed) {
+                            break;
+                        }
+                    }
+                }
+            }
+            return isOk;
+        }
+
         CArgsManager* GetArgsManager() { return cArgs.get(); }
 
         CChainParams* GetChainParams() { return cChainParams.get(); }
 
         CBaseChainParams* GetBaseChainParams() { return cBaseChainParams.get(); }
-
-        void RequestShutdown() { bShutdown = true; }
 
     private:
 
