@@ -21,6 +21,8 @@
 #endif
 
 #include <boost/thread.hpp>
+#include "base.hpp"
+#include "argmanager.h"
 
 namespace
 {
@@ -304,7 +306,7 @@ bool CDB::VerifyEnvironment(const std::string &walletFile, const fs::path &dataD
         if (!bitdb.Open(dataDir))
         {
             // if it still fails, it probably means we can't even create the database env
-            errorStr = strprintf(_("Error initializing wallet database environment %s!"), GetDataDir());
+            errorStr = strprintf(_("Error initializing wallet database environment %s!"), appbase::app().GetArgsManager()->GetDataDir());
             return false;
         }
     }
