@@ -107,12 +107,7 @@ bool CBase::InitParams(int argc, char *argv[])
 
 bool CBase::Initialize(int argc, char **argv)
 {
-    if (!InitParams(argc, argv))
-    {
-        return false;
-    }
-
-    return ForEachComponent(true, [](IComponent* component){ return component->Initialize(); });
+    return InitParams(argc, argv) && ForEachComponent(true, [](IComponent* component){ return component->Initialize(); });
 }
 
 bool CBase::Startup()
@@ -122,9 +117,7 @@ bool CBase::Startup()
 
 bool CBase::Shutdown()
 {
-    bool ret = ForEachComponent<std::function<bool(IComponent*)>, ReverseContainerIterator>(false, [](IComponent* component){ return component->Shutdown(); });
-    m_mapComponents.clear();
-    return ret;
+    return ForEachComponent<std::function<bool(IComponent*)>, ReverseContainerIterator>(false, [](IComponent* component){ return component->Shutdown(); });
 }
 
 void CBase::Run()
