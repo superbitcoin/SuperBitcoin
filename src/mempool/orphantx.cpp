@@ -20,7 +20,7 @@ COrphanTx &COrphanTx::Instance()
     static COrphanTx _orphantx;
     return _orphantx;
 }
-bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
 {
     const uint256 &hash = tx->GetHash();
     if (m_mapOrphanTransactions.count(hash))
@@ -54,7 +54,7 @@ bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer) EXCLUSIVE_LO
     return true;
 }
 
-int COrphanTx::EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+int COrphanTx::EraseOrphanTx(uint256 hash)
 {
     std::map<uint256, _OrphanTx>::iterator it = m_mapOrphanTransactions.find(hash);
     if (it == m_mapOrphanTransactions.end())
@@ -73,7 +73,7 @@ int COrphanTx::EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 }
 
 
-unsigned int COrphanTx::LimitOrphanTxSize(unsigned int nMaxOrphans) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
+unsigned int COrphanTx::LimitOrphanTxSize(unsigned int nMaxOrphans)
 {
     unsigned int nEvicted = 0;
     static int64_t nNextSweep;
@@ -128,13 +128,13 @@ void COrphanTx::EraseOrphansFor(NodeId peer)
     if (nErased > 0)
         LogPrint(BCLog::MEMPOOL, "Erased %d orphan tx from peer=%d\n", nErased, peer);
 }
-void COrphanTx::Clear() GUARDED_BY(cs_main)
+void COrphanTx::Clear()
 {
     //LOCK(cs_main);
     m_mapOrphanTransactions.clear();
     m_mapOrphanTransactionsByPrev.clear();
 }
-bool COrphanTx::Exists(uint256 hash) GUARDED_BY(cs_main)
+bool COrphanTx::Exists(uint256 hash)
 {
     return  (m_mapOrphanTransactions.count(hash) != 0);
 }

@@ -35,18 +35,18 @@ class COrphanTx
 {
 public:
     static COrphanTx &Instance();
-    bool AddOrphanTx(const CTransactionRef &tx, NodeId peer);
-    int EraseOrphanTx(uint256 hash);
-    unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans);
-    void EraseOrphansFor(NodeId peer);
-    void Clear();
-    bool Exists(uint256 hash);
+    bool AddOrphanTx(const CTransactionRef &tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    int EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    void EraseOrphansFor(NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    void Clear() GUARDED_BY(cs_main);
+    bool Exists(uint256 hash) GUARDED_BY(cs_main);
 private:
     COrphanTx();
     ~COrphanTx();
 public:
-    std::map<uint256, _OrphanTx> m_mapOrphanTransactions;
-    std::map<COutPoint, std::set<std::map<uint256, _OrphanTx>::iterator, IteratorComparator>> m_mapOrphanTransactionsByPrev;
+    std::map<uint256, _OrphanTx> m_mapOrphanTransactions GUARDED_BY(cs_main);
+    std::map<COutPoint, std::set<std::map<uint256, _OrphanTx>::iterator, IteratorComparator>> m_mapOrphanTransactionsByPrev GUARDED_BY(cs_main);
 
 };
 #endif //SUPERBITCOIN_ORPHANTX_H
