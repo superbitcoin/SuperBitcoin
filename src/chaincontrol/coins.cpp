@@ -4,11 +4,7 @@
 
 #include "coins.h"
 
-#include "config/consensus.h"
-#include "memusage.h"
 #include "random.h"
-
-#include <assert.h>
 
 bool CCoinsView::GetCoin(const COutPoint &outpoint, Coin &coin) const
 {
@@ -327,6 +323,21 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction &tx) const
         nResult += AccessCoin(tx.vin[i].prevout).out.nValue;
 
     return nResult;
+}
+
+bool CCoinsViewCache::HaveInputs(const CUtxo2UtxoTransaciton &tx) const
+{
+    if (!tx.IsCoinBase())
+    {
+        for (unsigned int i = 0; i < tx.vin.size(); i++)
+        {
+            if (!HaveCoin(tx.vin[i].prevout))
+            {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
 bool CCoinsViewCache::HaveInputs(const CTransaction &tx) const
