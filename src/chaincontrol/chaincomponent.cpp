@@ -35,7 +35,7 @@ int CChainCommonent::GetActiveChainHeight() const
 
 bool CChainCommonent::ReplayBlocks()
 {
-    CChainParams *params = appbase::app().GetChainParams();
+    const CChainParams &params = appbase::app().GetChainParams();
 
     CCoinsView *view(cViewManager.getCoinViewDB());
     CCoinsViewCache cache(view);
@@ -75,7 +75,7 @@ bool CChainCommonent::ReplayBlocks()
         if (pIndexOld->nHeight > 0) // Never disconnect the genesis block.
         {
             CBlock block;
-            if (!ReadBlockFromDisk(block, pIndexOld, params->GetConsensus()))
+            if (!ReadBlockFromDisk(block, pIndexOld, params.GetConsensus()))
             {
                 return error("RollbackBlock(): ReadBlockFromDisk() failed at %d, hash=%s", pIndexOld->nHeight,
                              pIndexOld->GetBlockHash().ToString());
@@ -104,7 +104,7 @@ bool CChainCommonent::ReplayBlocks()
         const CBlockIndex *pIndex = pIndexNew->GetAncestor(nHeight);
         LogPrintf("Rolling forward %s (%i)\n", pIndex->GetBlockHash().ToString(), nHeight);
         CBlock block;
-        if (!ReadBlockFromDisk(block, pIndex, params->GetConsensus()))
+        if (!ReadBlockFromDisk(block, pIndex, params.GetConsensus()))
         {
             return error("ReplayBlock(): ReadBlockFromDisk failed at %d, hash=%s", pIndex->nHeight,
                          pIndex->GetBlockHash().ToString());

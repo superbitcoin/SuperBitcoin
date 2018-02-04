@@ -244,7 +244,7 @@ bool CBlockIndexManager::CheckBlockFileExist()
 
 bool CBlockIndexManager::LoadBlockIndexDB()
 {
-    const Consensus::Params &consensus = app().GetChainParams()->GetConsensus();
+    const Consensus::Params &consensus = app().GetChainParams().GetConsensus();
     if (!pBlcokTreee->LoadBlockIndexGuts(consensus,
                                          std::bind(&CBlockIndexManager::InsertBlockIndex, this, std::placeholders::_1)))
     {

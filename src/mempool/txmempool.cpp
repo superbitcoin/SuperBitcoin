@@ -96,8 +96,8 @@ bool CTxMemPool::AcceptToMemoryPool(CValidationState &state, const CTransactionR
                         bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,
                         bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
 {
-    const CChainParams* chainparams = appbase::CBase::Instance().GetChainParams();
-    return AcceptToMemoryPoolWithTime(*chainparams, state, tx, fLimitFree, pfMissingInputs, GetTime(),
+    const CChainParams& chainparams = appbase::app().GetChainParams();
+    return AcceptToMemoryPoolWithTime(chainparams, state, tx, fLimitFree, pfMissingInputs, GetTime(),
                                       plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee);
 }
 
