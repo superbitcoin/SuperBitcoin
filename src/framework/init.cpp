@@ -96,6 +96,9 @@ static CZMQNotificationInterface* pzmqNotificationInterface = nullptr;
 #define MIN_CORE_FILEDESCRIPTORS 150
 #endif
 
+#include "base.hpp"
+#include "walletcomponent.h"
+
 static const char *FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
 
 //////////////////////////////////////////////////////////////////////////////
@@ -204,7 +207,7 @@ void Shutdown()
     StopRPC();
     StopHTTPServer();
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : vpwallets)
+    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         pwallet->Flush(false);
     }
@@ -275,7 +278,7 @@ void Shutdown()
         pblocktree = nullptr;
     }
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : vpwallets)
+    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         pwallet->Flush(true);
     }
@@ -301,11 +304,11 @@ void Shutdown()
     UnregisterAllValidationInterfaces();
     GetMainSignals().UnregisterBackgroundSignalScheduler();
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : vpwallets)
+    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         delete pwallet;
     }
-    vpwallets.clear();
+    appbase::app().FindComponent<CWalletComponent>()->GetWalletRef().clear();
 #endif
     globalVerifyHandle.reset();
     ECC_Stop();
@@ -2070,7 +2073,7 @@ bool AppInitMain(boost::thread_group &threadGroup, CScheduler &scheduler)
     uiInterface.InitMessage(_("Done loading"));
 
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : vpwallets)
+    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         pwallet->postInitProcess(scheduler);
     }

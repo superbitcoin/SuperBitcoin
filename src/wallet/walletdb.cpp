@@ -17,6 +17,7 @@
 #include "wallet/wallet.h"
 #include "base.hpp"
 #include "argmanager.h"
+#include "walletcomponent.h"
 
 #include <atomic>
 
@@ -776,7 +777,7 @@ void MaybeCompactWalletDB()
         return;
     }
 
-    for (CWalletRef pwallet : vpwallets)
+    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         CWalletDBWrapper &dbh = pwallet->GetDBHandle();
 
