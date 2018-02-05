@@ -138,3 +138,17 @@ bool COrphanTx::Exists(uint256 hash)
 {
     return  (m_mapOrphanTransactions.count(hash) != 0);
 }
+
+int COrphanTx::FindOrphanTransactionsByPrev(const COutPoint* op, ITBYPREV& itByPrev)
+{
+    if(op == nullptr)
+    {
+        return 0;
+    }
+    itByPrev = m_mapOrphanTransactionsByPrev.find(*op);
+    if (itByPrev == m_mapOrphanTransactionsByPrev.end())
+    {
+        return 0;
+    }
+    return 1;
+}

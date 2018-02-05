@@ -45,6 +45,7 @@
 #include "utils/utilmoneystr.h"
 #include "validationinterface.h"
 #include "mempool/orphantx.h"
+#include "framework/base.hpp"
 
 #ifdef ENABLE_WALLET
 
@@ -221,7 +222,13 @@ void Shutdown()
     StopTorControl();
     if (fDumpMempoolLater && gArgs.GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
     {
-        DumpMempool();
+        CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+        if(!txmempool)
+        {
+            LogPrintf("find txmempool component fail!\n");
+            return;
+        }
+        txmempool->DumpMempool();
     }
 
     if (fFeeEstimatesInitialized)
@@ -882,7 +889,13 @@ void ThreadImport(std::vector<fs::path> vImportFiles)
     } // End scope of CImportingNow
     if (gArgs.GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
     {
-        LoadMempool();
+        CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+        if(!txmempool)
+        {
+            LogPrintf("find txmempool component fail!\n");
+            return;
+        }
+        txmempool->LoadMempool();
         fDumpMempoolLater = !fRequestShutdown;
     }
 }

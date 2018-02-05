@@ -167,7 +167,12 @@ BOOST_FIXTURE_TEST_SUITE(miner_tests, TestingSetup)
     bool TestSequenceLocks(const CTransaction &tx, int flags)
     {
         LOCK(mempool.cs);
-        return CheckSequenceLocks(tx, flags);
+        CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+        if(!txmempool)
+        {
+            return false;
+        }
+        return txmempool->CheckSequenceLocks(tx, flags);
     }
 
     // Test suite for ancestor feerate transaction selection.

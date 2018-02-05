@@ -1138,8 +1138,9 @@ void PeerLogicValidation::BlockConnected(const std::shared_ptr<const CBlock> &pb
         // Which orphan pool entries must we evict?
         for (const auto &txin : tx.vin)
         {
-            auto itByPrev = COrphanTx::Instance().m_mapOrphanTransactionsByPrev.find(txin.prevout);
-            if (itByPrev == COrphanTx::Instance().m_mapOrphanTransactionsByPrev.end())
+            ITBYPREV itByPrev;
+            int ret = COrphanTx::Instance().FindOrphanTransactionsByPrev(&(txin.prevout), itByPrev);
+            if (ret == 0)
                 continue;
             for (auto mi = itByPrev->second.begin(); mi != itByPrev->second.end(); ++mi)
             {
@@ -3277,9 +3278,10 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
         std::set<NodeId> setMisbehaving;
         while (!vWorkQueue.empty())
         {
-            auto itByPrev = COrphanTx::Instance().m_mapOrphanTransactionsByPrev.find(vWorkQueue.front());
+            ITBYPREV itByPrev;
+            int ret = COrphanTx::Instance().FindOrphanTransactionsByPrev(&(vWorkQueue.front()), itByPrev);
             vWorkQueue.pop_front();
-            if (itByPrev == COrphanTx::Instance().m_mapOrphanTransactionsByPrev.end())
+            if (ret == 0)
                 continue;
             for (auto mi = itByPrev->second.begin();
                  mi != itByPrev->second.end();
