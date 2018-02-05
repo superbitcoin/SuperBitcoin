@@ -381,20 +381,6 @@ bool CheckFinalTx(const CTransaction &tx, int flags = -1);
  */
 bool TestLockPointValidity(const LockPoints *lp);
 
-/**
- * Check if transaction will be BIP 68 final in the next block to be created.
- *
- * Simulates calling SequenceLocks() with data from the tip of the current active chain.
- * Optionally stores in LockPoints the resulting height and time calculated and the hash
- * of the block needed for calculation or skips the calculation and uses the LockPoints
- * passed in for evaluation.
- * The LockPoints should not be considered valid if CheckSequenceLocks returns false.
- *
- * See consensus/consensus.h for flag definitions.
- */
-bool
-CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
-
 bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
                  unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
                  std::vector<CScriptCheck> *pvChecks = nullptr);
@@ -543,10 +529,6 @@ static const unsigned int REJECT_HIGHFEE = 0x100;
 /** Get block file info entry for one block file */
 CBlockFileInfo *GetBlockFileInfo(size_t n);
 
-/** Dump the mempool to disk. */
-void DumpMempool();
 
-/** Load the mempool from disk. */
-bool LoadMempool();
 
 #endif // BITCOIN_VALIDATION_H

@@ -1009,6 +1009,10 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         fHaveChain = !existingCoin.IsSpent();
     }
     CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    if(!txmempool)
+    {
+        throw std::runtime_error("find txmempool component fail!\n");
+    }
     bool fHaveMempool = mempool.exists(hashTx);
     if (!fHaveMempool && !fHaveChain)
     {

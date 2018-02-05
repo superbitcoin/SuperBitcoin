@@ -31,6 +31,8 @@ struct _OrphanTx
     int64_t nTimeExpire;
 };
 
+typedef std::map<COutPoint, std::set<std::map<uint256, _OrphanTx>::iterator, IteratorComparator>>::iterator ITBYPREV;
+
 class COrphanTx
 {
 public:
@@ -41,11 +43,11 @@ public:
     void EraseOrphansFor(NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
     void Clear() GUARDED_BY(cs_main);
     bool Exists(uint256 hash) GUARDED_BY(cs_main);
-
+    int FindOrphanTransactionsByPrev(const COutPoint* op, ITBYPREV& itByPrev);
 private:
     COrphanTx();
     ~COrphanTx();
-public:
+private:
     std::map<uint256, _OrphanTx> m_mapOrphanTransactions GUARDED_BY(cs_main);
     std::map<COutPoint, std::set<std::map<uint256, _OrphanTx>::iterator, IteratorComparator>> m_mapOrphanTransactionsByPrev GUARDED_BY(cs_main);
 
