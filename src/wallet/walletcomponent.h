@@ -21,6 +21,9 @@ using namespace appbase;
 
 class CWalletComponent : public IWalletComponent
 {
+private:
+    std::vector<CWalletRef> vpWallets;
+
 public:
     CWalletComponent() {};
 
@@ -33,6 +36,8 @@ public:
     bool ComponentShutdown() override;
 
     virtual const char* whoru() const override { return "I am CWalletComponent\n"; }
+
+    std::vector<CWalletRef>& GetWalletRef() { return vpWallets; }
 };
 
 #endif //SUPERBITCOIN_WALLETCOMPONENT_H

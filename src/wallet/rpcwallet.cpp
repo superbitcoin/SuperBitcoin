@@ -28,6 +28,7 @@
 #include "wallet/walletdb.h"
 #include "base.hpp"
 #include "argmanager.h"
+#include "walletcomponent.h"
 
 #include <stdint.h>
 
@@ -37,11 +38,12 @@ static const std::string WALLET_ENDPOINT_BASE = "/wallet/";
 
 CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest &request)
 {
+    std::vector<CWalletRef> &vecWallet = appbase::app().FindComponent<CWalletComponent>()->GetWalletRef();
     if (request.URI.substr(0, WALLET_ENDPOINT_BASE.size()) == WALLET_ENDPOINT_BASE)
     {
         // wallet endpoint was used
         std::string requestedWallet = urlDecode(request.URI.substr(WALLET_ENDPOINT_BASE.size()));
-        for (CWalletRef pwallet : ::vpwallets)
+        for (CWalletRef pwallet : vecWallet)
         {
             if (pwallet->GetName() == requestedWallet)
             {
@@ -50,7 +52,7 @@ CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest &request)
         }
         throw JSONRPCError(RPC_WALLET_NOT_FOUND, "Requested wallet does not exist or is not loaded");
     }
-    return ::vpwallets.size() == 1 || (request.fHelp && ::vpwallets.size() > 0) ? ::vpwallets[0] : nullptr;
+    return vecWallet.size() == 1 || (request.fHelp && vecWallet.size() > 0) ? vecWallet[0] : nullptr;
 }
 
 std::string HelpRequiringPassphrase(CWallet *const pwallet)
@@ -66,7 +68,7 @@ bool EnsureWalletIsAvailable(CWallet *const pwallet, bool avoidException)
         return true;
     if (avoidException)
         return false;
-    if (::vpwallets.empty())
+    if (appbase::app().FindComponent<CWalletComponent>()->GetWalletRef().empty())
     {
         // Note: It isn't currently possible to trigger this error because
         // wallet RPC methods aren't registered unless a wallet is loaded. But
@@ -2758,7 +2760,7 @@ UniValue listwallets(const JSONRPCRequest &request)
 
     UniValue obj(UniValue::VARR);
 
-    for (CWalletRef pwallet : vpwallets)
+    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
 
         if (!EnsureWalletIsAvailable(pwallet, request.fHelp))

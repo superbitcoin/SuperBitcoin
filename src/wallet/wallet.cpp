@@ -32,13 +32,13 @@
 #include "utils/utilmoneystr.h"
 #include "base.hpp"
 #include "argmanager.h"
+#include "walletcomponent.h"
 
 #include <assert.h>
 
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/thread.hpp>
 
-std::vector<CWalletRef> vpwallets;
 /** Transaction fee set by the user */
 CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);
 unsigned int nTxConfirmTarget = DEFAULT_TX_CONFIRM_TARGET;
@@ -4478,7 +4478,7 @@ bool CWallet::InitLoadWallet()
         {
             return false;
         }
-        vpwallets.push_back(pwallet);
+        appbase::app().FindComponent<CWalletComponent>()->GetWalletRef().push_back(pwallet);
     }
 
     return true;
