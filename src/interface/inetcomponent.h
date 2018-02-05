@@ -1,24 +1,18 @@
 #pragma once
 
+#include <string>
+#include <vector>
 #include "componentid.h"
 #include "framework/component.hpp"
 
 class INetComponent : public appbase::TComponent<INetComponent>
 {
 public:
-    virtual ~INetComponent()
-    {
-    }
+    virtual ~INetComponent() {}
 
-    enum
-    {
-        ID = CID_P2P_NET
-    };
+    enum { ID = CID_P2P_NET };
 
-    virtual int GetID() const override
-    {
-        return ID;
-    }
+    virtual int GetID() const override { return ID; }
 
     virtual bool ComponentInitialize() = 0;
 
@@ -28,7 +22,11 @@ public:
 
     virtual const char *whoru() const = 0;
 
+
+    virtual bool SendNetMessage(int64_t nodeID, const std::string& command, const std::vector<unsigned char>& data) = 0;
+
     //add other interface methods here ...
+
 
 };
 

@@ -203,6 +203,7 @@ public:
     bool ForNode(NodeId id, std::function<bool(CNode *pnode)> func);
 
     void PushMessage(CNode *pnode, CSerializedNetMsg &&msg);
+    void PushMessage(CNode *pnode, const std::string& command, const std::vector<unsigned char>& data);
 
     template<typename Callable>
     void ForEachNode(Callable &&func)
@@ -319,6 +320,8 @@ public:
     bool DisconnectNode(const std::string &node);
 
     bool DisconnectNode(NodeId id);
+
+    CNode* QueryNode(NodeId id);
 
     ServiceFlags GetLocalServices() const;
 
