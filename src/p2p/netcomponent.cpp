@@ -280,3 +280,16 @@ bool CNetComponent::ComponentShutdown()
 
     return true;
 }
+
+bool CNetComponent::SendNetMessage(int64_t nodeID, const std::string& command, const std::vector<unsigned char>& data)
+{
+    if (netConnMgr)
+    {
+        if (CNode* node = netConnMgr->QueryNode(nodeID))
+        {
+            netConnMgr->PushMessage(node, command, data);
+            return true;
+        }
+    }
+    return false;
+}

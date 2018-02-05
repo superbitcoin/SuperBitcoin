@@ -2757,6 +2757,19 @@ bool CConnman::DisconnectNode(NodeId id)
     return false;
 }
 
+CNode* CConnman::QueryNode(NodeId id)
+{
+    LOCK(cs_vNodes);
+    for (CNode *pnode : vNodes)
+    {
+        if (id == pnode->GetId())
+        {
+            return pnode;
+        }
+    }
+    return nullptr;
+}
+
 void CConnman::RecordBytesRecv(uint64_t bytes)
 {
     LOCK(cs_totalBytesRecv);
@@ -3012,15 +3025,20 @@ bool CConnman::NodeFullyConnected(const CNode *pnode)
 
 void CConnman::PushMessage(CNode *pnode, CSerializedNetMsg &&msg)
 {
-    size_t nMessageSize = msg.data.size();
+    PushMessage(pnode, msg.command, msg.data);
+}
+
+void CConnman::PushMessage(CNode *pnode, const std::string& command, const std::vector<unsigned char>& data)
+{
+    size_t nMessageSize = data.size();
     size_t nTotalSize = nMessageSize + CMessageHeader::HEADER_SIZE;
-    LogPrint(BCLog::NET, "sending %s (%d bytes) peer=%d\n", SanitizeString(msg.command.c_str()), nMessageSize,
+    LogPrint(BCLog::NET, "sending %s (%d bytes) peer=%d\n", SanitizeString(command.c_str()), nMessageSize,
              pnode->GetId());
 
     std::vector<unsigned char> serializedHeader;
     serializedHeader.reserve(CMessageHeader::HEADER_SIZE);
-    uint256 hash = Hash(msg.data.data(), msg.data.data() + nMessageSize);
-    CMessageHeader hdr(Params().MessageStart(), msg.command.c_str(), nMessageSize);
+    uint256 hash = Hash(data.data(), data.data() + nMessageSize);
+    CMessageHeader hdr(Params().MessageStart(), command.c_str(), nMessageSize);
     memcpy(hdr.pchChecksum, hash.begin(), CMessageHeader::CHECKSUM_SIZE);
 
     CVectorWriter{SER_NETWORK, INIT_PROTO_VERSION, serializedHeader, 0, hdr};
@@ -3031,14 +3049,14 @@ void CConnman::PushMessage(CNode *pnode, CSerializedNetMsg &&msg)
         bool optimisticSend(pnode->vSendMsg.empty());
 
         //log total amount of bytes per command
-        pnode->mapSendBytesPerMsgCmd[msg.command] += nTotalSize;
+        pnode->mapSendBytesPerMsgCmd[command] += nTotalSize;
         pnode->nSendSize += nTotalSize;
 
         if (pnode->nSendSize > nSendBufferMaxSize)
             pnode->fPauseSend = true;
         pnode->vSendMsg.push_back(std::move(serializedHeader));
         if (nMessageSize)
-            pnode->vSendMsg.push_back(std::move(msg.data));
+            pnode->vSendMsg.push_back(std::move(data));
 
         // If write queue empty, attempt "optimistic write"
         if (optimisticSend == true)

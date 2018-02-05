@@ -791,8 +791,7 @@ bool CTxMemPool::LoadMempool(void)
             if (nTime + nExpiryTimeout > nNow)
             {
                 LOCK(cs_main);
-                CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
-                txmempool->AcceptToMemoryPoolWithTime(chainparams, state, tx, true, nullptr, nTime, nullptr, false, 0);
+                AcceptToMemoryPoolWithTime(chainparams, state, tx, true, nullptr, nTime, nullptr, false, 0);
                 if (state.IsValid())
                 {
                     ++count;
@@ -812,7 +811,7 @@ bool CTxMemPool::LoadMempool(void)
 
         for (const auto &i : mapDeltas)
         {
-            mempool.PrioritiseTransaction(i.first, i.second);
+            PrioritiseTransaction(i.first, i.second);
         }
     } catch (const std::exception &e)
     {
@@ -1852,32 +1851,6 @@ bool CTxMemPool::HasNoInputsOf(const CTransaction &tx) const
     return true;
 }
 
-CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, const CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn),
-                                                                                        mempool(mempoolIn)
-{
-}
-
-bool CCoinsViewMemPool::GetCoin(const COutPoint &outpoint, Coin &coin) const
-{
-    // If an entry in the mempool exists, always return that one, as it's guaranteed to never
-    // conflict with the underlying cache, and it cannot have pruned entries (as it contains full)
-    // transactions. First checking the underlying cache risks returning a pruned entry instead.
-    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
-    CTransactionRef ptx = txmempool->get(outpoint.hash);
-    if (ptx)
-    {
-        if (outpoint.n < ptx->vout.size())
-        {
-            coin = Coin(ptx->vout[outpoint.n], MEMPOOL_HEIGHT, false);
-            return true;
-        } else
-        {
-            return false;
-        }
-    }
-    return base->GetCoin(outpoint, coin);
-}
-
 size_t CTxMemPool::DynamicMemoryUsage() const
 {
     LOCK(cs);
@@ -2061,6 +2034,32 @@ bool CTxMemPool::TransactionWithinChainLimit(const uint256 &txid, size_t chainLi
     auto it = mapTx.find(txid);
     return it == mapTx.end() || (it->GetCountWithAncestors() < chainLimit &&
                                  it->GetCountWithDescendants() < chainLimit);
+}
+
+CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, const CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn),
+                                                                                        mempool(mempoolIn)
+{
+}
+
+bool CCoinsViewMemPool::GetCoin(const COutPoint &outpoint, Coin &coin) const
+{
+    // If an entry in the mempool exists, always return that one, as it's guaranteed to never
+    // conflict with the underlying cache, and it cannot have pruned entries (as it contains full)
+    // transactions. First checking the underlying cache risks returning a pruned entry instead.
+    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    CTransactionRef ptx = txmempool->get(outpoint.hash);
+    if (ptx)
+    {
+        if (outpoint.n < ptx->vout.size())
+        {
+            coin = Coin(ptx->vout[outpoint.n], MEMPOOL_HEIGHT, false);
+            return true;
+        } else
+        {
+            return false;
+        }
+    }
+    return base->GetCoin(outpoint, coin);
 }
 
 SaltedTxidHasher::SaltedTxidHasher() : k0(GetRand(std::numeric_limits<uint64_t>::max())),
