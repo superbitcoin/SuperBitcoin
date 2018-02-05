@@ -30,10 +30,34 @@ bool CChainCommonent::ComponentShutdown()
     return true;
 }
 
+bool CChainCommonent::IsImporting() const
+{
+    //TODO:
+    return fImporting;
+}
+
+bool CChainCommonent::IsReindexing() const
+{
+    //TODO:
+    return fReindex;
+}
+
+bool CChainCommonent::IsInitialBlockDownload() const
+{
+    //TODO:
+    return IsInitialBlockDownload();
+}
+
+bool CChainCommonent::DoesBlockExist(uint256 hash) const
+{
+    //TODO:
+    return mapBlockIndex.find(hash) != mapBlockIndex.end();
+}
+
 int CChainCommonent::GetActiveChainHeight() const
 {
     //TODO:
-    return 0;
+    return chainActive.Height();
 }
 
 bool CChainCommonent::NetGetCheckPoint(XNodeInfo* nodeInfo, int height)
