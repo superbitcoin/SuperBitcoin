@@ -1,5 +1,8 @@
 #include <iostream>
 #include "chaincomponent.h"
+#include "sbtccore/streams.h"
+#include "interface/inetcomponent.h"
+#include "utils/net/netmessagehelper.h"
 
 CChainCommonent::CChainCommonent()
 {
@@ -31,6 +34,89 @@ int CChainCommonent::GetActiveChainHeight() const
 {
     //TODO:
     return 0;
+}
+
+bool CChainCommonent::NetGetCheckPoint(XNodeInfo* nodeInfo, int height)
+{
+    if (!nodeInfo)
+        return false;
+
+    std::set<int>& checkpointKnown = m_nodeCheckPointKnown[nodeInfo->nodeID];
+
+    std::vector<Checkpoints::CCheckData> vSendData;
+    std::vector<Checkpoints::CCheckData> vnHeight;
+    Checkpoints::GetCheckpointByHeight(height, vnHeight);
+    for (const auto &point : vnHeight)
+    {
+        if (checkpointKnown.count(point.getHeight()) == 0)
+        {
+            checkpointKnown.insert(point.getHeight());
+            vSendData.push_back(point);
+        }
+    }
+
+    if (!vSendData.empty())
+    {
+        SendNetMessage(nodeInfo->nodeID, NetMsgType::CHECKPOINT, nodeInfo->sendVersion, 0, vSendData);
+    }
+
+    return true;
+}
+
+bool CChainCommonent::NetCheckPoint(XNodeInfo* nodeInfo, CDataStream& stream)
+{
+    if (!nodeInfo)
+        return false;
+
+    LogPrint(BCLog::NET, "enter checkpoint\n");
+    LogPrint(BCLog::BENCH, "receive check block list====\n");
+
+    std::vector<Checkpoints::CCheckData> vdata;
+    stream >> vdata;
+
+    Checkpoints::CCheckPointDB cCheckPointDB;
+    std::vector<Checkpoints::CCheckData> vIndex;
+
+    const CChainParams &chainparams = appbase::app().GetChainParams();
+    for (const auto &point : vdata)
+    {
+        if (point.CheckSignature(chainparams.GetCheckPointPKey()))
+        {
+            if (!cCheckPointDB.ExistCheckpoint(point.getHeight()))
+            {
+                cCheckPointDB.WriteCheckpoint(point.getHeight(), point);
+                /*
+                 * add the check point to chainparams
+                 */
+                chainparams.AddCheckPoint(point.getHeight(), point.getHash());
+                m_nodeCheckPointKnown[nodeInfo->nodeID].insert(point.getHeight());
+                vIndex.push_back(point);
+            }
+        }
+        else
+        {
+            LogPrint(BCLog::NET, "check point signature check failed \n");
+            break;
+        }
+        LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
+    }
+
+    if (vIndex.size() > 0)
+    {
+        CValidationState state;
+        if (!CheckActiveChain(state, chainparams))
+        {
+            LogPrint(BCLog::NET, "CheckActiveChain error when receive  checkpoint\n");
+        }
+    }
+
+    //broadcast the check point if it is necessary
+    if (vIndex.size() == 1 && vIndex.size() == vdata.size())
+    {
+        SendNetMessage(-1, NetMsgType::CHECKPOINT, nodeInfo->sendVersion, 0, vdata);
+    }
+
+    return true;
 }
 
 bool CChainCommonent::ReplayBlocks()

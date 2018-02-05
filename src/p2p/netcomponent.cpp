@@ -285,6 +285,12 @@ bool CNetComponent::SendNetMessage(int64_t nodeID, const std::string& command, c
 {
     if (netConnMgr)
     {
+        if (nodeID == -1) // means any node, broadcast.
+        {
+            netConnMgr->ForEachNode([&](CNode *pnode) { netConnMgr->PushMessage(pnode, command, data); });
+            return true;
+        }
+
         if (CNode* node = netConnMgr->QueryNode(nodeID))
         {
             netConnMgr->PushMessage(node, command, data);
