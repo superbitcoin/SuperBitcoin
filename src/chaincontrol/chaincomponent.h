@@ -42,7 +42,11 @@ public:
         return "I am CChainCommonent\n";
     }
 
-    int GetActiveChainHeight() const override;
+    bool IsImporting() const override;
+    bool IsReindexing() const override;
+    bool IsInitialBlockDownload() const override;
+    bool DoesBlockExist(uint256 hash) const override;
+    int  GetActiveChainHeight() const override;
 
     bool NetGetCheckPoint(XNodeInfo *nodeInfo, int height) override;
 
