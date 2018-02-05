@@ -34,7 +34,7 @@ bool CWalletComponent::ComponentStartup()
         return false;
     }
     GET_BASE_INTERFACE(pBaseComponent);
-    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef()) {
+    for (CWalletRef pwallet : vpWallets) {
         pwallet->postInitProcess(*(pBaseComponent->GetScheduler()));
     }
 
@@ -43,12 +43,12 @@ bool CWalletComponent::ComponentStartup()
 
 bool CWalletComponent::ComponentShutdown()
 {
-    for (CWalletRef pWallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (CWalletRef pWallet : vpWallets)
     {
         pWallet->Flush(true);
     }
 
-    for (CWalletRef pWallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (CWalletRef pWallet : vpWallets)
     {
         delete pWallet;
     }
