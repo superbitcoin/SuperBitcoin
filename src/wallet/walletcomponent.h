@@ -32,7 +32,7 @@ public:
 
     bool ComponentShutdown() override;
 
-    virtual const char* whoru() const override { return "I am CNetComponent\n"; }
+    virtual const char* whoru() const override { return "I am CWalletComponent\n"; }
 };
 
 #endif //SUPERBITCOIN_WALLETCOMPONENT_H
