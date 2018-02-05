@@ -123,7 +123,7 @@ bool CDBEnv::Open(const fs::path &pathIn)
     LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s\n", pathLogDir.string(), pathErrorFile.string());
 
     unsigned int nEnvFlags = 0;
-    if (gArgs.GetArg<bool>("-privdb", DEFAULT_WALLET_PRIVDB))
+    if (appbase::app().GetArgsManager().GetArg<bool>("-privdb", DEFAULT_WALLET_PRIVDB))
         nEnvFlags |= DB_PRIVATE;
 
     dbenv->set_lg_dir(pathLogDir.string().c_str());
