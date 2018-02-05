@@ -20,8 +20,11 @@ public:
     virtual const char* whoru() const = 0;
 
     virtual bool IsImporting() const = 0;
+
     virtual bool IsReindexing() const = 0;
+
     virtual bool IsInitialBlockDownload() const = 0;
+
     virtual bool DoesBlockExist(uint256 hash) const = 0;
     virtual int  GetActiveChainHeight() const = 0;
 
