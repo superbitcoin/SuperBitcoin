@@ -30,7 +30,10 @@
 #include "utils/util.h"
 #include "utils/utilmoneystr.h"
 #include "utils/utilstrencodings.h"
+#include "framework/base.hpp"
 #include "framework/validationinterface.h"
+#include "interface/exchangeformat.h"
+#include "interface/ichaincomponent.h"
 #include "config/checkpoints.h"
 #include "framework/base.hpp"
 #include "mempool/orphantx.h"
@@ -2850,57 +2853,64 @@ bool PeerLogicValidation::ProcessFeeFilterMsg(CNode *pfrom, CDataStream &vRecv)
 
 bool PeerLogicValidation::ProcessCheckPointMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    LogPrint(BCLog::NET, "enter checkpoint\n");
-    LogPrint(BCLog::BENCH, "receive check block list====\n");
+    NodeExchangeInfo xnodeInfo;
+    xnodeInfo.nodeID = pfrom->GetId();
+    xnodeInfo.sendVersion = pfrom->GetSendVersion();
 
-    std::vector<Checkpoints::CCheckData> vdata;
-    vRecv >> vdata;
+    GET_CHAIN_INTERFACE(ifChainObj);
+    return ifChainObj->NetCheckPoint(&xnodeInfo, vRecv);
 
-    Checkpoints::CCheckPointDB cCheckPointDB;
-    std::vector<Checkpoints::CCheckData> vIndex;
-
-    const CChainParams &chainparams = Params();
-    for (const auto &point : vdata)
-    {
-        if (point.CheckSignature(chainparams.GetCheckPointPKey()))
-        {
-            if (!cCheckPointDB.ExistCheckpoint(point.getHeight()))
-            {
-                cCheckPointDB.WriteCheckpoint(point.getHeight(), point);
-                /*
-                 * add the check point to chainparams
-                 */
-                chainparams.AddCheckPoint(point.getHeight(), point.getHash());
-                pfrom->m_checkPointKnown.insert(point.getHeight());
-                vIndex.push_back(point);
-            }
-        }
-        else
-        {
-            LogPrint(BCLog::NET, "check point signature check failed \n");
-            break;
-        }
-        LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
-    }
-
-    if (vIndex.size() > 0)
-    {
-        CValidationState state;
-        if (!CheckActiveChain(state, chainparams))
-        {
-            LogPrint(BCLog::NET, "CheckActiveChain error when receive  checkpoint\n");
-        }
-    }
-
-    //broadcast the check point if it is necessary
-    if (vIndex.size() == 1 && vIndex.size() == vdata.size())
-    {
-        connman->ForEachNode([&](CNode *pnode) {
-            connman->PushMessage(pnode, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::CHECKPOINT, vdata));
-        });
-    }
-
-    return true;
+//    LogPrint(BCLog::NET, "enter checkpoint\n");
+//    LogPrint(BCLog::BENCH, "receive check block list====\n");
+//
+//    std::vector<Checkpoints::CCheckData> vdata;
+//    vRecv >> vdata;
+//
+//    Checkpoints::CCheckPointDB cCheckPointDB;
+//    std::vector<Checkpoints::CCheckData> vIndex;
+//
+//    const CChainParams &chainparams = Params();
+//    for (const auto &point : vdata)
+//    {
+//        if (point.CheckSignature(chainparams.GetCheckPointPKey()))
+//        {
+//            if (!cCheckPointDB.ExistCheckpoint(point.getHeight()))
+//            {
+//                cCheckPointDB.WriteCheckpoint(point.getHeight(), point);
+//                /*
+//                 * add the check point to chainparams
+//                 */
+//                chainparams.AddCheckPoint(point.getHeight(), point.getHash());
+//                pfrom->m_checkPointKnown.insert(point.getHeight());
+//                vIndex.push_back(point);
+//            }
+//        }
+//        else
+//        {
+//            LogPrint(BCLog::NET, "check point signature check failed \n");
+//            break;
+//        }
+//        LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
+//    }
+//
+//    if (vIndex.size() > 0)
+//    {
+//        CValidationState state;
+//        if (!CheckActiveChain(state, chainparams))
+//        {
+//            LogPrint(BCLog::NET, "CheckActiveChain error when receive  checkpoint\n");
+//        }
+//    }
+//
+//    //broadcast the check point if it is necessary
+//    if (vIndex.size() == 1 && vIndex.size() == vdata.size())
+//    {
+//        connman->ForEachNode([&](CNode *pnode) {
+//            connman->PushMessage(pnode, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::CHECKPOINT, vdata));
+//        });
+//    }
+//
+//    return true;
 }
 
 bool PeerLogicValidation::ProcessGetCheckPointMsg(CNode *pfrom, CDataStream &vRecv)
@@ -2908,24 +2918,31 @@ bool PeerLogicValidation::ProcessGetCheckPointMsg(CNode *pfrom, CDataStream &vRe
     int nHeight = 0;
     vRecv >> nHeight;
 
-    std::vector<Checkpoints::CCheckData> vSendData;
-    std::vector<Checkpoints::CCheckData> vnHeight;
-    Checkpoints::GetCheckpointByHeight(nHeight, vnHeight);
-    for (const auto &point : vnHeight)
-    {
-        if (pfrom->m_checkPointKnown.count(point.getHeight()) == 0)
-        {
-            pfrom->m_checkPointKnown.insert(point.getHeight());
-            vSendData.push_back(point);
-        }
-    }
+    NodeExchangeInfo xnodeInfo;
+    xnodeInfo.nodeID = pfrom->GetId();
+    xnodeInfo.sendVersion = pfrom->GetSendVersion();
 
-    if (!vSendData.empty())
-    {
-        connman->PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::CHECKPOINT, vSendData));
-    }
+    GET_CHAIN_INTERFACE(ifChainObj);
+    return ifChainObj->NetGetCheckPoint(&xnodeInfo, nHeight);
 
-    return true;
+//    std::vector<Checkpoints::CCheckData> vSendData;
+//    std::vector<Checkpoints::CCheckData> vnHeight;
+//    Checkpoints::GetCheckpointByHeight(nHeight, vnHeight);
+//    for (const auto &point : vnHeight)
+//    {
+//        if (pfrom->m_checkPointKnown.count(point.getHeight()) == 0)
+//        {
+//            pfrom->m_checkPointKnown.insert(point.getHeight());
+//            vSendData.push_back(point);
+//        }
+//    }
+//
+//    if (!vSendData.empty())
+//    {
+//        connman->PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::CHECKPOINT, vSendData));
+//    }
+//
+//    return true;
 }
 
 bool PeerLogicValidation::ProcessMemPoolMsg(CNode *pfrom, CDataStream &vRecv)
