@@ -3,6 +3,7 @@
 #include "sbtccore/streams.h"
 #include "interface/inetcomponent.h"
 #include "utils/net/netmessagehelper.h"
+#include "sbtccore/block/validation.h"
 
 CChainCommonent::CChainCommonent()
 {
@@ -36,12 +37,13 @@ int CChainCommonent::GetActiveChainHeight() const
     return 0;
 }
 
-bool CChainCommonent::NetGetCheckPoint(XNodeInfo* nodeInfo, int height)
+
+bool CChainCommonent::NetGetCheckPoint(XNodeInfo *nodeInfo, int height)
 {
     if (!nodeInfo)
         return false;
 
-    std::set<int>& checkpointKnown = m_nodeCheckPointKnown[nodeInfo->nodeID];
+    std::set<int> &checkpointKnown = m_nodeCheckPointKnown[nodeInfo->nodeID];
 
     std::vector<Checkpoints::CCheckData> vSendData;
     std::vector<Checkpoints::CCheckData> vnHeight;
@@ -63,7 +65,7 @@ bool CChainCommonent::NetGetCheckPoint(XNodeInfo* nodeInfo, int height)
     return true;
 }
 
-bool CChainCommonent::NetCheckPoint(XNodeInfo* nodeInfo, CDataStream& stream)
+bool CChainCommonent::NetCheckPoint(XNodeInfo *nodeInfo, CDataStream &stream)
 {
     if (!nodeInfo)
         return false;
@@ -92,8 +94,7 @@ bool CChainCommonent::NetCheckPoint(XNodeInfo* nodeInfo, CDataStream& stream)
                 m_nodeCheckPointKnown[nodeInfo->nodeID].insert(point.getHeight());
                 vIndex.push_back(point);
             }
-        }
-        else
+        } else
         {
             LogPrint(BCLog::NET, "check point signature check failed \n");
             break;
@@ -119,7 +120,7 @@ bool CChainCommonent::NetCheckPoint(XNodeInfo* nodeInfo, CDataStream& stream)
     return true;
 }
 
-bool CChainCommonent::NetGetBlocks(XNodeInfo* nodeInfo, CDataStream& stream, std::vector<uint256>& blockHashes)
+bool CChainCommonent::NetGetBlocks(XNodeInfo *nodeInfo, CDataStream &stream, std::vector<uint256> &blockHashes)
 {
     if (!nodeInfo)
         return false;
@@ -190,11 +191,21 @@ bool CChainCommonent::NetGetBlocks(XNodeInfo* nodeInfo, CDataStream& stream, std
     return true;
 }
 
+CBlockIndex *CChainCommonent::Tip()
+{
+    return cIndexManager.GetChain().Tip();
+}
+
+void CChainCommonent::SetTip(CBlockIndex *pIndexTip)
+{
+    cIndexManager.GetChain().SetTip(pIndexTip);
+}
+
 bool CChainCommonent::ReplayBlocks()
 {
     const CChainParams &params = appbase::app().GetChainParams();
 
-    CCoinsView *view(cViewManager.getCoinViewDB());
+    CCoinsView *view(cViewManager.GetCoinViewDB());
     CCoinsViewCache cache(view);
 
     std::vector<uint256> vecHashHeads = view->GetHeadBlocks();
@@ -209,7 +220,7 @@ bool CChainCommonent::ReplayBlocks()
     const CBlockIndex *pIndexNew;            // New tip during the interrupted flush.
     const CBlockIndex *pIndexFork = nullptr; // Latest block common to both the old and the new tip.
 
-    pIndexNew = cIndexManager.getBlockIndex(vecHashHeads[0]);
+    pIndexNew = cIndexManager.GetBlockIndex(vecHashHeads[0]);
     if (!pIndexNew)
     {
         return false;
@@ -217,7 +228,7 @@ bool CChainCommonent::ReplayBlocks()
 
     if (!vecHashHeads[1].IsNull())
     {
-        pIndexOld = cIndexManager.getBlockIndex(vecHashHeads[1]);
+        pIndexOld = cIndexManager.GetBlockIndex(vecHashHeads[1]);
         if (!pIndexOld)
         {
             return false;
@@ -273,5 +284,136 @@ bool CChainCommonent::ReplayBlocks()
     cache.SetBestBlock(pIndexNew->GetBlockHash());
     cache.Flush();
 
+    return true;
+}
+
+bool CChainCommonent::NeedFullFlush(FlushStateMode mode)
+{
+    return true;
+}
+
+bool CChainCommonent::FlushStateToDisk(CValidationState &state, FlushStateMode mode)
+{
+    if (!cIndexManager.Flush())
+    {
+        assert(0);
+        return false;
+    }
+
+    if (!cViewManager.Flush())
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool CChainCommonent::DisconnectTip(CValidationState &state)
+{
+    CBlockIndex *pIndexDelete = Tip();
+    assert(pIndexDelete);
+
+    // Read block from disk.
+    std::shared_ptr<CBlock> pBlock = std::make_shared<CBlock>();
+    CBlock &block = *pBlock;
+    const CChainParams &params = appbase::app().GetChainParams();
+
+    if (!ReadBlockFromDisk(block, pIndexDelete, params.GetConsensus()))
+    {
+        return AbortNode(state, "Failed to read block");
+    }
+    // Apply the block atomically to the chain state.
+    int64_t nStart = GetTimeMicros();
+    {
+        CCoinsViewCache view(cViewManager.GetCoinsTip());
+        assert(view.GetBestBlock() == pIndexDelete->GetBlockHash());
+        if (cViewManager.DisconnectBlock(block, pIndexDelete, view))
+        {
+            return error("DisconnectTip(): DisconnectBlock %s failed", pIndexDelete->GetBlockHash().ToString());
+        }
+
+        bool bFlush = view.Flush();
+        assert(bFlush);
+    }
+
+    LogPrint(BCLog::BENCH, "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
+
+    // Write the chain state to disk, if necessary.
+    if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED))
+    {
+        return false;
+    }
+
+    // Update chainActive and related variables.
+    SetTip(pIndexDelete->pprev);
+    return true;
+}
+
+bool CChainCommonent::ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMostWork,
+                                            const std::shared_ptr<const CBlock> &pblock, bool &fInvalidFound)
+{
+    const CBlockIndex *pIndexOldTip = Tip();
+    const CBlockIndex *pIndexFork = cIndexManager.GetChain().FindFork(pindexMostWork);
+
+    // Disconnect active blocks which are no longer in the best chain.
+    bool bBlocksDisconnected = false;
+    while (Tip() && Tip() != pIndexFork)
+    {
+        if (!DisconnectTip(state))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * Make the best chain active, in multiple steps. The result is either failure
+ * or an activated best chain. pblock is either nullptr or a pointer to a block
+ * that is already loaded (to avoid loading it again from disk).
+ */
+bool CChainCommonent::ActivateBestChain(CValidationState &state, std::shared_ptr<const CBlock> pblock)
+{
+    // Note that while we're often called here from ProcessNewBlock, this is
+    // far from a guarantee. Things in the P2P/RPC will often end up calling
+    // us in the middle of ProcessNewBlock - do not assume pblock is set
+    // sanely for performance or correctness!
+
+    CBlockIndex *pIndexMostWork = nullptr;
+    CBlockIndex *pIndexNewTip = nullptr;
+
+    const CArgsManager &appArgs = appbase::app().GetArgsManager();
+    int iStopAtHeight = appArgs.GetArg<int>("-stopatheight", DEFAULT_STOPATHEIGHT);
+    do
+    {
+        boost::this_thread::interruption_point();
+
+        const CBlockIndex *pIndexFork;
+        bool bInitialDownload;
+        {
+            CBlockIndex *pIndexOldTip = Tip();
+            if (pIndexMostWork == nullptr)
+            {
+                pIndexMostWork = cIndexManager.FindMostWorkIndex();
+            }
+
+            // Whether we have anything to do at all.
+            if (pIndexMostWork == nullptr || pIndexMostWork == pIndexOldTip)
+            {
+                return true;
+            }
+
+            bool bInvalidFound = false;
+            std::shared_ptr<const CBlock> nullBlockPtr;
+            if (!ActivateBestChainStep(state, pIndexMostWork,
+                                       pblock && pblock->GetHash() == pIndexMostWork->GetBlockHash() ? pblock
+                                                                                                     : nullBlockPtr,
+                                       bInvalidFound))
+            {
+                return false;
+            }
+
+        }
+    } while (1);
     return true;
 }

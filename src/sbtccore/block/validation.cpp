@@ -807,8 +807,8 @@ bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsVi
     return true;
 }
 
-namespace
-{
+//namespace
+//{
 
     bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint256 &hashBlock,
                          const CMessageHeader::MessageStartChars &messageStart)
@@ -851,13 +851,13 @@ namespace
         return false;
     }
 
-    bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage = "")
+    bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage)
     {
         AbortNode(strMessage, userMessage);
         return state.Error(strMessage);
     }
 
-} // namespace
+//} // namespace
 
 enum DisconnectResult
 {
@@ -1770,7 +1770,7 @@ public:
 /**
  * Connect a new block to chainActive. pblock is either nullptr or a pointer to a CBlock
  * corresponding to pindexNew, to bypass loading it again from disk.
- *
+ *0
  * The block is added to connectTrace if connection succeeds.
  */
 bool static ConnectTip(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindexNew,

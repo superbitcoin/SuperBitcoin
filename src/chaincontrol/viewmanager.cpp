@@ -25,13 +25,17 @@ bool CViewManager::Init(int64_t iCoinDBCacheSize, bool bReset)
 {
     std::cout << "initialize view manager \n";
 
-    pCoinsViewDB = std::unique_ptr<CCoinsViewDB>(new CCoinsViewDB(iCoinDBCacheSize, false, bReset));
+    pCoinsViewDB = new CCoinsViewDB(iCoinDBCacheSize, false, bReset);
+
+    pCoinsCatcher = new CCoinsViewErrorCatcher(pCoinsViewDB);
 
     if (!pCoinsViewDB->Upgrade())
     {
 
         return false;
     }
+
+    pCoinsTip = new CCoinsViewCache(pCoinsCatcher);
 
     return true;
 }
@@ -137,10 +141,14 @@ bool CViewManager::ConnectBlock(const CBlock &block, const CBlockIndex *pIndex, 
     return true;
 }
 
-CCoinsView *CViewManager::getCoinViewDB()
+CCoinsView *CViewManager::GetCoinViewDB()
 {
-    assert(pCoinsViewDB);
-    return pCoinsViewDB.get();
+    return pCoinsViewDB;
+}
+
+CCoinsViewCache *CViewManager::GetCoinsTip()
+{
+    return pCoinsTip;
 }
 
 std::vector<uint256> CViewManager::getHeads()
@@ -148,3 +156,9 @@ std::vector<uint256> CViewManager::getHeads()
     assert(pCoinsViewDB);
     return pCoinsViewDB->GetHeadBlocks();
 };
+
+bool CViewManager::Flush()
+{
+
+    return true;
+}
