@@ -33,9 +33,11 @@ public:
         return "I am CChainCommonent\n";
     }
 
-    int GetActiveChainHeight() const override;
+    int  GetActiveChainHeight() const override;
+
     bool NetGetCheckPoint(XNodeInfo* nodeInfo, int height) override;
     bool NetCheckPoint(XNodeInfo* nodeInfo, CDataStream& stream) override;
+    bool NetGetBlocks(XNodeInfo* nodeInfo, CDataStream& stream, std::vector<uint256>& blockHashes) override;
 
 private:
     database _db;

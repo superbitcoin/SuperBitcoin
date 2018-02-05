@@ -2968,70 +2968,91 @@ bool PeerLogicValidation::ProcessMemPoolMsg(CNode *pfrom, CDataStream &vRecv)
 
 bool PeerLogicValidation::ProcessGetBlocksMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    CBlockLocator locator;
-    uint256 hashStop;
-    vRecv >> locator >> hashStop;
+    NodeExchangeInfo xnodeInfo;
+    xnodeInfo.nodeID = pfrom->GetId();
 
-    // We might have announced the currently-being-connected tip using a
-    // compact block, which resulted in the peer sending a getblocks
-    // request, which we would otherwise respond to without the new block.
-    // To avoid this situation we simply verify that we are on our best
-    // known chain now. This is super overkill, but we handle it better
-    // for getheaders requests, and there are no known nodes which support
-    // compact blocks but still use getblocks to request blocks.
+    std::vector<uint256> blockHashes;
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (ifChainObj->NetGetBlocks(&xnodeInfo, vRecv, blockHashes))
     {
-        std::shared_ptr<const CBlock> a_recent_block;
+        for (const auto& hash : blockHashes)
         {
-            LOCK(cs_most_recent_block);
-            a_recent_block = most_recent_block;
+            pfrom->PushInventory(CInv(MSG_BLOCK, hash));
         }
-        CValidationState dummy;
-        ActivateBestChain(dummy, Params(), a_recent_block);
+        if ((int)blockHashes.size() >= 500)
+        {
+            pfrom->hashContinue = blockHashes.back();
+        }
+        return true;
     }
 
-    LOCK(cs_main);
+    return false;
 
-    // Find the last block the caller has in the main chain
-    const CBlockIndex *pindex = FindForkInGlobalIndex(chainActive, locator);
-
-    // Send the rest of the chain
-    if (pindex)
-        pindex = chainActive.Next(pindex);
-    int nLimit = 500;
-    LogPrint(BCLog::NET, "getblocks %d to %s limit %d from peer=%d\n", (pindex ? pindex->nHeight : -1),
-             hashStop.IsNull() ? "end" : hashStop.ToString(), nLimit, pfrom->GetId());
-
-    const CChainParams &chainparams = Params();
-    for (; pindex; pindex = chainActive.Next(pindex))
-    {
-        if (pindex->GetBlockHash() == hashStop)
-        {
-            LogPrint(BCLog::NET, "  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
-            break;
-        }
-        // If pruning, don't inv blocks unless we have on disk and are likely to still have
-        // for some reasonable time window (1 hour) that block relay might require.
-        const int nPrunedBlocksLikelyToHave =
-                MIN_BLOCKS_TO_KEEP - 3600 / chainparams.GetConsensus().nPowTargetSpacing;
-        if (fPruneMode && (!(pindex->nStatus & BLOCK_HAVE_DATA) ||
-                           pindex->nHeight <= chainActive.Tip()->nHeight - nPrunedBlocksLikelyToHave))
-        {
-            LogPrint(BCLog::NET, " getblocks stopping, pruned or too old block at %d %s\n", pindex->nHeight,
-                     pindex->GetBlockHash().ToString());
-            break;
-        }
-        pfrom->PushInventory(CInv(MSG_BLOCK, pindex->GetBlockHash()));
-        if (--nLimit <= 0)
-        {
-            // When this block is requested, we'll send an inv that'll
-            // trigger the peer to getblocks the next batch of inventory.
-            LogPrint(BCLog::NET, "  getblocks stopping at limit %d %s\n", pindex->nHeight,
-                     pindex->GetBlockHash().ToString());
-            pfrom->hashContinue = pindex->GetBlockHash();
-            break;
-        }
-    }
-    return true;
+//    CBlockLocator locator;
+//    uint256 hashStop;
+//    vRecv >> locator >> hashStop;
+//
+//    // We might have announced the currently-being-connected tip using a
+//    // compact block, which resulted in the peer sending a getblocks
+//    // request, which we would otherwise respond to without the new block.
+//    // To avoid this situation we simply verify that we are on our best
+//    // known chain now. This is super overkill, but we handle it better
+//    // for getheaders requests, and there are no known nodes which support
+//    // compact blocks but still use getblocks to request blocks.
+//    {
+//        std::shared_ptr<const CBlock> a_recent_block;
+//        {
+//            LOCK(cs_most_recent_block);
+//            a_recent_block = most_recent_block;
+//        }
+//        CValidationState dummy;
+//        ActivateBestChain(dummy, Params(), a_recent_block);
+//    }
+//
+//    LOCK(cs_main);
+//
+//    // Find the last block the caller has in the main chain
+//    const CBlockIndex *pindex = FindForkInGlobalIndex(chainActive, locator);
+//
+//    // Send the rest of the chain
+//    if (pindex)
+//        pindex = chainActive.Next(pindex);
+//    int nLimit = 500;
+//    LogPrint(BCLog::NET, "getblocks %d to %s limit %d from peer=%d\n", (pindex ? pindex->nHeight : -1),
+//             hashStop.IsNull() ? "end" : hashStop.ToString(), nLimit, pfrom->GetId());
+//
+//    const CChainParams &chainparams = Params();
+//    for (; pindex; pindex = chainActive.Next(pindex))
+//    {
+//        if (pindex->GetBlockHash() == hashStop)
+//        {
+//            LogPrint(BCLog::NET, "  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
+//            break;
+//        }
+//        // If pruning, don't inv blocks unless we have on disk and are likely to still have
+//        // for some reasonable time window (1 hour) that block relay might require.
+//        const int nPrunedBlocksLikelyToHave =
+//                MIN_BLOCKS_TO_KEEP - 3600 / chainparams.GetConsensus().nPowTargetSpacing;
+//        if (fPruneMode && (!(pindex->nStatus & BLOCK_HAVE_DATA) ||
+//                           pindex->nHeight <= chainActive.Tip()->nHeight - nPrunedBlocksLikelyToHave))
+//        {
+//            LogPrint(BCLog::NET, " getblocks stopping, pruned or too old block at %d %s\n", pindex->nHeight,
+//                     pindex->GetBlockHash().ToString());
+//            break;
+//        }
+//        pfrom->PushInventory(CInv(MSG_BLOCK, pindex->GetBlockHash()));
+//        if (--nLimit <= 0)
+//        {
+//            // When this block is requested, we'll send an inv that'll
+//            // trigger the peer to getblocks the next batch of inventory.
+//            LogPrint(BCLog::NET, "  getblocks stopping at limit %d %s\n", pindex->nHeight,
+//                     pindex->GetBlockHash().ToString());
+//            pfrom->hashContinue = pindex->GetBlockHash();
+//            break;
+//        }
+//    }
+//    return true;
 }
 
 bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc)

@@ -2,6 +2,7 @@
 
 #include "componentid.h"
 #include "exchangeformat.h"
+#include "utils/uint256.h"
 #include "framework/component.hpp"
 
 class CDataStream;
@@ -18,10 +19,11 @@ public:
     virtual bool ComponentShutdown() = 0;
     virtual const char* whoru() const = 0;
 
-    virtual int GetActiveChainHeight() const = 0;
+    virtual int  GetActiveChainHeight() const = 0;
 
     virtual bool NetGetCheckPoint(XNodeInfo* nodeInfo, int height) = 0;
     virtual bool NetCheckPoint(XNodeInfo* nodeInfo, CDataStream& stream) = 0;
+    virtual bool NetGetBlocks(XNodeInfo* nodeInfo, CDataStream& stream, std::vector<uint256>& blockHashes) = 0;
 
     //add other interface methods here ...
 };
