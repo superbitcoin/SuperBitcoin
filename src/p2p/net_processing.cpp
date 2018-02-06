@@ -3131,8 +3131,9 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
 bool PeerLogicValidation::ProcessGetHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 {
     NodeExchangeInfo xnode;
+    InitFlagsBit(xnode.flags, NF_WHITELIST, pfrom->fWhitelisted);
+    xnode.retFlags = xnode.flags;
     xnode.nodeID = pfrom->GetId();
-    xnode.fWhitelisted = pfrom->fWhitelisted;
     xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
@@ -3201,17 +3202,38 @@ bool PeerLogicValidation::ProcessGetHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 bool PeerLogicValidation::ProcessHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 {
     NodeExchangeInfo xnode;
+    InitFlagsBit(xnode.flags, NF_WHITELIST, pfrom->fWhitelisted);
+    InitFlagsBit(xnode.flags, NF_DISCONNECT, pfrom->fDisconnect);
+    InitFlagsBit(xnode.flags, NF_OUTBOUND, !pfrom->fInbound);
+    InitFlagsBit(xnode.flags, NF_MANUALCONN, pfrom->m_manual_connection);
+    xnode.startHeight = pfrom->nStartingHeight;
+    xnode.serviceFlags = pfrom->GetLocalServices();
     xnode.nodeID = pfrom->GetId();
-    xnode.fWhitelisted = pfrom->fWhitelisted;
-    xnode.fDisconnect = pfrom->fDisconnect;
-    xnode.fOutBound = !pfrom->fInbound;
-    xnode.fManualConn = !pfrom->m_manual_connection;
     xnode.sendVersion = pfrom->GetSendVersion();
+    xnode.nMisbehavior = 0;
+
+    {
+        LOCK(cs_main);
+        CNodeState* state = State(pfrom->GetId());
+        InitFlagsBit(xnode.flags, NF_WITNESS, state->fHaveWitness);
+        InitFlagsBit(xnode.flags, NF_PREFERHEADERS, state->fPreferHeaders);
+        InitFlagsBit(xnode.flags, NF_PREFERHEADERANDIDS, state->fPreferHeaderAndIDs);
+        InitFlagsBit(xnode.flags, NF_PROVIDEHEADERSANDIDS, state->fProvidesHeaderAndIDs);
+        InitFlagsBit(xnode.flags, NF_WANTCMPCTWITNESS, state->fWantsCmpctWitness);
+        InitFlagsBit(xnode.flags, NF_DESIREDCMPCTVERSION, state->fSupportsDesiredCmpctVersion);
+        xnode.nBlocksInFlight = state->nBlocksInFlight;
+        xnode.nUnconnectingHeaders = state->nUnconnectingHeaders;
+        xnode.retFlags = xnode.flags;
+    }
 
     GET_CHAIN_INTERFACE(ifChainObj);
     bool ret = ifChainObj->NetReceiveHeaders(&xnode, vRecv);
 
-    //TODO:
+    if (xnode.nMisbehavior > 0)
+        Misbehaving(xnode.nodeID, xnode.nMisbehavior);
+
+    if (IsFlagsBitOn(xnode.retFlags, NF_DISCONNECT))
+        pfrom->fDisconnect = true;
 
     return ret;
 
