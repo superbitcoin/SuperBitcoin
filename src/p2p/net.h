@@ -124,6 +124,7 @@ struct CSerializedNetMsg
     std::string command;
 };
 
+class CChainParams;
 class NetEventsInterface;
 
 class CConnman
@@ -437,6 +438,8 @@ private:
     void RecordBytesRecv(uint64_t bytes);
 
     void RecordBytesSent(uint64_t bytes);
+
+    const CChainParams &Params();
 
     // Whether the node should be passed out in ForEach* callbacks
     static bool NodeFullyConnected(const CNode *pnode);

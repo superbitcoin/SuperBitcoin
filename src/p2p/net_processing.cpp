@@ -8,6 +8,7 @@
 #include "p2p/addrman.h"
 #include "utils/arith_uint256.h"
 #include "block/blockencodings.h"
+#include "config/argmanager.h"
 #include "config/chainparams.h"
 #include "chaincontrol/validation.h"
 #include "hash.h"
@@ -23,6 +24,7 @@
 #include "transaction/transaction.h"
 #include "random.h"
 #include "reverse_iterator.h"
+#include "framework/base.hpp"
 #include "framework/scheduler.h"
 #include "tinyformat.h"
 #include "mempool/txmempool.h"
@@ -78,7 +80,7 @@ static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUAR
 
 void AddToCompactExtraTransactions(const CTransactionRef &tx)
 {
-    size_t max_extra_txn = gArgs.GetArg<uint32_t>("-blockreconstructionextratxn",
+    size_t max_extra_txn = appbase::app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
     if (max_extra_txn <= 0)
         return;
@@ -691,7 +693,7 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    int banscore = gArgs.GetArg<int>("-banscore", DEFAULT_BANSCORE_THRESHOLD);
+    int banscore = appbase::app().GetArgsManager().GetArg<int>("-banscore", DEFAULT_BANSCORE_THRESHOLD);
     if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("%s: %s peer=%d (%d -> %d) BAN THRESHOLD EXCEEDED\n", __func__, state->name, pnode,
@@ -1109,8 +1111,13 @@ static bool ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::ve
 
 //////////////////////////////////////////////////////////////////////////////
 
+const CChainParams &PeerLogicValidation::Params()
+{
+    return appbase::app().GetChainParams();
+}
+
 PeerLogicValidation::PeerLogicValidation(CConnman *connmanIn, CScheduler &scheduler)
-        : connman(connmanIn), m_stale_tip_check_time(0)
+        : connman(connmanIn), m_stale_tip_check_time(0), appArgs(appbase::app().GetArgsManager())
 {
     // Initialize global variables that cannot be constructed at startup.
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
@@ -2009,11 +2016,11 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
         // Message: feefilter
         //
         // We don't want white listed peers to filter txs to us if we have -whitelistforcerelay
-        if (pto->nVersion >= FEEFILTER_VERSION && gArgs.GetArg<bool>("-feefilter", DEFAULT_FEEFILTER) &&
-            !(pto->fWhitelisted && gArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY)))
+        if (pto->nVersion >= FEEFILTER_VERSION && appArgs.GetArg<bool>("-feefilter", DEFAULT_FEEFILTER) &&
+            !(pto->fWhitelisted && appArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY)))
         {
             CAmount currentFilter = mempool.GetMinFee(
-                    gArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFeePerK();
+                    appArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFeePerK();
             int64_t timeNow = GetTimeMicros();
             if (timeNow > pto->nextSendTimeFeeFilter)
             {
@@ -2100,7 +2107,7 @@ bool PeerLogicValidation::ProcessMessage(CNode *pfrom, const std::string &strCom
 {
     LogPrint(BCLog::NET, "received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->GetId());
 
-    if (gArgs.IsArgSet("-dropmessagestest") && GetRand(gArgs.GetArg<uint64_t>("-dropmessagestest", 0)) == 0)
+    if (appArgs.IsArgSet("-dropmessagestest") && GetRand(appArgs.GetArg<uint64_t>("-dropmessagestest", 0)) == 0)
     {
         LogPrintf("dropmessagestest DROPPING RECV MESSAGE\n");
         return true;
@@ -3069,7 +3076,7 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
     bool fBlocksOnly = !fRelayTxes;
 
     // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
-    if (pfrom->fWhitelisted && gArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY))
+    if (pfrom->fWhitelisted && appArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY))
         fBlocksOnly = false;
 
     LOCK(cs_main);
@@ -3277,7 +3284,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 {
     // Stop processing the transaction early if
     // We are in blocks only mode and peer is either not whitelisted or whitelistrelay is off
-    if (!fRelayTxes && (!pfrom->fWhitelisted || !gArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
+    if (!fRelayTxes && (!pfrom->fWhitelisted || !appArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
     {
         LogPrint(BCLog::NET, "transaction sent in violation of protocol peer=%d\n", pfrom->GetId());
         return true;
@@ -3412,7 +3419,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0,
-                                                               int64_t(gArgs.GetArg<uint32_t>("-maxorphantx",
+                                                               int64_t(appArgs.GetArg<uint32_t>("-maxorphantx",
                                                                                               DEFAULT_MAX_ORPHAN_TRANSACTIONS)));
             unsigned int nEvicted = COrphanTx::Instance().LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
@@ -3447,7 +3454,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
             AddToCompactExtraTransactions(ptx);
         }
 
-        if (pfrom->fWhitelisted && gArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
+        if (pfrom->fWhitelisted && appArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
         {
             // Always relay transactions received from whitelisted peers, even
             // if they were already in the mempool or rejected from it due

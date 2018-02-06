@@ -6,6 +6,7 @@
 #include "addrdb.h"
 
 #include "p2p/addrman.h"
+#include "framework/base.hpp"
 #include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
 #include "fs.h"
@@ -25,8 +26,8 @@ namespace
         try
         {
             CHashWriter hasher(SER_DISK, CLIENT_VERSION);
-            stream << FLATDATA(Params().MessageStart()) << data;
-            hasher << FLATDATA(Params().MessageStart()) << data;
+            stream << FLATDATA(appbase::app().GetChainParams().MessageStart()) << data;
+            hasher << FLATDATA(appbase::app().GetChainParams().MessageStart()) << data;
             stream << hasher.GetHash();
         } catch (const std::exception &e)
         {
@@ -74,7 +75,7 @@ namespace
             unsigned char pchMsgTmp[4];
             verifier >> FLATDATA(pchMsgTmp);
             // ... verify the network matches ours
-            if (memcmp(pchMsgTmp, Params().MessageStart(), sizeof(pchMsgTmp)))
+            if (memcmp(pchMsgTmp, appbase::app().GetChainParams().MessageStart(), sizeof(pchMsgTmp)))
                 return error("%s: Invalid network magic number", __func__);
 
             // de-serialize data
