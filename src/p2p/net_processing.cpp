@@ -8,6 +8,7 @@
 #include "p2p/addrman.h"
 #include "utils/arith_uint256.h"
 #include "block/blockencodings.h"
+#include "config/argmanager.h"
 #include "config/chainparams.h"
 #include "chaincontrol/validation.h"
 #include "hash.h"
@@ -23,6 +24,7 @@
 #include "transaction/transaction.h"
 #include "random.h"
 #include "reverse_iterator.h"
+#include "framework/base.hpp"
 #include "framework/scheduler.h"
 #include "tinyformat.h"
 #include "mempool/txmempool.h"
@@ -78,7 +80,7 @@ static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUAR
 
 void AddToCompactExtraTransactions(const CTransactionRef &tx)
 {
-    size_t max_extra_txn = gArgs.GetArg<uint32_t>("-blockreconstructionextratxn",
+    size_t max_extra_txn = appbase::app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
     if (max_extra_txn <= 0)
         return;
@@ -691,7 +693,7 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    int banscore = gArgs.GetArg<int>("-banscore", DEFAULT_BANSCORE_THRESHOLD);
+    int banscore = appbase::app().GetArgsManager().GetArg<int>("-banscore", DEFAULT_BANSCORE_THRESHOLD);
     if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("%s: %s peer=%d (%d -> %d) BAN THRESHOLD EXCEEDED\n", __func__, state->name, pnode,
@@ -1109,8 +1111,13 @@ static bool ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::ve
 
 //////////////////////////////////////////////////////////////////////////////
 
+const CChainParams &PeerLogicValidation::Params()
+{
+    return appbase::app().GetChainParams();
+}
+
 PeerLogicValidation::PeerLogicValidation(CConnman *connmanIn, CScheduler &scheduler)
-        : connman(connmanIn), m_stale_tip_check_time(0)
+        : connman(connmanIn), m_stale_tip_check_time(0), appArgs(appbase::app().GetArgsManager())
 {
     // Initialize global variables that cannot be constructed at startup.
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
@@ -2009,11 +2016,11 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
         // Message: feefilter
         //
         // We don't want white listed peers to filter txs to us if we have -whitelistforcerelay
-        if (pto->nVersion >= FEEFILTER_VERSION && gArgs.GetArg<bool>("-feefilter", DEFAULT_FEEFILTER) &&
-            !(pto->fWhitelisted && gArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY)))
+        if (pto->nVersion >= FEEFILTER_VERSION && appArgs.GetArg<bool>("-feefilter", DEFAULT_FEEFILTER) &&
+            !(pto->fWhitelisted && appArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY)))
         {
             CAmount currentFilter = mempool.GetMinFee(
-                    gArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFeePerK();
+                    appArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFeePerK();
             int64_t timeNow = GetTimeMicros();
             if (timeNow > pto->nextSendTimeFeeFilter)
             {
@@ -2100,7 +2107,7 @@ bool PeerLogicValidation::ProcessMessage(CNode *pfrom, const std::string &strCom
 {
     LogPrint(BCLog::NET, "received: %s (%u bytes) peer=%d\n", SanitizeString(strCommand), vRecv.size(), pfrom->GetId());
 
-    if (gArgs.IsArgSet("-dropmessagestest") && GetRand(gArgs.GetArg<uint64_t>("-dropmessagestest", 0)) == 0)
+    if (appArgs.IsArgSet("-dropmessagestest") && GetRand(appArgs.GetArg<uint64_t>("-dropmessagestest", 0)) == 0)
     {
         LogPrintf("dropmessagestest DROPPING RECV MESSAGE\n");
         return true;
@@ -2858,7 +2865,7 @@ bool PeerLogicValidation::ProcessCheckPointMsg(CNode *pfrom, CDataStream &vRecv)
     xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    return ifChainObj->NetCheckPoint(&xnode, vRecv);
+    return ifChainObj->NetReceiveCheckPoint(&xnode, vRecv);
 
 //    LogPrint(BCLog::NET, "enter checkpoint\n");
 //    LogPrint(BCLog::BENCH, "receive check block list====\n");
@@ -2923,7 +2930,7 @@ bool PeerLogicValidation::ProcessGetCheckPointMsg(CNode *pfrom, CDataStream &vRe
     xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    return ifChainObj->NetGetCheckPoint(&xnode, nHeight);
+    return ifChainObj->NetRequestCheckPoint(&xnode, nHeight);
 
 //    std::vector<Checkpoints::CCheckData> vSendData;
 //    std::vector<Checkpoints::CCheckData> vnHeight;
@@ -2974,7 +2981,7 @@ bool PeerLogicValidation::ProcessGetBlocksMsg(CNode *pfrom, CDataStream &vRecv)
     std::vector<uint256> blockHashes;
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (ifChainObj->NetGetBlocks(&xnode, vRecv, blockHashes))
+    if (ifChainObj->NetRequestBlocks(&xnode, vRecv, blockHashes))
     {
         for (const auto& hash : blockHashes)
         {
@@ -3069,7 +3076,7 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
     bool fBlocksOnly = !fRelayTxes;
 
     // Allow whitelisted peers to send data other than blocks in blocks only mode if whitelistrelay is true
-    if (pfrom->fWhitelisted && gArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY))
+    if (pfrom->fWhitelisted && appArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY))
         fBlocksOnly = false;
 
     LOCK(cs_main);
@@ -3124,12 +3131,13 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
 bool PeerLogicValidation::ProcessGetHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 {
     NodeExchangeInfo xnode;
+    InitFlagsBit(xnode.flags, NF_WHITELIST, pfrom->fWhitelisted);
+    xnode.retFlags = xnode.flags;
     xnode.nodeID = pfrom->GetId();
-    xnode.fWhitelisted = pfrom->fWhitelisted;
     xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    return ifChainObj->NetGetHeaders(&xnode, vRecv);
+    return ifChainObj->NetRequestHeaders(&xnode, vRecv);
 
 //    CBlockLocator locator;
 //    uint256 hashStop;
@@ -3193,29 +3201,65 @@ bool PeerLogicValidation::ProcessGetHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 
 bool PeerLogicValidation::ProcessHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    std::vector<CBlockHeader> headers;
+    NodeExchangeInfo xnode;
+    InitFlagsBit(xnode.flags, NF_WHITELIST, pfrom->fWhitelisted);
+    InitFlagsBit(xnode.flags, NF_DISCONNECT, pfrom->fDisconnect);
+    InitFlagsBit(xnode.flags, NF_OUTBOUND, !pfrom->fInbound);
+    InitFlagsBit(xnode.flags, NF_MANUALCONN, pfrom->m_manual_connection);
+    xnode.startHeight = pfrom->nStartingHeight;
+    xnode.serviceFlags = pfrom->GetLocalServices();
+    xnode.nodeID = pfrom->GetId();
+    xnode.sendVersion = pfrom->GetSendVersion();
+    xnode.nMisbehavior = 0;
 
-    // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
-    unsigned int nCount = ReadCompactSize(vRecv);
-    if (nCount > MAX_HEADERS_RESULTS)
     {
         LOCK(cs_main);
-        Misbehaving(pfrom->GetId(), 20);
-        return error("headers message size = %u", nCount);
-    }
-    headers.resize(nCount);
-    for (unsigned int n = 0; n < nCount; n++)
-    {
-        vRecv >> headers[n];
-        ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+        CNodeState* state = State(pfrom->GetId());
+        InitFlagsBit(xnode.flags, NF_WITNESS, state->fHaveWitness);
+        InitFlagsBit(xnode.flags, NF_PREFERHEADERS, state->fPreferHeaders);
+        InitFlagsBit(xnode.flags, NF_PREFERHEADERANDIDS, state->fPreferHeaderAndIDs);
+        InitFlagsBit(xnode.flags, NF_PROVIDEHEADERSANDIDS, state->fProvidesHeaderAndIDs);
+        InitFlagsBit(xnode.flags, NF_WANTCMPCTWITNESS, state->fWantsCmpctWitness);
+        InitFlagsBit(xnode.flags, NF_DESIREDCMPCTVERSION, state->fSupportsDesiredCmpctVersion);
+        xnode.nBlocksInFlight = state->nBlocksInFlight;
+        xnode.nUnconnectingHeaders = state->nUnconnectingHeaders;
+        xnode.retFlags = xnode.flags;
     }
 
-    // Headers received via a HEADERS message should be valid, and reflect
-    // the chain the peer is on. If we receive a known-invalid header,
-    // disconnect the peer if it is using one of our outbound connection
-    // slots.
-    bool should_punish = !pfrom->fInbound && !pfrom->m_manual_connection;
-    return ProcessHeadersMessage(pfrom, connman, headers, Params(), should_punish);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool ret = ifChainObj->NetReceiveHeaders(&xnode, vRecv);
+
+    if (xnode.nMisbehavior > 0)
+        Misbehaving(xnode.nodeID, xnode.nMisbehavior);
+
+    if (IsFlagsBitOn(xnode.retFlags, NF_DISCONNECT))
+        pfrom->fDisconnect = true;
+
+    return ret;
+
+//    std::vector<CBlockHeader> headers;
+//
+//    // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
+//    unsigned int nCount = ReadCompactSize(vRecv);
+//    if (nCount > MAX_HEADERS_RESULTS)
+//    {
+//        LOCK(cs_main);
+//        Misbehaving(pfrom->GetId(), 20);
+//        return error("headers message size = %u", nCount);
+//    }
+//    headers.resize(nCount);
+//    for (unsigned int n = 0; n < nCount; n++)
+//    {
+//        vRecv >> headers[n];
+//        ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+//    }
+//
+//    // Headers received via a HEADERS message should be valid, and reflect
+//    // the chain the peer is on. If we receive a known-invalid header,
+//    // disconnect the peer if it is using one of our outbound connection
+//    // slots.
+//    bool should_punish = !pfrom->fInbound && !pfrom->m_manual_connection;
+//    return ProcessHeadersMessage(pfrom, connman, headers, Params(), should_punish);
 }
 
 bool PeerLogicValidation::ProcessGetDataMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc)
@@ -3277,7 +3321,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 {
     // Stop processing the transaction early if
     // We are in blocks only mode and peer is either not whitelisted or whitelistrelay is off
-    if (!fRelayTxes && (!pfrom->fWhitelisted || !gArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
+    if (!fRelayTxes && (!pfrom->fWhitelisted || !appArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
     {
         LogPrint(BCLog::NET, "transaction sent in violation of protocol peer=%d\n", pfrom->GetId());
         return true;
@@ -3412,7 +3456,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0,
-                                                               int64_t(gArgs.GetArg<uint32_t>("-maxorphantx",
+                                                               int64_t(appArgs.GetArg<uint32_t>("-maxorphantx",
                                                                                               DEFAULT_MAX_ORPHAN_TRANSACTIONS)));
             unsigned int nEvicted = COrphanTx::Instance().LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
@@ -3447,7 +3491,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
             AddToCompactExtraTransactions(ptx);
         }
 
-        if (pfrom->fWhitelisted && gArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
+        if (pfrom->fWhitelisted && appArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
         {
             // Always relay transactions received from whitelisted peers, even
             // if they were already in the mempool or rejected from it due

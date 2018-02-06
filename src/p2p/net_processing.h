@@ -28,7 +28,8 @@ static constexpr int64_t EXTRA_PEER_CHECK_INTERVAL = 45;
 /** Minimum time an outbound-peer-eviction candidate must be connected for, in order to evict, in seconds */
 static constexpr int64_t MINIMUM_CONNECT_TIME = 30;
 
-
+class CArgsManager;
+class CChainParams;
 class PeerLogicValidation : public CValidationInterface, public NetEventsInterface
 {
 public:
@@ -131,6 +132,10 @@ private:
 private:
     CConnman *const connman;
     int64_t m_stale_tip_check_time; //! Next time to check for stale tip
+
+    const CArgsManager& appArgs;
+
+    const CChainParams &Params();
 };
 
 

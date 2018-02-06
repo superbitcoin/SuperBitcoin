@@ -54,13 +54,11 @@ public:
 
 
     // P2P network message response.
-    bool NetGetCheckPoint(ExNode *xnode, int height) override;
-
-    bool NetCheckPoint(ExNode *xnode, CDataStream &stream) override;
-
-    bool NetGetBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes) override;
-
-    bool NetGetHeaders(ExNode *xnode, CDataStream &stream) override;
+    bool NetRequestCheckPoint(ExNode* xnode, int height) override;
+    bool NetReceiveCheckPoint(ExNode* xnode, CDataStream& stream) override;
+    bool NetRequestBlocks(ExNode* xnode, CDataStream& stream, std::vector<uint256>& blockHashes) override;
+    bool NetRequestHeaders(ExNode* xnode, CDataStream& stream) override;
+    bool NetReceiveHeaders(ExNode* xnode, CDataStream& stream) override;
 
 private:
     database _db;
@@ -88,4 +86,6 @@ private:
     bool ActivateBestChain(CValidationState &state, std::shared_ptr<const CBlock> pblock);
 
     bool FlushStateToDisk(CValidationState &state, FlushStateMode mode);
+
+    bool NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockHeader>& headers);
 };

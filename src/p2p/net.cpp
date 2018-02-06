@@ -12,6 +12,7 @@
 #include "net.h"
 
 #include "p2p/addrman.h"
+#include "config/argmanager.h"
 #include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
 #include "config/consensus.h"
@@ -20,6 +21,7 @@
 #include "hash.h"
 #include "transaction/transaction.h"
 #include "netbase.h"
+#include "framework/base.hpp"
 #include "framework/scheduler.h"
 #include "framework/ui_interface.h"
 #include "utils/utilstrencodings.h"
@@ -102,7 +104,7 @@ void CConnman::AddOneShot(const std::string &strDest)
 
 unsigned short GetListenPort()
 {
-    return (unsigned short)(gArgs.GetArg<int32_t>("-port", Params().GetDefaultPort()));
+    return (unsigned short)(appbase::app().GetArgsManager().GetArg<int32_t>("-port", appbase::app().GetChainParams().GetDefaultPort()));
 }
 
 // find 'best' local address for a particular peer
@@ -301,6 +303,10 @@ bool IsReachable(const CNetAddr &addr)
     return IsReachable(net);
 }
 
+const CChainParams &CConnman::Params()
+{
+    return appbase::app().GetChainParams();
+}
 
 CNode *CConnman::FindNode(const CNetAddr &ip)
 {
@@ -533,7 +539,7 @@ void CConnman::Ban(const CSubNet &subNet, const BanReason &banReason, int64_t ba
     banEntry.banReason = banReason;
     if (bantimeoffset <= 0)
     {
-        bantimeoffset = gArgs.GetArg<uint32_t>("-bantime", DEFAULT_MISBEHAVING_BANTIME);
+        bantimeoffset = appbase::app().GetArgsManager().GetArg<uint32_t>("-bantime", DEFAULT_MISBEHAVING_BANTIME);
         sinceUnixEpoch = false;
     }
     banEntry.nBanUntil = (sinceUnixEpoch ? 0 : GetTime()) + bantimeoffset;
@@ -1653,7 +1659,7 @@ void CConnman::ThreadDNSAddressSeed()
     //  creating fewer identifying DNS requests, reduces trust by giving seeds
     //  less influence on the network topology, and reduces traffic to the seeds.
     if ((addrman.size() > 0) &&
-        (!gArgs.GetArg<bool>("-forcednsseed", DEFAULT_FORCEDNSSEED)))
+        (!appbase::app().GetArgsManager().GetArg<bool>("-forcednsseed", DEFAULT_FORCEDNSSEED)))
     {
         if (!interruptNet.sleep_for(std::chrono::seconds(11)))
             return;
@@ -1788,13 +1794,15 @@ int CConnman::GetExtraOutboundCount()
 
 void CConnman::ThreadOpenConnections()
 {
+    const CArgsManager& appArgs = appbase::app().GetArgsManager();
+
     // Connect to specific addresses
-    if (gArgs.IsArgSet("-connect"))
+    if (appArgs.IsArgSet("-connect"))
     {
         for (int64_t nLoop = 0;; nLoop++)
         {
             ProcessOneShot();
-            for (const std::string &strAddr : gArgs.GetArgs("-connect"))
+            for (const std::string &strAddr : appArgs.GetArgs("-connect"))
             {
                 CAddress addr(CService(), NODE_NONE);
                 OpenNetworkConnection(addr, false, nullptr, strAddr.c_str());
@@ -2043,7 +2051,7 @@ void CConnman::ThreadOpenAddedConnections()
 {
     {
         LOCK(cs_vAddedNodes);
-        vAddedNodes = gArgs.GetArgs("-addnode");
+        vAddedNodes = appbase::app().GetArgsManager().GetArgs("-addnode");
     }
 
     while (true)
@@ -2520,7 +2528,9 @@ bool CConnman::Start(CScheduler &scheduler, const Options &connOptions)
     threadSocketHandler = std::thread(&TraceThread<std::function<void()> >, "net",
                                       std::function<void()>(std::bind(&CConnman::ThreadSocketHandler, this)));
 
-    if (!gArgs.GetArg<bool>("-dnsseed", true))
+    const CArgsManager& appArgs = appbase::app().GetArgsManager();
+
+    if (!appArgs.GetArg<bool>("-dnsseed", true))
         LogPrintf("DNS seeding disabled\n");
     else
         threadDNSAddressSeed = std::thread(&TraceThread<std::function<void()> >, "dnsseed",
@@ -2531,7 +2541,7 @@ bool CConnman::Start(CScheduler &scheduler, const Options &connOptions)
             std::bind(&CConnman::ThreadOpenAddedConnections, this)));
 
     // Initiate outbound connections unless connect=0
-    if (!gArgs.IsArgSet("-connect") || gArgs.GetArgs("-connect").size() != 1 || gArgs.GetArgs("-connect")[0] != "0")
+    if (!appArgs.IsArgSet("-connect") || appArgs.GetArgs("-connect").size() != 1 || appArgs.GetArgs("-connect")[0] != "0")
         threadOpenConnections = std::thread(&TraceThread<std::function<void()> >, "opencon",
                                             std::function<void()>(std::bind(&CConnman::ThreadOpenConnections, this)));
 
