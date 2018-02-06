@@ -105,7 +105,6 @@ public:
     bool ComponentInitialize() override;
     bool ComponentStartup() override;
     bool ComponentShutdown() override;
-    const char* whoru() const override { return "I am CTxMemPoolCommonent\n"; };
 
     void OnNetMessageTx(int node_id, const char* vRecv);
 
@@ -181,7 +180,7 @@ public:
     /*--------------------------------------------------------------------------------------------*/
     /** (try to) add transaction to memory pool
         * plTxnReplaced will be appended to with all transactions replaced from mempool **/
-    bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
+    virtual bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
                                         bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced = nullptr,
                                         bool fOverrideMempoolLimit = false, const CAmount nAbsurdFee = 0);
 
@@ -209,13 +208,13 @@ public:
     bool CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &view,
                                         unsigned int flags, bool cacheSigStore, PrecomputedTransactionData &txdata);
 
-    void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool fAddToMempool);
+    virtual void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool fAddToMempool);
 
     /** Dump the mempool to disk. */
-    void DumpMempool();
+    virtual void DumpMempool();
 
     /** Load the mempool from disk. */
-    bool LoadMempool();
+    virtual bool LoadMempool();
 
     /**
      * Check if transaction will be BIP 68 final in the next block to be created.
@@ -228,7 +227,7 @@ public:
      *
      * See consensus/consensus.h for flag definitions.
      */
-    bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
+    virtual bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
 
 private:
     typedef std::map<txiter, setEntries, CompareIteratorByHash> cacheMap;
