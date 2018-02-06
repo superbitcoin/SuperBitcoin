@@ -2853,12 +2853,12 @@ bool PeerLogicValidation::ProcessFeeFilterMsg(CNode *pfrom, CDataStream &vRecv)
 
 bool PeerLogicValidation::ProcessCheckPointMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    NodeExchangeInfo xnodeInfo;
-    xnodeInfo.nodeID = pfrom->GetId();
-    xnodeInfo.sendVersion = pfrom->GetSendVersion();
+    NodeExchangeInfo xnode;
+    xnode.nodeID = pfrom->GetId();
+    xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    return ifChainObj->NetCheckPoint(&xnodeInfo, vRecv);
+    return ifChainObj->NetCheckPoint(&xnode, vRecv);
 
 //    LogPrint(BCLog::NET, "enter checkpoint\n");
 //    LogPrint(BCLog::BENCH, "receive check block list====\n");
@@ -2918,12 +2918,12 @@ bool PeerLogicValidation::ProcessGetCheckPointMsg(CNode *pfrom, CDataStream &vRe
     int nHeight = 0;
     vRecv >> nHeight;
 
-    NodeExchangeInfo xnodeInfo;
-    xnodeInfo.nodeID = pfrom->GetId();
-    xnodeInfo.sendVersion = pfrom->GetSendVersion();
+    NodeExchangeInfo xnode;
+    xnode.nodeID = pfrom->GetId();
+    xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    return ifChainObj->NetGetCheckPoint(&xnodeInfo, nHeight);
+    return ifChainObj->NetGetCheckPoint(&xnode, nHeight);
 
 //    std::vector<Checkpoints::CCheckData> vSendData;
 //    std::vector<Checkpoints::CCheckData> vnHeight;
@@ -2968,13 +2968,13 @@ bool PeerLogicValidation::ProcessMemPoolMsg(CNode *pfrom, CDataStream &vRecv)
 
 bool PeerLogicValidation::ProcessGetBlocksMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    NodeExchangeInfo xnodeInfo;
-    xnodeInfo.nodeID = pfrom->GetId();
+    NodeExchangeInfo xnode;
+    xnode.nodeID = pfrom->GetId();
 
     std::vector<uint256> blockHashes;
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (ifChainObj->NetGetBlocks(&xnodeInfo, vRecv, blockHashes))
+    if (ifChainObj->NetGetBlocks(&xnode, vRecv, blockHashes))
     {
         for (const auto& hash : blockHashes)
         {
@@ -3123,64 +3123,72 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
 
 bool PeerLogicValidation::ProcessGetHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    CBlockLocator locator;
-    uint256 hashStop;
-    vRecv >> locator >> hashStop;
+    NodeExchangeInfo xnode;
+    xnode.nodeID = pfrom->GetId();
+    xnode.fWhitelisted = pfrom->fWhitelisted;
+    xnode.sendVersion = pfrom->GetSendVersion();
 
-    LOCK(cs_main);
-    if (IsInitialBlockDownload() && !pfrom->fWhitelisted)
-    {
-        LogPrint(BCLog::NET, "Ignoring getheaders from peer=%d because node is in initial block download\n", pfrom->GetId());
-        return true;
-    }
+    GET_CHAIN_INTERFACE(ifChainObj);
+    return ifChainObj->NetGetHeaders(&xnode, vRecv);
 
-    CNodeState *nodestate = State(pfrom->GetId());
-    const CBlockIndex *pindex = nullptr;
-    if (locator.IsNull())
-    {
-        // If locator is null, return the hashStop block
-        BlockMap::iterator mi = mapBlockIndex.find(hashStop);
-        if (mi == mapBlockIndex.end())
-            return true;
-        pindex = (*mi).second;
-    }
-    else
-    {
-        // Find the last block the caller has in the main chain
-        pindex = FindForkInGlobalIndex(chainActive, locator);
-        if (pindex)
-            pindex = chainActive.Next(pindex);
-    }
-
-    // we must use CBlocks, as CBlockHeaders won't include the 0x00 nTx count at the end
-    std::vector<CBlock> vHeaders;
-    int nLimit = MAX_HEADERS_RESULTS;
-
-    LogPrint(BCLog::NET, "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1),
-             hashStop.IsNull() ? "end" : hashStop.ToString(), pfrom->GetId());
-
-    for (; pindex; pindex = chainActive.Next(pindex))
-    {
-        vHeaders.push_back(pindex->GetBlockHeader());
-        if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
-            break;
-    }
-
-    // pindex can be nullptr either if we sent chainActive.Tip() OR
-    // if our peer has chainActive.Tip() (and thus we are sending an empty
-    // headers message). In both cases it's safe to update
-    // pindexBestHeaderSent to be our tip.
-    //
-    // It is important that we simply reset the BestHeaderSent value here,
-    // and not max(BestHeaderSent, newHeaderSent). We might have announced
-    // the currently-being-connected tip using a compact block, which
-    // resulted in the peer sending a headers request, which we respond to
-    // without the new block. By resetting the BestHeaderSent, we ensure we
-    // will re-announce the new block via headers (or compact blocks again)
-    // in the SendMessages logic.
-    nodestate->pindexBestHeaderSent = pindex ? pindex : chainActive.Tip();
-    connman->PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::HEADERS, vHeaders));
-    return true;
+//    CBlockLocator locator;
+//    uint256 hashStop;
+//    vRecv >> locator >> hashStop;
+//
+//    LOCK(cs_main);
+//    if (IsInitialBlockDownload() && !pfrom->fWhitelisted)
+//    {
+//        LogPrint(BCLog::NET, "Ignoring getheaders from peer=%d because node is in initial block download\n", pfrom->GetId());
+//        return true;
+//    }
+//
+//    CNodeState *nodestate = State(pfrom->GetId());
+//    const CBlockIndex *pindex = nullptr;
+//    if (locator.IsNull())
+//    {
+//        // If locator is null, return the hashStop block
+//        BlockMap::iterator mi = mapBlockIndex.find(hashStop);
+//        if (mi == mapBlockIndex.end())
+//            return true;
+//        pindex = (*mi).second;
+//    }
+//    else
+//    {
+//        // Find the last block the caller has in the main chain
+//        pindex = FindForkInGlobalIndex(chainActive, locator);
+//        if (pindex)
+//            pindex = chainActive.Next(pindex);
+//    }
+//
+//    // we must use CBlocks, as CBlockHeaders won't include the 0x00 nTx count at the end
+//    std::vector<CBlock> vHeaders;
+//    int nLimit = MAX_HEADERS_RESULTS;
+//
+//    LogPrint(BCLog::NET, "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1),
+//             hashStop.IsNull() ? "end" : hashStop.ToString(), pfrom->GetId());
+//
+//    for (; pindex; pindex = chainActive.Next(pindex))
+//    {
+//        vHeaders.push_back(pindex->GetBlockHeader());
+//        if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
+//            break;
+//    }
+//
+//    // pindex can be nullptr either if we sent chainActive.Tip() OR
+//    // if our peer has chainActive.Tip() (and thus we are sending an empty
+//    // headers message). In both cases it's safe to update
+//    // pindexBestHeaderSent to be our tip.
+//    //
+//    // It is important that we simply reset the BestHeaderSent value here,
+//    // and not max(BestHeaderSent, newHeaderSent). We might have announced
+//    // the currently-being-connected tip using a compact block, which
+//    // resulted in the peer sending a headers request, which we respond to
+//    // without the new block. By resetting the BestHeaderSent, we ensure we
+//    // will re-announce the new block via headers (or compact blocks again)
+//    // in the SendMessages logic.
+//    nodestate->pindexBestHeaderSent = pindex ? pindex : chainActive.Tip();
+//    connman->PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::HEADERS, vHeaders));
+//    return true;
 }
 
 bool PeerLogicValidation::ProcessHeadersMsg(CNode *pfrom, CDataStream &vRecv)

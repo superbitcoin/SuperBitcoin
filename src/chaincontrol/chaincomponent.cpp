@@ -49,25 +49,25 @@ bool CChainCommonent::IsInitialBlockDownload() const
     return IsInitialBlockDownload();
 }
 
-bool CChainCommonent::DoesBlockExist(uint256 hash) const
+bool CChainCommonent::DoesBlockExist(uint256 hash)
 {
     //TODO:
-    return mapBlockIndex.find(hash) != mapBlockIndex.end();
+    return cIndexManager.GetBlockIndex(hash);
 }
 
-int CChainCommonent::GetActiveChainHeight() const
+int CChainCommonent::GetActiveChainHeight()
 {
     //TODO:
-    return chainActive.Height();
+    return cIndexManager.GetChain().Height();
 }
 
 
-bool CChainCommonent::NetGetCheckPoint(XNodeInfo *nodeInfo, int height)
+bool CChainCommonent::NetGetCheckPoint(ExNode *xnode, int height)
 {
-    if (!nodeInfo)
+    if (!xnode)
         return false;
 
-    std::set<int> &checkpointKnown = m_nodeCheckPointKnown[nodeInfo->nodeID];
+    std::set<int> &checkpointKnown = m_nodeCheckPointKnown[xnode->nodeID];
 
     std::vector<Checkpoints::CCheckData> vSendData;
     std::vector<Checkpoints::CCheckData> vnHeight;
@@ -83,15 +83,15 @@ bool CChainCommonent::NetGetCheckPoint(XNodeInfo *nodeInfo, int height)
 
     if (!vSendData.empty())
     {
-        SendNetMessage(nodeInfo->nodeID, NetMsgType::CHECKPOINT, nodeInfo->sendVersion, 0, vSendData);
+        SendNetMessage(xnode->nodeID, NetMsgType::CHECKPOINT, xnode->sendVersion, 0, vSendData);
     }
 
     return true;
 }
 
-bool CChainCommonent::NetCheckPoint(XNodeInfo *nodeInfo, CDataStream &stream)
+bool CChainCommonent::NetCheckPoint(ExNode *xnode, CDataStream &stream)
 {
-    if (!nodeInfo)
+    if (!xnode)
         return false;
 
     LogPrint(BCLog::NET, "enter checkpoint\n");
@@ -115,7 +115,7 @@ bool CChainCommonent::NetCheckPoint(XNodeInfo *nodeInfo, CDataStream &stream)
                  * add the check point to chainparams
                  */
                 chainparams.AddCheckPoint(point.getHeight(), point.getHash());
-                m_nodeCheckPointKnown[nodeInfo->nodeID].insert(point.getHeight());
+                m_nodeCheckPointKnown[xnode->nodeID].insert(point.getHeight());
                 vIndex.push_back(point);
             }
         } else
@@ -138,15 +138,15 @@ bool CChainCommonent::NetCheckPoint(XNodeInfo *nodeInfo, CDataStream &stream)
     //broadcast the check point if it is necessary
     if (vIndex.size() == 1 && vIndex.size() == vdata.size())
     {
-        SendNetMessage(-1, NetMsgType::CHECKPOINT, nodeInfo->sendVersion, 0, vdata);
+        SendNetMessage(-1, NetMsgType::CHECKPOINT, xnode->sendVersion, 0, vdata);
     }
 
     return true;
 }
 
-bool CChainCommonent::NetGetBlocks(XNodeInfo *nodeInfo, CDataStream &stream, std::vector<uint256> &blockHashes)
+bool CChainCommonent::NetGetBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes)
 {
-    if (!nodeInfo)
+    if (!xnode)
         return false;
 
     CBlockLocator locator;
@@ -177,14 +177,14 @@ bool CChainCommonent::NetGetBlocks(XNodeInfo *nodeInfo, CDataStream &stream, std
 
     // Send the rest of the chain
     if (pindex)
-        pindex = chainActive.Next(pindex);
+        pindex = cIndexManager.GetChain().Next(pindex);
 
     int nLimit = 500;
     LogPrint(BCLog::NET, "getblocks %d to %s limit %d from peer=%d\n", (pindex ? pindex->nHeight : -1),
-             hashStop.IsNull() ? "end" : hashStop.ToString(), nLimit, nodeInfo->nodeID);
+             hashStop.IsNull() ? "end" : hashStop.ToString(), nLimit, xnode->nodeID);
 
     const CChainParams &chainparams = appbase::app().GetChainParams();
-    for (; pindex; pindex = chainActive.Next(pindex))
+    for (; pindex; pindex = cIndexManager.GetChain().Next(pindex))
     {
         if (pindex->GetBlockHash() == hashStop)
         {
@@ -196,7 +196,7 @@ bool CChainCommonent::NetGetBlocks(XNodeInfo *nodeInfo, CDataStream &stream, std
         const int nPrunedBlocksLikelyToHave =
                 MIN_BLOCKS_TO_KEEP - 3600 / chainparams.GetConsensus().nPowTargetSpacing;
         if (fPruneMode && (!(pindex->nStatus & BLOCK_HAVE_DATA) ||
-                           pindex->nHeight <= chainActive.Tip()->nHeight - nPrunedBlocksLikelyToHave))
+                           pindex->nHeight <= Tip()->nHeight - nPrunedBlocksLikelyToHave))
         {
             LogPrint(BCLog::NET, " getblocks stopping, pruned or too old block at %d %s\n", pindex->nHeight,
                      pindex->GetBlockHash().ToString());
@@ -213,6 +213,56 @@ bool CChainCommonent::NetGetBlocks(XNodeInfo *nodeInfo, CDataStream &stream, std
         }
     }
     return true;
+}
+
+bool CChainCommonent::NetGetHeaders(ExNode* xnode, CDataStream& stream)
+{
+    if (!xnode)
+        return false;
+
+    if (IsInitialBlockDownload() && !xnode->fWhitelisted)
+    {
+        LogPrint(BCLog::NET, "Ignoring getheaders from peer=%d because node is in initial block download\n", xnode->nodeID);
+        return true;
+    }
+
+    CBlockLocator locator;
+    uint256 hashStop;
+    stream >> locator >> hashStop;
+
+    const CBlockIndex *pindex = nullptr;
+    if (locator.IsNull())
+    {
+        // If locator is null, return the hashStop block
+        pindex = cIndexManager.GetBlockIndex(hashStop);
+        if (!pindex)
+        {
+            return true;
+        }
+    }
+    else
+    {
+        // Find the last block the caller has in the main chain
+        pindex = FindForkInGlobalIndex(cIndexManager.GetChain(), locator);
+        if (pindex)
+            pindex = cIndexManager.GetChain().Next(pindex);
+    }
+
+    // we must use CBlocks, as CBlockHeaders won't include the 0x00 nTx count at the end
+    std::vector<CBlock> vHeaders;
+    int nLimit = MAX_HEADERS_RESULTS;
+
+    LogPrint(BCLog::NET, "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1),
+             hashStop.IsNull() ? "end" : hashStop.ToString(), xnode->nodeID);
+
+    for (; pindex; pindex = cIndexManager.GetChain().Next(pindex))
+    {
+        vHeaders.push_back(pindex->GetBlockHeader());
+        if (--nLimit <= 0 || pindex->GetBlockHash() == hashStop)
+            break;
+    }
+
+    return SendNetMessage(xnode->nodeID, NetMsgType::HEADERS, xnode->sendVersion, 0, vHeaders);
 }
 
 CBlockIndex *CChainCommonent::Tip()

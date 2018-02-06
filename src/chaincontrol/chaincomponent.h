@@ -48,15 +48,16 @@ public:
 
     bool IsInitialBlockDownload() const override;
 
-    bool DoesBlockExist(uint256 hash) const override;
+    bool DoesBlockExist(uint256 hash) override;
 
-    int GetActiveChainHeight() const override;
+    int  GetActiveChainHeight() override;
 
-    bool NetGetCheckPoint(XNodeInfo *nodeInfo, int height) override;
 
-    bool NetCheckPoint(XNodeInfo *nodeInfo, CDataStream &stream) override;
-
-    bool NetGetBlocks(XNodeInfo *nodeInfo, CDataStream &stream, std::vector<uint256> &blockHashes) override;
+    // P2P network message response.
+    bool NetGetCheckPoint(ExNode *xnode, int height) override;
+    bool NetCheckPoint(ExNode *xnode, CDataStream &stream) override;
+    bool NetGetBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes) override;
+    bool NetGetHeaders(ExNode* xnode, CDataStream& stream) override;
 
 private:
     database _db;
