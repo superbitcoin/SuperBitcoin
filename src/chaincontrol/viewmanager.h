@@ -29,7 +29,9 @@ public:
 
     bool Init(int64_t iCoinDBCacheSize, bool bReset);
 
-    CCoinsView *getCoinViewDB();
+    CCoinsView *GetCoinViewDB();
+
+    CCoinsViewCache *GetCoinsTip();
 
     int ConnectBlock();
 
@@ -37,10 +39,13 @@ public:
 
     DisconnectResult DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CCoinsViewCache &view);
 
+    bool Flush();
+
 private:
     CChain cChian;
-    std::unique_ptr<CCoinsViewDB> pCoinsViewDB;
-    CCoinsView cCoinView;
+    CCoinsViewDB *pCoinsViewDB;
+    CCoinsViewErrorCatcher *pCoinsCatcher = nullptr;
+    CCoinsViewCache *pCoinsTip;
 
     std::vector<uint256> getHeads();
 

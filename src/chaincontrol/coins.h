@@ -21,6 +21,7 @@
 #include <sbtccore/transaction/CUtxo2UtxoTransaciton.h>
 
 class CUtxo2UtxoTransaciton;
+
 /**
  * A UTXO entry.
  *
@@ -343,6 +344,7 @@ public:
     bool HaveInputs(const CTransaction &tx) const;
 
     bool HaveInputs(const CUtxo2UtxoTransaciton &tx) const;
+
 private:
     CCoinsMap::iterator FetchCoin(const COutPoint &outpoint) const;
 
@@ -350,6 +352,32 @@ private:
      * By making the copy constructor private, we prevent accidentally using it when one intends to create a cache on top of a base cache.
      */
     CCoinsViewCache(const CCoinsViewCache &);
+};
+
+class CCoinsViewErrorCatcher : public CCoinsViewBacked
+{
+public:
+    CCoinsViewErrorCatcher(CCoinsView *view) : CCoinsViewBacked(view)
+    {
+    }
+
+    bool GetCoin(const COutPoint &outpoint, Coin &coin) const override
+    {
+        try
+        {
+            return CCoinsViewBacked::GetCoin(outpoint, coin);
+        } catch (const std::runtime_error &e)
+        {
+            //            uiInterface.ThreadSafeMessageBox(_("Error reading from database, shutting down."), "", CClientUIInterface::MSG_ERROR);
+            //            LogPrintf("Error reading from database: %s\n", e.what());
+            // Starting the shutdown sequence and returning false to the caller would be
+            // interpreted as 'entry not found' (as opposed to unable to read data), and
+            // could lead to invalid interpretation. Just exit immediately, as we can't
+            // continue anyway, and all writes should be atomic.
+            abort();
+        }
+    }
+    // Writes do not need similar protection, as failure to write is handled by the caller.
 };
 
 //! Utility function to add all of a transaction's outputs to a cache.

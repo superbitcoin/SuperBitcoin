@@ -73,8 +73,16 @@ public:
     const CBlockIndex *LastCommonAncestor(const uint256 hasha, const uint256 hashb);
 
     const CBlockIndex *LastCommonAncestor(const CBlockIndex *pa, const CBlockIndex *pb);
-    
-    const CBlockIndex *getBlockIndex(const uint256 hash);
+
+    CBlockIndex *GetBlockIndex(const uint256 hash);
+
+    CChain &GetChain();
+
+    bool Flush();
+
+    int GetLastBlockFile();
+
+    std::vector<CBlockFileInfo> GetBlockFileInfo();
 
 private:
     bool bReIndex = false;
@@ -91,6 +99,7 @@ private:
     std::set<CBlockIndex *> setDirtyBlockIndex;
     CBlockIndex *pIndexBestInvalid;
     CBlockIndex *pIndexBestHeader = nullptr;
+    CChain cChainActive;
 
     CBlockIndex *InsertBlockIndex(uint256 hash);
 

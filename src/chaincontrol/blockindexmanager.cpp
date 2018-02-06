@@ -17,10 +17,81 @@ CBlockIndexManager::~CBlockIndexManager()
 
 }
 
+int CBlockIndexManager::GetLastBlockFile()
+{
+    return iLastBlockFile;
+}
+
+std::vector<CBlockFileInfo> CBlockIndexManager::GetBlockFileInfo()
+{
+    return vecBlockFileInfo;
+}
+
 CBlockIndex *CBlockIndexManager::FindMostWorkIndex()
 {
+    do
+    {
+        CBlockIndex *pIndexNew = nullptr;
 
-    return nullptr;
+        // Find the best candidate header.
+        {
+            std::set<CBlockIndex *, CBlockIndexWorkComparator>::reverse_iterator it = setBlockIndexCandidates.rbegin();
+            if (it == setBlockIndexCandidates.rend())
+            {
+                return nullptr;
+            }
+            pIndexNew = *it;
+        }
+
+        // Check whether all blocks on the path between the currently active chain and the candidate are valid.
+        // Just going until the active chain is an optimization, as we know all blocks in it are valid already.
+        CBlockIndex *pIndexTest = pIndexNew;
+        bool bInvalidAncestor = false;
+        while (pIndexTest && !cChainActive.Contains(pIndexTest))
+        {
+            assert(pIndexTest->nChainTx || pIndexTest->nHeight == 0);
+
+            // Pruned nodes may have entries in setBlockIndexCandidates for
+            // which block files have been deleted.  Remove those as candidates
+            // for the most work chain if we come across them; we can't switch
+            // to a chain unless we have all the non-active-chain parent blocks.
+            bool bFailedChain = pIndexTest->nStatus & BLOCK_FAILED_MASK;
+            bool bMissingData = !(pIndexTest->nStatus & BLOCK_HAVE_DATA);
+            if (bFailedChain || bMissingData)
+            {
+                // Candidate chain is not usable (either invalid or missing data)
+                if (bFailedChain &&
+                    (pIndexBestInvalid == nullptr || pIndexNew->nChainWork > pIndexBestInvalid->nChainWork))
+                    pIndexBestInvalid = pIndexNew;
+                CBlockIndex *pindexFailed = pIndexNew;
+                // Remove the entire chain from the set.
+                while (pIndexTest != pindexFailed)
+                {
+                    if (bFailedChain)
+                    {
+                        pindexFailed->nStatus |= BLOCK_FAILED_CHILD;
+                    } else if (bMissingData)
+                    {
+                        // If we're missing data, then add back to mapBlocksUnlinked,
+                        // so that if the block arrives in the future we can try adding
+                        // to setBlockIndexCandidates again.
+                        mBlocksUnlinked.insert(std::make_pair(pindexFailed->pprev, pindexFailed));
+                    }
+                    setBlockIndexCandidates.erase(pindexFailed);
+                    pindexFailed = pindexFailed->pprev;
+                }
+                setBlockIndexCandidates.erase(pIndexTest);
+                bInvalidAncestor = true;
+                break;
+            }
+            pIndexTest = pIndexTest->pprev;
+        }
+
+        if (!bInvalidAncestor)
+        {
+            return pIndexNew;
+        }
+    } while (true);
 }
 
 CBlockIndex *CBlockIndexManager::AddToBlockIndex(const CBlockHeader &block)
@@ -171,7 +242,7 @@ bool CBlockIndexManager::LoadBlockIndex()
 
     if (bReIndex || mBlockIndex.empty())
     {
-        const CArgsManager& cArgs = app().GetArgsManager();
+        const CArgsManager &cArgs = app().GetArgsManager();
         bTxIndex = cArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX);
         pBlcokTreee->WriteFlag("txindex", bTxIndex);
     }
@@ -331,7 +402,7 @@ const CBlockIndex *CBlockIndexManager::LastCommonAncestor(const uint256 hashA, c
     return pIndexFork;
 }
 
-const CBlockIndex *CBlockIndexManager::getBlockIndex(const uint256 hash)
+CBlockIndex *CBlockIndexManager::GetBlockIndex(const uint256 hash)
 {
     if (mBlockIndex.count(hash) == 0)
     {
@@ -340,4 +411,14 @@ const CBlockIndex *CBlockIndexManager::getBlockIndex(const uint256 hash)
     }
 
     return mBlockIndex[hash];
+}
+
+CChain &CBlockIndexManager::GetChain()
+{
+    return cChainActive;
+}
+
+bool CBlockIndexManager::Flush()
+{
+    return true;
 }

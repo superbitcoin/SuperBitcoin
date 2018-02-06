@@ -44,6 +44,7 @@ src/qt/forms/ui_*.h
 
 src/qt/test/moc*.cpp
 
+.idea
 .deps
 .dirstamp
 .libs

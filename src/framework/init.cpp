@@ -145,32 +145,32 @@ bool ShutdownRequested()
  * chainstate, while keeping user interface out of the common library, which is shared
  * between bitcoind, and bitcoin-qt and non-server tools.
 */
-class CCoinsViewErrorCatcher : public CCoinsViewBacked
-{
-public:
-    CCoinsViewErrorCatcher(CCoinsView *view) : CCoinsViewBacked(view)
-    {
-    }
-
-    bool GetCoin(const COutPoint &outpoint, Coin &coin) const override
-    {
-        try
-        {
-            return CCoinsViewBacked::GetCoin(outpoint, coin);
-        } catch (const std::runtime_error &e)
-        {
-            uiInterface.ThreadSafeMessageBox(_("Error reading from database, shutting down."), "",
-                                             CClientUIInterface::MSG_ERROR);
-            LogPrintf("Error reading from database: %s\n", e.what());
-            // Starting the shutdown sequence and returning false to the caller would be
-            // interpreted as 'entry not found' (as opposed to unable to read data), and
-            // could lead to invalid interpretation. Just exit immediately, as we can't
-            // continue anyway, and all writes should be atomic.
-            abort();
-        }
-    }
-    // Writes do not need similar protection, as failure to write is handled by the caller.
-};
+//class CCoinsViewErrorCatcher : public CCoinsViewBacked
+//{
+//public:
+//    CCoinsViewErrorCatcher(CCoinsView *view) : CCoinsViewBacked(view)
+//    {
+//    }
+//
+//    bool GetCoin(const COutPoint &outpoint, Coin &coin) const override
+//    {
+//        try
+//        {
+//            return CCoinsViewBacked::GetCoin(outpoint, coin);
+//        } catch (const std::runtime_error &e)
+//        {
+//            uiInterface.ThreadSafeMessageBox(_("Error reading from database, shutting down."), "",
+//                                             CClientUIInterface::MSG_ERROR);
+//            LogPrintf("Error reading from database: %s\n", e.what());
+//            // Starting the shutdown sequence and returning false to the caller would be
+//            // interpreted as 'entry not found' (as opposed to unable to read data), and
+//            // could lead to invalid interpretation. Just exit immediately, as we can't
+//            // continue anyway, and all writes should be atomic.
+//            abort();
+//        }
+//    }
+//    // Writes do not need similar protection, as failure to write is handled by the caller.
+//};
 
 static CCoinsViewErrorCatcher *pcoinscatcher = nullptr;
 static std::unique_ptr<ECCVerifyHandle> globalVerifyHandle;

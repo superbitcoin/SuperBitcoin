@@ -433,6 +433,8 @@ public:
     }
 };
 
+bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage = "");
+
 /** Initializes the script-execution cache */
 void InitScriptExecutionCache();
 
