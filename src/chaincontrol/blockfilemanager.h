@@ -15,7 +15,13 @@
 class CBlockFileManager
 {
 public:
-    void Flush(int iLastBlockFile, std::vector<CBlockFileInfo> vecInfoBlockFile, bool bFinalize = false);
+    fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
+
+    FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly);
+
+    FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+
+    void Flush(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize = false);
 
 private:
     CCriticalSection csLastBlockFile;
