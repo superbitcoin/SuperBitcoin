@@ -62,7 +62,7 @@ int CChainCommonent::GetActiveChainHeight()
 }
 
 
-bool CChainCommonent::NetGetCheckPoint(ExNode *xnode, int height)
+bool CChainCommonent::NetRequestCheckPoint(ExNode *xnode, int height)
 {
     if (!xnode)
         return false;
@@ -89,7 +89,7 @@ bool CChainCommonent::NetGetCheckPoint(ExNode *xnode, int height)
     return true;
 }
 
-bool CChainCommonent::NetCheckPoint(ExNode *xnode, CDataStream &stream)
+bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
 {
     if (!xnode)
         return false;
@@ -144,7 +144,7 @@ bool CChainCommonent::NetCheckPoint(ExNode *xnode, CDataStream &stream)
     return true;
 }
 
-bool CChainCommonent::NetGetBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes)
+bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes)
 {
     if (!xnode)
         return false;
@@ -215,7 +215,7 @@ bool CChainCommonent::NetGetBlocks(ExNode *xnode, CDataStream &stream, std::vect
     return true;
 }
 
-bool CChainCommonent::NetGetHeaders(ExNode* xnode, CDataStream& stream)
+bool CChainCommonent::NetRequestHeaders(ExNode* xnode, CDataStream& stream)
 {
     if (!xnode)
         return false;
@@ -263,6 +263,37 @@ bool CChainCommonent::NetGetHeaders(ExNode* xnode, CDataStream& stream)
     }
 
     return SendNetMessage(xnode->nodeID, NetMsgType::HEADERS, xnode->sendVersion, 0, vHeaders);
+}
+
+bool CChainCommonent::NetReceiveHeaders(ExNode* xnode, CDataStream& stream)
+{
+    if (!xnode)
+        return false;
+
+    std::vector<CBlockHeader> headers;
+
+    // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
+    unsigned int nCount = ReadCompactSize(stream);
+    if (nCount > MAX_HEADERS_RESULTS)
+    {
+        LOCK(cs_main);
+        xnode->nMisbehavior = 20;
+        return error("headers message size = %u", nCount);
+    }
+
+    headers.resize(nCount);
+    for (unsigned int n = 0; n < nCount; n++)
+    {
+        stream >> headers[n];
+        ReadCompactSize(stream); // ignore tx count; assume it is 0.
+    }
+
+    return NetReceiveHeaders(xnode, headers);
+}
+
+bool CChainCommonent::NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockHeader>& headers)
+{
+    return true;
 }
 
 CBlockIndex *CChainCommonent::Tip()
