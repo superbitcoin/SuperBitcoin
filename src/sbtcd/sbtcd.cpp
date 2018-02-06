@@ -622,10 +622,7 @@ bool AppInit(int argc, char *argv[])
 #include "framework/basecomponent.hpp"
 #include "chaincontrol/chaincomponent.h"
 #include "mempool/txmempool.h"
-
-#ifdef ENABLE_WALLET
 # include "walletcomponent.h"
-#endif
 
 int main( int argc, char** argv )
 {
@@ -635,10 +632,7 @@ int main( int argc, char** argv )
     app.RegisterComponent(new CTxMemPool);
     app.RegisterComponent(new CHttpRpcComponent);
     app.RegisterComponent(new CNetComponent);
-
-#ifdef ENABLE_WALLET
     app.RegisterComponent(new CWalletComponent);
-#endif
 
     if (app.Initialize(argc, argv))
     {
