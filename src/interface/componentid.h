@@ -15,6 +15,7 @@ enum SBTCComponentID
     CID_ACCOUNT     = MID_ACCOUNT,
     CID_WALLET      = MID_WALLET,
     CID_ALL_MODULE  = MID_ALL_MODULE,
+    CID_TX_VERIFY   = MID_TX_VERIFY,
 };
 
 #endif //__SBTC_COMPONENTID_H__
