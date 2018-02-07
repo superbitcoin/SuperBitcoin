@@ -104,7 +104,10 @@ public:
     bool ComponentShutdown() override;
 
     bool DoesTransactionExist(uint256 hash) override;
-    bool NetReceiveTransaction(ExNode* xnode, CDataStream& stream, uint256& txHash) override;
+    bool NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash) override;
+
+    bool NetRequestTxInventory(ExNode* xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter* txFilter,
+                               std::vector<uint256>& toSendTxHashes, std::vector<uint256>& haveSentTxHashes) override;
 
 private:
     uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.

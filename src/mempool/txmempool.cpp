@@ -906,6 +906,15 @@ namespace
 
     size_t vExtraTxnForCompactIt = 0;
     std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
+
+
+    /** Relay map, protected by cs_main. */
+    typedef std::map<uint256, CTransactionRef> MapRelay;
+
+    MapRelay mapRelay;
+
+    /** Expiration-time ordered list of (expire time, relay map entry) pairs, protected by cs_main). */
+    std::deque<std::pair<int64_t, MapRelay::iterator>> vRelayExpiration;
 }
 
 void AddToCompactExtraTransactions(const CTransactionRef &tx)
@@ -925,7 +934,7 @@ bool CTxMemPool::DoesTransactionExist(uint256 hash)
     return true;
 }
 
-bool CTxMemPool::NetReceiveTransaction(ExNode* xnode, CDataStream& stream, uint256& txHash)
+bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash)
 {
     assert(xnode != nullptr);
 
@@ -1164,6 +1173,110 @@ bool CTxMemPool::NetReceiveTransaction(ExNode* xnode, CDataStream& stream, uint2
             xnode->nMisbehavior = nDoS;
         }
     }
+    return true;
+}
+
+bool CTxMemPool::NetRequestTxInventory(ExNode* xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter* txFilter,
+        std::vector<uint256>& toSendTxHashes, std::vector<uint256>& haveSentTxHashes)
+{
+    assert(xnode != nullptr);
+
+    GET_NET_INTERFACE(ifNetObj);
+    assert(ifNetObj != nullptr);
+
+    std::vector<CInv> vInv;
+    if (sendMempool)
+    {
+        auto vtxinfo = infoAll();
+        for (const auto &txinfo : vtxinfo)
+        {
+            const uint256 &hash = txinfo.tx->GetHash();
+            CInv inv(MSG_TX, hash);
+
+            auto it = std::find(toSendTxHashes.begin(), toSendTxHashes.end(), hash);
+            if (it != toSendTxHashes.end())
+                toSendTxHashes.erase(it);
+
+            if (txinfo.feeRate.GetFeePerK() < minFeeFilter)
+                continue;
+
+            if (txFilter)
+                if (!txFilter->IsRelevantAndUpdate(*txinfo.tx))
+                    continue;
+
+            haveSentTxHashes.emplace_back(hash);
+            vInv.push_back(inv);
+            if (vInv.size() == MAX_INV_SZ)
+            {
+                SendNetMessage(xnode->nodeID, NetMsgType::INV, xnode->sendVersion, 0, vInv);
+                vInv.clear();
+            }
+        }
+    }
+
+    if (!toSendTxHashes.empty())
+    {
+        int64_t nNow = GetTimeMicros();
+
+        // Expire old relay messages
+        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < nNow)
+        {
+            mapRelay.erase(vRelayExpiration.front().second);
+            vRelayExpiration.pop_front();
+        }
+
+        // Topologically and fee-rate sort the inventory we send for privacy and priority reasons.
+        // A heap is used so that not all items need sorting if only a few are being sent.
+        auto compFunc = [this](uint256 a, uint256 b){ return CompareDepthAndScore(b, a); };
+        std::make_heap(toSendTxHashes.begin(), toSendTxHashes.end(), compFunc);
+
+        // No reason to drain out at many times the network's capacity,
+        // especially since we have many peers and some will draw much shorter delays.
+        unsigned int nRelayedTransactions = 0;
+
+        while (!toSendTxHashes.empty() && nRelayedTransactions < INVENTORY_BROADCAST_MAX)
+        {
+            // Fetch the top element from the heap
+            std::pop_heap(toSendTxHashes.begin(), toSendTxHashes.end(), compFunc);
+
+            uint256 hash = toSendTxHashes.back();
+            toSendTxHashes.pop_back();
+
+            auto txinfo = info(hash);
+            if (!txinfo.tx)
+                continue;
+
+            if (txinfo.feeRate.GetFeePerK() < minFeeFilter)
+                continue;
+
+            if (txFilter)
+                if (!txFilter->IsRelevantAndUpdate(*txinfo.tx))
+                    continue;
+
+            haveSentTxHashes.emplace_back(hash);
+
+            auto ret = mapRelay.insert(std::make_pair(hash, std::move(txinfo.tx)));
+            if (ret.second)
+            {
+                vRelayExpiration.push_back(std::make_pair(nNow + 15 * 60 * 1000000, ret.first));
+            }
+
+            vInv.push_back(CInv(MSG_TX, hash));
+            nRelayedTransactions++;
+
+            if (vInv.size() == MAX_INV_SZ)
+            {
+                SendNetMessage(xnode->nodeID, NetMsgType::INV, xnode->sendVersion, 0, vInv);
+                vInv.clear();
+            }
+        }
+    }
+
+    if (!vInv.empty())
+    {
+        SendNetMessage(xnode->nodeID, NetMsgType::INV, xnode->sendVersion, 0, vInv);
+    }
+
     return true;
 }
 

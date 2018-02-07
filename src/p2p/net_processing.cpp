@@ -33,6 +33,8 @@
 #include "utils/utilstrencodings.h"
 #include "framework/base.hpp"
 #include "framework/validationinterface.h"
+#include "mempool/txmempool.h"
+#include "mempool/orphantx.h"
 #include "interface/imempoolcomponent.h"
 #include "interface/exchangeformat.h"
 #include "interface/ichaincomponent.h"
@@ -48,22 +50,22 @@
 std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of when we last received a block
 
 
-class CompareInvMempoolOrder
-{
-    CTxMemPool *mp;
-public:
-    CompareInvMempoolOrder(CTxMemPool *_mempool)
-    {
-        mp = _mempool;
-    }
-
-    bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b)
-    {
-        /* As std::make_heap produces a max-heap, we want the entries with the
-         * fewest ancestors/highest fee to sort later. */
-        return mp->CompareDepthAndScore(*b, *a);
-    }
-};
+//class CompareInvMempoolOrder
+//{
+//    CTxMemPool *mp;
+//public:
+//    CompareInvMempoolOrder(CTxMemPool *_mempool)
+//    {
+//        mp = _mempool;
+//    }
+//
+//    bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b)
+//    {
+//        /* As std::make_heap produces a max-heap, we want the entries with the
+//         * fewest ancestors/highest fee to sort later. */
+//        return mp->CompareDepthAndScore(*b, *a);
+//    }
+//};
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1764,6 +1766,42 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
             }
 
             // Respond to BIP35 mempool requests
+            if (fSendTrickle)
+            {
+                NodeExchangeInfo xnode;
+                xnode.sendVersion = pto->GetSendVersion();
+                xnode.nodeID = pto->GetId();
+
+                CAmount filterrate = 0;
+                {
+                    LOCK(pto->cs_feeFilter);
+                    filterrate = pto->minFeeFilter;
+                }
+
+                std::vector<uint256> haveSentTxHashes;
+                std::vector<uint256> toSendTxHashes(pto->setInventoryTxToSend.begin(), pto->setInventoryTxToSend.end());
+
+                // LOCK(pto->cs_feeFilter);
+                GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+                ifTxMempoolObj->NetRequestTxInventory(&xnode, pto->fSendMempool, filterrate, pto->pfilter, toSendTxHashes, haveSentTxHashes);
+
+                if (pto->fSendMempool)
+                {
+                    pto->fSendMempool = false;
+                    pto->timeLastMempoolReq = GetTime();
+                }
+
+                pto->setInventoryTxToSend.clear();
+                pto->setInventoryTxToSend.insert(toSendTxHashes.begin(), toSendTxHashes.end());
+
+                for (const auto& hash : haveSentTxHashes)
+                {
+                    pto->filterInventoryKnown.insert(hash);
+                }
+            }
+
+#if 0
+            // Respond to BIP35 mempool requests
             if (fSendTrickle && pto->fSendMempool)
             {
                 auto vtxinfo = mempool.infoAll();
@@ -1877,6 +1915,8 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
                     pto->filterInventoryKnown.insert(hash);
                 }
             }
+#endif
+
         }
         if (!vInv.empty())
             connman->PushMessage(pto, msgMaker.Make(NetMsgType::INV, vInv));
@@ -3359,7 +3399,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
     uint256 txHash;
 
     GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
-    bool ret = ifTxMempoolObj->NetReceiveTransaction(&xnode, vRecv, txHash);
+    bool ret = ifTxMempoolObj->NetReceiveTxData(&xnode, vRecv, txHash);
 
     pfrom->AddInventoryKnown(CInv(MSG_TX, txHash));
     pfrom->setAskFor.erase(txHash);
