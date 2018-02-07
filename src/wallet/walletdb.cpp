@@ -6,7 +6,6 @@
 #include "wallet/walletdb.h"
 
 #include "utils/base58.h"
-#include "sbtccore/transaction/tx_verify.h"
 #include "chaincontrol/validation.h"
 #include "fs.h"
 #include "p2p/protocol.h"

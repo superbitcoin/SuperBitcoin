@@ -10,7 +10,6 @@
 #include "config/chainparams.h"
 #include "chaincontrol/coins.h"
 #include "config/consensus.h"
-#include "sbtccore/transaction/tx_verify.h"
 #include "sbtccore/block/merkle.h"
 #include "chaincontrol/validation.h"
 #include "hash.h"

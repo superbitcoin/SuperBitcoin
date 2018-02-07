@@ -12,7 +12,6 @@
 #include "sbtccore/checkqueue.h"
 #include "config/consensus.h"
 #include "merkle.h"
-#include "sbtccore/transaction/tx_verify.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/cuckoocache.h"
 #include "fs.h"
