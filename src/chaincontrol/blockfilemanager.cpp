@@ -9,13 +9,13 @@
 #include "utils/tinyformat.h"
 #include "utils/util.h"
 
-fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix)
+fs::path CBlockFileManager::GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix)
 {
 
     return GetDataDir() / "blocks" / strprintf("%s%05u.dat", prefix, pos.nFile);
 }
 
-static FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
+FILE *CBlockFileManager::OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
 {
     if (pos.IsNull())
         return nullptr;
@@ -42,7 +42,7 @@ static FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fRe
 }
 
 /** Open an undo file (rev?????.dat) */
-static FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false)
+FILE *CBlockFileManager::OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly)
 {
     return OpenDiskFile(pos, "rev", fReadOnly);
 }
@@ -52,7 +52,7 @@ FILE *CBlockFileManager::OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly 
     return OpenDiskFile(pos, "blk", fReadOnly);
 }
 
-void CBlockFileManager::Flush(int iLastBlockFile, std::vector<CBlockFileInfo> vecInfoBlockFile, bool bFinalize)
+void CBlockFileManager::Flush(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize)
 {
     LOCK(csLastBlockFile);
 
@@ -62,7 +62,7 @@ void CBlockFileManager::Flush(int iLastBlockFile, std::vector<CBlockFileInfo> ve
     if (fileOld)
     {
         if (bFinalize)
-            TruncateFile(fileOld, vecInfoBlockFile[iLastBlockFile].nSize);
+            TruncateFile(fileOld, iSize);
         FileCommit(fileOld);
         fclose(fileOld);
     }
@@ -71,7 +71,7 @@ void CBlockFileManager::Flush(int iLastBlockFile, std::vector<CBlockFileInfo> ve
     if (fileOld)
     {
         if (bFinalize)
-            TruncateFile(fileOld, vecInfoBlockFile[iLastBlockFile].nUndoSize);
+            TruncateFile(fileOld, iUndoSize);
         FileCommit(fileOld);
         fclose(fileOld);
     }

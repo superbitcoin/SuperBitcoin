@@ -2865,7 +2865,7 @@ bool PeerLogicValidation::ProcessCheckPointMsg(CNode *pfrom, CDataStream &vRecv)
     xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    return ifChainObj->NetCheckPoint(&xnode, vRecv);
+    return ifChainObj->NetReceiveCheckPoint(&xnode, vRecv);
 
 //    LogPrint(BCLog::NET, "enter checkpoint\n");
 //    LogPrint(BCLog::BENCH, "receive check block list====\n");
@@ -2930,7 +2930,7 @@ bool PeerLogicValidation::ProcessGetCheckPointMsg(CNode *pfrom, CDataStream &vRe
     xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    return ifChainObj->NetGetCheckPoint(&xnode, nHeight);
+    return ifChainObj->NetRequestCheckPoint(&xnode, nHeight);
 
 //    std::vector<Checkpoints::CCheckData> vSendData;
 //    std::vector<Checkpoints::CCheckData> vnHeight;
@@ -2981,7 +2981,7 @@ bool PeerLogicValidation::ProcessGetBlocksMsg(CNode *pfrom, CDataStream &vRecv)
     std::vector<uint256> blockHashes;
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (ifChainObj->NetGetBlocks(&xnode, vRecv, blockHashes))
+    if (ifChainObj->NetRequestBlocks(&xnode, vRecv, blockHashes))
     {
         for (const auto& hash : blockHashes)
         {
@@ -3131,12 +3131,13 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
 bool PeerLogicValidation::ProcessGetHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 {
     NodeExchangeInfo xnode;
+    InitFlagsBit(xnode.flags, NF_WHITELIST, pfrom->fWhitelisted);
+    xnode.retFlags = xnode.flags;
     xnode.nodeID = pfrom->GetId();
-    xnode.fWhitelisted = pfrom->fWhitelisted;
     xnode.sendVersion = pfrom->GetSendVersion();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    return ifChainObj->NetGetHeaders(&xnode, vRecv);
+    return ifChainObj->NetRequestHeaders(&xnode, vRecv);
 
 //    CBlockLocator locator;
 //    uint256 hashStop;
@@ -3200,29 +3201,65 @@ bool PeerLogicValidation::ProcessGetHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 
 bool PeerLogicValidation::ProcessHeadersMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    std::vector<CBlockHeader> headers;
+    NodeExchangeInfo xnode;
+    InitFlagsBit(xnode.flags, NF_WHITELIST, pfrom->fWhitelisted);
+    InitFlagsBit(xnode.flags, NF_DISCONNECT, pfrom->fDisconnect);
+    InitFlagsBit(xnode.flags, NF_OUTBOUND, !pfrom->fInbound);
+    InitFlagsBit(xnode.flags, NF_MANUALCONN, pfrom->m_manual_connection);
+    xnode.startHeight = pfrom->nStartingHeight;
+    xnode.serviceFlags = pfrom->GetLocalServices();
+    xnode.nodeID = pfrom->GetId();
+    xnode.sendVersion = pfrom->GetSendVersion();
+    xnode.nMisbehavior = 0;
 
-    // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
-    unsigned int nCount = ReadCompactSize(vRecv);
-    if (nCount > MAX_HEADERS_RESULTS)
     {
         LOCK(cs_main);
-        Misbehaving(pfrom->GetId(), 20);
-        return error("headers message size = %u", nCount);
-    }
-    headers.resize(nCount);
-    for (unsigned int n = 0; n < nCount; n++)
-    {
-        vRecv >> headers[n];
-        ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+        CNodeState* state = State(pfrom->GetId());
+        InitFlagsBit(xnode.flags, NF_WITNESS, state->fHaveWitness);
+        InitFlagsBit(xnode.flags, NF_PREFERHEADERS, state->fPreferHeaders);
+        InitFlagsBit(xnode.flags, NF_PREFERHEADERANDIDS, state->fPreferHeaderAndIDs);
+        InitFlagsBit(xnode.flags, NF_PROVIDEHEADERSANDIDS, state->fProvidesHeaderAndIDs);
+        InitFlagsBit(xnode.flags, NF_WANTCMPCTWITNESS, state->fWantsCmpctWitness);
+        InitFlagsBit(xnode.flags, NF_DESIREDCMPCTVERSION, state->fSupportsDesiredCmpctVersion);
+        xnode.nBlocksInFlight = state->nBlocksInFlight;
+        xnode.nUnconnectingHeaders = state->nUnconnectingHeaders;
+        xnode.retFlags = xnode.flags;
     }
 
-    // Headers received via a HEADERS message should be valid, and reflect
-    // the chain the peer is on. If we receive a known-invalid header,
-    // disconnect the peer if it is using one of our outbound connection
-    // slots.
-    bool should_punish = !pfrom->fInbound && !pfrom->m_manual_connection;
-    return ProcessHeadersMessage(pfrom, connman, headers, Params(), should_punish);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool ret = ifChainObj->NetReceiveHeaders(&xnode, vRecv);
+
+    if (xnode.nMisbehavior > 0)
+        Misbehaving(xnode.nodeID, xnode.nMisbehavior);
+
+    if (IsFlagsBitOn(xnode.retFlags, NF_DISCONNECT))
+        pfrom->fDisconnect = true;
+
+    return ret;
+
+//    std::vector<CBlockHeader> headers;
+//
+//    // Bypass the normal CBlock deserialization, as we don't want to risk deserializing 2000 full blocks.
+//    unsigned int nCount = ReadCompactSize(vRecv);
+//    if (nCount > MAX_HEADERS_RESULTS)
+//    {
+//        LOCK(cs_main);
+//        Misbehaving(pfrom->GetId(), 20);
+//        return error("headers message size = %u", nCount);
+//    }
+//    headers.resize(nCount);
+//    for (unsigned int n = 0; n < nCount; n++)
+//    {
+//        vRecv >> headers[n];
+//        ReadCompactSize(vRecv); // ignore tx count; assume it is 0.
+//    }
+//
+//    // Headers received via a HEADERS message should be valid, and reflect
+//    // the chain the peer is on. If we receive a known-invalid header,
+//    // disconnect the peer if it is using one of our outbound connection
+//    // slots.
+//    bool should_punish = !pfrom->fInbound && !pfrom->m_manual_connection;
+//    return ProcessHeadersMessage(pfrom, connman, headers, Params(), should_punish);
 }
 
 bool PeerLogicValidation::ProcessGetDataMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc)
@@ -3250,34 +3287,55 @@ bool PeerLogicValidation::ProcessGetDataMsg(CNode *pfrom, CDataStream &vRecv, co
 
 bool PeerLogicValidation::ProcessBlockMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
-    vRecv >> *pblock;
+    uint256 blockHash;
 
-    LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock->GetHash().ToString(), pfrom->GetId());
+    NodeExchangeInfo xnode;
+    xnode.retFlags = 0;
+    xnode.nodeID = pfrom->GetId();
 
-    bool forceProcessing = false;
-    const uint256 hash(pblock->GetHash());
-    {
-        LOCK(cs_main);
-        // Also always process if we requested the block explicitly, as we may
-        // need it even though it is not a candidate for a new best tip.
-        forceProcessing |= MarkBlockAsReceived(hash);
-        // mapBlockSource is only used for sending reject messages and DoS scores,
-        // so the race between here and cs_main in ProcessNewBlock is fine.
-        mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
-    }
-    bool fNewBlock = false;
-    ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock);
-    if (fNewBlock)
+    GET_CHAIN_INTERFACE(ifChainObj);
+    ifChainObj->NetReceiveBlock(&xnode, vRecv, blockHash);
+
+    if (IsFlagsBitOn(xnode.retFlags, NF_NEWBLOCK))
     {
         pfrom->nLastBlockTime = GetTime();
     }
     else
     {
         LOCK(cs_main);
-        mapBlockSource.erase(pblock->GetHash());
+        mapBlockSource.erase(blockHash);
     }
+
     return true;
+
+//    std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
+//    vRecv >> *pblock;
+//
+//    LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock->GetHash().ToString(), pfrom->GetId());
+//
+//    bool forceProcessing = false;
+//    const uint256 hash(pblock->GetHash());
+//    {
+//        LOCK(cs_main);
+//        // Also always process if we requested the block explicitly, as we may
+//        // need it even though it is not a candidate for a new best tip.
+//        forceProcessing |= MarkBlockAsReceived(hash);
+//        // mapBlockSource is only used for sending reject messages and DoS scores,
+//        // so the race between here and cs_main in ProcessNewBlock is fine.
+//        mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
+//    }
+//    bool fNewBlock = false;
+//    ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock);
+//    if (fNewBlock)
+//    {
+//        pfrom->nLastBlockTime = GetTime();
+//    }
+//    else
+//    {
+//        LOCK(cs_main);
+//        mapBlockSource.erase(pblock->GetHash());
+//    }
+//    return true;
 }
 
 bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)

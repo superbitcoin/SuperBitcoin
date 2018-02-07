@@ -28,10 +28,12 @@ public:
     virtual bool DoesBlockExist(uint256 hash) = 0;
     virtual int  GetActiveChainHeight() = 0;
 
-    virtual bool NetGetCheckPoint(ExNode* xnode, int height) = 0;
-    virtual bool NetCheckPoint(ExNode* xnode, CDataStream& stream) = 0;
-    virtual bool NetGetBlocks(ExNode* xnode, CDataStream& stream, std::vector<uint256>& blockHashes) = 0;
-    virtual bool NetGetHeaders(ExNode* xnode, CDataStream& stream) = 0;
+    virtual bool NetRequestCheckPoint(ExNode* xnode, int height) = 0;
+    virtual bool NetReceiveCheckPoint(ExNode* xnode, CDataStream& stream) = 0;
+    virtual bool NetRequestBlocks(ExNode* xnode, CDataStream& stream, std::vector<uint256>& blockHashes) = 0;
+    virtual bool NetRequestHeaders(ExNode* xnode, CDataStream& stream) = 0;
+    virtual bool NetReceiveHeaders(ExNode* xnode, CDataStream& stream) = 0;
+    virtual bool NetReceiveBlock(ExNode* xnode, CDataStream& stream, uint256& blockHash) = 0;
 
     //add other interface methods here ...
 };

@@ -50,14 +50,16 @@ public:
 
     bool DoesBlockExist(uint256 hash) override;
 
-    int  GetActiveChainHeight() override;
+    int GetActiveChainHeight() override;
 
 
     // P2P network message response.
-    bool NetGetCheckPoint(ExNode *xnode, int height) override;
-    bool NetCheckPoint(ExNode *xnode, CDataStream &stream) override;
-    bool NetGetBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes) override;
-    bool NetGetHeaders(ExNode* xnode, CDataStream& stream) override;
+    bool NetRequestCheckPoint(ExNode* xnode, int height) override;
+    bool NetReceiveCheckPoint(ExNode* xnode, CDataStream& stream) override;
+    bool NetRequestBlocks(ExNode* xnode, CDataStream& stream, std::vector<uint256>& blockHashes) override;
+    bool NetRequestHeaders(ExNode* xnode, CDataStream& stream) override;
+    bool NetReceiveHeaders(ExNode* xnode, CDataStream& stream) override;
+    bool NetReceiveBlock(ExNode* xnode, CDataStream& stream, uint256& blockHash) override;
 
 private:
     database _db;
@@ -75,6 +77,8 @@ private:
 
     bool NeedFullFlush(FlushStateMode mode);
 
+    bool ConnectTip(CValidationState &state, CBlockIndex *pIndexNew, const std::shared_ptr<const CBlock> &pblock);
+
     bool DisconnectTip(CValidationState &state);
 
     bool ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMostWork,
@@ -83,4 +87,6 @@ private:
     bool ActivateBestChain(CValidationState &state, std::shared_ptr<const CBlock> pblock);
 
     bool FlushStateToDisk(CValidationState &state, FlushStateMode mode);
+
+    bool NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockHeader>& headers);
 };
