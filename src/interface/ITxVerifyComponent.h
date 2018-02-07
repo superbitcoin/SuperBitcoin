@@ -9,7 +9,7 @@ class ITxVerifyComponent : public appbase::TComponent<ITxVerifyComponent>
 public:
     virtual ~ITxVerifyComponent() {}
 
-    enum { ID = CID_TX_MEMPOOL };
+    enum { ID = CID_TX_VERIFY };
     virtual int GetID() const override { return ID; }
 
     virtual bool ComponentInitialize() = 0;
