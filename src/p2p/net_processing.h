@@ -154,6 +154,6 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
 /** Increase a node's misbehavior score. */
 void Misbehaving(NodeId nodeid, int howmuch);
 
-void AddToCompactExtraTransactions(const CTransactionRef &tx);
+//void AddToCompactExtraTransactions(const CTransactionRef &tx);
 
 #endif // BITCOIN_NET_PROCESSING_H

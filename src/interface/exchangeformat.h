@@ -9,15 +9,17 @@ enum NetNodeFlags
     NF_MANUALCONN   = 8,
     NF_ONESHOT      = 16,
     NF_FEELER       = 32,
+    NF_RELAYTX      = 64,
 
-    NF_WITNESS      = 64,
-    NF_PREFERHEADERS = 128,
-    NF_PREFERHEADERANDIDS = 256,
-    NF_PROVIDEHEADERSANDIDS = (1 << 9),
-    NF_WANTCMPCTWITNESS = (1 << 10),
-    NF_DESIREDCMPCTVERSION = (1 << 11),
+    NF_WITNESS              = (1 << 7),
+    NF_PREFERHEADERS        = (1 << 8),
+    NF_PREFERHEADERANDIDS   = (1 << 9),
+    NF_PROVIDEHEADERSANDIDS = (1 << 10),
+    NF_WANTCMPCTWITNESS     = (1 << 11),
+    NF_DESIREDCMPCTVERSION  = (1 << 12),
 
-    NF_NEWBLOCK     = (1 << 12),
+    NF_NEWBLOCK             = (1 << 13),
+    NF_NEWTRANSACTION       = (1 << 14),
 
 };
 
@@ -59,7 +61,7 @@ struct NodeExchangeInfo
     int         recvVersion;
     int         startHeight;
     int         nBlocksInFlight;
-    int         serviceFlags;
+    int         nLocalServices;
 
     //[out]
     int         retFlags;

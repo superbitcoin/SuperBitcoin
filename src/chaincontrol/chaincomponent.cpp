@@ -464,7 +464,7 @@ bool CChainCommonent::NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockH
             } else
             {
                 uint32_t nFetchFlags = 0;
-                if (IsFlagsBitOn(xnode->serviceFlags, NODE_WITNESS) &&
+                if (IsFlagsBitOn(xnode->nLocalServices, NODE_WITNESS) &&
                         IsFlagsBitOn(xnode->flags, NF_WITNESS))
                     nFetchFlags = MSG_WITNESS_FLAG;
 

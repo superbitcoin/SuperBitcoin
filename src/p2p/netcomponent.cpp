@@ -314,3 +314,12 @@ bool CNetComponent::BroadcastTransaction(uint256 txHash)
     return false;
 }
 
+bool CNetComponent::AskForTransaction(int64_t nodeID, uint256 txHash)
+{
+    return true;
+}
+
+bool CNetComponent::MisbehaveNode(int64_t nodeID, int num)
+{
+    return true;
+}

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "componentid.h"
+#include "exchangeformat.h"
+#include "sbtccore/streams.h"
 #include "framework/component.hpp"
 
 class ITxMempoolComponent : public appbase::TComponent<ITxMempoolComponent>
@@ -37,6 +39,12 @@ public:
      * See consensus/consensus.h for flag definitions.
      */
     virtual bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false) = 0;
+
+
+    virtual bool DoesTransactionExist(uint256 hash) = 0;
+
+    virtual bool NetReceiveTransaction(ExNode* xnode, CDataStream& stream, uint256& txHash) = 0;
+
     //add other interface methods here ...
 
 };

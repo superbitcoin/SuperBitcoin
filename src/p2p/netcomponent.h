@@ -20,6 +20,10 @@ public:
 
     bool BroadcastTransaction(uint256 txHash) override;
 
+    bool AskForTransaction(int64_t nodeID, uint256 txHash) override;
+
+    bool MisbehaveNode(int64_t nodeID, int num) override;
+
 
 private:
     std::unique_ptr<CConnman>   netConnMgr;

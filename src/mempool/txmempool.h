@@ -106,7 +106,8 @@ public:
     bool ComponentStartup() override;
     bool ComponentShutdown() override;
 
-    void OnNetMessageTx(int node_id, const char* vRecv);
+    bool DoesTransactionExist(uint256 hash) override;
+    bool NetReceiveTransaction(ExNode* xnode, CDataStream& stream, uint256& txHash) override;
 
 private:
     uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.

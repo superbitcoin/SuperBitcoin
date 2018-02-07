@@ -78,7 +78,7 @@ static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUAR
 // mapOrphanTransactions
 //
 
-void AddToCompactExtraTransactions(const CTransactionRef &tx)
+static void AddToCompactExtraTransactions(const CTransactionRef &tx)
 {
     size_t max_extra_txn = appbase::app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
@@ -3207,7 +3207,7 @@ bool PeerLogicValidation::ProcessHeadersMsg(CNode *pfrom, CDataStream &vRecv)
     InitFlagsBit(xnode.flags, NF_OUTBOUND, !pfrom->fInbound);
     InitFlagsBit(xnode.flags, NF_MANUALCONN, pfrom->m_manual_connection);
     xnode.startHeight = pfrom->nStartingHeight;
-    xnode.serviceFlags = pfrom->GetLocalServices();
+    xnode.nLocalServices = pfrom->GetLocalServices();
     xnode.nodeID = pfrom->GetId();
     xnode.sendVersion = pfrom->GetSendVersion();
     xnode.nMisbehavior = 0;
