@@ -84,6 +84,10 @@ public:
 
     std::vector<CBlockFileInfo> GetBlockFileInfo();
 
+    void InvalidChainFound(CBlockIndex *pIndexNew);
+
+    void CheckBlockIndex(const Consensus::Params &consensusParams);
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;
@@ -100,6 +104,8 @@ private:
     CBlockIndex *pIndexBestInvalid;
     CBlockIndex *pIndexBestHeader = nullptr;
     CChain cChainActive;
+
+    CCriticalSection cs;
 
     CBlockIndex *InsertBlockIndex(uint256 hash);
 

@@ -254,7 +254,7 @@ void CBlockIndexManager::UnLoadBlockIndex()
 {
     setBlockIndexCandidates.clear();
     pIndexBestInvalid = nullptr;
-    pindexBestHeader = nullptr;
+    pIndexBestHeader = nullptr;
     mBlocksUnlinked.clear();
     vecBlockFileInfo.clear();
     iLastBlockFile = 0;
@@ -421,4 +421,267 @@ CChain &CBlockIndexManager::GetChain()
 bool CBlockIndexManager::Flush()
 {
     return true;
+}
+
+void CBlockIndexManager::InvalidChainFound(CBlockIndex *pIndexNew)
+{
+    if (!pIndexBestInvalid || pIndexNew->nChainWork > pIndexBestInvalid->nChainWork)
+        pIndexBestInvalid = pIndexNew;
+
+    LogPrintf("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s\n", __func__,
+              pIndexNew->GetBlockHash().ToString(), pIndexNew->nHeight,
+              log(pIndexNew->nChainWork.getdouble()) / log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
+                                                                                   pIndexNew->GetBlockTime()));
+    CBlockIndex *tip = cChainActive.Tip();
+    assert (tip);
+    LogPrintf("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s\n", __func__,
+              tip->GetBlockHash().ToString(), cChainActive.Height(), log(tip->nChainWork.getdouble()) / log(2.0),
+              DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
+    //    CheckForkWarningConditions();
+}
+
+void CBlockIndexManager::CheckBlockIndex(const Consensus::Params &consensusParams)
+{
+    if (!fCheckBlockIndex)
+    {
+        return;
+    }
+
+    LOCK(cs);
+
+    // During a reindex, we read the genesis block and call CheckBlockIndex before ActivateBestChain,
+    // so we have the genesis block in mapBlockIndex but no active chain.  (A few of the tests when
+    // iterating the block tree require that chainActive has been initialized.)
+    if (cChainActive.Height() < 0)
+    {
+        assert(mBlockIndex.size() <= 1);
+        return;
+    }
+
+    // Build forward-pointing map of the entire block tree.
+    std::multimap<CBlockIndex *, CBlockIndex *> forward;
+    for (BlockMap::iterator it = mBlockIndex.begin(); it != mBlockIndex.end(); it++)
+    {
+        forward.insert(std::make_pair(it->second->pprev, it->second));
+    }
+
+    assert(forward.size() == mBlockIndex.size());
+
+    std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> rangeGenesis = forward.equal_range(
+            nullptr);
+    CBlockIndex *pindex = rangeGenesis.first->second;
+    rangeGenesis.first++;
+    assert(rangeGenesis.first == rangeGenesis.second); // There is only one index entry with parent nullptr.
+
+    // Iterate over the entire block tree, using depth-first search.
+    // Along the way, remember whether there are blocks on the path from genesis
+    // block being explored which are the first to have certain properties.
+    size_t nNodes = 0;
+    int nHeight = 0;
+    CBlockIndex *pindexFirstInvalid = nullptr; // Oldest ancestor of pindex which is invalid.
+    CBlockIndex *pindexFirstMissing = nullptr; // Oldest ancestor of pindex which does not have BLOCK_HAVE_DATA.
+    CBlockIndex *pindexFirstNeverProcessed = nullptr; // Oldest ancestor of pindex for which nTx == 0.
+    CBlockIndex *pindexFirstNotTreeValid = nullptr; // Oldest ancestor of pindex which does not have BLOCK_VALID_TREE (regardless of being valid or not).
+    CBlockIndex *pindexFirstNotTransactionsValid = nullptr; // Oldest ancestor of pindex which does not have BLOCK_VALID_TRANSACTIONS (regardless of being valid or not).
+    CBlockIndex *pindexFirstNotChainValid = nullptr; // Oldest ancestor of pindex which does not have BLOCK_VALID_CHAIN (regardless of being valid or not).
+    CBlockIndex *pindexFirstNotScriptsValid = nullptr; // Oldest ancestor of pindex which does not have BLOCK_VALID_SCRIPTS (regardless of being valid or not).
+    while (pindex != nullptr)
+    {
+        nNodes++;
+        if (pindexFirstInvalid == nullptr && pindex->nStatus & BLOCK_FAILED_VALID)
+            pindexFirstInvalid = pindex;
+        if (pindexFirstMissing == nullptr && !(pindex->nStatus & BLOCK_HAVE_DATA))
+            pindexFirstMissing = pindex;
+        if (pindexFirstNeverProcessed == nullptr && pindex->nTx == 0)
+            pindexFirstNeverProcessed = pindex;
+        if (pindex->pprev != nullptr && pindexFirstNotTreeValid == nullptr &&
+            (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_TREE)
+            pindexFirstNotTreeValid = pindex;
+        if (pindex->pprev != nullptr && pindexFirstNotTransactionsValid == nullptr &&
+            (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_TRANSACTIONS)
+            pindexFirstNotTransactionsValid = pindex;
+        if (pindex->pprev != nullptr && pindexFirstNotChainValid == nullptr &&
+            (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_CHAIN)
+            pindexFirstNotChainValid = pindex;
+        if (pindex->pprev != nullptr && pindexFirstNotScriptsValid == nullptr &&
+            (pindex->nStatus & BLOCK_VALID_MASK) < BLOCK_VALID_SCRIPTS)
+            pindexFirstNotScriptsValid = pindex;
+
+        // Begin: actual consistency checks.
+        if (pindex->pprev == nullptr)
+        {
+            // Genesis block checks.
+            assert(pindex->GetBlockHash() == consensusParams.hashGenesisBlock); // Genesis block's hash must match.
+            assert(pindex == cChainActive.Genesis()); // The current active chain's genesis block must be this block.
+        }
+        if (pindex->nChainTx == 0)
+            assert(pindex->nSequenceId <=
+                   0);  // nSequenceId can't be set positive for blocks that aren't linked (negative is used for preciousblock)
+        // VALID_TRANSACTIONS is equivalent to nTx > 0 for all nodes (whether or not pruning has occurred).
+        // HAVE_DATA is only equivalent to nTx > 0 (or VALID_TRANSACTIONS) if no pruning has occurred.
+        if (!bHavePruned)
+        {
+            // If we've never pruned, then HAVE_DATA should be equivalent to nTx > 0
+            assert(!(pindex->nStatus & BLOCK_HAVE_DATA) == (pindex->nTx == 0));
+            assert(pindexFirstMissing == pindexFirstNeverProcessed);
+        } else
+        {
+            // If we have pruned, then we can only say that HAVE_DATA implies nTx > 0
+            if (pindex->nStatus & BLOCK_HAVE_DATA)
+                assert(pindex->nTx > 0);
+        }
+        if (pindex->nStatus & BLOCK_HAVE_UNDO)
+            assert(pindex->nStatus & BLOCK_HAVE_DATA);
+        assert(((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_TRANSACTIONS) ==
+               (pindex->nTx > 0)); // This is pruning-independent.
+        // All parents having had data (at some point) is equivalent to all parents being VALID_TRANSACTIONS, which is equivalent to nChainTx being set.
+        assert((pindexFirstNeverProcessed != nullptr) == (pindex->nChainTx ==
+                                                          0)); // nChainTx != 0 is used to signal that all parent blocks have been processed (but may have been pruned).
+        assert((pindexFirstNotTransactionsValid != nullptr) == (pindex->nChainTx == 0));
+        assert(pindex->nHeight == nHeight); // nHeight must be consistent.
+        assert(pindex->pprev == nullptr || pindex->nChainWork >=
+                                           pindex->pprev->nChainWork); // For every block except the genesis block, the chainwork must be larger than the parent's.
+        assert(nHeight < 2 || (pindex->pskip && (pindex->pskip->nHeight <
+                                                 nHeight))); // The pskip pointer must point back for all but the first 2 blocks.
+        assert(pindexFirstNotTreeValid == nullptr); // All mapBlockIndex entries must at least be TREE valid
+        if ((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_TREE)
+            assert(pindexFirstNotTreeValid == nullptr); // TREE valid implies all parents are TREE valid
+        if ((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_CHAIN)
+            assert(pindexFirstNotChainValid == nullptr); // CHAIN valid implies all parents are CHAIN valid
+        if ((pindex->nStatus & BLOCK_VALID_MASK) >= BLOCK_VALID_SCRIPTS)
+            assert(pindexFirstNotScriptsValid == nullptr); // SCRIPTS valid implies all parents are SCRIPTS valid
+        if (pindexFirstInvalid == nullptr)
+        {
+            // Checks for not-invalid blocks.
+            assert((pindex->nStatus & BLOCK_FAILED_MASK) ==
+                   0); // The failed mask cannot be set for blocks without invalid parents.
+        }
+        if (!CBlockIndexWorkComparator()(pindex, cChainActive.Tip()) && pindexFirstNeverProcessed == nullptr)
+        {
+            if (pindexFirstInvalid == nullptr)
+            {
+                // If this block sorts at least as good as the current tip and
+                // is valid and we have all data for its parents, it must be in
+                // setBlockIndexCandidates.  chainActive.Tip() must also be there
+                // even if some data has been pruned.
+                if (pindexFirstMissing == nullptr || pindex == cChainActive.Tip())
+                {
+                    assert(setBlockIndexCandidates.count(pindex));
+                }
+                // If some parent is missing, then it could be that this block was in
+                // setBlockIndexCandidates but had to be removed because of the missing data.
+                // In this case it must be in mapBlocksUnlinked -- see test below.
+            }
+        } else
+        { // If this block sorts worse than the current tip or some ancestor's block has never been seen, it cannot be in setBlockIndexCandidates.
+            assert(setBlockIndexCandidates.count(pindex) == 0);
+        }
+        // Check whether this block is in mapBlocksUnlinked.
+        std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> rangeUnlinked = mBlocksUnlinked.equal_range(
+                pindex->pprev);
+        bool foundInUnlinked = false;
+        while (rangeUnlinked.first != rangeUnlinked.second)
+        {
+            assert(rangeUnlinked.first->first == pindex->pprev);
+            if (rangeUnlinked.first->second == pindex)
+            {
+                foundInUnlinked = true;
+                break;
+            }
+            rangeUnlinked.first++;
+        }
+        if (pindex->pprev && (pindex->nStatus & BLOCK_HAVE_DATA) && pindexFirstNeverProcessed != nullptr &&
+            pindexFirstInvalid == nullptr)
+        {
+            // If this block has block data available, some parent was never received, and has no invalid parents, it must be in mapBlocksUnlinked.
+            assert(foundInUnlinked);
+        }
+        if (!(pindex->nStatus & BLOCK_HAVE_DATA))
+            assert(!foundInUnlinked); // Can't be in mapBlocksUnlinked if we don't HAVE_DATA
+        if (pindexFirstMissing == nullptr)
+            assert(!foundInUnlinked); // We aren't missing data for any parent -- cannot be in mapBlocksUnlinked.
+        if (pindex->pprev && (pindex->nStatus & BLOCK_HAVE_DATA) && pindexFirstNeverProcessed == nullptr &&
+            pindexFirstMissing != nullptr)
+        {
+            // We HAVE_DATA for this block, have received data for all parents at some point, but we're currently missing data for some parent.
+            assert(bHavePruned); // We must have pruned.
+            // This block may have entered mapBlocksUnlinked if:
+            //  - it has a descendant that at some point had more work than the
+            //    tip, and
+            //  - we tried switching to that descendant but were missing
+            //    data for some intermediate block between chainActive and the
+            //    tip.
+            // So if this block is itself better than chainActive.Tip() and it wasn't in
+            // setBlockIndexCandidates, then it must be in mapBlocksUnlinked.
+            if (!CBlockIndexWorkComparator()(pindex, cChainActive.Tip()) && setBlockIndexCandidates.count(pindex) == 0)
+            {
+                if (pindexFirstInvalid == nullptr)
+                {
+                    assert(foundInUnlinked);
+                }
+            }
+        }
+        // assert(pindex->GetBlockHash() == pindex->GetBlockHeader().GetHash()); // Perhaps too slow
+        // End: actual consistency checks.
+
+        // Try descending into the first subnode.
+        std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> range = forward.equal_range(
+                pindex);
+        if (range.first != range.second)
+        {
+            // A subnode was found.
+            pindex = range.first->second;
+            nHeight++;
+            continue;
+        }
+        // This is a leaf node.
+        // Move upwards until we reach a node of which we have not yet visited the last child.
+        while (pindex)
+        {
+            // We are going to either move to a parent or a sibling of pindex.
+            // If pindex was the first with a certain property, unset the corresponding variable.
+            if (pindex == pindexFirstInvalid)
+                pindexFirstInvalid = nullptr;
+            if (pindex == pindexFirstMissing)
+                pindexFirstMissing = nullptr;
+            if (pindex == pindexFirstNeverProcessed)
+                pindexFirstNeverProcessed = nullptr;
+            if (pindex == pindexFirstNotTreeValid)
+                pindexFirstNotTreeValid = nullptr;
+            if (pindex == pindexFirstNotTransactionsValid)
+                pindexFirstNotTransactionsValid = nullptr;
+            if (pindex == pindexFirstNotChainValid)
+                pindexFirstNotChainValid = nullptr;
+            if (pindex == pindexFirstNotScriptsValid)
+                pindexFirstNotScriptsValid = nullptr;
+            // Find our parent.
+            CBlockIndex *pindexPar = pindex->pprev;
+            // Find which child we just visited.
+            std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> rangePar = forward.equal_range(
+                    pindexPar);
+            while (rangePar.first->second != pindex)
+            {
+                assert(rangePar.first !=
+                       rangePar.second); // Our parent must have at least the node we're coming from as child.
+                rangePar.first++;
+            }
+            // Proceed to the next one.
+            rangePar.first++;
+            if (rangePar.first != rangePar.second)
+            {
+                // Move to the sibling.
+                pindex = rangePar.first->second;
+                break;
+            } else
+            {
+                // Move up further.
+                pindex = pindexPar;
+                nHeight--;
+                continue;
+            }
+        }
+    }
+
+    // Check that we actually traversed the entire map.
+    assert(nNodes == forward.size());
 }

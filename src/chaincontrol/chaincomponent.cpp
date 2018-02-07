@@ -2,9 +2,9 @@
 #include "chaincomponent.h"
 #include "sbtccore/streams.h"
 #include "interface/inetcomponent.h"
-#include "utils/reverse_iterator.h"
 #include "utils/net/netmessagehelper.h"
 #include "sbtccore/block/validation.h"
+#include "utils/reverse_iterator.h"
 
 CChainCommonent::CChainCommonent()
 {
@@ -679,12 +679,21 @@ bool CChainCommonent::NeedFullFlush(FlushStateMode mode)
 
 bool CChainCommonent::FlushStateToDisk(CValidationState &state, FlushStateMode mode)
 {
+    int iLastBlockFile = cIndexManager.GetLastBlockFile();
+    int iSize = cIndexManager.GetBlockFileInfo()[iLastBlockFile].nSize;
+    int iUndoSize = cIndexManager.GetBlockFileInfo()[iLastBlockFile].nUndoSize;
+
+    // block file flush
+    cFileManager.Flush(iLastBlockFile, iSize, iUndoSize);
+
+    // block index flush
     if (!cIndexManager.Flush())
     {
         assert(0);
         return false;
     }
 
+    // view flush
     if (!cViewManager.Flush())
     {
         return false;
@@ -734,11 +743,40 @@ bool CChainCommonent::DisconnectTip(CValidationState &state)
     return true;
 }
 
-bool CChainCommonent::ActivateBestChainStep(CValidationState &state, CBlockIndex *pindexMostWork,
+/**
+ * Connect a new block to chainActive. pblock is either nullptr or a pointer to a CBlock
+ * corresponding to pindexNew, to bypass loading it again from disk.
+ *
+ * The block is added to connectTrace if connection succeeds.
+ */
+bool CChainCommonent::ConnectTip(CValidationState &state, CBlockIndex *pIndexNew,
+                                 const std::shared_ptr<const CBlock> &pblock)
+{
+    assert(pIndexNew->pprev == Tip());
+
+    const CChainParams &params = appbase::app().GetChainParams();
+    std::shared_ptr<const CBlock> pthisBlock;
+    if (!pblock)
+    {
+        std::shared_ptr<CBlock> pblockNew = std::make_shared<CBlock>();
+        if (!ReadBlockFromDisk(*pblockNew, pIndexNew, params.GetConsensus()))
+            return AbortNode(state, "Failed to read block");
+        pthisBlock = pblockNew;
+    } else
+    {
+        pthisBlock = pblock;
+    }
+
+    const CBlock &blockConnecting = *pthisBlock;
+
+    return true;
+}
+
+bool CChainCommonent::ActivateBestChainStep(CValidationState &state, CBlockIndex *pIndexMostWork,
                                             const std::shared_ptr<const CBlock> &pblock, bool &fInvalidFound)
 {
     const CBlockIndex *pIndexOldTip = Tip();
-    const CBlockIndex *pIndexFork = cIndexManager.GetChain().FindFork(pindexMostWork);
+    const CBlockIndex *pIndexFork = cIndexManager.GetChain().FindFork(pIndexMostWork);
 
     // Disconnect active blocks which are no longer in the best chain.
     bool bBlocksDisconnected = false;
@@ -746,7 +784,66 @@ bool CChainCommonent::ActivateBestChainStep(CValidationState &state, CBlockIndex
     {
         if (!DisconnectTip(state))
         {
+            // some thing todo
             return false;
+        }
+        bBlocksDisconnected = true;
+    }
+
+    // Build list of new blocks to connect.
+    std::vector<CBlockIndex *> vecIndexToConnect;
+    bool bContinue = true;
+    int iHeight = pIndexFork ? pIndexFork->nHeight : -1;
+    while (bContinue && iHeight != pIndexMostWork->nHeight)
+    {
+        // Don't iterate the entire list of potential improvements toward the best tip, as we likely only need
+        // a few blocks along the way.
+        int iTargetHeight = std::min(iHeight + 32, pIndexMostWork->nHeight);
+        vecIndexToConnect.clear();
+        vecIndexToConnect.reserve(iTargetHeight - iHeight);
+        CBlockIndex *pIndexIter = pIndexMostWork->GetAncestor(iTargetHeight);
+        while (pIndexIter && pIndexIter->nHeight != iHeight)
+        {
+            vecIndexToConnect.push_back(pIndexIter);
+            pIndexIter = pIndexIter->pprev;
+        }
+        iHeight = iTargetHeight;
+
+        // Connect new blocks.
+        for (CBlockIndex *pIndexConnect : reverse_iterate(vecIndexToConnect))
+        {
+            if (!ConnectTip(state, pIndexConnect,
+                            pIndexConnect == pIndexMostWork ? pblock : std::shared_ptr<const CBlock>()))
+            {
+                if (state.IsInvalid())
+                {
+                    // The block violates a consensus rule.
+                    if (!state.CorruptionPossible())
+                    {
+                        cIndexManager.InvalidChainFound(vecIndexToConnect.back());
+                    }
+                    state = CValidationState();
+                    fInvalidFound = true;
+                    bContinue = false;
+                    break;
+                } else
+                {
+                    // A system error occurred (disk space, database error, ...).
+                    // Make the mempool consistent with the current tip, just in case
+                    // any observers try to use it before shutdown.
+                    //                    UpdateMempoolForReorg(disconnectpool, false);
+                    return false;
+                }
+            } else
+            {
+                cIndexManager.PruneBlockIndexCandidates();
+                if (!pIndexOldTip || Tip()->nChainWork > pIndexOldTip->nChainWork)
+                {
+                    // We're in a better position than we were. Return temporarily to release the lock.
+                    bContinue = false;
+                    break;
+                }
+            }
         }
     }
     return true;
@@ -767,7 +864,9 @@ bool CChainCommonent::ActivateBestChain(CValidationState &state, std::shared_ptr
     CBlockIndex *pIndexMostWork = nullptr;
     CBlockIndex *pIndexNewTip = nullptr;
 
+    const CChainParams &params = appbase::app().GetChainParams();
     const CArgsManager &appArgs = appbase::app().GetArgsManager();
+
     int iStopAtHeight = appArgs.GetArg<int>("-stopatheight", DEFAULT_STOPATHEIGHT);
     do
     {
@@ -798,7 +897,20 @@ bool CChainCommonent::ActivateBestChain(CValidationState &state, std::shared_ptr
                 return false;
             }
 
+            if (bInvalidFound)
+            {
+                // Wipe cache, we may need another branch now.
+                pIndexMostWork = nullptr;
+            }
+            pIndexNewTip = Tip();
+            pIndexFork = cIndexManager.GetChain().FindFork(pIndexOldTip);
+            bInitialDownload = IsInitialBlockDownload();
+
+            // block connect event todo
+
         }
-    } while (1);
+    } while (pIndexNewTip != pIndexMostWork);
+
+    cIndexManager.CheckBlockIndex(params.GetConsensus());
     return true;
 }

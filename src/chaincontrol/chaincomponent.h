@@ -50,7 +50,7 @@ public:
 
     bool DoesBlockExist(uint256 hash) override;
 
-    int  GetActiveChainHeight() override;
+    int GetActiveChainHeight() override;
 
 
     // P2P network message response.
@@ -76,6 +76,8 @@ private:
     void SetTip(CBlockIndex *pIndexTip);
 
     bool NeedFullFlush(FlushStateMode mode);
+
+    bool ConnectTip(CValidationState &state, CBlockIndex *pIndexNew, const std::shared_ptr<const CBlock> &pblock);
 
     bool DisconnectTip(CValidationState &state);
 
