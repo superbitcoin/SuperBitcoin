@@ -949,7 +949,8 @@ bool CTxMemPool::NetReceiveTransaction(ExNode* xnode, CDataStream& stream, uint2
     stream >> ptx;
     const CTransaction &tx = *ptx;
 
-    CInv inv(MSG_TX, tx.GetHash());
+    txHash = tx.GetHash();
+    CInv inv(MSG_TX, txHash);
 
     std::deque<COutPoint> vWorkQueue;
     std::vector<uint256> vEraseQueue;
@@ -1071,7 +1072,7 @@ bool CTxMemPool::NetReceiveTransaction(ExNode* xnode, CDataStream& stream, uint2
                 CInv _inv(MSG_TX | nFetchFlags, txin.prevout.hash);
                 // pfrom->AddInventoryKnown(_inv);
                 if (!DoesTransactionExist(_inv.hash))
-                    ifNetObj->AskForTransaction(xnode->nodeID, _inv.hash);
+                    ifNetObj->AskForTransaction(xnode->nodeID, _inv.hash, nFetchFlags);
             }
 
             COrphanTx::Instance().AddOrphanTx(ptx, xnode->nodeID);

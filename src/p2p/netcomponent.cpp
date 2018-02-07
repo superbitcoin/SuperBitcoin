@@ -314,12 +314,26 @@ bool CNetComponent::BroadcastTransaction(uint256 txHash)
     return false;
 }
 
-bool CNetComponent::AskForTransaction(int64_t nodeID, uint256 txHash)
+bool CNetComponent::AskForTransaction(int64_t nodeID, uint256 txHash, int flags)
 {
-    return true;
+    if (netConnMgr)
+    {
+        if (CNode* node = netConnMgr->QueryNode(nodeID))
+        {
+            node->AskFor(CInv(MSG_TX | flags, txHash));
+            return true;
+        }
+    }
+
+    return false;
 }
 
 bool CNetComponent::MisbehaveNode(int64_t nodeID, int num)
 {
-    return true;
+    if (netConnMgr)
+    {
+        Misbehaving(nodeID, num);
+        return true;
+    }
+    return false;
 }

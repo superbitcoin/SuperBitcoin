@@ -5,7 +5,6 @@
 #include "orphantx.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/transaction/policy.h"
-#include "p2p/net_processing.h"
 
 void AddToCompactExtraTransactions(const CTransactionRef &tx);
 
