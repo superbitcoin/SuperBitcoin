@@ -7,7 +7,6 @@
 
 #include "config/consensus.h"
 #include "config/argmanager.h"
-#include "sbtccore/transaction/tx_verify.h"
 #include "chaincontrol/validation.h"
 #include "block/validation.h"
 #include "sbtccore/transaction/policy.h"
