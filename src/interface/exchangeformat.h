@@ -15,7 +15,9 @@ enum NetNodeFlags
     NF_PREFERHEADERANDIDS = 256,
     NF_PROVIDEHEADERSANDIDS = (1 << 9),
     NF_WANTCMPCTWITNESS = (1 << 10),
-    NF_DESIREDCMPCTVERSION = (1 << 1),
+    NF_DESIREDCMPCTVERSION = (1 << 11),
+
+    NF_NEWBLOCK     = (1 << 12),
 
 };
 

@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include "componentid.h"
+#include "utils/uint256.h"
 #include "framework/component.hpp"
 
 class INetComponent : public appbase::TComponent<INetComponent>
@@ -24,6 +25,8 @@ public:
 
 
     virtual bool SendNetMessage(int64_t nodeID, const std::string& command, const std::vector<unsigned char>& data) = 0;
+
+    virtual bool BroadcastTransaction(uint256 txHash) = 0;
 
     //add other interface methods here ...
 

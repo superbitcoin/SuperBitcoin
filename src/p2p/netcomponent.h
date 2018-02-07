@@ -18,6 +18,8 @@ public:
 
     bool SendNetMessage(int64_t nodeID, const std::string& command, const std::vector<unsigned char>& data) override;
 
+    bool BroadcastTransaction(uint256 txHash) override;
+
 
 private:
     std::unique_ptr<CConnman>   netConnMgr;

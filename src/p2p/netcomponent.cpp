@@ -299,3 +299,18 @@ bool CNetComponent::SendNetMessage(int64_t nodeID, const std::string& command, c
     }
     return false;
 }
+
+bool CNetComponent::BroadcastTransaction(uint256 txHash)
+{
+    if (netConnMgr)
+    {
+        CInv inv(MSG_TX, txHash);
+        netConnMgr->ForEachNode([&inv](CNode *pnode)
+                             {
+                                 pnode->PushInventory(inv);
+                             });
+        return true;
+    }
+    return false;
+}
+

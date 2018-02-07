@@ -3287,34 +3287,55 @@ bool PeerLogicValidation::ProcessGetDataMsg(CNode *pfrom, CDataStream &vRecv, co
 
 bool PeerLogicValidation::ProcessBlockMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
-    vRecv >> *pblock;
+    uint256 blockHash;
 
-    LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock->GetHash().ToString(), pfrom->GetId());
+    NodeExchangeInfo xnode;
+    xnode.retFlags = 0;
+    xnode.nodeID = pfrom->GetId();
 
-    bool forceProcessing = false;
-    const uint256 hash(pblock->GetHash());
-    {
-        LOCK(cs_main);
-        // Also always process if we requested the block explicitly, as we may
-        // need it even though it is not a candidate for a new best tip.
-        forceProcessing |= MarkBlockAsReceived(hash);
-        // mapBlockSource is only used for sending reject messages and DoS scores,
-        // so the race between here and cs_main in ProcessNewBlock is fine.
-        mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
-    }
-    bool fNewBlock = false;
-    ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock);
-    if (fNewBlock)
+    GET_CHAIN_INTERFACE(ifChainObj);
+    ifChainObj->NetReceiveBlock(&xnode, vRecv, blockHash);
+
+    if (IsFlagsBitOn(xnode.retFlags, NF_NEWBLOCK))
     {
         pfrom->nLastBlockTime = GetTime();
     }
     else
     {
         LOCK(cs_main);
-        mapBlockSource.erase(pblock->GetHash());
+        mapBlockSource.erase(blockHash);
     }
+
     return true;
+
+//    std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
+//    vRecv >> *pblock;
+//
+//    LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock->GetHash().ToString(), pfrom->GetId());
+//
+//    bool forceProcessing = false;
+//    const uint256 hash(pblock->GetHash());
+//    {
+//        LOCK(cs_main);
+//        // Also always process if we requested the block explicitly, as we may
+//        // need it even though it is not a candidate for a new best tip.
+//        forceProcessing |= MarkBlockAsReceived(hash);
+//        // mapBlockSource is only used for sending reject messages and DoS scores,
+//        // so the race between here and cs_main in ProcessNewBlock is fine.
+//        mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
+//    }
+//    bool fNewBlock = false;
+//    ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock);
+//    if (fNewBlock)
+//    {
+//        pfrom->nLastBlockTime = GetTime();
+//    }
+//    else
+//    {
+//        LOCK(cs_main);
+//        mapBlockSource.erase(pblock->GetHash());
+//    }
+//    return true;
 }
 
 bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)

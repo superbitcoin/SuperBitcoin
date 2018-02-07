@@ -59,6 +59,7 @@ public:
     bool NetRequestBlocks(ExNode* xnode, CDataStream& stream, std::vector<uint256>& blockHashes) override;
     bool NetRequestHeaders(ExNode* xnode, CDataStream& stream) override;
     bool NetReceiveHeaders(ExNode* xnode, CDataStream& stream) override;
+    bool NetReceiveBlock(ExNode* xnode, CDataStream& stream, uint256& blockHash) override;
 
 private:
     database _db;

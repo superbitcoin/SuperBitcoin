@@ -65,8 +65,7 @@ int CChainCommonent::GetActiveChainHeight()
 
 bool CChainCommonent::NetRequestCheckPoint(ExNode *xnode, int height)
 {
-    if (!xnode)
-        return false;
+    assert(xnode != nullptr);
 
     std::set<int> &checkpointKnown = m_nodeCheckPointKnown[xnode->nodeID];
 
@@ -92,8 +91,7 @@ bool CChainCommonent::NetRequestCheckPoint(ExNode *xnode, int height)
 
 bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
 {
-    if (!xnode)
-        return false;
+    assert(xnode != nullptr);
 
     LogPrint(BCLog::NET, "enter checkpoint\n");
     LogPrint(BCLog::BENCH, "receive check block list====\n");
@@ -147,8 +145,7 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
 
 bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes)
 {
-    if (!xnode)
-        return false;
+    assert(xnode != nullptr);
 
     CBlockLocator locator;
     uint256 hashStop;
@@ -218,8 +215,7 @@ bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
 
 bool CChainCommonent::NetRequestHeaders(ExNode* xnode, CDataStream& stream)
 {
-    if (!xnode)
-        return false;
+    assert(xnode != nullptr);
 
     if (IsInitialBlockDownload() && !IsFlagsBitOn(xnode->flags, NF_WHITELIST))
     {
@@ -268,8 +264,7 @@ bool CChainCommonent::NetRequestHeaders(ExNode* xnode, CDataStream& stream)
 
 bool CChainCommonent::NetReceiveHeaders(ExNode* xnode, CDataStream& stream)
 {
-    if (!xnode)
-        return false;
+    assert(xnode != nullptr);
 
     std::vector<CBlockHeader> headers;
 
@@ -294,6 +289,7 @@ bool CChainCommonent::NetReceiveHeaders(ExNode* xnode, CDataStream& stream)
 
 bool CChainCommonent::NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockHeader>& headers)
 {
+    assert(xnode != nullptr);
 
     size_t nCount = headers.size();
     if (nCount == 0)
@@ -544,6 +540,37 @@ bool CChainCommonent::NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockH
 //                ++g_outbound_peers_with_protect_from_disconnect;
 //            }
 //        }
+    }
+
+    return true;
+}
+
+bool CChainCommonent::NetReceiveBlock(ExNode* xnode, CDataStream& stream, uint256& blockHash)
+{
+    assert(xnode != nullptr);
+
+    std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
+    stream >> *pblock;
+
+    LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock->GetHash().ToString(), xnode->nodeID);
+
+    bool forceProcessing = false;
+    const uint256 hash(pblock->GetHash());
+//    {
+//        LOCK(cs_main);
+//        // Also always process if we requested the block explicitly, as we may
+//        // need it even though it is not a candidate for a new best tip.
+//        forceProcessing |= MarkBlockAsReceived(hash);
+//        // mapBlockSource is only used for sending reject messages and DoS scores,
+//        // so the race between here and cs_main in ProcessNewBlock is fine.
+//        mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
+//    }
+
+    bool fNewBlock = false;
+    ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock);
+    if (fNewBlock)
+    {
+        SetFlagsBit(xnode->retFlags, NF_NEWBLOCK);
     }
 
     return true;
