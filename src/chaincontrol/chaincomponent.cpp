@@ -5,6 +5,7 @@
 #include "utils/net/netmessagehelper.h"
 #include "sbtccore/block/validation.h"
 #include "utils/reverse_iterator.h"
+#include "utils/merkleblock.h"
 
 CChainCommonent::CChainCommonent()
 {
@@ -545,7 +546,162 @@ bool CChainCommonent::NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockH
     return true;
 }
 
-bool CChainCommonent::NetReceiveBlock(ExNode* xnode, CDataStream& stream, uint256& blockHash)
+bool CChainCommonent::NetRequestBlockData(ExNode* xnode, uint256 blockHash, int blockType)
+{
+    assert(xnode != nullptr);
+
+    GET_NET_INTERFACE(ifNetObj);
+    assert(ifNetObj != nullptr);
+
+    bool isOK = false;
+    const Consensus::Params &consensusParams = appbase::app().GetChainParams().GetConsensus();
+
+//    std::shared_ptr<const CBlock> a_recent_block;
+//    std::shared_ptr<const CBlockHeaderAndShortTxIDs> a_recent_compact_block;
+//    bool fWitnessesPresentInARecentCompactBlock;
+//    {
+//        LOCK(cs_most_recent_block);
+//        a_recent_block = most_recent_block;
+//        a_recent_compact_block = most_recent_compact_block;
+//        fWitnessesPresentInARecentCompactBlock = fWitnessesPresentInMostRecentCompactBlock;
+//    }
+
+    CBlockIndex * bi = cIndexManager.GetBlockIndex(blockHash);
+    if (bi != nullptr)
+    {
+        if (bi->nChainTx && !bi->IsValid(BLOCK_VALID_SCRIPTS) && bi->IsValid(BLOCK_VALID_TREE))
+        {
+            // If we have the block and all of its parents, but have not yet validated it,
+            // we might be in the middle of connecting it (ie in the unlock of cs_main
+            // before ActivateBestChain but after AcceptBlock).
+            // In this case, we need to run ActivateBestChain prior to checking the relay
+            // conditions below.
+            // CValidationState dummy;
+            // ActivateBestChain(dummy, Params(), a_recent_block);
+        }
+
+        if (cIndexManager.GetChain().Contains(bi))
+        {
+            isOK = true;
+        }
+        else
+        {
+            static const int nOneMonth = 30 * 24 * 60 * 60;
+            // To prevent fingerprinting attacks, only send blocks outside of the active
+            // chain if they are valid, and no more than a month older (both in time, and in
+            // best equivalent proof of work) than the best header chain we know about.
+            isOK = bi->IsValid(BLOCK_VALID_SCRIPTS) && (pindexBestHeader != nullptr) &&
+                   (pindexBestHeader->GetBlockTime() - bi->GetBlockTime() < nOneMonth) &&
+                   (GetBlockProofEquivalentTime(*pindexBestHeader, *bi, *pindexBestHeader,
+                                                consensusParams) < nOneMonth);
+            if (!isOK)
+            {
+                LogPrintf("%s: ignoring request from peer=%i for old block that isn't in the main chain\n",
+                          __func__, xnode->nodeID);
+            }
+        }
+    }
+    // disconnect node in case we have reached the outbound limit for serving historical blocks
+    // never disconnect whitelisted nodes
+    static const int nOneWeek = 7 * 24 * 60 * 60; // assume > 1 week = historical
+    if (isOK && ifNetObj->OutboundTargetReached(true) && (((pindexBestHeader != nullptr) &&
+                                                          (pindexBestHeader->GetBlockTime() -
+                                                           bi->GetBlockTime() > nOneWeek)) ||
+                                                           blockType == MSG_FILTERED_BLOCK) &&
+        !IsFlagsBitOn(xnode->flags, NF_WHITELIST))
+    {
+        LogPrint(BCLog::NET, "historical block serving limit reached, disconnect peer=%d\n",
+                 xnode->nodeID);
+
+        //disconnect node
+        SetFlagsBit(xnode->retFlags, NF_DISCONNECT);
+        isOK = false;
+    }
+    // Pruned nodes may have deleted the block, so check whether
+    // it's available before trying to send.
+    if (isOK && (bi->nStatus & BLOCK_HAVE_DATA))
+    {
+        std::shared_ptr<const CBlock> pblock;
+//        if (a_recent_block && a_recent_block->GetHash() == (*mi).second->GetBlockHash())
+//        {
+//            pblock = a_recent_block;
+//        } else
+        {
+            // Send block from disk
+            std::shared_ptr<CBlock> pblockRead = std::make_shared<CBlock>();
+            if (!ReadBlockFromDisk(*pblockRead, bi, consensusParams))
+                assert(!"cannot load block from disk");
+            pblock = pblockRead;
+        }
+        if (blockType == MSG_BLOCK)
+        {
+            SendNetMessage(xnode->nodeID, NetMsgType::BLOCK, xnode->sendVersion, SERIALIZE_TRANSACTION_NO_WITNESS, *pblock);
+        }
+        else if (blockType == MSG_WITNESS_BLOCK)
+        {
+            SendNetMessage(xnode->nodeID, NetMsgType::BLOCK, xnode->sendVersion, 0, *pblock);
+        }
+        else if (blockType == MSG_FILTERED_BLOCK)
+        {
+            bool sendMerkleBlock = false;
+            CMerkleBlock merkleBlock;
+//            {
+//                LOCK(pfrom->cs_filter);
+//                if (pfrom->pfilter)
+//                {
+//                    sendMerkleBlock = true;
+//                    merkleBlock = CMerkleBlock(*pblock, *pfrom->pfilter);
+//                }
+//            }
+            if (sendMerkleBlock)
+            {
+                SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, 0, merkleBlock);
+                // CMerkleBlock just contains hashes, so also push any transactions in the block the client did not see
+                // This avoids hurting performance by pointlessly requiring a round-trip
+                // Note that there is currently no way for a node to request any single transactions we didn't send here -
+                // they must either disconnect and retry or request the full block.
+                // Thus, the protocol spec specified allows for us to provide duplicate txn here,
+                // however we MUST always provide at least what the remote peer needs
+                typedef std::pair<unsigned int, uint256> PairType;
+                for (PairType &pair : merkleBlock.vMatchedTxn)
+                    SendNetMessage(xnode->nodeID, NetMsgType::TX, xnode->sendVersion, SERIALIZE_TRANSACTION_NO_WITNESS, *pblock->vtx[pair.first]);
+            }
+            // else
+            // no response
+        }
+        else if (blockType == MSG_CMPCT_BLOCK)
+        {
+//            // If a peer is asking for old blocks, we're almost guaranteed
+//            // they won't have a useful mempool to match against a compact block,
+//            // and we don't feel like constructing the object for them, so
+//            // instead we respond with the full, non-compact block.
+//            bool fPeerWantsWitness = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS);
+//            int nSendFlags = fPeerWantsWitness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
+//            if (CanDirectFetch(consensusParams) &&
+//                bi->nHeight >= cIndexManager.GetChain().Height() - MAX_CMPCTBLOCK_DEPTH)
+//            {
+//                if ((fPeerWantsWitness || !fWitnessesPresentInARecentCompactBlock) &&
+//                    a_recent_compact_block &&
+//                    a_recent_compact_block->header.GetHash() == bi->GetBlockHash())
+//                {
+//                    SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, nSendFlags, *a_recent_compact_block);
+//                }
+//                else
+//                {
+//                    CBlockHeaderAndShortTxIDs cmpctblock(*pblock, fPeerWantsWitness);
+//                    SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags, cmpctblock);
+//                }
+//            }
+//            else
+//            {
+//                SendNetMessage(xnode->nodeID, NetMsgType::BLOCK, xnode->sendVersion, nSendFlags, *pblock);
+//            }
+        }
+    }
+    return isOK;
+}
+
+bool CChainCommonent::NetReceiveBlockData(ExNode* xnode, CDataStream& stream, uint256& blockHash)
 {
     assert(xnode != nullptr);
 

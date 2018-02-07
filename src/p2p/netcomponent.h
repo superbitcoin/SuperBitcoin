@@ -24,6 +24,8 @@ public:
 
     bool MisbehaveNode(int64_t nodeID, int num) override;
 
+    bool OutboundTargetReached(bool historicalBlockServingLimit) override;
+
 
 private:
     std::unique_ptr<CConnman>   netConnMgr;

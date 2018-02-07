@@ -3333,7 +3333,7 @@ bool PeerLogicValidation::ProcessBlockMsg(CNode *pfrom, CDataStream &vRecv)
     xnode.nodeID = pfrom->GetId();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    ifChainObj->NetReceiveBlock(&xnode, vRecv, blockHash);
+    ifChainObj->NetReceiveBlockData(&xnode, vRecv, blockHash);
 
     if (IsFlagsBitOn(xnode.retFlags, NF_NEWBLOCK))
     {

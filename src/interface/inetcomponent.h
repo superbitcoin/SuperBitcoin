@@ -32,6 +32,9 @@ public:
 
     virtual bool MisbehaveNode(int64_t nodeID, int num) = 0;
 
+    //!check if the outbound target is reached
+    virtual bool OutboundTargetReached(bool historicalBlockServingLimit) = 0;
+
     //add other interface methods here ...
 
 

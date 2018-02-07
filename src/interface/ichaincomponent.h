@@ -33,7 +33,8 @@ public:
     virtual bool NetRequestBlocks(ExNode* xnode, CDataStream& stream, std::vector<uint256>& blockHashes) = 0;
     virtual bool NetRequestHeaders(ExNode* xnode, CDataStream& stream) = 0;
     virtual bool NetReceiveHeaders(ExNode* xnode, CDataStream& stream) = 0;
-    virtual bool NetReceiveBlock(ExNode* xnode, CDataStream& stream, uint256& blockHash) = 0;
+    virtual bool NetRequestBlockData(ExNode* xnode, uint256 blockHash, int blockType) = 0;
+    virtual bool NetReceiveBlockData(ExNode* xnode, CDataStream& stream, uint256& blockHash) = 0;
 
     //add other interface methods here ...
 };

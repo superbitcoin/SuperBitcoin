@@ -337,3 +337,12 @@ bool CNetComponent::MisbehaveNode(int64_t nodeID, int num)
     }
     return false;
 }
+
+bool CNetComponent::OutboundTargetReached(bool historicalBlockServingLimit)
+{
+    if (netConnMgr)
+    {
+        return netConnMgr->OutboundTargetReached(historicalBlockServingLimit);
+    }
+    return true;
+}
