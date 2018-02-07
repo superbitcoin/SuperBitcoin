@@ -99,9 +99,6 @@ public:
 //    CTxMemPool();
     ~CTxMemPool();
 
-
-
-
     bool ComponentInitialize() override;
     bool ComponentStartup() override;
     bool ComponentShutdown() override;

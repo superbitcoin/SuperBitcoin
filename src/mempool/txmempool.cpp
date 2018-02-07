@@ -24,6 +24,7 @@
 #include "interface/inetcomponent.h"
 #include "utils/net/netmessagehelper.h"
 #include "orphantx.h"
+#include "interface/ITxVerifyComponent.h"
 
 using namespace appbase;
 
@@ -94,8 +95,8 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
         *pfMissingInputs = false;
-
-    if (!CheckTransaction(tx, state))
+    GET_VERIFY_INTERFACE(ifVerifyObj);
+    if (!ifVerifyObj->CheckTransaction(tx, state))
         return false; // state filled in by CheckTransaction
 
     // Coinbase is only valid in a block, not as a loose transaction
@@ -237,7 +238,8 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         if (tx.HasWitness() && fRequireStandard && !IsWitnessStandard(tx, view))
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-witness-nonstandard", true);
 
-        int64_t nSigOpsCost = GetTransactionSigOpCost(tx, view, STANDARD_SCRIPT_VERIFY_FLAGS);
+        GET_VERIFY_INTERFACE(ifVerifyObj);
+        int64_t nSigOpsCost = ifVerifyObj->GetTransactionSigOpCost(tx, view, STANDARD_SCRIPT_VERIFY_FLAGS);
 
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn - nValueOut;
@@ -673,7 +675,8 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
                 prevheights[txinIndex] = coin.nHeight;
             }
         }
-        lockPair = CalculateSequenceLocks(tx, flags, &prevheights, index);
+        GET_VERIFY_INTERFACE(ifVerifyObj);
+        lockPair = ifVerifyObj->CalculateSequenceLocks(tx, flags, &prevheights, index);
         if (lp)
         {
             lp->height = lockPair.first;
@@ -703,7 +706,8 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
             lp->maxInputBlock = tip->GetAncestor(maxInputHeight);
         }
     }
-    return EvaluateSequenceLocks(index, lockPair);
+    GET_VERIFY_INTERFACE(ifVerifyObj);
+    return ifVerifyObj->EvaluateSequenceLocks(index, lockPair);
 }
 
 bool CTxMemPool::LoadMempool(void)
@@ -1807,6 +1811,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
     LOCK(cs);
     std::list<const CTxMemPoolEntry *> waitingOnDependants;
+    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++)
     {
         unsigned int i = 0;
@@ -1892,8 +1897,9 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         else
         {
             CValidationState state;
+
             bool fCheckResult = tx.IsCoinBase() ||
-                                Consensus::CheckTxInputs(tx, state, mempoolDuplicate, nSpendHeight);
+                    ifVerifyObj->CheckTxInputs(tx, state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
             UpdateCoins(tx, mempoolDuplicate, 1000000);
         }
@@ -1912,7 +1918,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         } else
         {
             bool fCheckResult = entry->GetTx().IsCoinBase() ||
-                                Consensus::CheckTxInputs(entry->GetTx(), state, mempoolDuplicate, nSpendHeight);
+                                ifVerifyObj->CheckTxInputs(entry->GetTx(), state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
             UpdateCoins(entry->GetTx(), mempoolDuplicate, 1000000);
             stepsSinceLastRemove = 0;
