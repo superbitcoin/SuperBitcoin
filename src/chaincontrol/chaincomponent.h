@@ -43,14 +43,12 @@ public:
     }
 
     bool IsImporting() const override;
-
     bool IsReindexing() const override;
-
     bool IsInitialBlockDownload() const override;
 
     bool DoesBlockExist(uint256 hash) override;
-
-    int GetActiveChainHeight() override;
+    int  GetActiveChainHeight() override;
+    bool GetActiveChainTipHash(uint256& tipHash) override;
 
 
     // P2P network message response.

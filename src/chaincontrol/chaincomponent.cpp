@@ -63,6 +63,16 @@ int CChainCommonent::GetActiveChainHeight()
     return cIndexManager.GetChain().Height();
 }
 
+bool CChainCommonent::GetActiveChainTipHash(uint256& tipHash)
+{
+    if (CBlockIndex* tip = cIndexManager.GetChain().Tip())
+    {
+        tipHash = tip->GetBlockHash();
+        return true;
+    }
+
+    return false;
+}
 
 bool CChainCommonent::NetRequestCheckPoint(ExNode *xnode, int height)
 {

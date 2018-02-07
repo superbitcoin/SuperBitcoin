@@ -20,13 +20,12 @@ public:
     virtual const char* whoru() const = 0;
 
     virtual bool IsImporting() const = 0;
-
     virtual bool IsReindexing() const = 0;
-
     virtual bool IsInitialBlockDownload() const = 0;
 
     virtual bool DoesBlockExist(uint256 hash) = 0;
     virtual int  GetActiveChainHeight() = 0;
+    virtual bool GetActiveChainTipHash(uint256& tipHash) = 0;
 
     virtual bool NetRequestCheckPoint(ExNode* xnode, int height) = 0;
     virtual bool NetReceiveCheckPoint(ExNode* xnode, CDataStream& stream) = 0;
