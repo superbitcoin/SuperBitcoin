@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////////////////
 
 #include "blockindexmanager.h"
+#include "framework/warnings.h"
 
 CBlockIndexManager::CBlockIndexManager()
 {
@@ -440,6 +441,18 @@ void CBlockIndexManager::InvalidChainFound(CBlockIndex *pIndexNew)
     //    CheckForkWarningConditions();
 }
 
+void CBlockIndexManager::InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state)
+{
+    if (!state.CorruptionPossible())
+    {
+        pindex->nStatus |= BLOCK_FAILED_VALID;
+        setFailedBlocks.insert(pindex);
+        setDirtyBlockIndex.insert(pindex);
+        setBlockIndexCandidates.erase(pindex);
+        InvalidChainFound(pindex);
+    }
+}
+
 void CBlockIndexManager::CheckBlockIndex(const Consensus::Params &consensusParams)
 {
     if (!fCheckBlockIndex)
@@ -684,4 +697,106 @@ void CBlockIndexManager::CheckBlockIndex(const Consensus::Params &consensusParam
 
     // Check that we actually traversed the entire map.
     assert(nNodes == forward.size());
+}
+
+void CBlockIndexManager::InvalidateBlock(CBlockIndex *pIndex, CBlockIndex *pInvalidWalkTip, bool bIndexWasInChain)
+{
+    while (bIndexWasInChain && pInvalidWalkTip != pIndex)
+    {
+        pInvalidWalkTip->nStatus |= BLOCK_FAILED_CHILD;
+        setDirtyBlockIndex.insert(pInvalidWalkTip);
+        setBlockIndexCandidates.erase(pInvalidWalkTip);
+        pInvalidWalkTip = pInvalidWalkTip->pprev;
+    }
+
+    // Mark the block itself as invalid.
+    pIndex->nStatus |= BLOCK_FAILED_VALID;
+    setDirtyBlockIndex.insert(pIndex);
+    setBlockIndexCandidates.erase(pIndex);
+    setFailedBlocks.insert(pIndex);
+
+    // The resulting new best tip may not be in setBlockIndexCandidates anymore, so
+    // add it again.
+    BlockMap::iterator it = mBlockIndex.begin();
+    while (it != mBlockIndex.end())
+    {
+        if (it->second->IsValid(BLOCK_VALID_TRANSACTIONS) && it->second->nChainTx &&
+            !setBlockIndexCandidates.value_comp()(it->second, cChainActive.Tip()))
+        {
+            setBlockIndexCandidates.insert(it->second);
+        }
+        it++;
+    }
+}
+
+void CBlockIndexManager::CheckForkWarningConditions()
+{
+    // If our best fork is no longer within 72 blocks (+/- 12 hours if no one mines it)
+    // of our head, drop it
+    if (pIndexBestForkTip && cChainActive.Height() - pIndexBestForkTip->nHeight >= 72)
+        pIndexBestForkTip = nullptr;
+
+    if (pIndexBestForkTip || (pIndexBestInvalid && pIndexBestInvalid->nChainWork > cChainActive.Tip()->nChainWork +
+                                                                                   (GetBlockProof(*cChainActive.Tip()) *
+                                                                                    6)))
+    {
+        if (!GetfLargeWorkForkFound() && pIndexBestForkBase)
+        {
+            std::string warning = std::string("'Warning: Large-work fork detected, forking after block ") +
+                                  pIndexBestForkBase->phashBlock->ToString() + std::string("'");
+            AlertNotify(warning);
+        }
+        if (pIndexBestForkTip && pIndexBestForkBase)
+        {
+            LogPrintf(
+                    "%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n",
+                    __func__,
+                    pIndexBestForkBase->nHeight, pIndexBestForkBase->phashBlock->ToString(),
+                    pIndexBestForkTip->nHeight, pIndexBestForkTip->phashBlock->ToString());
+            SetfLargeWorkForkFound(true);
+        } else
+        {
+            LogPrintf(
+                    "%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n",
+                    __func__);
+            SetfLargeWorkInvalidChainFound(true);
+        }
+    } else
+    {
+        SetfLargeWorkForkFound(false);
+        SetfLargeWorkInvalidChainFound(false);
+    }
+}
+
+void CBlockIndexManager::CheckForkWarningConditionsOnNewFork(CBlockIndex *pindexNewForkTip)
+{
+    AssertLockHeld(cs);
+    // If we are on a fork that is sufficiently large, set a warning flag
+    CBlockIndex *pfork = pindexNewForkTip;
+    CBlockIndex *plonger = cChainActive.Tip();
+    while (pfork && pfork != plonger)
+    {
+        while (plonger && plonger->nHeight > pfork->nHeight)
+            plonger = plonger->pprev;
+        if (pfork == plonger)
+            break;
+        pfork = pfork->pprev;
+    }
+
+    // We define a condition where we should warn the user about as a fork of at least 7 blocks
+    // with a tip within 72 blocks (+/- 12 hours if no one mines it) of ours
+    // We use 7 blocks rather arbitrarily as it represents just under 10% of sustained network
+    // hash rate operating on the fork.
+    // or a chain that is entirely longer than ours and invalid (note that this should be detected by both)
+    // We define it this way because it allows us to only store the highest fork tip (+ base) which meets
+    // the 7-block condition and from this always have the most-likely-to-cause-warning fork
+    if (pfork && (!pIndexBestForkTip || pindexNewForkTip->nHeight > pIndexBestForkTip->nHeight) &&
+        pindexNewForkTip->nChainWork - pfork->nChainWork > (GetBlockProof(*pfork) * 7) &&
+        cChainActive.Height() - pindexNewForkTip->nHeight < 72)
+    {
+        pIndexBestForkTip = pindexNewForkTip;
+        pIndexBestForkBase = pfork;
+    }
+
+    CheckForkWarningConditions();
 }

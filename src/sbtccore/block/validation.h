@@ -384,6 +384,7 @@ bool TestLockPointValidity(const LockPoints *lp);
 bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
                  unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
                  std::vector<CScriptCheck> *pvChecks = nullptr);
+
 /**
  * Closure representing one script verification
  * Note that this stores references to the spending transaction 
@@ -434,6 +435,8 @@ public:
 };
 
 bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage = "");
+
+void AlertNotify(const std::string &strMessage);
 
 /** Initializes the script-execution cache */
 void InitScriptExecutionCache();
@@ -530,7 +533,6 @@ static const unsigned int REJECT_HIGHFEE = 0x100;
 
 /** Get block file info entry for one block file */
 CBlockFileInfo *GetBlockFileInfo(size_t n);
-
 
 
 #endif // BITCOIN_VALIDATION_H
