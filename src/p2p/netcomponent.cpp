@@ -314,3 +314,35 @@ bool CNetComponent::BroadcastTransaction(uint256 txHash)
     return false;
 }
 
+bool CNetComponent::AskForTransaction(int64_t nodeID, uint256 txHash, int flags)
+{
+    if (netConnMgr)
+    {
+        if (CNode* node = netConnMgr->QueryNode(nodeID))
+        {
+            node->AskFor(CInv(MSG_TX | flags, txHash));
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool CNetComponent::MisbehaveNode(int64_t nodeID, int num)
+{
+    if (netConnMgr)
+    {
+        Misbehaving(nodeID, num);
+        return true;
+    }
+    return false;
+}
+
+bool CNetComponent::OutboundTargetReached(bool historicalBlockServingLimit)
+{
+    if (netConnMgr)
+    {
+        return netConnMgr->OutboundTargetReached(historicalBlockServingLimit);
+    }
+    return true;
+}

@@ -53,5 +53,7 @@ bool CWalletComponent::ComponentShutdown()
         delete pWallet;
     }
 
+    vpWallets.clear();
+
     return true;
 }

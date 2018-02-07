@@ -99,14 +99,16 @@ public:
 //    CTxMemPool();
     ~CTxMemPool();
 
-
-
-
     bool ComponentInitialize() override;
     bool ComponentStartup() override;
     bool ComponentShutdown() override;
 
-    void OnNetMessageTx(int node_id, const char* vRecv);
+    bool DoesTransactionExist(uint256 hash) override;
+    bool NetRequestTxData(ExNode* xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) override;
+    bool NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash) override;
+
+    bool NetRequestTxInventory(ExNode* xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter* txFilter,
+                               std::vector<uint256>& toSendTxHashes, std::vector<uint256>& haveSentTxHashes) override;
 
 private:
     uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.

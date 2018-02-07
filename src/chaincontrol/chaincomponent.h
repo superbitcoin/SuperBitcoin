@@ -174,6 +174,8 @@ public:
 
     int GetActiveChainHeight() override;
 
+    bool GetActiveChainTipHash(uint256 &tipHash) override;
+
 
     // P2P network message response.
     bool NetRequestCheckPoint(ExNode *xnode, int height) override;
@@ -186,7 +188,9 @@ public:
 
     bool NetReceiveHeaders(ExNode *xnode, CDataStream &stream) override;
 
-    bool NetReceiveBlock(ExNode *xnode, CDataStream &stream, uint256 &blockHash) override;
+    bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType) override;
+
+    bool NetReceiveBlockData(ExNode *xnode, CDataStream &stream, uint256 &blockHash) override;
 
 private:
     database _db;

@@ -20,6 +20,12 @@ public:
 
     bool BroadcastTransaction(uint256 txHash) override;
 
+    bool AskForTransaction(int64_t nodeID, uint256 txHash, int flags) override;
+
+    bool MisbehaveNode(int64_t nodeID, int num) override;
+
+    bool OutboundTargetReached(bool historicalBlockServingLimit) override;
+
 
 private:
     std::unique_ptr<CConnman>   netConnMgr;

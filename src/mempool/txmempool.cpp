@@ -6,7 +6,7 @@
 #include "txmempool.h"
 
 #include "config/consensus.h"
-#include "sbtccore/transaction/tx_verify.h"
+#include "config/argmanager.h"
 #include "chaincontrol/validation.h"
 #include "block/validation.h"
 #include "sbtccore/transaction/policy.h"
@@ -20,8 +20,10 @@
 #include "net_processing.h"
 #include "wallet/rbf.h"
 #include "framework/base.hpp"
-#include "base.hpp"
-#include "argmanager.h"
+#include "interface/inetcomponent.h"
+#include "utils/net/netmessagehelper.h"
+#include "orphantx.h"
+#include "interface/ITxVerifyComponent.h"
 
 using namespace appbase;
 
@@ -92,8 +94,8 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
         *pfMissingInputs = false;
-
-    if (!CheckTransaction(tx, state))
+    GET_VERIFY_INTERFACE(ifVerifyObj);
+    if (!ifVerifyObj->CheckTransaction(tx, state))
         return false; // state filled in by CheckTransaction
 
     // Coinbase is only valid in a block, not as a loose transaction
@@ -235,7 +237,8 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         if (tx.HasWitness() && fRequireStandard && !IsWitnessStandard(tx, view))
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-witness-nonstandard", true);
 
-        int64_t nSigOpsCost = GetTransactionSigOpCost(tx, view, STANDARD_SCRIPT_VERIFY_FLAGS);
+        GET_VERIFY_INTERFACE(ifVerifyObj);
+        int64_t nSigOpsCost = ifVerifyObj->GetTransactionSigOpCost(tx, view, STANDARD_SCRIPT_VERIFY_FLAGS);
 
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn - nValueOut;
@@ -671,7 +674,8 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
                 prevheights[txinIndex] = coin.nHeight;
             }
         }
-        lockPair = CalculateSequenceLocks(tx, flags, &prevheights, index);
+        GET_VERIFY_INTERFACE(ifVerifyObj);
+        lockPair = ifVerifyObj->CalculateSequenceLocks(tx, flags, &prevheights, index);
         if (lp)
         {
             lp->height = lockPair.first;
@@ -701,7 +705,8 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
             lp->maxInputBlock = tip->GetAncestor(maxInputHeight);
         }
     }
-    return EvaluateSequenceLocks(index, lockPair);
+    GET_VERIFY_INTERFACE(ifVerifyObj);
+    return ifVerifyObj->EvaluateSequenceLocks(index, lockPair);
 }
 
 bool CTxMemPool::LoadMempool(void)
@@ -874,11 +879,430 @@ bool CTxMemPool::CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidat
     return CheckInputs(tx, state, view, true, flags, cacheSigStore, true, txdata);
 }
 
-
-void CTxMemPool::OnNetMessageTx(int node_id, const char* vRecv)
+namespace
 {
-    //HandleNetTx(node_id, vRecv);
+    /**
+     * Filter for transactions that were recently rejected by
+     * AcceptToMemoryPool. These are not rerequested until the chain tip
+     * changes, at which point the entire filter is reset. Protected by
+     * cs_main.
+     *
+     * Without this filter we'd be re-requesting txs from each of our peers,
+     * increasing bandwidth consumption considerably. For instance, with 100
+     * peers, half of which relay a tx we don't accept, that might be a 50x
+     * bandwidth increase. A flooding attacker attempting to roll-over the
+     * filter using minimum-sized, 60byte, transactions might manage to send
+     * 1000/sec if we have fast peers, so we pick 120,000 to give our peers a
+     * two minute window to send invs to us.
+     *
+     * Decreasing the false positive rate is fairly cheap, so we pick one in a
+     * million to make it highly unlikely for users to have issues with this
+     * filter.
+     *
+     * Memory used: 1.3 MB
+     */
+    std::unique_ptr<CRollingBloomFilter> recentRejects;
+    uint256 hashRecentRejectsChainTip;
+
+    size_t vExtraTxnForCompactIt = 0;
+    std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
+
+
+    /** Relay map, protected by cs_main. */
+    typedef std::map<uint256, CTransactionRef> MapRelay;
+
+    MapRelay mapRelay;
+
+    /** Expiration-time ordered list of (expire time, relay map entry) pairs, protected by cs_main). */
+    std::deque<std::pair<int64_t, MapRelay::iterator>> vRelayExpiration;
 }
+
+void AddToCompactExtraTransactions(const CTransactionRef &tx)
+{
+    size_t max_extra_txn = appbase::app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
+                                                                            DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
+    if (max_extra_txn <= 0)
+        return;
+    if (!vExtraTxnForCompact.size())
+        vExtraTxnForCompact.resize(max_extra_txn);
+    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
+    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
+}
+
+bool CTxMemPool::DoesTransactionExist(uint256 hash)
+{
+    return true;
+}
+
+bool CTxMemPool::NetRequestTxData(ExNode* xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq)
+{
+    assert(xnode != nullptr);
+
+    int nSendFlags = witness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
+
+    auto mi = mapRelay.find(txHash);
+    if (mi != mapRelay.end())
+    {
+        SendNetMessage(xnode->nodeID, NetMsgType::TX, xnode->sendVersion, nSendFlags, *mi->second);
+        return true;
+    }
+
+    auto txinfo = info(txHash);
+    if (txinfo.tx && txinfo.nTime <= timeLastMempoolReq)
+    {
+        SendNetMessage(xnode->nodeID, NetMsgType::TX, xnode->sendVersion, nSendFlags, *txinfo.tx);
+        return true;
+    }
+
+    return false;
+}
+
+bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash)
+{
+    assert(xnode != nullptr);
+
+    const CArgsManager& appArgs = appbase::app().GetArgsManager();
+
+    // Stop processing the transaction early if
+    // We are in blocks only mode and peer is either not whitelisted or whitelistrelay is off
+    if (!IsFlagsBitOn(xnode->flags, NF_RELAYTX) &&
+        (!IsFlagsBitOn(xnode->flags, NF_WHITELIST) ||
+         !appArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
+    {
+        LogPrint(BCLog::NET, "transaction sent in violation of protocol peer=%d\n", xnode->nodeID);
+        return true;
+    }
+
+    GET_NET_INTERFACE(ifNetObj);
+    assert(ifNetObj != nullptr);
+
+    CTransactionRef ptx;
+    stream >> ptx;
+    const CTransaction &tx = *ptx;
+
+    txHash = tx.GetHash();
+    CInv inv(MSG_TX, txHash);
+
+    std::deque<COutPoint> vWorkQueue;
+    std::vector<uint256> vEraseQueue;
+
+
+    bool fMissingInputs = false;
+    CValidationState state;
+
+    std::list<CTransactionRef> lRemovedTxn;
+
+    if (!DoesTransactionExist(tx.GetHash()) &&
+        AcceptToMemoryPool(state, ptx, true, &fMissingInputs, &lRemovedTxn))
+    {
+        check(pcoinsTip);
+        ifNetObj->BroadcastTransaction(tx.GetHash());
+
+        for (unsigned int i = 0; i < tx.vout.size(); i++)
+        {
+            vWorkQueue.emplace_back(inv.hash, i);
+        }
+
+        SetFlagsBit(xnode->retFlags, NF_NEWTRANSACTION);
+
+        LogPrint(BCLog::MEMPOOL, "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)\n",
+                 xnode->nodeID,
+                 tx.GetHash().ToString(),
+                 size(), DynamicMemoryUsage() / 1000);
+
+        // Recursively process any orphan transactions that depended on this one
+        std::set<NodeId> setMisbehaving;
+        while (!vWorkQueue.empty())
+        {
+            ITBYPREV itByPrev;
+            int ret = COrphanTx::Instance().FindOrphanTransactionsByPrev(&(vWorkQueue.front()), itByPrev);
+            vWorkQueue.pop_front();
+            if (ret == 0)
+                continue;
+            for (auto mi = itByPrev->second.begin();
+                 mi != itByPrev->second.end();
+                 ++mi)
+            {
+                const CTransactionRef &porphanTx = (*mi)->second.tx;
+                const CTransaction &orphanTx = *porphanTx;
+                const uint256 &orphanHash = orphanTx.GetHash();
+                NodeId fromPeer = (*mi)->second.fromPeer;
+                bool fMissingInputs2 = false;
+                // Use a dummy CValidationState so someone can't setup nodes to counter-DoS based on orphan
+                // resolution (that is, feeding people an invalid transaction based on LegitTxX in order to get
+                // anyone relaying LegitTxX banned)
+                CValidationState stateDummy;
+
+
+                if (setMisbehaving.count(fromPeer))
+                    continue;
+                if (AcceptToMemoryPool(stateDummy, porphanTx, true, &fMissingInputs2, &lRemovedTxn))
+                {
+                    LogPrint(BCLog::MEMPOOL, "   accepted orphan tx %s\n", orphanHash.ToString());
+
+                    ifNetObj->BroadcastTransaction(orphanTx.GetHash());
+
+                    for (unsigned int i = 0; i < orphanTx.vout.size(); i++)
+                    {
+                        vWorkQueue.emplace_back(orphanHash, i);
+                    }
+
+                    vEraseQueue.push_back(orphanHash);
+                }
+                else if (!fMissingInputs2)
+                {
+                    int nDos = 0;
+                    if (stateDummy.IsInvalid(nDos) && nDos > 0)
+                    {
+                        // Punish peer that gave us an invalid orphan tx
+                        ifNetObj->MisbehaveNode(fromPeer, nDos);
+                        setMisbehaving.insert(fromPeer);
+                        LogPrint(BCLog::MEMPOOL, "   invalid orphan tx %s\n", orphanHash.ToString());
+                    }
+                    // Has inputs but not accepted to mempool
+                    // Probably non-standard or insufficient fee
+                    LogPrint(BCLog::MEMPOOL, "   removed orphan tx %s\n", orphanHash.ToString());
+                    vEraseQueue.push_back(orphanHash);
+                    if (!orphanTx.HasWitness() && !stateDummy.CorruptionPossible())
+                    {
+                        // Do not use rejection cache for witness transactions or
+                        // witness-stripped transactions, as they can have been malleated.
+                        // See https://github.com/bitcoin/bitcoin/issues/8279 for details.
+                        assert(recentRejects);
+                        recentRejects->insert(orphanHash);
+                    }
+                }
+                check(pcoinsTip);
+            }
+        }
+
+        for (uint256 hash : vEraseQueue)
+            COrphanTx::Instance().EraseOrphanTx(hash);
+    }
+    else if (fMissingInputs)
+    {
+        bool fRejectedParents = false; // It may be the case that the orphans parents have all been rejected
+        for (const CTxIn &txin : tx.vin)
+        {
+            if (recentRejects->contains(txin.prevout.hash))
+            {
+                fRejectedParents = true;
+                break;
+            }
+        }
+
+        if (!fRejectedParents)
+        {
+            uint32_t nFetchFlags = 0;
+            if (IsFlagsBitOn(xnode->nLocalServices, NODE_WITNESS) &&
+                IsFlagsBitOn(xnode->flags, NF_WITNESS))
+                nFetchFlags = MSG_WITNESS_FLAG;
+
+            for (const CTxIn &txin : tx.vin)
+            {
+                CInv _inv(MSG_TX | nFetchFlags, txin.prevout.hash);
+                // pfrom->AddInventoryKnown(_inv);
+                if (!DoesTransactionExist(_inv.hash))
+                    ifNetObj->AskForTransaction(xnode->nodeID, _inv.hash, nFetchFlags);
+            }
+
+            COrphanTx::Instance().AddOrphanTx(ptx, xnode->nodeID);
+
+            // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
+            unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0,
+                                                               int64_t(appArgs.GetArg<uint32_t>("-maxorphantx",
+                                                                                                DEFAULT_MAX_ORPHAN_TRANSACTIONS)));
+            unsigned int nEvicted = COrphanTx::Instance().LimitOrphanTxSize(nMaxOrphanTx);
+            if (nEvicted > 0)
+            {
+                LogPrint(BCLog::MEMPOOL, "mapOrphan overflow, removed %u tx\n", nEvicted);
+            }
+        }
+        else
+        {
+            LogPrint(BCLog::MEMPOOL, "not keeping orphan with rejected parents %s\n", tx.GetHash().ToString());
+            // We will continue to reject this tx since it has rejected
+            // parents so avoid re-requesting it from other peers.
+            recentRejects->insert(tx.GetHash());
+        }
+    }
+    else
+    {
+        if (!tx.HasWitness() && !state.CorruptionPossible())
+        {
+            // Do not use rejection cache for witness transactions or
+            // witness-stripped transactions, as they can have been malleated.
+            // See https://github.com/bitcoin/bitcoin/issues/8279 for details.
+            assert(recentRejects);
+            recentRejects->insert(tx.GetHash());
+            if (RecursiveDynamicUsage(*ptx) < 100000)
+            {
+                AddToCompactExtraTransactions(ptx);
+            }
+        }
+        else if (tx.HasWitness() && RecursiveDynamicUsage(*ptx) < 100000)
+        {
+            AddToCompactExtraTransactions(ptx);
+        }
+
+        if (IsFlagsBitOn(xnode->flags, NF_WHITELIST) && appArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
+        {
+            // Always relay transactions received from whitelisted peers, even
+            // if they were already in the mempool or rejected from it due
+            // to policy, allowing the node to function as a gateway for
+            // nodes hidden behind it.
+            //
+            // Never relay transactions that we would assign a non-zero DoS
+            // score for, as we expect peers to do the same with us in that
+            // case.
+            int nDoS = 0;
+            if (!state.IsInvalid(nDoS) || nDoS == 0)
+            {
+                LogPrintf("Force relaying tx %s from whitelisted peer=%d\n", tx.GetHash().ToString(),
+                          xnode->nodeID);
+
+                ifNetObj->BroadcastTransaction(tx.GetHash());
+            }
+            else
+            {
+                LogPrintf("Not relaying invalid transaction %s from whitelisted peer=%d (%s)\n",
+                          tx.GetHash().ToString(), xnode->nodeID, FormatStateMessage(state));
+            }
+        }
+    }
+
+    for (const CTransactionRef &removedTx : lRemovedTxn)
+        AddToCompactExtraTransactions(removedTx);
+
+    int nDoS = 0;
+    if (state.IsInvalid(nDoS))
+    {
+        LogPrint(BCLog::MEMPOOLREJ, "%s from peer=%d was not accepted: %s\n", tx.GetHash().ToString(),
+                 xnode->nodeID,
+                 FormatStateMessage(state));
+        if (state.GetRejectCode() > 0 &&
+            state.GetRejectCode() < REJECT_INTERNAL) // Never send AcceptToMemoryPool's internal codes over P2P
+        {
+            SendNetMessage(xnode->nodeID, NetMsgType::REJECT, xnode->sendVersion, 0,
+                           std::string(NetMsgType::TX),
+                           (unsigned char)state.GetRejectCode(),
+                           state.GetRejectReason().substr(0, MAX_REJECT_MESSAGE_LENGTH),
+                           inv.hash);
+        }
+
+
+        if (nDoS > 0)
+        {
+            xnode->nMisbehavior = nDoS;
+        }
+    }
+    return true;
+}
+
+bool CTxMemPool::NetRequestTxInventory(ExNode* xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter* txFilter,
+        std::vector<uint256>& toSendTxHashes, std::vector<uint256>& haveSentTxHashes)
+{
+    assert(xnode != nullptr);
+
+    GET_NET_INTERFACE(ifNetObj);
+    assert(ifNetObj != nullptr);
+
+    std::vector<CInv> vInv;
+    if (sendMempool)
+    {
+        auto vtxinfo = infoAll();
+        for (const auto &txinfo : vtxinfo)
+        {
+            const uint256 &hash = txinfo.tx->GetHash();
+            CInv inv(MSG_TX, hash);
+
+            auto it = std::find(toSendTxHashes.begin(), toSendTxHashes.end(), hash);
+            if (it != toSendTxHashes.end())
+                toSendTxHashes.erase(it);
+
+            if (txinfo.feeRate.GetFeePerK() < minFeeFilter)
+                continue;
+
+            if (txFilter)
+                if (!txFilter->IsRelevantAndUpdate(*txinfo.tx))
+                    continue;
+
+            haveSentTxHashes.emplace_back(hash);
+            vInv.push_back(inv);
+            if (vInv.size() == MAX_INV_SZ)
+            {
+                SendNetMessage(xnode->nodeID, NetMsgType::INV, xnode->sendVersion, 0, vInv);
+                vInv.clear();
+            }
+        }
+    }
+
+    if (!toSendTxHashes.empty())
+    {
+        int64_t nNow = GetTimeMicros();
+
+        // Expire old relay messages
+        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < nNow)
+        {
+            mapRelay.erase(vRelayExpiration.front().second);
+            vRelayExpiration.pop_front();
+        }
+
+        // Topologically and fee-rate sort the inventory we send for privacy and priority reasons.
+        // A heap is used so that not all items need sorting if only a few are being sent.
+        auto compFunc = [this](uint256 a, uint256 b){ return CompareDepthAndScore(b, a); };
+        std::make_heap(toSendTxHashes.begin(), toSendTxHashes.end(), compFunc);
+
+        // No reason to drain out at many times the network's capacity,
+        // especially since we have many peers and some will draw much shorter delays.
+        unsigned int nRelayedTransactions = 0;
+
+        while (!toSendTxHashes.empty() && nRelayedTransactions < INVENTORY_BROADCAST_MAX)
+        {
+            // Fetch the top element from the heap
+            std::pop_heap(toSendTxHashes.begin(), toSendTxHashes.end(), compFunc);
+
+            uint256 hash = toSendTxHashes.back();
+            toSendTxHashes.pop_back();
+
+            auto txinfo = info(hash);
+            if (!txinfo.tx)
+                continue;
+
+            if (txinfo.feeRate.GetFeePerK() < minFeeFilter)
+                continue;
+
+            if (txFilter)
+                if (!txFilter->IsRelevantAndUpdate(*txinfo.tx))
+                    continue;
+
+            haveSentTxHashes.emplace_back(hash);
+
+            auto ret = mapRelay.insert(std::make_pair(hash, std::move(txinfo.tx)));
+            if (ret.second)
+            {
+                vRelayExpiration.push_back(std::make_pair(nNow + 15 * 60 * 1000000, ret.first));
+            }
+
+            vInv.push_back(CInv(MSG_TX, hash));
+            nRelayedTransactions++;
+
+            if (vInv.size() == MAX_INV_SZ)
+            {
+                SendNetMessage(xnode->nodeID, NetMsgType::INV, xnode->sendVersion, 0, vInv);
+                vInv.clear();
+            }
+        }
+    }
+
+    if (!vInv.empty())
+    {
+        SendNetMessage(xnode->nodeID, NetMsgType::INV, xnode->sendVersion, 0, vInv);
+    }
+
+    return true;
+}
+
 // Update the given tx for any in-mempool descendants.
 // Assumes that setMemPoolChildren is correct for the given tx and all
 // descendants.
@@ -1523,6 +1947,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
     LOCK(cs);
     std::list<const CTxMemPoolEntry *> waitingOnDependants;
+    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++)
     {
         unsigned int i = 0;
@@ -1608,8 +2033,9 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         else
         {
             CValidationState state;
+
             bool fCheckResult = tx.IsCoinBase() ||
-                                Consensus::CheckTxInputs(tx, state, mempoolDuplicate, nSpendHeight);
+                    ifVerifyObj->CheckTxInputs(tx, state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
             UpdateCoins(tx, mempoolDuplicate, 1000000);
         }
@@ -1628,7 +2054,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
         } else
         {
             bool fCheckResult = entry->GetTx().IsCoinBase() ||
-                                Consensus::CheckTxInputs(entry->GetTx(), state, mempoolDuplicate, nSpendHeight);
+                                ifVerifyObj->CheckTxInputs(entry->GetTx(), state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
             UpdateCoins(entry->GetTx(), mempoolDuplicate, 1000000);
             stepsSinceLastRemove = 0;

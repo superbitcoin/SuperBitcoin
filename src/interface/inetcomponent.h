@@ -28,6 +28,13 @@ public:
 
     virtual bool BroadcastTransaction(uint256 txHash) = 0;
 
+    virtual bool AskForTransaction(int64_t nodeID, uint256 txHash, int flags = 0) = 0;
+
+    virtual bool MisbehaveNode(int64_t nodeID, int num) = 0;
+
+    //!check if the outbound target is reached
+    virtual bool OutboundTargetReached(bool historicalBlockServingLimit) = 0;
+
     //add other interface methods here ...
 
 

@@ -12,7 +12,6 @@
 #include "sbtccore/checkqueue.h"
 #include "config/consensus.h"
 #include "merkle.h"
-#include "sbtccore/transaction/tx_verify.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/cuckoocache.h"
 #include "fs.h"
@@ -42,6 +41,7 @@
 #include "framework/versionbits.h"
 #include "framework/warnings.h"
 #include "framework/base.hpp"
+#include "interface/ITxVerifyComponent.h"
 
 #include <atomic>
 #include <sstream>
@@ -260,7 +260,8 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
                                ? chainActive.Tip()->GetMedianTimePast()
                                : GetAdjustedTime();
 
-    return IsFinalTx(tx, nBlockHeight, nBlockTime);
+    GET_VERIFY_INTERFACE(ifVerifyObj);
+    return ifVerifyObj->IsFinalTx(tx, nBlockHeight, nBlockTime);
 }
 
 bool TestLockPointValidity(const LockPoints *lp)
@@ -710,7 +711,8 @@ bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsVi
 {
     if (!tx.IsCoinBase())
     {
-        if (!Consensus::CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs)))
+        GET_VERIFY_INTERFACE(ifVerifyObj);
+        if (!ifVerifyObj->CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs)))
             return false;
 
         if (pvChecks)
@@ -1277,6 +1279,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
 
         nInputs += tx.vin.size();
 
+        GET_VERIFY_INTERFACE(ifVerifyObj);
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
@@ -1292,7 +1295,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
                 prevheights[j] = view.AccessCoin(tx.vin[j].prevout).nHeight;
             }
 
-            if (!SequenceLocks(tx, nLockTimeFlags, &prevheights, *pindex))
+            if (!ifVerifyObj->SequenceLocks(tx, nLockTimeFlags, &prevheights, *pindex))
             {
                 return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
                                  REJECT_INVALID, "bad-txns-nonfinal");
@@ -1303,7 +1306,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
         // * legacy (always)
         // * p2sh (when P2SH enabled in flags and excludes coinbase)
         // * witness (when witness enabled in flags and excludes coinbase)
-        nSigOpsCost += GetTransactionSigOpCost(tx, view, flags);
+        nSigOpsCost += ifVerifyObj->GetTransactionSigOpCost(tx, view, flags);
         if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
@@ -2668,8 +2671,9 @@ bool CheckBlock(const CBlock &block, CValidationState &state, const Consensus::P
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
 
     // Check transactions
+    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (const auto &tx : block.vtx)
-        if (!CheckTransaction(*tx, state, false))
+        if (!ifVerifyObj->CheckTransaction(*tx, state, false))
             return state.Invalid(false, state.GetRejectCode(), state.GetRejectReason(),
                                  strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(),
                                            state.GetDebugMessage()));
@@ -2677,7 +2681,7 @@ bool CheckBlock(const CBlock &block, CValidationState &state, const Consensus::P
     unsigned int nSigOps = 0;
     for (const auto &tx : block.vtx)
     {
-        nSigOps += GetLegacySigOpCount(*tx);
+        nSigOps += ifVerifyObj->GetLegacySigOpCount(*tx);
     }
     if (nSigOps * WITNESS_SCALE_FACTOR > MAX_BLOCK_SIGOPS_COST)
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops", false, "out-of-bounds SigOpCount");
@@ -2823,9 +2827,10 @@ static bool ContextualCheckBlock(const CBlock &block, CValidationState &state, c
                               : block.GetBlockTime();
 
     // Check that all transactions are finalized
+    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (const auto &tx : block.vtx)
     {
-        if (!IsFinalTx(*tx, nHeight, nLockTimeCutoff))
+        if (!ifVerifyObj->IsFinalTx(*tx, nHeight, nLockTimeCutoff))
         {
             return state.DoS(10, false, REJECT_INVALID, "bad-txns-nonfinal", false, "non-final transaction");
         }

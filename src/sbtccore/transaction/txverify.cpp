@@ -2,8 +2,6 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "tx_verify.h"
-
 #include "consensus.h"
 #include "transaction/transaction.h"
 #include "script/interpreter.h"
@@ -13,8 +11,16 @@
 #include "chaincontrol/chain.h"
 #include "chaincontrol/coins.h"
 #include "utils/utilmoneystr.h"
+#include "txverify.h"
+CTxVerify::CTxVerify()
+{
 
-bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
+}
+CTxVerify::~CTxVerify()
+{
+
+}
+bool CTxVerify::IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 {
     if (tx.nLockTime == 0)
         return true;
@@ -28,8 +34,7 @@ bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
     return true;
 }
 
-std::pair<int, int64_t>
-CalculateSequenceLocks(const CTransaction &tx, int flags, std::vector<int> *prevHeights, const CBlockIndex &block)
+std::pair<int, int64_t> CTxVerify::CalculateSequenceLocks(const CTransaction &tx, int flags, std::vector<int> *prevHeights, const CBlockIndex &block)
 {
     assert(prevHeights->size() == tx.vin.size());
 
@@ -97,7 +102,7 @@ CalculateSequenceLocks(const CTransaction &tx, int flags, std::vector<int> *prev
     return std::make_pair(nMinHeight, nMinTime);
 }
 
-bool EvaluateSequenceLocks(const CBlockIndex &block, std::pair<int, int64_t> lockPair)
+bool CTxVerify::EvaluateSequenceLocks(const CBlockIndex &block, std::pair<int, int64_t> lockPair)
 {
     assert(block.pprev);
     int64_t nBlockTime = block.pprev->GetMedianTimePast();
@@ -107,12 +112,12 @@ bool EvaluateSequenceLocks(const CBlockIndex &block, std::pair<int, int64_t> loc
     return true;
 }
 
-bool SequenceLocks(const CTransaction &tx, int flags, std::vector<int> *prevHeights, const CBlockIndex &block)
+bool CTxVerify::SequenceLocks(const CTransaction &tx, int flags, std::vector<int> *prevHeights, const CBlockIndex &block)
 {
     return EvaluateSequenceLocks(block, CalculateSequenceLocks(tx, flags, prevHeights, block));
 }
 
-unsigned int GetLegacySigOpCount(const CTransaction &tx)
+unsigned int CTxVerify::GetLegacySigOpCount(const CTransaction &tx)
 {
     unsigned int nSigOps = 0;
     for (const auto &txin : tx.vin)
@@ -126,7 +131,7 @@ unsigned int GetLegacySigOpCount(const CTransaction &tx)
     return nSigOps;
 }
 
-unsigned int GetP2SHSigOpCount(const CTransaction &tx, const CCoinsViewCache &inputs)
+unsigned int CTxVerify::GetP2SHSigOpCount(const CTransaction &tx, const CCoinsViewCache &inputs)
 {
     if (tx.IsCoinBase())
         return 0;
@@ -143,7 +148,7 @@ unsigned int GetP2SHSigOpCount(const CTransaction &tx, const CCoinsViewCache &in
     return nSigOps;
 }
 
-int64_t GetTransactionSigOpCost(const CTransaction &tx, const CCoinsViewCache &inputs, int flags)
+int64_t CTxVerify::GetTransactionSigOpCost(const CTransaction &tx, const CCoinsViewCache &inputs, int flags)
 {
     int64_t nSigOps = GetLegacySigOpCount(tx) * WITNESS_SCALE_FACTOR;
 
@@ -165,7 +170,7 @@ int64_t GetTransactionSigOpCost(const CTransaction &tx, const CCoinsViewCache &i
     return nSigOps;
 }
 
-bool CheckTransaction(const CTransaction &tx, CValidationState &state, bool fCheckDuplicateInputs)
+bool CTxVerify::CheckTransaction(const CTransaction &tx, CValidationState &state, bool fCheckDuplicateInputs)
 {
     // Basic checks that don't depend on any context
     if (tx.vin.empty())
@@ -215,7 +220,7 @@ bool CheckTransaction(const CTransaction &tx, CValidationState &state, bool fChe
     return true;
 }
 
-bool Consensus::CheckTxInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs,
+bool CTxVerify::CheckTxInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs,
                               int nSpendHeight)
 {
     // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
@@ -261,3 +266,5 @@ bool Consensus::CheckTxInputs(const CTransaction &tx, CValidationState &state, c
         return state.DoS(100, false, REJECT_INVALID, "bad-txns-fee-outofrange");
     return true;
 }
+
+

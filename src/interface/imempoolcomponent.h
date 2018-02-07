@@ -1,6 +1,10 @@
 #pragma once
 
+#include <vector>
 #include "componentid.h"
+#include "exchangeformat.h"
+#include "sbtccore/streams.h"
+#include "p2p/bloom.h"
 #include "framework/component.hpp"
 
 class ITxMempoolComponent : public appbase::TComponent<ITxMempoolComponent>
@@ -37,6 +41,17 @@ public:
      * See consensus/consensus.h for flag definitions.
      */
     virtual bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false) = 0;
+
+
+    virtual bool DoesTransactionExist(uint256 hash) = 0;
+
+    virtual bool NetRequestTxData(ExNode* xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) = 0;
+
+    virtual bool NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash) = 0;
+
+    virtual bool NetRequestTxInventory(ExNode* xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter* txFilter,
+                                       std::vector<uint256>& toSendTxHashes, std::vector<uint256>& haveSentTxHashes) = 0;
+
     //add other interface methods here ...
 
 };
