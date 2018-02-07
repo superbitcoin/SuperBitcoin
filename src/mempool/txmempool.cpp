@@ -934,6 +934,29 @@ bool CTxMemPool::DoesTransactionExist(uint256 hash)
     return true;
 }
 
+bool CTxMemPool::NetRequestTxData(ExNode* xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq)
+{
+    assert(xnode != nullptr);
+
+    int nSendFlags = witness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
+
+    auto mi = mapRelay.find(txHash);
+    if (mi != mapRelay.end())
+    {
+        SendNetMessage(xnode->nodeID, NetMsgType::TX, xnode->sendVersion, nSendFlags, *mi->second);
+        return true;
+    }
+
+    auto txinfo = info(txHash);
+    if (txinfo.tx && txinfo.nTime <= timeLastMempoolReq)
+    {
+        SendNetMessage(xnode->nodeID, NetMsgType::TX, xnode->sendVersion, nSendFlags, *txinfo.tx);
+        return true;
+    }
+
+    return false;
+}
+
 bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash)
 {
     assert(xnode != nullptr);

@@ -4220,30 +4220,40 @@ void PeerLogicValidation::ProcessGetData(CNode *pfrom, const std::atomic<bool> &
                 }
             } else if (inv.type == MSG_TX || inv.type == MSG_WITNESS_TX)
             {
-                // Send stream from relay memory
-                bool push = false;
-                auto mi = mapRelay.find(inv.hash);
-                int nSendFlags = (inv.type == MSG_TX ? SERIALIZE_TRANSACTION_NO_WITNESS : 0);
-                if (mi != mapRelay.end())
-                {
-                    connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::TX, *mi->second));
-                    push = true;
-                } else if (pfrom->timeLastMempoolReq)
-                {
-                    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
-                    auto txinfo = txmempool->info(inv.hash);
-                    // To protect privacy, do not answer getdata using the mempool when
-                    // that TX couldn't have been INVed in reply to a MEMPOOL request.
-                    if (txinfo.tx && txinfo.nTime <= pfrom->timeLastMempoolReq)
-                    {
-                        connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::TX, *txinfo.tx));
-                        push = true;
-                    }
-                }
-                if (!push)
+                NodeExchangeInfo xnode;
+                xnode.sendVersion = pfrom->GetSendVersion();
+                xnode.nodeID = pfrom->GetId();
+
+                GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+                if (!ifTxMempoolObj->NetRequestTxData(&xnode, inv.hash, inv.type == MSG_WITNESS_TX, pfrom->timeLastMempoolReq))
                 {
                     vNotFound.push_back(inv);
                 }
+
+//                // Send stream from relay memory
+//                bool push = false;
+//                auto mi = mapRelay.find(inv.hash);
+//                int nSendFlags = (inv.type == MSG_TX ? SERIALIZE_TRANSACTION_NO_WITNESS : 0);
+//                if (mi != mapRelay.end())
+//                {
+//                    connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::TX, *mi->second));
+//                    push = true;
+//                } else if (pfrom->timeLastMempoolReq)
+//                {
+//                    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+//                    auto txinfo = txmempool->info(inv.hash);
+//                    // To protect privacy, do not answer getdata using the mempool when
+//                    // that TX couldn't have been INVed in reply to a MEMPOOL request.
+//                    if (txinfo.tx && txinfo.nTime <= pfrom->timeLastMempoolReq)
+//                    {
+//                        connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::TX, *txinfo.tx));
+//                        push = true;
+//                    }
+//                }
+//                if (!push)
+//                {
+//                    vNotFound.push_back(inv);
+//                }
             }
 
             // Track requests for our stuff.
