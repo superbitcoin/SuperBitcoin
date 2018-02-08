@@ -65,6 +65,8 @@ private:
     CBlockFileManager cFileManager;
     CBlockIndexManager cIndexManager;
     CViewManager cViewManager;
+
+    CCriticalSection cs_nodeExchangInfo;
     std::map<int64_t, std::set<int>> m_nodeCheckPointKnown;
 
 
@@ -88,4 +90,6 @@ private:
     bool FlushStateToDisk(CValidationState &state, FlushStateMode mode);
 
     bool NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockHeader>& headers);
+
+    void OnNodeDisconnected(int64_t nodeID, bool bInBound, int disconnectReason);
 };

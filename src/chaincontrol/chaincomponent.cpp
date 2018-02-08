@@ -6,6 +6,9 @@
 #include "sbtccore/block/validation.h"
 #include "utils/reverse_iterator.h"
 #include "utils/merkleblock.h"
+#include "framework/base.hpp"
+#include "interface/ibasecomponent.h"
+#include "eventmanager/eventmanager.h"
 
 CChainCommonent::CChainCommonent()
 {
@@ -18,6 +21,12 @@ CChainCommonent::~CChainCommonent()
 bool CChainCommonent::ComponentInitialize()
 {
     std::cout << "initialize chain component \n";
+
+    GET_BASE_INTERFACE(ifBaseObj);
+    assert(ifBaseObj != nullptr);
+
+    ifBaseObj->GetEventManager()->RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainCommonent::OnNodeDisconnected);
+
     return true;
 }
 
@@ -74,21 +83,29 @@ bool CChainCommonent::GetActiveChainTipHash(uint256& tipHash)
     return false;
 }
 
+void CChainCommonent::OnNodeDisconnected(int64_t nodeID, bool /*bInBound*/, int /*disconnectReason*/)
+{
+    LOCK(cs_nodeExchangInfo);
+    m_nodeCheckPointKnown.erase(nodeID);
+}
+
 bool CChainCommonent::NetRequestCheckPoint(ExNode *xnode, int height)
 {
     assert(xnode != nullptr);
 
-    std::set<int> &checkpointKnown = m_nodeCheckPointKnown[xnode->nodeID];
-
     std::vector<Checkpoints::CCheckData> vSendData;
     std::vector<Checkpoints::CCheckData> vnHeight;
     Checkpoints::GetCheckpointByHeight(height, vnHeight);
-    for (const auto &point : vnHeight)
     {
-        if (checkpointKnown.count(point.getHeight()) == 0)
+        LOCK(cs_nodeExchangInfo);
+        std::set<int> &checkpointKnown = m_nodeCheckPointKnown[xnode->nodeID];
+        for (const auto &point : vnHeight)
         {
-            checkpointKnown.insert(point.getHeight());
-            vSendData.push_back(point);
+            if (checkpointKnown.count(point.getHeight()) == 0)
+            {
+                checkpointKnown.insert(point.getHeight());
+                vSendData.push_back(point);
+            }
         }
     }
 
@@ -111,8 +128,8 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
     stream >> vdata;
 
     Checkpoints::CCheckPointDB cCheckPointDB;
+    std::vector<int> toInsertCheckpoints;
     std::vector<Checkpoints::CCheckData> vIndex;
-
     const CChainParams &chainparams = appbase::app().GetChainParams();
     for (const auto &point : vdata)
     {
@@ -125,7 +142,7 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
                  * add the check point to chainparams
                  */
                 chainparams.AddCheckPoint(point.getHeight(), point.getHash());
-                m_nodeCheckPointKnown[xnode->nodeID].insert(point.getHeight());
+                toInsertCheckpoints.push_back(point.getHeight());
                 vIndex.push_back(point);
             }
         } else
@@ -134,6 +151,13 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
             break;
         }
         LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
+    }
+
+    if (!toInsertCheckpoints.empty())
+    {
+        LOCK(cs_nodeExchangInfo);
+        std::set<int> &checkpointKnown = m_nodeCheckPointKnown[xnode->nodeID];
+        checkpointKnown.insert(toInsertCheckpoints.begin(), toInsertCheckpoints.end());
     }
 
     if (vIndex.size() > 0)

@@ -4122,6 +4122,7 @@ void PeerLogicValidation::ProcessGetData(CNode *pfrom, const std::atomic<bool> &
             // Track requests for our stuff.
             GetMainSignals().Inventory(inv.hash);
 
+            // why process just one block getdata msg here?
             if (inv.type == MSG_BLOCK || inv.type == MSG_FILTERED_BLOCK || inv.type == MSG_CMPCT_BLOCK ||
                 inv.type == MSG_WITNESS_BLOCK)
                 break;
