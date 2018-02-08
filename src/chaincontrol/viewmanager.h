@@ -11,6 +11,7 @@
 #include "chain.h"
 #include "coins.h"
 #include "sbtccore/transaction/txdb.h"
+#include "sbtccore/block/undo.h"
 
 enum DisconnectResult
 {
@@ -40,6 +41,10 @@ public:
     DisconnectResult DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CCoinsViewCache &view);
 
     bool Flush();
+
+    void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight);
+
+    void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
 
 private:
     CChain cChian;

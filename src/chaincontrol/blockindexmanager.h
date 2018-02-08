@@ -86,7 +86,15 @@ public:
 
     void InvalidChainFound(CBlockIndex *pIndexNew);
 
+    void InvalidBlockFound(CBlockIndex *pindex, const CValidationState &state);
+
     void CheckBlockIndex(const Consensus::Params &consensusParams);
+
+    void InvalidateBlock(CBlockIndex *pIndex, CBlockIndex *pInvalidWalkTip, bool bIndexWasInChain);
+
+    void CheckForkWarningConditionsOnNewFork(CBlockIndex *pindexNewForkTip);
+
+    void CheckForkWarningConditions();
 
 private:
     bool bReIndex = false;
@@ -101,8 +109,12 @@ private:
     std::set<CBlockIndex *, CBlockIndexWorkComparator> setBlockIndexCandidates;
     /** Dirty block index entries. */
     std::set<CBlockIndex *> setDirtyBlockIndex;
+    std::set<CBlockIndex *> setFailedBlocks;
     CBlockIndex *pIndexBestInvalid;
     CBlockIndex *pIndexBestHeader = nullptr;
+    CBlockIndex *pIndexBestForkTip = nullptr;
+    CBlockIndex *pIndexBestForkBase = nullptr;
+
     CChain cChainActive;
 
     CCriticalSection cs;
