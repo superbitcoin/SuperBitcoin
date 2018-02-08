@@ -7,10 +7,23 @@
 #define BITCOIN_PRIMITIVES_TRANSACTION_H
 
 #include <stdint.h>
+
+
 #include "wallet/amount.h"
 #include "script/script.h"
 #include "sbtccore/serialize.h"
 #include "uint256.h"
+#include "CTransactionBase.h"
+//#include "policy.h"
+
+
+//#include <chaincontrol/validation.h>
+//#include <chaincontrol/coins.h>
+class CTransactionBase;
+//#include "CTransactionBase.h"
+class  CBlockIndex;
+class CValidationState;
+class CCoinsViewCache;
 
 static const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
 
@@ -287,12 +300,13 @@ inline void SerializeTransaction(const TxType &tx, Stream &s)
     s << tx.nLockTime;
 }
 
-
+//class  CPolicy;
 /** The basic transaction that is broadcasted on the network and contained in
  * blocks.  A transaction can contain multiple inputs and outputs.
  */
-class CTransaction
+class CTransaction : public CTransactionBase
 {
+
 public:
     // Default transaction version.
     static const int32_t CURRENT_VERSION = 2;
@@ -313,12 +327,12 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
 
+//     CPolicy cPolicy;
 private:
     /** Memory only. */
     const uint256 hash;
 
     uint256 ComputeHash() const;
-
 public:
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
@@ -394,6 +408,76 @@ public:
         }
         return false;
     }
+
+    /**
+          * Check whether all inputs of this transaction are valid (no double spends and amounts)
+          * This does not modify the UTXO set. This does not check scripts and sigs.
+          * Preconditions: tx.IsCoinBase() is false.
+          */
+    bool CheckTxInputs(CValidationState &state, const CCoinsViewCache &inputs,
+                       int nSpendHeight) const;
+
+    /** Context-independent validity checks */
+    bool CheckTransaction(CValidationState &state, bool fCheckDuplicateInputs = true) const;
+
+    /** Auxiliary functions for transaction validation (ideally should not be exposed) */
+
+    /**
+     * Count ECDSA signature operations the old-fashioned (pre-0.6) way
+     * @return number of sigops this transaction's outputs will produce when spent
+     * @see CTransaction::FetchInputs
+     */
+    unsigned int GetLegacySigOpCount() const;
+
+    /**
+     * Count ECDSA signature operations in pay-to-script-hash inputs.
+     *
+     * @param[in] mapInputs Map of previous transactions that have outputs we're spending
+     * @return maximum number of sigops required to validate this transaction's inputs
+     * @see CTransaction::FetchInputs
+     */
+    unsigned int GetP2SHSigOpCount(const CCoinsViewCache &mapInputs) const;
+
+    /**
+    * Compute total signature operation cost of a transaction.
+    * @param[in] tx     Transaction for which we are computing the cost
+    * @param[in] inputs Map of previous transactions that have outputs we're spending
+    * @param[out] flags Script verification flags
+    * @return Total signature operation cost of tx
+    */
+    int64_t GetTransactionSigOpCost(const CCoinsViewCache &inputs, int flags) const;
+
+
+    /**
+   * Check if transaction is final and can be included in a block with the
+   * specified height and time. Consensus critical.
+   */
+    bool IsFinalTx(int nBlockHeight, int64_t nBlockTime) const;
+
+    /**
+     * Calculates the block height and previous block's median time past at
+     * which the transaction will be considered final in the context of BIP 68.
+     * Also removes from the vector of input heights any entries which did not
+     * correspond to sequence locked inputs as they do not affect the calculation.
+     */
+     std::pair<int, int64_t>
+    CalculateSequenceLocks(int flags, std::vector<int> *prevHeights, const CBlockIndex &block) const;
+
+    bool EvaluateSequenceLocks(const CBlockIndex &block, std::pair<int, int64_t> lockPair) const ;
+
+
+    const std::vector<CKeyID> sender() const override;
+
+    std::vector<CKeyID> to() const override;
+
+    bool PreCheck() const override;
+
+    bool EndCheck() const override;
+
+    bool Excute() const override;
+
+    bool Undo() const override;
+
 };
 
 /** A mutable version of CTransaction. */
