@@ -7,6 +7,7 @@
 #include "blockindexmanager.h"
 #include "viewmanager.h"
 #include "mempool/txmempool.h"
+#include "sbtccore/block/blockencodings.h"
 
 struct database
 {
@@ -192,9 +193,13 @@ public:
 
     bool NetReceiveBlockData(ExNode *xnode, CDataStream &stream, uint256 &blockHash) override;
 
+    bool NetRequestBlockTxn(ExNode *xnode, CDataStream &stream) override;
+
 private:
 
-    bool NetReceiveHeaders(ExNode* xnode, const std::vector<CBlockHeader>& headers);
+    bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);
+
+    bool NetSendBlockTransactions(ExNode *xnode, const BlockTransactionsRequest &req, const CBlock &block);
 
     void OnNodeDisconnected(int64_t nodeID, bool bInBound, int disconnectReason);
 

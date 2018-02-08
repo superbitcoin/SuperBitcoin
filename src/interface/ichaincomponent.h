@@ -34,6 +34,7 @@ public:
     virtual bool NetReceiveHeaders(ExNode* xnode, CDataStream& stream) = 0;
     virtual bool NetRequestBlockData(ExNode* xnode, uint256 blockHash, int blockType) = 0;
     virtual bool NetReceiveBlockData(ExNode* xnode, CDataStream& stream, uint256& blockHash) = 0;
+    virtual bool NetRequestBlockTxn(ExNode* xnode, CDataStream& stream) = 0;
 
     //add other interface methods here ...
 };

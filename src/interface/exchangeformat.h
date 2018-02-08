@@ -58,7 +58,6 @@ struct NodeExchangeInfo
     int64_t     nodeID;
     int         flags;
     int         sendVersion;
-    int         recvVersion;
     int         startHeight;
     int         nBlocksInFlight;
     int         nLocalServices;

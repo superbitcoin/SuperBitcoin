@@ -51,7 +51,8 @@ bool CChainCommonent::ComponentInitialize()
     GET_BASE_INTERFACE(ifBaseObj);
     assert(ifBaseObj != nullptr);
 
-    ifBaseObj->GetEventManager()->RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainCommonent::OnNodeDisconnected);
+    ifBaseObj->GetEventManager()->RegisterEventHandler(EID_NODE_DISCONNECTED, this,
+                                                       &CChainCommonent::OnNodeDisconnected);
 
     return true;
 }
@@ -789,11 +790,78 @@ bool CChainCommonent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, ui
     );
     if (fNewBlock)
     {
-        SetFlagsBit(xnode
-                            ->retFlags, NF_NEWBLOCK);
+        SetFlagsBit(xnode->retFlags, NF_NEWBLOCK);
     }
 
     return true;
+}
+
+bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
+{
+    assert(xnode != nullptr);
+
+    BlockTransactionsRequest req;
+    stream >> req;
+
+    //    std::shared_ptr<const CBlock> recent_block;
+    //    {
+    //        LOCK(cs_most_recent_block);
+    //        if (most_recent_block_hash == req.blockhash)
+    //            recent_block = most_recent_block;
+    //        // Unlock cs_most_recent_block to avoid cs_main lock inversion
+    //    }
+    //
+    //    if (recent_block)
+    //    {
+    //        NetSendBlockTransactions(xnode, req, *recent_block);
+    //        return true;
+    //    }
+
+    CBlockIndex *bi = cIndexManager.GetBlockIndex(req.blockhash);
+    if (!bi || !(bi->nStatus & BLOCK_HAVE_DATA))
+    {
+        LogPrintf("Peer %d sent us a getblocktxn for a block we don't have", xnode->nodeID);
+        return true;
+    }
+
+    if (bi->nHeight < chainActive.Height() - MAX_BLOCKTXN_DEPTH)
+    {
+        // If an older block is requested (should never happen in practice,
+        // but can happen in tests) send a block response instead of a
+        // blocktxn response. Sending a full block response instead of a
+        // small blocktxn response is preferable in the case where a peer
+        // might maliciously send lots of getblocktxn requests to trigger
+        // expensive disk reads, because it will require the peer to
+        // actually receive all the data read from disk over the network.
+        LogPrint(BCLog::NET, "Peer %d sent us a getblocktxn for a block > %i deep", xnode->nodeID, MAX_BLOCKTXN_DEPTH);
+        int blockType = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ? MSG_WITNESS_BLOCK : MSG_BLOCK;
+        NetRequestBlockData(xnode, req.blockhash, blockType);
+        return true;
+    }
+
+    CBlock block;
+    bool ret = ReadBlockFromDisk(block, bi, appbase::app().GetChainParams().GetConsensus());
+    assert(ret);
+
+    return NetSendBlockTransactions(xnode, req, block);
+}
+
+bool CChainCommonent::NetSendBlockTransactions(ExNode *xnode, const BlockTransactionsRequest &req, const CBlock &block)
+{
+    BlockTransactions resp(req);
+    for (size_t i = 0; i < req.indexes.size(); i++)
+    {
+        if (req.indexes[i] >= block.vtx.size())
+        {
+            xnode->nMisbehavior = 100;
+            LogPrintf("Peer %d sent us a getblocktxn with out-of-bounds tx indices", xnode->nodeID);
+            return false;
+        }
+        resp.txn[i] = block.vtx[req.indexes[i]];
+    }
+
+    int nSendFlags = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
+    return SendNetMessage(xnode->nodeID, NetMsgType::BLOCKTXN, xnode->sendVersion, nSendFlags, resp);
 }
 
 CBlockIndex *CChainCommonent::Tip()
