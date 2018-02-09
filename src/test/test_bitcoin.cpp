@@ -17,7 +17,7 @@
 #include "random.h"
 #include "transaction/txdb.h"
 #include "mempool/txmempool.h"
-#include "framwork/ui_interface.h"
+#include "framework/ui_interface.h"
 #include "rpc/server.h"
 #include "rpc/register.h"
 #include "script/sigcache.h"

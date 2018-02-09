@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "sbtccore/streams.h"
-#include "support/allocators/zeroafterfree.h"
+#include "utils/crypto/allocators/zeroafterfree.h"
 #include "test/test_bitcoin.h"
 
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'

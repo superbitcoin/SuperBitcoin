@@ -3,7 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "chaincontrol/chain.h"
-#include "framwork/versionbits.h"
+#include "framework/versionbits.h"
 #include "test/test_bitcoin.h"
 #include "config/chainparams.h"
 #include "block/validation.h"
