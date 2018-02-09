@@ -4,28 +4,19 @@
 enum SBTCEventID
 {
     //NOTE:
-    EID_STARTUP     = 1,
+    //Params: [NodeID, IsInBound, totalNodeCount]
+    EID_NODE_CONNECTED  = 1,
 
     //NOTE:
-    EID_DESTROY     = 2,
+    //Params: [NodeID, IsInBound, DisconnectReason]
+    EID_NODE_DISCONNECTED = 2,
 
     //NOTE:
-    EID_TRANSACTION = 3,
-
-    //NOTE:
-    EID_BLOCK       = 4,
-
-    //NOTE:
-    EID_HEADERS     = 5,
-
-    //NOTE:
-    EID_INV         = 6,
-
-    //NOTE:
-    EID_MEMPOOL     = 7,
+    //Params: [oldTipHash, oldChainHeight, newTipHash, newChainHeight]
+    EID_CHAIN_CHANGED   = 3,
 
 
-    //...
+    //add other event id here...
 };
 
 

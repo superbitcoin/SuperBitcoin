@@ -12,6 +12,9 @@
 #include "sbtccore/checkqueue.h"
 #include "sbtccore/block/undo.h"
 #include "utils/merkleblock.h"
+#include "framework/base.hpp"
+#include "interface/ibasecomponent.h"
+#include "eventmanager/eventmanager.h"
 
 static int64_t nTimeCheck = 0;
 static int64_t nTimeForks = 0;
@@ -44,7 +47,12 @@ CChainCommonent::~CChainCommonent()
 bool CChainCommonent::ComponentInitialize()
 {
     std::cout << "initialize chain component \n";
-    
+
+    GET_BASE_INTERFACE(ifBaseObj);
+    assert(ifBaseObj != nullptr);
+
+    ifBaseObj->GetEventManager()->RegisterEventHandler(EID_NODE_DISCONNECTED, this,
+                                                       &CChainCommonent::OnNodeDisconnected);
     return true;
 }
 
@@ -101,21 +109,29 @@ bool CChainCommonent::GetActiveChainTipHash(uint256 &tipHash)
     return false;
 }
 
+void CChainCommonent::OnNodeDisconnected(int64_t nodeID, bool /*bInBound*/, int /*disconnectReason*/)
+{
+    LOCK(cs_xnodeGuard);
+    m_nodeCheckPointKnown.erase(nodeID);
+}
+
 bool CChainCommonent::NetRequestCheckPoint(ExNode *xnode, int height)
 {
     assert(xnode != nullptr);
 
-    std::set<int> &checkpointKnown = m_nodeCheckPointKnown[xnode->nodeID];
-
     std::vector<Checkpoints::CCheckData> vSendData;
     std::vector<Checkpoints::CCheckData> vnHeight;
     Checkpoints::GetCheckpointByHeight(height, vnHeight);
-    for (const auto &point : vnHeight)
     {
-        if (checkpointKnown.count(point.getHeight()) == 0)
+        LOCK(cs_xnodeGuard);
+        std::set<int> &checkpointKnown = m_nodeCheckPointKnown[xnode->nodeID];
+        for (const auto &point : vnHeight)
         {
-            checkpointKnown.insert(point.getHeight());
-            vSendData.push_back(point);
+            if (checkpointKnown.count(point.getHeight()) == 0)
+            {
+                checkpointKnown.insert(point.getHeight());
+                vSendData.push_back(point);
+            }
         }
     }
 
@@ -138,8 +154,8 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
     stream >> vdata;
 
     Checkpoints::CCheckPointDB cCheckPointDB;
+    std::vector<int> toInsertCheckpoints;
     std::vector<Checkpoints::CCheckData> vIndex;
-
     const CChainParams &chainparams = appbase::app().GetChainParams();
     for (const auto &point : vdata)
     {
@@ -152,7 +168,7 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
                  * add the check point to chainparams
                  */
                 chainparams.AddCheckPoint(point.getHeight(), point.getHash());
-                m_nodeCheckPointKnown[xnode->nodeID].insert(point.getHeight());
+                toInsertCheckpoints.push_back(point.getHeight());
                 vIndex.push_back(point);
             }
         } else
@@ -161,6 +177,13 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
             break;
         }
         LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
+    }
+
+    if (!toInsertCheckpoints.empty())
+    {
+        LOCK(cs_xnodeGuard);
+        std::set<int> &checkpointKnown = m_nodeCheckPointKnown[xnode->nodeID];
+        checkpointKnown.insert(toInsertCheckpoints.begin(), toInsertCheckpoints.end());
     }
 
     if (vIndex.size() > 0)
@@ -766,11 +789,78 @@ bool CChainCommonent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, ui
     );
     if (fNewBlock)
     {
-        SetFlagsBit(xnode
-                            ->retFlags, NF_NEWBLOCK);
+        SetFlagsBit(xnode->retFlags, NF_NEWBLOCK);
     }
 
     return true;
+}
+
+bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
+{
+    assert(xnode != nullptr);
+
+    BlockTransactionsRequest req;
+    stream >> req;
+
+    //    std::shared_ptr<const CBlock> recent_block;
+    //    {
+    //        LOCK(cs_most_recent_block);
+    //        if (most_recent_block_hash == req.blockhash)
+    //            recent_block = most_recent_block;
+    //        // Unlock cs_most_recent_block to avoid cs_main lock inversion
+    //    }
+    //
+    //    if (recent_block)
+    //    {
+    //        NetSendBlockTransactions(xnode, req, *recent_block);
+    //        return true;
+    //    }
+
+    CBlockIndex *bi = cIndexManager.GetBlockIndex(req.blockhash);
+    if (!bi || !(bi->nStatus & BLOCK_HAVE_DATA))
+    {
+        LogPrintf("Peer %d sent us a getblocktxn for a block we don't have", xnode->nodeID);
+        return true;
+    }
+
+    if (bi->nHeight < chainActive.Height() - MAX_BLOCKTXN_DEPTH)
+    {
+        // If an older block is requested (should never happen in practice,
+        // but can happen in tests) send a block response instead of a
+        // blocktxn response. Sending a full block response instead of a
+        // small blocktxn response is preferable in the case where a peer
+        // might maliciously send lots of getblocktxn requests to trigger
+        // expensive disk reads, because it will require the peer to
+        // actually receive all the data read from disk over the network.
+        LogPrint(BCLog::NET, "Peer %d sent us a getblocktxn for a block > %i deep", xnode->nodeID, MAX_BLOCKTXN_DEPTH);
+        int blockType = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ? MSG_WITNESS_BLOCK : MSG_BLOCK;
+        NetRequestBlockData(xnode, req.blockhash, blockType);
+        return true;
+    }
+
+    CBlock block;
+    bool ret = ReadBlockFromDisk(block, bi, appbase::app().GetChainParams().GetConsensus());
+    assert(ret);
+
+    return NetSendBlockTransactions(xnode, req, block);
+}
+
+bool CChainCommonent::NetSendBlockTransactions(ExNode *xnode, const BlockTransactionsRequest &req, const CBlock &block)
+{
+    BlockTransactions resp(req);
+    for (size_t i = 0; i < req.indexes.size(); i++)
+    {
+        if (req.indexes[i] >= block.vtx.size())
+        {
+            xnode->nMisbehavior = 100;
+            LogPrintf("Peer %d sent us a getblocktxn with out-of-bounds tx indices", xnode->nodeID);
+            return false;
+        }
+        resp.txn[i] = block.vtx[req.indexes[i]];
+    }
+
+    int nSendFlags = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
+    return SendNetMessage(xnode->nodeID, NetMsgType::BLOCKTXN, xnode->sendVersion, nSendFlags, resp);
 }
 
 CBlockIndex *CChainCommonent::Tip()
@@ -1896,7 +1986,7 @@ bool CChainCommonent::RewindBlock(const CChainParams &params)
     CChain chainActive = cIndexManager.GetChain();
     while (iHeight <= chainActive.Height())
     {
-        if(cIndexManager.NeedRewind(iHeight, params.GetConsensus()))
+        if (cIndexManager.NeedRewind(iHeight, params.GetConsensus()))
         {
             break;
         }
@@ -1933,9 +2023,9 @@ bool CChainCommonent::RewindBlock(const CChainParams &params)
     // to disk before writing the chainstate, resulting in a failure to continue if interrupted.
     cIndexManager.RewindBlockIndex(params.GetConsensus());
 
-    if(Tip() != nullptr)
+    if (Tip() != nullptr)
     {
-        if(!FlushStateToDisk(state, FLUSH_STATE_ALWAYS, params))
+        if (!FlushStateToDisk(state, FLUSH_STATE_ALWAYS, params))
         {
             return false;
         }

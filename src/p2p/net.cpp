@@ -24,6 +24,8 @@
 #include "framework/base.hpp"
 #include "framework/scheduler.h"
 #include "framework/ui_interface.h"
+#include "interface/ibasecomponent.h"
+#include "eventmanager/eventmanager.h"
 #include "utils/utilstrencodings.h"
 
 #ifdef WIN32
@@ -1198,10 +1200,15 @@ void CConnman::AcceptConnection(const ListenSocket &hListenSocket)
 
     LogPrint(BCLog::NET, "connection from %s accepted\n", addr.ToString());
 
+    int totalNodeCount = 0;
     {
         LOCK(cs_vNodes);
         vNodes.push_back(pnode);
+        totalNodeCount = (int)vNodes.size();
     }
+
+    GET_BASE_INTERFACE(ifBaseObj);
+    ifBaseObj->GetEventManager()->PostEvent(EID_NODE_CONNECTED, id, true, totalNodeCount);
 }
 
 void CConnman::ThreadSocketHandler()
@@ -2654,6 +2661,10 @@ void CConnman::DeleteNode(CNode *pnode)
     {
         addrman.Connected(pnode->addr);
     }
+
+    GET_BASE_INTERFACE(ifBaseObj);
+    ifBaseObj->GetEventManager()->PostEvent(EID_NODE_DISCONNECTED, pnode->GetId(), pnode->fInbound, 0);
+
     delete pnode;
 }
 

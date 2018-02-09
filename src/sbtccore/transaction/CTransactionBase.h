@@ -13,8 +13,7 @@
 
 class CTransactionBase
 {
-public:
-    CTransactionBase();
+
 
 public:
     virtual std::vector<CKeyID> const sender() const = 0;
@@ -40,12 +39,19 @@ protected:
     enum Type
     {
         NullTransaction,                ///< Null transaction.
-        ContractCreation,                ///< Transaction to create contracts - receiveAddress() is ignored.
-        MessageCall                        ///< Transaction to invoke a message call - receiveAddress() is used.
+        Utox2UtoxTransaction,           ///< Utox2UtoxTransaction
+        ContractCreation,               ///< Transaction to create contracts - receiveAddress() is ignored.
+        MessageCall                     ///< Transaction to invoke a message call - receiveAddress() is used.
     };
 
-    Type type = NullTransaction;
+    const Type type = NullTransaction;
+public:
+    CTransactionBase(Type type):type(type)
+    {
+    };
 
+//private:
+    CTransactionBase(){};
 
 };
 
