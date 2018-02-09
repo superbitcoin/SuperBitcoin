@@ -242,6 +242,8 @@ private:
 
     bool CheckActiveChain(CValidationState &state, const CChainParams &chainparams);
 
+    bool RewindBlock(const CChainParams &params);
+
     bool
     CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams, bool fCheckPOW,
                bool fCheckMerkleRoot);

@@ -350,7 +350,14 @@ bool CBlockIndexManager::LoadBlockIndexDB()
 
 void CBlockIndexManager::PruneBlockIndexCandidates()
 {
-
+    // Note that we can't delete the current block itself, as we may need to return to it later in case a
+    // reorganization to a better block fails.
+    std::set<CBlockIndex*, CBlockIndexWorkComparator>::iterator it = setBlockIndexCandidates.begin();
+    while (it != setBlockIndexCandidates.end() && setBlockIndexCandidates.value_comp()(*it, cChainActive.Tip())) {
+        setBlockIndexCandidates.erase(it++);
+    }
+    // Either the current tip or a successor of it we're working towards is left in setBlockIndexCandidates.
+    assert(!setBlockIndexCandidates.empty());
 }
 
 /** Find the last common ancestor two blocks have.
@@ -799,4 +806,81 @@ void CBlockIndexManager::CheckForkWarningConditionsOnNewFork(CBlockIndex *pindex
     }
 
     CheckForkWarningConditions();
+}
+
+bool CBlockIndexManager::IsWitnessEnabled(const CBlockIndex *pIndexPrev, const Consensus::Params &params)
+{
+    LOCK(cs);
+    return (VersionBitsState(pIndexPrev, params, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
+}
+
+bool CBlockIndexManager::NeedRewind(const int height, const Consensus::Params &params)
+{
+    assert(height >= 1);
+
+    if (IsWitnessEnabled(cChainActive[height - 1], params) && !(cChainActive[height]->nStatus & BLOCK_OPT_WITNESS))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+void CBlockIndexManager::RewindBlockIndex(const Consensus::Params &params)
+{
+    for (BlockMap::iterator it = mBlockIndex.begin(); it != mBlockIndex.end(); it++)
+    {
+        CBlockIndex *pIndexIter = it->second;
+
+        // Note: If we encounter an insufficiently validated block that
+        // is on chainActive, it must be because we are a pruning node, and
+        // this block or some successor doesn't HAVE_DATA, so we were unable to
+        // rewind all the way.  Blocks remaining on chainActive at this point
+        // must not have their validity reduced.
+        if (IsWitnessEnabled(pIndexIter->pprev, params) && !(pIndexIter->nStatus & BLOCK_OPT_WITNESS) &&
+            !cChainActive.Contains(pIndexIter))
+        {
+            // Reduce validity
+            pIndexIter->nStatus = std::min<unsigned int>(pIndexIter->nStatus & BLOCK_VALID_MASK, BLOCK_VALID_TREE) |
+                                  (pIndexIter->nStatus & ~BLOCK_VALID_MASK);
+            // Remove have-data flags.
+            pIndexIter->nStatus &= ~(BLOCK_HAVE_DATA | BLOCK_HAVE_UNDO);
+            // Remove storage location.
+            pIndexIter->nFile = 0;
+            pIndexIter->nDataPos = 0;
+            pIndexIter->nUndoPos = 0;
+            // Remove various other things
+            pIndexIter->nTx = 0;
+            pIndexIter->nChainTx = 0;
+            pIndexIter->nSequenceId = 0;
+            // Make sure it gets written.
+            setDirtyBlockIndex.insert(pIndexIter);
+            // Update indexes
+            setBlockIndexCandidates.erase(pIndexIter);
+            std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> ret = mBlocksUnlinked.equal_range(
+                    pIndexIter->pprev);
+            while (ret.first != ret.second)
+            {
+                if (ret.first->second == pIndexIter)
+                {
+                    mBlocksUnlinked.erase(ret.first++);
+                } else
+                {
+                    ++ret.first;
+                }
+            }
+        } else if (pIndexIter->IsValid(BLOCK_VALID_TRANSACTIONS) && pIndexIter->nChainTx)
+        {
+            setBlockIndexCandidates.insert(pIndexIter);
+        }
+    }
+
+    if(cChainActive.Tip() != nullptr)
+    {
+        // We can't prune block index candidates based on our tip if we have
+        // no tip due to chainActive being empty!
+        PruneBlockIndexCandidates();
+
+        CheckBlockIndex(params);
+    }
 }

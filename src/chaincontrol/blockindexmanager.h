@@ -96,6 +96,10 @@ public:
 
     void CheckForkWarningConditions();
 
+    bool NeedRewind(const int height, const Consensus::Params &params);
+
+    void RewindBlockIndex(const Consensus::Params &params);
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;
@@ -132,6 +136,8 @@ private:
     bool LoadBlockIndexDB();
 
     void UnLoadBlockIndex();
+
+    bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
 
 };
 

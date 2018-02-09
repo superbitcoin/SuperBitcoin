@@ -44,6 +44,7 @@ CChainCommonent::~CChainCommonent()
 bool CChainCommonent::ComponentInitialize()
 {
     std::cout << "initialize chain component \n";
+    
     return true;
 }
 
@@ -1881,6 +1882,64 @@ bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainPara
     }
 
     LogPrint(BCLog::BENCH, "CheckActiveChain End====\n");
+
+    return true;
+}
+
+bool CChainCommonent::RewindBlock(const CChainParams &params)
+{
+    LOCK(cs);
+
+    // Note that during -reindex-chainstate we are called with an empty chainActive!
+
+    int iHeight = 1;
+    CChain chainActive = cIndexManager.GetChain();
+    while (iHeight <= chainActive.Height())
+    {
+        if(cIndexManager.NeedRewind(iHeight, params.GetConsensus()))
+        {
+            break;
+        }
+        iHeight++;
+    }
+
+    // nHeight is now the height of the first insufficiently-validated block, or tipheight + 1
+    CValidationState state;
+    CBlockIndex *pIndex = chainActive.Tip();
+    while (chainActive.Height() >= iHeight)
+    {
+        if (fPruneMode && !(chainActive.Tip()->nStatus & BLOCK_HAVE_DATA))
+        {
+            // If pruning, don't try rewinding past the HAVE_DATA point;
+            // since older blocks can't be served anyway, there's
+            // no need to walk further, and trying to DisconnectTip()
+            // will fail (and require a needless reindex/redownload
+            // of the blockchain).
+            break;
+        }
+        if (!DisconnectTip(state, params, nullptr))
+        {
+            return error("RewindBlock: unable to disconnect block at height %i", pIndex->nHeight);
+        }
+        // Occasionally flush state to disk.
+        if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC, params))
+        {
+            return false;
+        }
+    }
+
+    // Reduce validity flag and have-data flags.
+    // We do this after actual disconnecting, otherwise we'll end up writing the lack of data
+    // to disk before writing the chainstate, resulting in a failure to continue if interrupted.
+    cIndexManager.RewindBlockIndex(params.GetConsensus());
+
+    if(Tip() != nullptr)
+    {
+        if(!FlushStateToDisk(state, FLUSH_STATE_ALWAYS, params))
+        {
+            return false;
+        }
+    }
 
     return true;
 }
