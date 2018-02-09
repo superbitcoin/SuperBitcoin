@@ -100,6 +100,8 @@ public:
 
     void RewindBlockIndex(const Consensus::Params &params);
 
+    bool IsOnlyGenesisBlockIndex();
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;

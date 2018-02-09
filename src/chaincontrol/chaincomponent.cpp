@@ -2033,3 +2033,42 @@ bool CChainCommonent::RewindBlock(const CChainParams &params)
 
     return true;
 }
+
+bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
+{
+    CChain chainActive = cIndexManager.GetChain();
+    uint256 bestHash = cViewManager.GetCoinsTip()->GetBestBlock();
+    if (chainActive.Tip() && chainActive.Tip()->GetBlockHash() == bestHash);
+    {
+        return true;
+    }
+
+    if (bestHash.IsNull() && cIndexManager.IsOnlyGenesisBlockIndex())
+    {
+        // In case we just added the genesis block, connect it now, so
+        // that we always have a chainActive.Tip() when we return.
+        LogPrintf("%s: Connecting genesis block...\n", __func__);
+        CValidationState state;
+        if(!ActivateBestChain(state, chainparams, nullptr))
+        {
+            return false;
+        }
+    }
+
+    // Load pointer to end of best chain
+    CBlockIndex *pTip = cIndexManager.GetBlockIndex(bestHash);
+    if(!pTip)
+    {
+        return false;
+    }
+
+    SetTip(pTip);
+
+    cIndexManager.PruneBlockIndexCandidates();
+
+    LogPrintf("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f\n",
+              chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
+              DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
+              GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
+    return true;
+}

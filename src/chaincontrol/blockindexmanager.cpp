@@ -352,8 +352,9 @@ void CBlockIndexManager::PruneBlockIndexCandidates()
 {
     // Note that we can't delete the current block itself, as we may need to return to it later in case a
     // reorganization to a better block fails.
-    std::set<CBlockIndex*, CBlockIndexWorkComparator>::iterator it = setBlockIndexCandidates.begin();
-    while (it != setBlockIndexCandidates.end() && setBlockIndexCandidates.value_comp()(*it, cChainActive.Tip())) {
+    std::set<CBlockIndex *, CBlockIndexWorkComparator>::iterator it = setBlockIndexCandidates.begin();
+    while (it != setBlockIndexCandidates.end() && setBlockIndexCandidates.value_comp()(*it, cChainActive.Tip()))
+    {
         setBlockIndexCandidates.erase(it++);
     }
     // Either the current tip or a successor of it we're working towards is left in setBlockIndexCandidates.
@@ -875,7 +876,7 @@ void CBlockIndexManager::RewindBlockIndex(const Consensus::Params &params)
         }
     }
 
-    if(cChainActive.Tip() != nullptr)
+    if (cChainActive.Tip() != nullptr)
     {
         // We can't prune block index candidates based on our tip if we have
         // no tip due to chainActive being empty!
@@ -883,4 +884,9 @@ void CBlockIndexManager::RewindBlockIndex(const Consensus::Params &params)
 
         CheckBlockIndex(params);
     }
+}
+
+bool CBlockIndexManager::IsOnlyGenesisBlockIndex()
+{
+    return (mBlockIndex.size() == 1);
 }

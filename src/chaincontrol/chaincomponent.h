@@ -233,6 +233,8 @@ private:
     bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockIndex *pIndex, CCoinsViewCache &view,
                       const CChainParams &chainparams, bool fJustCheck = false);
 
+    bool LoadChainTip(const CChainParams &chainparams);
+
     void UpdateTip(CBlockIndex *pindexNew, const CChainParams &chainParams);
 
     bool ConnectTip(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pIndexNew,
