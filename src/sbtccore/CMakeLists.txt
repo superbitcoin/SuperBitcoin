@@ -4,5 +4,5 @@ link_directories(../utils)
 set(depSources
         ../utils/crypto/aes.h
         ../utils/crypto/aes.cpp
-        transaction/txverify.h transaction/txverify.cpp)
+        )
 add_library(sbtccore ${sources} ${headers} ${depSources})

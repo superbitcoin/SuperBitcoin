@@ -41,7 +41,6 @@
 #include "framework/versionbits.h"
 #include "framework/warnings.h"
 #include "framework/base.hpp"
-#include "interface/ITxVerifyComponent.h"
 
 #include <atomic>
 #include <sstream>
@@ -260,8 +259,8 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
                                ? chainActive.Tip()->GetMedianTimePast()
                                : GetAdjustedTime();
 
-    GET_VERIFY_INTERFACE(ifVerifyObj);
-    return ifVerifyObj->IsFinalTx(tx, nBlockHeight, nBlockTime);
+//    GET_VERIFY_INTERFACE(ifVerifyObj);
+    return tx.IsFinalTx(nBlockHeight, nBlockTime);
 }
 
 bool TestLockPointValidity(const LockPoints *lp)
@@ -691,123 +690,123 @@ void InitScriptExecutionCache()
               (nElems * sizeof(uint256)) >> 20, (nMaxCacheSize * 2) >> 20, nElems);
 }
 
-/**
- * Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
- * This does not modify the UTXO set.
- *
- * If pvChecks is not nullptr, script checks are pushed onto it instead of being performed inline. Any
- * script checks which are not necessary (eg due to script execution cache hits) are, obviously,
- * not pushed onto pvChecks/run.
- *
- * Setting cacheSigStore/cacheFullScriptStore to false will remove elements from the corresponding cache
- * which are matched. This is useful for checking blocks where we will likely never need the cache
- * entry again.
- *
- * Non-static (and re-declared) in src/test/txvalidationcache_tests.cpp
- */
-bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
-                 unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
-                 std::vector<CScriptCheck> *pvChecks)
-{
-    if (!tx.IsCoinBase())
-    {
-        GET_VERIFY_INTERFACE(ifVerifyObj);
-        if (!ifVerifyObj->CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs)))
-            return false;
-
-        if (pvChecks)
-            pvChecks->reserve(tx.vin.size());
-
-        // The first loop above does all the inexpensive checks.
-        // Only if ALL inputs pass do we perform expensive ECDSA signature checks.
-        // Helps prevent CPU exhaustion attacks.
-
-        // Skip script verification when connecting blocks under the
-        // assumevalid block. Assuming the assumevalid block is valid this
-        // is safe because block merkle hashes are still computed and checked,
-        // Of course, if an assumed valid block is invalid due to false scriptSigs
-        // this optimization would allow an invalid chain to be accepted.
-        if (fScriptChecks)
-        {
-            // First check if script executions have been cached with the same
-            // flags. Note that this assumes that the inputs provided are
-            // correct (ie that the transaction hash which is in tx's prevouts
-            // properly commits to the scriptPubKey in the inputs view of that
-            // transaction).
-            uint256 hashCacheEntry;
-            // We only use the first 19 bytes of nonce to avoid a second SHA
-            // round - giving us 19 + 32 + 4 = 55 bytes (+ 8 + 1 = 64)
-            static_assert(55 - sizeof(flags) - 32 >= 128 / 8,
-                          "Want at least 128 bits of nonce for script execution cache");
-            CSHA256().Write(scriptExecutionCacheNonce.begin(), 55 - sizeof(flags) - 32).Write(
-                    tx.GetWitnessHash().begin(), 32).Write((unsigned char *)&flags, sizeof(flags)).Finalize(
-                    hashCacheEntry.begin());
-            AssertLockHeld(cs_main); //TODO: Remove this requirement by making CuckooCache not require external locks
-            if (scriptExecutionCache.contains(hashCacheEntry, !cacheFullScriptStore))
-            {
-                return true;
-            }
-
-            for (unsigned int i = 0; i < tx.vin.size(); i++)
-            {
-                const COutPoint &prevout = tx.vin[i].prevout;
-                const Coin &coin = inputs.AccessCoin(prevout);
-                assert(!coin.IsSpent());
-
-                // We very carefully only pass in things to CScriptCheck which
-                // are clearly committed to by tx' witness hash. This provides
-                // a sanity check that our caching is not introducing consensus
-                // failures through additional data in, eg, the coins being
-                // spent being checked as a part of CScriptCheck.
-                const CScript &scriptPubKey = coin.out.scriptPubKey;
-                const CAmount amount = coin.out.nValue;
-
-                // Verify signature
-                CScriptCheck check(scriptPubKey, amount, tx, i, flags, cacheSigStore, &txdata);
-                if (pvChecks)
-                {
-                    pvChecks->push_back(CScriptCheck());
-                    check.swap(pvChecks->back());
-                } else if (!check())
-                {
-                    if (flags & STANDARD_NOT_MANDATORY_VERIFY_FLAGS)
-                    {
-                        // Check whether the failure was caused by a
-                        // non-mandatory script verification check, such as
-                        // non-standard DER encodings or non-null dummy
-                        // arguments; if so, don't trigger DoS protection to
-                        // avoid splitting the network between upgraded and
-                        // non-upgraded nodes.
-                        CScriptCheck check2(scriptPubKey, amount, tx, i,
-                                            flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheSigStore, &txdata);
-                        if (check2())
-                            return state.Invalid(false, REJECT_NONSTANDARD,
-                                                 strprintf("non-mandatory-script-verify-flag (%s)",
-                                                           ScriptErrorString(check.GetScriptError())));
-                    }
-                    // Failures of other flags indicate a transaction that is
-                    // invalid in new blocks, e.g. an invalid P2SH. We DoS ban
-                    // such nodes as they are not following the protocol. That
-                    // said during an upgrade careful thought should be taken
-                    // as to the correct behavior - we may want to continue
-                    // peering with non-upgraded nodes even after soft-fork
-                    // super-majority signaling has occurred.
-                    return state.DoS(100, false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)",
-                                                                           ScriptErrorString(check.GetScriptError())));
-                }
-            }
-
-            if (cacheFullScriptStore && !pvChecks)
-            {
-                // We executed all of the provided scripts, and were told to
-                // cache the result. Do so now.
-                scriptExecutionCache.insert(hashCacheEntry);
-            }
-        }
-    }
-
-    return true;
-}
+///**
+// * Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
+// * This does not modify the UTXO set.
+// *
+// * If pvChecks is not nullptr, script checks are pushed onto it instead of being performed inline. Any
+// * script checks which are not necessary (eg due to script execution cache hits) are, obviously,
+// * not pushed onto pvChecks/run.
+// *
+// * Setting cacheSigStore/cacheFullScriptStore to false will remove elements from the corresponding cache
+// * which are matched. This is useful for checking blocks where we will likely never need the cache
+// * entry again.
+// *
+// * Non-static (and re-declared) in src/test/txvalidationcache_tests.cpp
+// */
+//bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
+//                 unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
+//                 std::vector<CScriptCheck> *pvChecks)
+//{
+//    if (!tx.IsCoinBase())
+//    {
+//        GET_VERIFY_INTERFACE(ifVerifyObj);
+//        if (!ifVerifyObj->CheckTxInputs(tx, state, inputs, GetSpendHeight(inputs)))
+//            return false;
+//
+//        if (pvChecks)
+//            pvChecks->reserve(tx.vin.size());
+//
+//        // The first loop above does all the inexpensive checks.
+//        // Only if ALL inputs pass do we perform expensive ECDSA signature checks.
+//        // Helps prevent CPU exhaustion attacks.
+//
+//        // Skip script verification when connecting blocks under the
+//        // assumevalid block. Assuming the assumevalid block is valid this
+//        // is safe because block merkle hashes are still computed and checked,
+//        // Of course, if an assumed valid block is invalid due to false scriptSigs
+//        // this optimization would allow an invalid chain to be accepted.
+//        if (fScriptChecks)
+//        {
+//            // First check if script executions have been cached with the same
+//            // flags. Note that this assumes that the inputs provided are
+//            // correct (ie that the transaction hash which is in tx's prevouts
+//            // properly commits to the scriptPubKey in the inputs view of that
+//            // transaction).
+//            uint256 hashCacheEntry;
+//            // We only use the first 19 bytes of nonce to avoid a second SHA
+//            // round - giving us 19 + 32 + 4 = 55 bytes (+ 8 + 1 = 64)
+//            static_assert(55 - sizeof(flags) - 32 >= 128 / 8,
+//                          "Want at least 128 bits of nonce for script execution cache");
+//            CSHA256().Write(scriptExecutionCacheNonce.begin(), 55 - sizeof(flags) - 32).Write(
+//                    tx.GetWitnessHash().begin(), 32).Write((unsigned char *)&flags, sizeof(flags)).Finalize(
+//                    hashCacheEntry.begin());
+//            AssertLockHeld(cs_main); //TODO: Remove this requirement by making CuckooCache not require external locks
+//            if (scriptExecutionCache.contains(hashCacheEntry, !cacheFullScriptStore))
+//            {
+//                return true;
+//            }
+//
+//            for (unsigned int i = 0; i < tx.vin.size(); i++)
+//            {
+//                const COutPoint &prevout = tx.vin[i].prevout;
+//                const Coin &coin = inputs.AccessCoin(prevout);
+//                assert(!coin.IsSpent());
+//
+//                // We very carefully only pass in things to CScriptCheck which
+//                // are clearly committed to by tx' witness hash. This provides
+//                // a sanity check that our caching is not introducing consensus
+//                // failures through additional data in, eg, the coins being
+//                // spent being checked as a part of CScriptCheck.
+//                const CScript &scriptPubKey = coin.out.scriptPubKey;
+//                const CAmount amount = coin.out.nValue;
+//
+//                // Verify signature
+//                CScriptCheck check(scriptPubKey, amount, tx, i, flags, cacheSigStore, &txdata);
+//                if (pvChecks)
+//                {
+//                    pvChecks->push_back(CScriptCheck());
+//                    check.swap(pvChecks->back());
+//                } else if (!check())
+//                {
+//                    if (flags & STANDARD_NOT_MANDATORY_VERIFY_FLAGS)
+//                    {
+//                        // Check whether the failure was caused by a
+//                        // non-mandatory script verification check, such as
+//                        // non-standard DER encodings or non-null dummy
+//                        // arguments; if so, don't trigger DoS protection to
+//                        // avoid splitting the network between upgraded and
+//                        // non-upgraded nodes.
+//                        CScriptCheck check2(scriptPubKey, amount, tx, i,
+//                                            flags & ~STANDARD_NOT_MANDATORY_VERIFY_FLAGS, cacheSigStore, &txdata);
+//                        if (check2())
+//                            return state.Invalid(false, REJECT_NONSTANDARD,
+//                                                 strprintf("non-mandatory-script-verify-flag (%s)",
+//                                                           ScriptErrorString(check.GetScriptError())));
+//                    }
+//                    // Failures of other flags indicate a transaction that is
+//                    // invalid in new blocks, e.g. an invalid P2SH. We DoS ban
+//                    // such nodes as they are not following the protocol. That
+//                    // said during an upgrade careful thought should be taken
+//                    // as to the correct behavior - we may want to continue
+//                    // peering with non-upgraded nodes even after soft-fork
+//                    // super-majority signaling has occurred.
+//                    return state.DoS(100, false, REJECT_INVALID, strprintf("mandatory-script-verify-flag-failed (%s)",
+//                                                                           ScriptErrorString(check.GetScriptError())));
+//                }
+//            }
+//
+//            if (cacheFullScriptStore && !pvChecks)
+//            {
+//                // We executed all of the provided scripts, and were told to
+//                // cache the result. Do so now.
+//                scriptExecutionCache.insert(hashCacheEntry);
+//            }
+//        }
+//    }
+//
+//    return true;
+//}
 
 //namespace
 //{
@@ -1279,7 +1278,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
 
         nInputs += tx.vin.size();
 
-        GET_VERIFY_INTERFACE(ifVerifyObj);
+//        GET_VERIFY_INTERFACE(ifVerifyObj);
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
@@ -1295,7 +1294,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
                 prevheights[j] = view.AccessCoin(tx.vin[j].prevout).nHeight;
             }
 
-            if (!ifVerifyObj->SequenceLocks(tx, nLockTimeFlags, &prevheights, *pindex))
+            if (!tx.SequenceLocks(nLockTimeFlags, &prevheights, *pindex))
             {
                 return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
                                  REJECT_INVALID, "bad-txns-nonfinal");
@@ -1306,7 +1305,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
         // * legacy (always)
         // * p2sh (when P2SH enabled in flags and excludes coinbase)
         // * witness (when witness enabled in flags and excludes coinbase)
-        nSigOpsCost += ifVerifyObj->GetTransactionSigOpCost(tx, view, flags);
+        nSigOpsCost += tx.GetTransactionSigOpCost(view, flags);
         if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");
@@ -1318,7 +1317,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
+            if (!tx.CheckInputs(state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
                              nScriptCheckThreads ? &vChecks : nullptr))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                              tx.GetHash().ToString(), FormatStateMessage(state));
@@ -2671,9 +2670,9 @@ bool CheckBlock(const CBlock &block, CValidationState &state, const Consensus::P
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
 
     // Check transactions
-    GET_VERIFY_INTERFACE(ifVerifyObj);
+//    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (const auto &tx : block.vtx)
-        if (!ifVerifyObj->CheckTransaction(*tx, state, false))
+        if (!(*tx).CheckTransaction(state, false))
             return state.Invalid(false, state.GetRejectCode(), state.GetRejectReason(),
                                  strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(),
                                            state.GetDebugMessage()));
@@ -2681,7 +2680,7 @@ bool CheckBlock(const CBlock &block, CValidationState &state, const Consensus::P
     unsigned int nSigOps = 0;
     for (const auto &tx : block.vtx)
     {
-        nSigOps += ifVerifyObj->GetLegacySigOpCount(*tx);
+        nSigOps += (*tx).GetLegacySigOpCount();
     }
     if (nSigOps * WITNESS_SCALE_FACTOR > MAX_BLOCK_SIGOPS_COST)
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops", false, "out-of-bounds SigOpCount");
@@ -2827,10 +2826,10 @@ static bool ContextualCheckBlock(const CBlock &block, CValidationState &state, c
                               : block.GetBlockTime();
 
     // Check that all transactions are finalized
-    GET_VERIFY_INTERFACE(ifVerifyObj);
+//    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (const auto &tx : block.vtx)
     {
-        if (!ifVerifyObj->IsFinalTx(*tx, nHeight, nLockTimeCutoff))
+        if (!(*tx).IsFinalTx(nHeight, nLockTimeCutoff))
         {
             return state.DoS(10, false, REJECT_INVALID, "bad-txns-nonfinal", false, "non-final transaction");
         }

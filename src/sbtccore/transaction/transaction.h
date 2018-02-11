@@ -17,6 +17,7 @@
 //#include "policy.h"
 
 
+
 //#include <chaincontrol/validation.h>
 //#include <chaincontrol/coins.h>
 class CTransactionBase;
@@ -24,6 +25,10 @@ class CTransactionBase;
 class  CBlockIndex;
 class CValidationState;
 class CCoinsViewCache;
+class CTransaction;
+class CScriptCheck;
+
+struct PrecomputedTransactionData;
 
 static const int SERIALIZE_TRANSACTION_NO_WITNESS = 0x40000000;
 
@@ -327,6 +332,7 @@ public:
     const std::vector<CTxOut> vout;
     const uint32_t nLockTime;
 
+
 //     CPolicy cPolicy;
 private:
     /** Memory only. */
@@ -465,18 +471,41 @@ public:
 
     bool EvaluateSequenceLocks(const CBlockIndex &block, std::pair<int, int64_t> lockPair) const ;
 
+    bool SequenceLocks( int flags, std::vector<int> *prevHeights, const CBlockIndex &block) const ;
+
+
+    /**
+ * Check whether all inputs of this transaction are valid (no double spends, scripts & sigs, amounts)
+ * This does not modify the UTXO set.
+ *
+ * If pvChecks is not nullptr, script checks are pushed onto it instead of being performed inline. Any
+ * script checks which are not necessary (eg due to script execution cache hits) are, obviously,
+ * not pushed onto pvChecks/run.
+ *
+ * Setting cacheSigStore/cacheFullScriptStore to false will remove elements from the corresponding cache
+ * which are matched. This is useful for checking blocks where we will likely never need the cache
+ * entry again.
+ *
+ * Non-static (and re-declared) in src/test/txvalidationcache_tests.cpp
+ */
+    bool CheckInputs( CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
+                     unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
+                     std::vector<CScriptCheck> *pvChecks = nullptr) const ;
+
+
+
 
     const std::vector<CKeyID> sender() const override;
 
     std::vector<CKeyID> to() const override;
 
-    bool PreCheck() const override;
+    bool PreCheck(CHECK_TYPE type,CValidationState &state) const override;
 
-    bool EndCheck() const override;
+    bool EndCheck(CHECK_TYPE type) const override;
 
-    bool Excute() const override;
+    bool Excute(CHECK_TYPE type) const override;
 
-    bool Undo() const override;
+    bool Undo(CHECK_TYPE type) const override;
 
 };
 

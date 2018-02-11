@@ -11,8 +11,15 @@
 
 #include <utils/pubkey.h>
 
+class  CValidationState;
+enum CHECK_TYPE {
+    ENTER_MEMPOOL,
+    ACCEPT_TO_BLOCK
+};
+
 class CTransactionBase
 {
+
 
 
 public:
@@ -20,13 +27,13 @@ public:
 
     virtual std::vector<CKeyID> to() const = 0;
 
-    virtual bool PreCheck() const =0;
+    virtual bool PreCheck(CHECK_TYPE type,CValidationState &state) const =0;
 
-    virtual bool EndCheck() const =0;
+    virtual bool EndCheck(CHECK_TYPE type) const =0;
 
-    virtual bool Excute() const =0;
+    virtual bool Excute(CHECK_TYPE type) const =0;
 
-    virtual bool Undo() const = 0;
+    virtual bool Undo(CHECK_TYPE type) const = 0;
 
     virtual std::string ToString() const = 0;
 

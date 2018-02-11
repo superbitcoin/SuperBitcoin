@@ -25,7 +25,6 @@
 #include "utils/util.h"
 #include "utils/utilmoneystr.h"
 #include "framework/validationinterface.h"
-#include "interface/ITxVerifyComponent.h"
 
 #include <algorithm>
 #include <queue>
@@ -182,8 +181,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
     pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
     pblock->nNonce = 0;
-    GET_VERIFY_INTERFACE(ifVerifyObj);
-    pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * ifVerifyObj->GetLegacySigOpCount(*pblock->vtx[0]);
+    pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * (*pblock->vtx[0]).GetLegacySigOpCount();
 
     CValidationState state;
     if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false))
@@ -233,8 +231,8 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries &packa
 {
     for (const CTxMemPool::txiter it : package)
     {
-        GET_VERIFY_INTERFACE(ifVerifyObj);
-        if (!ifVerifyObj->IsFinalTx(it->GetTx(), nHeight, nLockTimeCutoff))
+//        GET_VERIFY_INTERFACE(ifVerifyObj);
+        if (!it->GetTx().IsFinalTx(nHeight, nLockTimeCutoff))
             return false;
         if (!fIncludeWitness && it->GetTx().HasWitness())
             return false;

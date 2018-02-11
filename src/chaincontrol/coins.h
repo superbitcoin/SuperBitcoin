@@ -6,7 +6,7 @@
 #ifndef BITCOIN_COINS_H
 #define BITCOIN_COINS_H
 
-#include "transaction/transaction.h"
+//#include "transaction/transaction.h"
 #include "script/compressor.h"
 #include "sbtccore/core_memusage.h"
 #include "hash.h"
@@ -19,7 +19,8 @@
 
 #include <unordered_map>
 #include <sbtccore/transaction/CUtxo2UtxoTransaciton.h>
-
+class CTransactionBase;
+class CTransaction;
 class CUtxo2UtxoTransaciton;
 
 /**

@@ -13,10 +13,12 @@
 #include <stdint.h>
 #include <string>
 
+
 class CPubKey;
 
 class CScript;
 
+class CTransactionBase;
 class CTransaction;
 
 class uint256;
@@ -121,7 +123,6 @@ bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned i
 struct PrecomputedTransactionData
 {
     uint256 hashPrevouts, hashSequence, hashOutputs;
-
     PrecomputedTransactionData(const CTransaction &tx);
 };
 

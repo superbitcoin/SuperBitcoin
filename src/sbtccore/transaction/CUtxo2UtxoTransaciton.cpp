@@ -82,7 +82,7 @@ std::string CUtxo2UtxoTransaciton::ToString() const
     return str;
 }
 
-bool CUtxo2UtxoTransaciton::Excute() const
+bool CUtxo2UtxoTransaciton::Excute(CHECK_TYPE type) const
 {
     return false;
 }

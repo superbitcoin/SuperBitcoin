@@ -36,7 +36,7 @@ public:
     const uint32_t nLockTime;
 
 
-    bool Excute() const override;
+    bool Excute(CHECK_TYPE type ) const override;
 
 
     bool IsFinalTx(int nBlockHeight, int64_t nBlockTime);

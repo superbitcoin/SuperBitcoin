@@ -381,9 +381,9 @@ bool CheckFinalTx(const CTransaction &tx, int flags = -1);
  */
 bool TestLockPointValidity(const LockPoints *lp);
 
-bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
-                 unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
-                 std::vector<CScriptCheck> *pvChecks = nullptr);
+//bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
+//                 unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
+//                 std::vector<CScriptCheck> *pvChecks = nullptr);
 
 /**
  * Closure representing one script verification

@@ -28,7 +28,7 @@ file(GLOB headers "*.h" "chaincontrol/*.h" "compat/*.h" "config/*.h" "framework/
         "utils/crypto/*.h" "utils/crypto/allocators/*.h" "eventmanager/*.h" "interface/*.h" "utils/crypto/ctaes/*.h" )
 #"zmq/*.h"
 
-add_library(base ${sources} ${headers} interface/ITxVerifyComponent.h)
+add_library(base ${sources} ${headers} )
 
 find_package(LevelDB)
 target_include_directories(base SYSTEM PUBLIC "${LEVELDB_INCLUDE_DIR}" "${LEVELDB_INCLUDE_DIR}/leveldb/helpers")

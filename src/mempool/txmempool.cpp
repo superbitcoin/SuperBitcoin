@@ -23,7 +23,6 @@
 #include "interface/inetcomponent.h"
 #include "utils/net/netmessagehelper.h"
 #include "orphantx.h"
-#include "interface/ITxVerifyComponent.h"
 
 using namespace appbase;
 
@@ -89,43 +88,44 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
                                      bool fOverrideMempoolLimit, const CAmount &nAbsurdFee,
                                      std::vector<COutPoint> &coins_to_uncache)
 {
+
     const CTransaction &tx = *ptx;
     const uint256 hash = tx.GetHash();
     AssertLockHeld(cs_main);
     if (pfMissingInputs)
         *pfMissingInputs = false;
-    GET_VERIFY_INTERFACE(ifVerifyObj);
-    if (!ifVerifyObj->CheckTransaction(tx, state))
-        return false; // state filled in by CheckTransaction
 
-    // Coinbase is only valid in a block, not as a loose transaction
-    if (tx.IsCoinBase())
-        return state.DoS(100, false, REJECT_INVALID, "coinbase");
-
-    // Reject transactions with witness before segregated witness activates (override with -prematurewitness)
-    const CArgsManager &mArgs = appbase::app().GetArgsManager();
-    bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), chainparams.GetConsensus());
-    if (!mArgs.GetArg<bool>("-prematurewitness", false) && tx.HasWitness() && !witnessEnabled)
-    {
-        return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
-    }
-
-    // Rather not work on nonstandard transactions (unless -testnet/-regtest)
-    std::string reason;
-    if (fRequireStandard && !IsStandardTx(tx, reason, witnessEnabled))
-        return state.DoS(0, false, REJECT_NONSTANDARD, reason);
-
-    // Only accept nLockTime-using transactions that can be mined in the next
-    // block; we don't want our mempool filled up with transactions that can't
-    // be mined yet.
-    if (!CheckFinalTx(tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
-        return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
 
     // is it already in the memory pool?
     if (this->exists(hash))
     {
         return state.Invalid(false, REJECT_DUPLICATE, "txn-already-in-mempool");
     }
+
+    if(!tx.PreCheck(ENTER_MEMPOOL,state))
+    {
+        return false;
+    }
+
+
+
+//    // Reject transactions with witness before segregated witness activates (override with -prematurewitness)
+//    const CArgsManager &mArgs = appbase::app().GetArgsManager();
+//    bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), chainparams.GetConsensus());
+//    if (!mArgs.GetArg<bool>("-prematurewitness", false) && tx.HasWitness() && !witnessEnabled)
+//    {
+//        return state.DoS(0, false, REJECT_NONSTANDARD, "no-witness-yet", true);
+//    }
+
+
+
+//    // Only accept nLockTime-using transactions that can be mined in the next
+//    // block; we don't want our mempool filled up with transactions that can't
+//    // be mined yet.
+//    if (!CheckFinalTx(tx, STANDARD_LOCKTIME_VERIFY_FLAGS))
+//        return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
+
+
 
     // Check for conflicts with in-memory transactions
     std::set<uint256> setConflicts;
@@ -230,15 +230,15 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         }
 
         // Check for non-standard pay-to-script-hash in inputs
-        if (fRequireStandard && !AreInputsStandard(tx, view))
+        if (!AreInputsStandard(tx, view))
             return state.Invalid(false, REJECT_NONSTANDARD, "bad-txns-nonstandard-inputs");
 
         // Check for non-standard witness in P2WSH
-        if (tx.HasWitness() && fRequireStandard && !IsWitnessStandard(tx, view))
+        if (tx.HasWitness() && !IsWitnessStandard(tx, view))
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-witness-nonstandard", true);
 
-        GET_VERIFY_INTERFACE(ifVerifyObj);
-        int64_t nSigOpsCost = ifVerifyObj->GetTransactionSigOpCost(tx, view, STANDARD_SCRIPT_VERIFY_FLAGS);
+//        GET_VERIFY_INTERFACE(ifVerifyObj);
+        int64_t nSigOpsCost = tx.GetTransactionSigOpCost(view, STANDARD_SCRIPT_VERIFY_FLAGS);
 
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn - nValueOut;
@@ -272,6 +272,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
                              strprintf("%d", nSigOpsCost));
 
+        const CArgsManager &mArgs = appbase::app().GetArgsManager();
         CAmount mempoolRejectFee = this->GetMinFee(
                 mArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
         if (mempoolRejectFee > 0 && nModifiedFees < mempoolRejectFee)
@@ -454,24 +455,24 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         }
 
         unsigned int scriptVerifyFlags = STANDARD_SCRIPT_VERIFY_FLAGS;
-        if (!chainparams.RequireStandard())
-        {
-            scriptVerifyFlags = mArgs.GetArg<uint32_t>("-promiscuousmempoolflags", scriptVerifyFlags);
-        }
+//        if (!chainparams.RequireStandard())
+//        {
+//            scriptVerifyFlags = mArgs.GetArg<uint32_t>("-promiscuousmempoolflags", scriptVerifyFlags);
+//        }
 
         // Check against previous transactions
-        // This is done last to help prevent CPU exhaustion denial-of-service attacks.
+        // This is done last to help prevent CPU exhaustion   attacks.
         PrecomputedTransactionData txdata(tx);
-        if (!CheckInputs(tx, state, view, true, scriptVerifyFlags, true, false, txdata))
+        if (!tx.CheckInputs(state, view, true, scriptVerifyFlags, true, false, txdata))
         {
             // SCRIPT_VERIFY_CLEANSTACK requires SCRIPT_VERIFY_WITNESS, so we
             // need to turn both off, and compare against just turning off CLEANSTACK
             // to see if the failure is specifically due to witness validation.
             CValidationState stateDummy; // Want reported failures to be from first CheckInputs
-            if (!tx.HasWitness() && CheckInputs(tx, stateDummy, view, true,
+            if (!tx.HasWitness() && tx.CheckInputs(stateDummy, view, true,
                                                 scriptVerifyFlags & ~(SCRIPT_VERIFY_WITNESS | SCRIPT_VERIFY_CLEANSTACK),
                                                 true, false, txdata) &&
-                !CheckInputs(tx, stateDummy, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, false,
+                !tx.CheckInputs(stateDummy, view, true, scriptVerifyFlags & ~SCRIPT_VERIFY_CLEANSTACK, true, false,
                              txdata))
             {
                 // Only the witness is missing, so the transaction itself may be fine.
@@ -499,7 +500,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         unsigned int currentBlockScriptVerifyFlags = 0;
         if (!CheckInputsFromMempoolAndCache(tx, state, view, currentBlockScriptVerifyFlags, true, txdata))
         {
-            // If we're using promiscuousmempoolflags, we may hit this normally
+            // If we're using promiscuousmempoolflags, we may hit this normallyd
             // Check if current block has some flags that scriptVerifyFlags
             // does not before printing an ominous warning
             if (!(~scriptVerifyFlags & currentBlockScriptVerifyFlags))
@@ -509,7 +510,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
                         __func__, hash.ToString(), FormatStateMessage(state));
             } else
             {
-                if (!CheckInputs(tx, state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, false, txdata))
+                if (!tx.CheckInputs(state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, false, txdata))
                 {
                     return error(
                             "%s: ConnectInputs failed against MANDATORY but not STANDARD flags due to promiscuous mempool %s, %s",
@@ -674,8 +675,8 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
                 prevheights[txinIndex] = coin.nHeight;
             }
         }
-        GET_VERIFY_INTERFACE(ifVerifyObj);
-        lockPair = ifVerifyObj->CalculateSequenceLocks(tx, flags, &prevheights, index);
+//        GET_VERIFY_INTERFACE(ifVerifyObj);
+        lockPair = tx.CalculateSequenceLocks(flags, &prevheights, index);
         if (lp)
         {
             lp->height = lockPair.first;
@@ -705,8 +706,7 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
             lp->maxInputBlock = tip->GetAncestor(maxInputHeight);
         }
     }
-    GET_VERIFY_INTERFACE(ifVerifyObj);
-    return ifVerifyObj->EvaluateSequenceLocks(index, lockPair);
+    return tx.EvaluateSequenceLocks(index, lockPair);
 }
 
 bool CTxMemPool::LoadMempool(void)
@@ -876,7 +876,7 @@ bool CTxMemPool::CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidat
         }
     }
 
-    return CheckInputs(tx, state, view, true, flags, cacheSigStore, true, txdata);
+    return tx.CheckInputs(state, view, true, flags, cacheSigStore, true, txdata);
 }
 
 namespace
@@ -1947,7 +1947,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
 
     LOCK(cs);
     std::list<const CTxMemPoolEntry *> waitingOnDependants;
-    GET_VERIFY_INTERFACE(ifVerifyObj);
+//    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (indexed_transaction_set::const_iterator it = mapTx.begin(); it != mapTx.end(); it++)
     {
         unsigned int i = 0;
@@ -2035,7 +2035,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             CValidationState state;
 
             bool fCheckResult = tx.IsCoinBase() ||
-                    ifVerifyObj->CheckTxInputs(tx, state, mempoolDuplicate, nSpendHeight);
+                    tx.CheckTxInputs(state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
             UpdateCoins(tx, mempoolDuplicate, 1000000);
         }
@@ -2053,8 +2053,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             assert(stepsSinceLastRemove < waitingOnDependants.size());
         } else
         {
-            bool fCheckResult = entry->GetTx().IsCoinBase() ||
-                                ifVerifyObj->CheckTxInputs(entry->GetTx(), state, mempoolDuplicate, nSpendHeight);
+            bool fCheckResult = entry->GetTx().IsCoinBase() ||entry->GetTx().CheckTxInputs(state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
             UpdateCoins(entry->GetTx(), mempoolDuplicate, 1000000);
             stepsSinceLastRemove = 0;
