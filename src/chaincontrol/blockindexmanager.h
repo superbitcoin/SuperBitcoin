@@ -54,6 +54,16 @@ struct CBlockIndexWorkComparator
     }
 };
 
+enum ResultBlockIndex
+{
+    OK_BLOCK_INDEX = 0,
+    ERR_LOAD_INDEX_DB = -2000,
+    ERR_LOAD_GENESIS,
+    ERR_INIT_GENESIS,
+    ERR_TXINDEX_STATE,
+    ERR_PRUNE_STATE,
+};
+
 class CBlockIndexManager
 {
 
@@ -66,7 +76,7 @@ public:
 
     CBlockIndex *FindMostWorkIndex();
 
-    bool Init(int64_t iBlockTreeDBCache, bool bReIndex);
+    int LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, const CChainParams &chainparams);
 
     void PruneBlockIndexCandidates();
 
@@ -102,6 +112,8 @@ public:
 
     bool IsOnlyGenesisBlockIndex();
 
+    bool NeedInitGenesisBlock(const CChainParams &chainparams);
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;
@@ -125,6 +137,10 @@ private:
 
     CCriticalSection cs;
 
+    bool Init(int64_t iBlockTreeDBCache, bool bReIndex, const CChainParams &chainparams);
+
+    int Check(const CChainParams &chainparams);
+
     CBlockIndex *InsertBlockIndex(uint256 hash);
 
     void SortBlockIndex();
@@ -133,14 +149,11 @@ private:
 
     void ReadBlockFileInfo();
 
-    bool LoadBlockIndex();
-
-    bool LoadBlockIndexDB();
+    bool LoadBlockIndexDB(const CChainParams &chainparams);
 
     void UnLoadBlockIndex();
 
     bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
-
 };
 
 #endif // !defined(__SBTC_BLOCKINDEXMANAGER_H__)

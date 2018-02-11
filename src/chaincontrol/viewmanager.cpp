@@ -21,23 +21,24 @@ CViewManager::~CViewManager()
 
 }
 
-bool CViewManager::Init(int64_t iCoinDBCacheSize, bool bReset)
+int CViewManager::InitCoinsDB(int64_t iCoinDBCacheSize, bool bReset)
 {
     std::cout << "initialize view manager \n";
 
     pCoinsViewDB = new CCoinsViewDB(iCoinDBCacheSize, false, bReset);
-
-    pCoinsCatcher = new CCoinsViewErrorCatcher(pCoinsViewDB);
-
     if (!pCoinsViewDB->Upgrade())
     {
 
         return false;
     }
 
-    pCoinsTip = new CCoinsViewCache(pCoinsCatcher);
-
     return true;
+}
+
+void CViewManager::InitCoinsCache()
+{
+    pCoinsCatcher = new CCoinsViewErrorCatcher(pCoinsViewDB);
+    pCoinsTip = new CCoinsViewCache(pCoinsCatcher);
 }
 
 int CViewManager::ConnectBlock()
@@ -163,12 +164,14 @@ bool CViewManager::Flush()
     return true;
 }
 
-void CViewManager::UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, CTxUndo &txundo, int nHeight)
+void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
 {
     // mark inputs spent
-    if (!tx.IsCoinBase()) {
+    if (!tx.IsCoinBase())
+    {
         txundo.vprevout.reserve(tx.vin.size());
-        for (const CTxIn &txin : tx.vin) {
+        for (const CTxIn &txin : tx.vin)
+        {
             txundo.vprevout.emplace_back();
             bool is_spent = inputs.SpendCoin(txin.prevout, &txundo.vprevout.back());
             assert(is_spent);
@@ -178,7 +181,7 @@ void CViewManager::UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, 
     AddCoins(inputs, tx, nHeight);
 }
 
-void CViewManager::UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight)
+void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight)
 {
     CTxUndo txundo;
     UpdateCoins(tx, inputs, txundo, nHeight);

@@ -53,18 +53,229 @@ bool CChainCommonent::ComponentInitialize()
 
     ifBaseObj->GetEventManager()->RegisterEventHandler(EID_NODE_DISCONNECTED, this,
                                                        &CChainCommonent::OnNodeDisconnected);
+
+
+    const CChainParams &chainParams = app().GetChainParams();
+    const CArgsManager &cArgs = app().GetArgsManager();
+
+    // block pruning; get the amount of disk space (in MiB) to allot for block & undo files
+    int64_t iPruneArg = cArgs.GetArg<int32_t>("-prune", 0);
+    if (iPruneArg < 0)
+    {
+        return InitError(_("Prune cannot be configured with a negative value."));
+    }
+    nPruneTarget = (uint64_t)iPruneArg * 1024 * 1024;
+    if (iPruneArg == 1)
+    {  // manual pruning: -prune=1
+        LogPrintf(
+                "Block pruning enabled.  Use RPC call pruneblockchain(height) to manually prune block and undo files.\n");
+        nPruneTarget = std::numeric_limits<uint64_t>::max();
+        fPruneMode = true;
+    } else if (nPruneTarget)
+    {
+        if (nPruneTarget < MIN_DISK_SPACE_FOR_BLOCK_FILES)
+        {
+            return InitError(strprintf(_("Prune configured below the minimum of %d MiB.  Please use a higher number."),
+                                       MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
+        }
+        LogPrintf("Prune configured to target %uMiB on disk for block and undo files.\n", nPruneTarget / 1024 / 1024);
+        fPruneMode = true;
+    }
+
+    bool bArgReIndex = cArgs.GetArg<bool>("-reindex", false);
+    bool bReindexChainState = cArgs.GetArg<bool>("-reindex-chainstate", false);
+
+    // cache size calculations
+    int64_t iTotalCache = (cArgs.GetArg<int64_t>("-dbcache", nDefaultDbCache) << 20);
+    iTotalCache = std::max(iTotalCache, nMinDbCache << 20); // total cache cannot be less than nMinDbCache
+    iTotalCache = std::min(iTotalCache, nMaxDbCache << 20); // total cache cannot be greater than nMaxDbcache
+    int64_t iBlockTreeDBCache = iTotalCache / 8;
+    iBlockTreeDBCache = std::min(iBlockTreeDBCache,
+                                 (cArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX) ? nMaxBlockDBAndTxIndexCache
+                                                                                  : nMaxBlockDBCache) << 20);
+    iTotalCache -= iBlockTreeDBCache;
+    int64_t iCoinDBCache = std::min(iTotalCache / 2,
+                                    (iTotalCache / 4) + (1 << 23)); // use 25%-50% of the remainder for disk cache
+    iCoinDBCache = std::min(iCoinDBCache, nMaxCoinsDBCache << 20); // cap total coins db cache
+    iTotalCache -= iCoinDBCache;
+    LogPrintf("Cache configuration:\n");
+    LogPrintf("* Using %.1fMiB for block index database\n", iBlockTreeDBCache * (1.0 / 1024 / 1024));
+    LogPrintf("* Using %.1fMiB for chain state database\n", iCoinDBCache * (1.0 / 1024 / 1024));
+
+    int64_t iStart;
+    bool bLoaded = false;
+    while (!bLoaded && !bRequestShutdown)
+    {
+        bool bReIndex = bArgReIndex;
+        std::string strLoadError;
+
+        uiInterface.InitMessage(_("Loading block index..."));
+
+        iStart = GetTimeMillis();
+
+        do
+        {
+            if (bReIndex && fPruneMode)
+            {
+                cFileManager.CleanupBlockRevFiles();
+            }
+
+            if (bRequestShutdown)
+            {
+                break;
+            }
+
+            int ret = cIndexManager.LoadBlockIndex(iBlockTreeDBCache, bReIndex, chainParams);
+            if (ret == OK_BLOCK_INDEX)
+            {
+                strLoadError = _("Error loading block database");
+                break;
+            } else if (ret == ERR_LOAD_GENESIS)
+            {
+                return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
+            } else if (ret == ERR_TXINDEX_STATE)
+            {
+                strLoadError = _("You need to rebuild the database using -reindex to change -txindex");
+                break;
+            } else if (ret == ERR_PRUNE_STATE)
+            {
+                strLoadError = _(
+                        "You need to rebuild the database using -reindex to go back to unpruned mode.  This will redownload the entire blockchain");
+                break;
+            }
+
+            if (cIndexManager.NeedInitGenesisBlock(chainParams))
+            {
+                if (!LoadGenesisBlock(chainParams))
+                {
+                    strLoadError = _("Error initializing block database");
+                    break;
+                }
+            }
+
+            uiInterface.InitMessage(_("Init View..."));
+            ret = cViewManager.InitCoinsDB(iCoinDBCache, bReIndex | bReindexChainState);
+            if (ret = ERR_VIEW_UPGRADE)
+            {
+                strLoadError = _("Error upgrading chainstate database");
+                break;
+            }
+
+            // ReplayBlocks is a no-op if we cleared the coinsviewdb with -reindex or -reindex-chainstate
+            if (!ReplayBlocks())
+            {
+                strLoadError = _(
+                        "Unable to replay blocks. You will need to rebuild the database using -reindex-chainstate.");
+                break;
+            }
+
+            // The on-disk coinsdb is now in a good state, create the cache
+            cViewManager.InitCoinsCache();
+
+            bool bCoinsViewEmpty =
+                    bReIndex || bReindexChainState || cViewManager.GetCoinsTip()->GetBestBlock().IsNull();
+            if (!bCoinsViewEmpty)
+            {
+                // LoadChainTip sets chainActive based on pcoinsTip's best block
+                if (!LoadChainTip(chainParams))
+                {
+                    strLoadError = _("Error initializing block database");
+                    break;
+                }
+                // check current chain according to checkpoint
+                CValidationState state;
+                CheckActiveChain(state, chainParams);
+                assert(state.IsValid());
+                assert(Tip() != nullptr);
+            }
+
+            if (!bReIndex)
+            {
+                // Note that RewindBlockIndex MUST run even if we're about to -reindex-chainstate.
+                // It both disconnects blocks based on chainActive, and drops block data in
+                // mapBlockIndex based on lack of available witness data.
+                uiInterface.InitMessage(_("Rewinding blocks..."));
+                if (!RewindBlock(chainParams))
+                {
+                    strLoadError = _(
+                            "Unable to rewind the database to a pre-fork state. You will need to redownload the blockchain");
+                    break;
+                }
+            }
+
+            if (!bCoinsViewEmpty)
+            {
+                ret = VerifyBlocks();
+                if (ret == OK_CHAIN)
+                {
+
+                } else if (ret == ERR_FUTURE_BLOCK)
+                {
+                    strLoadError = _("The block database contains a block which appears to be from the future. "
+                                             "This may be due to your computer's date and time being set incorrectly. "
+                                             "Only rebuild the block database if you are sure that your computer's date and time are correct");
+                    break;
+                } else if (ret == ERR_VERIFY_DB)
+                {
+                    strLoadError = _("Corrupted block database detected");
+                    break;
+                }
+            }
+
+            bLoaded = true;
+        } while (false);
+
+        if (!bLoaded && !bRequestShutdown)
+        {
+            // first suggest a reindex
+            if (!bReIndex)
+            {
+                bool bRet = uiInterface.ThreadSafeQuestion(
+                        strLoadError + ".\n\n" + _("Do you want to rebuild the block database now?"),
+                        strLoadError + ".\nPlease restart with -reindex or -reindex-chainstate to recover.",
+                        "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);
+                if (bRet)
+                {
+                    bArgReIndex = true;
+                    bRequestShutdown = false;
+                } else
+                {
+                    LogPrintf("Aborted block database rebuild. Exiting.\n");
+                    return false;
+                }
+            } else
+            {
+                return InitError(strLoadError);
+            }
+        }
+    }
+
+    // As LoadBlockIndex can take several minutes, it's possible the user
+    // requested to kill the GUI during the last operation. If so, exit.
+    // As the program has not fully started yet, Shutdown() is possibly overkill.
+    if (bRequestShutdown)
+    {
+        LogPrintf("Shutdown requested. Exiting.\n");
+        return false;
+    }
+    if (bLoaded)
+    {
+        LogPrintf(" block index %15dms\n", GetTimeMillis() - iStart);
+    }
     return true;
 }
 
 bool CChainCommonent::ComponentStartup()
 {
     std::cout << "startup chain component \n";
+    bRequestShutdown = false;
     return true;
 }
 
 bool CChainCommonent::ComponentShutdown()
 {
     std::cout << "shutdown chain component \n";
+    bRequestShutdown = true;
     return true;
 }
 
@@ -90,6 +301,30 @@ bool CChainCommonent::DoesBlockExist(uint256 hash)
 {
     //TODO:
     return cIndexManager.GetBlockIndex(hash);
+}
+
+bool CChainCommonent::LoadGenesisBlock(const CChainParams &chainparams)
+{
+    LOCK(cs);
+
+    //    try {
+    //        CBlock &block = const_cast<CBlock&>(chainparams.GenesisBlock());
+    //        // Start new block file
+    //        unsigned int nBlockSize = ::GetSerializeSize(block, SER_DISK, CLIENT_VERSION);
+    //        CDiskBlockPos blockPos;
+    //        CValidationState state;
+    //        if (!cFileManager.FindBlockPos(state, blockPos, nBlockSize+8, 0, block.GetBlockTime()))
+    //            return error("%s: FindBlockPos failed", __func__);
+    //        if (!cFileManager.WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
+    //            return error("%s: writing genesis block to disk failed", __func__);
+    //        CBlockIndex *pindex = AddToBlockIndex(block);
+    //        if (!ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
+    //            return error("%s: genesis block not accepted", __func__);
+    //    } catch (const std::runtime_error& e) {
+    //        return error("%s: failed to write genesis block: %s", __func__, e.what());
+    //}
+
+    return true;
 }
 
 int CChainCommonent::GetActiveChainHeight()
@@ -2038,7 +2273,7 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
 {
     CChain chainActive = cIndexManager.GetChain();
     uint256 bestHash = cViewManager.GetCoinsTip()->GetBestBlock();
-    if (chainActive.Tip() && chainActive.Tip()->GetBlockHash() == bestHash);
+    if (chainActive.Tip() && chainActive.Tip()->GetBlockHash() == bestHash)
     {
         return true;
     }
@@ -2049,7 +2284,7 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
         // that we always have a chainActive.Tip() when we return.
         LogPrintf("%s: Connecting genesis block...\n", __func__);
         CValidationState state;
-        if(!ActivateBestChain(state, chainparams, nullptr))
+        if (!ActivateBestChain(state, chainparams, nullptr))
         {
             return false;
         }
@@ -2057,7 +2292,7 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
 
     // Load pointer to end of best chain
     CBlockIndex *pTip = cIndexManager.GetBlockIndex(bestHash);
-    if(!pTip)
+    if (!pTip)
     {
         return false;
     }
@@ -2071,4 +2306,27 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
               GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
     return true;
+}
+
+int CChainCommonent::VerifyBlocks()
+{
+    uiInterface.InitMessage(_("Verifying blocks..."));
+
+    LOCK(cs);
+    CBlockIndex *tip = Tip();
+    if (tip && tip->nTime > GetAdjustedTime() + 2 * 60 * 60)
+    {
+        return ERR_FUTURE_BLOCK;
+    }
+
+    const CChainParams &chainParams = appbase::app().GetChainParams();
+    const CArgsManager &cArgs = app().GetArgsManager();
+    uint32_t checkLevel = cArgs.GetArg<uint32_t>("-checklevel", DEFAULT_CHECKLEVEL);
+    int checkBlocks = cArgs.GetArg<int>("-checkblocks", DEFAULT_CHECKBLOCKS);
+    if (CVerifyDB().VerifyDB(chainParams, cViewManager.GetCoinViewDB(), checkLevel, checkBlocks))
+    {
+        return ERR_VERIFY_DB;
+    }
+
+    return OK_CHAIN;
 }

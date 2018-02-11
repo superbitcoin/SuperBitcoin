@@ -142,6 +142,13 @@ enum FlushStateMode
     FLUSH_STATE_ALWAYS
 };
 
+enum ResultChainControl
+{
+    OK_CHAIN = 0,
+    ERR_FUTURE_BLOCK = -1000,
+    ERR_VERIFY_DB,
+};
+
 class CChainCommonent : public IChainComponent
 {
 public:
@@ -205,7 +212,7 @@ private:
 
 private:
     database _db;
-
+    bool bRequestShutdown;
     CBlockFileManager cFileManager;
     CBlockIndexManager cIndexManager;
     CViewManager cViewManager;
@@ -262,4 +269,9 @@ private:
     bool
     CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams, bool fCheckPOW,
                bool fCheckMerkleRoot);
+
+    bool LoadGenesisBlock(const CChainParams &chainparams);
+
+    int VerifyBlocks();
+
 };

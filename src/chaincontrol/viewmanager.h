@@ -20,6 +20,13 @@ enum DisconnectResult
     DISCONNECT_FAILED   // Something else went wrong.
 };
 
+enum ResultView
+{
+    OK_VIEW = 0,
+    ERR_VIEW_UPGRADE = -3000,
+
+};
+
 class CViewManager
 {
 
@@ -28,9 +35,11 @@ public:
 
     virtual ~CViewManager();
 
-    bool Init(int64_t iCoinDBCacheSize, bool bReset);
+    int InitCoinsDB(int64_t iCoinDBCacheSize, bool bReset);
 
     CCoinsView *GetCoinViewDB();
+
+    void InitCoinsCache();
 
     CCoinsViewCache *GetCoinsTip();
 
@@ -44,7 +53,7 @@ public:
 
     void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight);
 
-    void UpdateCoins(const CTransaction& tx, CCoinsViewCache& inputs, int nHeight);
+    void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight);
 
 private:
     CChain cChian;

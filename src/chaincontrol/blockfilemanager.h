@@ -23,6 +23,8 @@ public:
 
     void Flush(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize = false);
 
+    void CleanupBlockRevFiles();
+
 private:
     CCriticalSection csLastBlockFile;
 

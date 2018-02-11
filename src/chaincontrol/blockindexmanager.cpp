@@ -192,7 +192,7 @@ void CBlockIndexManager::SortBlockIndex()
     }
 }
 
-bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex)
+bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex, const CChainParams &chainparams)
 {
     std::cout << "initialize index manager \n";
 
@@ -204,8 +204,6 @@ bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex)
     {
         pBlcokTreee->WriteReindexing(true);
     }
-
-    LoadBlockIndex();
 
     return true;
 }
@@ -230,11 +228,13 @@ CBlockIndex *CBlockIndexManager::InsertBlockIndex(uint256 hash)
     return pIndexNew;
 }
 
-bool CBlockIndexManager::LoadBlockIndex()
+int CBlockIndexManager::LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, const CChainParams &chainparams)
 {
+    Init(iBlockTreeDBCache, bReset, chainparams);
+
     if (!bReIndex)
     {
-        bool ret = LoadBlockIndexDB();
+        bool ret = LoadBlockIndexDB(chainparams);
         if (!ret)
         {
             return false;
@@ -248,7 +248,8 @@ bool CBlockIndexManager::LoadBlockIndex()
         pBlcokTreee->WriteFlag("txindex", bTxIndex);
     }
 
-    return true;
+
+    return Check(chainparams);
 }
 
 void CBlockIndexManager::UnLoadBlockIndex()
@@ -267,6 +268,46 @@ void CBlockIndexManager::UnLoadBlockIndex()
     }
     mBlockIndex.clear();
     bHavePruned = false;
+}
+
+int CBlockIndexManager::Check(const CChainParams &chainparams)
+{
+    // If the loaded chain has a wrong genesis, bail out immediately
+    // (we're likely using a testnet datadir, or the other way around).
+    if (!mBlockIndex.empty() && (mBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0))
+    {
+        return ERR_LOAD_GENESIS;
+    }
+
+    const CArgsManager &cArgs = app().GetArgsManager();
+    // Check for changed -txindex state
+    if (bTxIndex != cArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX))
+    {
+        return ERR_TXINDEX_STATE;
+    }
+
+    // Check for changed -prune state.  What we are concerned about is a user who has pruned blocks
+    // in the past, but is now trying to run unpruned.
+    if (bHavePruned && !fPruneMode)
+    {
+        return ERR_PRUNE_STATE;
+    }
+
+    return 0;
+}
+
+bool CBlockIndexManager::NeedInitGenesisBlock(const CChainParams &chainparams)
+{
+    LOCK(cs);
+
+    // Check whether we're already initialized by checking for genesis in
+    // mapBlockIndex. Note that we can't use chainActive here, since it is
+    // set based on the coins db, not the block index db, which is the only
+    // thing loaded at this point.
+    if (bReIndex || mBlockIndex.count(chainparams.GenesisBlock().GetHash()) == 0)
+        return true;
+
+    return false;
 }
 
 void CBlockIndexManager::ReadBlockFileInfo()
@@ -314,9 +355,9 @@ bool CBlockIndexManager::CheckBlockFileExist()
     return true;
 }
 
-bool CBlockIndexManager::LoadBlockIndexDB()
+bool CBlockIndexManager::LoadBlockIndexDB(const CChainParams &chainparams)
 {
-    const Consensus::Params &consensus = app().GetChainParams().GetConsensus();
+    const Consensus::Params &consensus = chainparams.GetConsensus();
     if (!pBlcokTreee->LoadBlockIndexGuts(consensus,
                                          std::bind(&CBlockIndexManager::InsertBlockIndex, this, std::placeholders::_1)))
     {
