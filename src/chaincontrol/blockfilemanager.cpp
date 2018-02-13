@@ -9,14 +9,18 @@
 #include "utils/tinyformat.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
+#include "sbtccore/streams.h"
+#include "sbtccore/clientversion.h"
 
-fs::path CBlockFileManager::GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix)
+CCriticalSection csLastBlockFile;
+
+fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix)
 {
 
     return GetDataDir() / "blocks" / strprintf("%s%05u.dat", prefix, pos.nFile);
 }
 
-FILE *CBlockFileManager::OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
+FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
 {
     if (pos.IsNull())
         return nullptr;
@@ -43,17 +47,38 @@ FILE *CBlockFileManager::OpenDiskFile(const CDiskBlockPos &pos, const char *pref
 }
 
 /** Open an undo file (rev?????.dat) */
-FILE *CBlockFileManager::OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly)
+FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly)
 {
     return OpenDiskFile(pos, "rev", fReadOnly);
 }
 
-FILE *CBlockFileManager::OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false)
+FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly)
 {
     return OpenDiskFile(pos, "blk", fReadOnly);
 }
 
-void CBlockFileManager::Flush(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize)
+bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHeader::MessageStartChars &messageStart)
+{
+    // Open history file to append
+    CAutoFile fileout(OpenBlockFile(pos), SER_DISK, CLIENT_VERSION);
+    if (fileout.IsNull())
+        return error("WriteBlockToDisk: OpenBlockFile failed");
+
+    // Write index header
+    unsigned int nSize = GetSerializeSize(fileout, block);
+    fileout << FLATDATA(messageStart) << nSize;
+
+    // Write block
+    long fileOutPos = ftell(fileout.Get());
+    if (fileOutPos < 0)
+        return error("WriteBlockToDisk: ftell failed");
+    pos.nPos = (unsigned int)fileOutPos;
+    fileout << block;
+
+    return true;
+}
+
+void FlushBlockFile(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize)
 {
     LOCK(csLastBlockFile);
 
@@ -84,7 +109,7 @@ void CBlockFileManager::Flush(int iLastBlockFile, int iSize, int iUndoSize, bool
 // rev files since they'll be rewritten by the reindex anyway.  This ensures that vinfoBlockFile
 // is in sync with what's actually on disk by the time we start downloading, so that pruning
 // works correctly.
-void CBlockFileManager::CleanupBlockRevFiles()
+void CleanupBlockRevFiles()
 {
     std::map<std::string, fs::path> mapBlockFiles;
 

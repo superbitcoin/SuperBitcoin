@@ -46,6 +46,7 @@
 #include "validationinterface.h"
 #include "mempool/orphantx.h"
 #include "framework/base.hpp"
+#include "chaincontrol/blockfilemanager.h"
 
 #ifdef ENABLE_WALLET
 
@@ -225,8 +226,8 @@ void Shutdown()
     StopTorControl();
     if (fDumpMempoolLater && gArgs.GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
     {
-        CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
-        if(!txmempool)
+        CTxMemPool *txmempool = (CTxMemPool *)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+        if (!txmempool)
         {
             LogPrintf("find txmempool component fail!\n");
             return;
@@ -776,43 +777,6 @@ struct CImportingNow
 // rev files since they'll be rewritten by the reindex anyway.  This ensures that vinfoBlockFile
 // is in sync with what's actually on disk by the time we start downloading, so that pruning
 // works correctly.
-void CleanupBlockRevFiles()
-{
-    std::map<std::string, fs::path> mapBlockFiles;
-
-    // Glob all blk?????.dat and rev?????.dat files from the blocks directory.
-    // Remove the rev files immediately and insert the blk file paths into an
-    // ordered map keyed by block file index.
-    LogPrintf("Removing unusable blk?????.dat and rev?????.dat files for -reindex with -prune\n");
-    fs::path blocksdir = GetDataDir() / "blocks";
-    for (fs::directory_iterator it(blocksdir); it != fs::directory_iterator(); it++)
-    {
-        if (is_regular_file(*it) &&
-            it->path().filename().string().length() == 12 &&
-            it->path().filename().string().substr(8, 4) == ".dat")
-        {
-            if (it->path().filename().string().substr(0, 3) == "blk")
-                mapBlockFiles[it->path().filename().string().substr(3, 5)] = it->path();
-            else if (it->path().filename().string().substr(0, 3) == "rev")
-                remove(it->path());
-        }
-    }
-
-    // Remove all block files that aren't part of a contiguous set starting at
-    // zero by walking the ordered map (keys are block file indices) by
-    // keeping a separate counter.  Once we hit a gap (or if 0 doesn't exist)
-    // start removing block files.
-    int nContigCounter = 0;
-    for (const std::pair<std::string, fs::path> &item : mapBlockFiles)
-    {
-        if (atoi(item.first) == nContigCounter)
-        {
-            nContigCounter++;
-            continue;
-        }
-        remove(item.second);
-    }
-}
 
 void ThreadImport(std::vector<fs::path> vImportFiles)
 {
@@ -892,8 +856,8 @@ void ThreadImport(std::vector<fs::path> vImportFiles)
     } // End scope of CImportingNow
     if (gArgs.GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
     {
-        CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
-        if(!txmempool)
+        CTxMemPool *txmempool = (CTxMemPool *)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+        if (!txmempool)
         {
             LogPrintf("find txmempool component fail!\n");
             return;
@@ -1733,8 +1697,8 @@ bool AppInitMain(boost::thread_group &threadGroup, CScheduler &scheduler)
                 {
                     pblocktree->WriteReindexing(true);
                     //If we're reindexing in prune mode, wipe away unusable block files and all undo data files
-                    if (fPruneMode)
-                        CleanupBlockRevFiles();
+//                    if (fPruneMode)
+//                        CleanupBlockRevFiles();
                 }
 
                 if (fRequestShutdown)

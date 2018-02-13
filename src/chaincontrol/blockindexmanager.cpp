@@ -6,6 +6,7 @@
 ///////////////////////////////////////////////////////////
 
 #include "blockindexmanager.h"
+#include "blockfilemanager.h"
 #include "framework/warnings.h"
 
 CBlockIndexManager::CBlockIndexManager()
@@ -930,4 +931,264 @@ void CBlockIndexManager::RewindBlockIndex(const Consensus::Params &params)
 bool CBlockIndexManager::IsOnlyGenesisBlockIndex()
 {
     return (mBlockIndex.size() == 1);
+}
+
+bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidationState &state,
+                                           const CChainParams &chainparams, CBlockIndex **ppindex)
+{
+    AssertLockHeld(cs);
+    // Check for duplicate
+    uint256 hash = block.GetHash();
+    BlockMap::iterator miSelf = mBlockIndex.find(hash);
+    CBlockIndex *pindex = nullptr;
+    if (hash != chainparams.GetConsensus().hashGenesisBlock)
+    {
+
+        if (miSelf != mBlockIndex.end())
+        {
+            // Block header is already known.
+            pindex = miSelf->second;
+            if (ppindex)
+                *ppindex = pindex;
+            if (pindex->nStatus & BLOCK_FAILED_MASK)
+                return state.Invalid(error("%s: block %s is marked invalid", __func__, hash.ToString()), 0,
+                                     "duplicate");
+            return true;
+        }
+
+        if (!CheckBlockHeader(block, state, chainparams.GetConsensus()))
+            return error("%s: Consensus::CheckBlockHeader: %s, %s", __func__, hash.ToString(),
+                         FormatStateMessage(state));
+
+        // Get prev block index
+        CBlockIndex *pindexPrev = nullptr;
+        BlockMap::iterator mi = mBlockIndex.find(block.hashPrevBlock);
+        if (mi == mBlockIndex.end())
+            return state.DoS(10, error("%s: prev block not found", __func__), 0, "prev-blk-not-found");
+        pindexPrev = (*mi).second;
+        if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
+            return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+        if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, GetAdjustedTime()))
+            return error("%s: Consensus::ContextualCheckBlockHeader: %s, %s", __func__, hash.ToString(),
+                         FormatStateMessage(state));
+
+        if (!pindexPrev->IsValid(BLOCK_VALID_SCRIPTS))
+        {
+            for (const CBlockIndex *failedit : setFailedBlocks)
+            {
+                if (pindexPrev->GetAncestor(failedit->nHeight) == failedit)
+                {
+                    assert(failedit->nStatus & BLOCK_FAILED_VALID);
+                    CBlockIndex *invalid_walk = pindexPrev;
+                    while (invalid_walk != failedit)
+                    {
+                        invalid_walk->nStatus |= BLOCK_FAILED_CHILD;
+                        setDirtyBlockIndex.insert(invalid_walk);
+                        invalid_walk = invalid_walk->pprev;
+                    }
+                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+                }
+            }
+        }
+    }
+    if (pindex == nullptr)
+        pindex = AddToBlockIndex(block);
+
+    if (ppindex)
+        *ppindex = pindex;
+
+    CheckBlockIndex(chainparams.GetConsensus());
+
+    return true;
+}
+
+bool CBlockIndexManager::CheckBlockHeader(const CBlockHeader &block, CValidationState &state,
+                                          const Consensus::Params &consensusParams, bool fCheckPOW)
+{
+    // Check proof of work matches claimed amount
+    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
+        return state.DoS(50, false, REJECT_INVALID, "high-hash", false, "proof of work failed");
+
+    return true;
+}
+
+/** Context-dependent validity checks.
+ *  By "context", we mean only the previous block headers, but not the UTXO
+ *  set; UTXO-related validity checks are done in ConnectBlock(). */
+bool CBlockIndexManager::ContextualCheckBlockHeader(const CBlockHeader &block, CValidationState &state,
+                                                    const CChainParams &params, const CBlockIndex *pindexPrev,
+                                                    int64_t nAdjustedTime)
+{
+    assert(pindexPrev != nullptr);
+    const int nHeight = pindexPrev->nHeight + 1;
+
+    // Check proof of work
+    const Consensus::Params &consensusParams = params.GetConsensus();
+    if (block.nBits != GetNextWorkRequired(pindexPrev, &block, consensusParams))
+        return state.DoS(100, false, REJECT_INVALID, "bad-diffbits", false, "incorrect proof of work");
+
+    // Check against checkpoints
+    if (fCheckpointsEnabled)
+    {
+        // Don't accept any forks from the main chain prior to last checkpoint.
+        // GetLastCheckpoint finds the last checkpoint in MapCheckpoints that's in our
+        // MapBlockIndex.
+        if (IsAgainstCheckPoint(params, pindexPrev) || IsAgainstCheckPoint(params, nHeight, block.GetHash()))
+            return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight),
+                             REJECT_CHECKPOINT, "bad-fork-prior-to-checkpoint");
+    }
+
+    // Check timestamp against prev
+    if (block.GetBlockTime() <= pindexPrev->GetMedianTimePast())
+        return state.Invalid(false, REJECT_INVALID, "time-too-old", "block's timestamp is too early");
+
+    // Check timestamp
+    if (block.GetBlockTime() > nAdjustedTime + MAX_FUTURE_BLOCK_TIME)
+        return state.Invalid(false, REJECT_INVALID, "time-too-new", "block timestamp too far in the future");
+
+    // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
+    // check for version 2, 3 and 4 upgrades
+    if ((block.nVersion < 2 && nHeight >= consensusParams.BIP34Height) ||
+        (block.nVersion < 3 && nHeight >= consensusParams.BIP66Height) ||
+        (block.nVersion < 4 && nHeight >= consensusParams.BIP65Height))
+        return state.Invalid(false, REJECT_OBSOLETE, strprintf("bad-version(0x%08x)", block.nVersion),
+                             strprintf("rejected nVersion=0x%08x block", block.nVersion));
+
+    return true;
+}
+
+CBlockIndex *CBlockIndexManager::GetIndexBestHeader()
+{
+    return pIndexBestHeader;
+}
+
+bool CBlockIndexManager::SetDirtyIndex(CBlockIndex *pIndex)
+{
+    setDirtyBlockIndex.insert(pIndex);
+}
+
+bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize,
+                                      unsigned int nHeight, uint64_t nTime, bool fKnown)
+{
+    LOCK(csLastBlockFile);
+
+    unsigned int nFile = fKnown ? pos.nFile : iLastBlockFile;
+    if (vecBlockFileInfo.size() <= nFile)
+    {
+        vecBlockFileInfo.resize(nFile + 1);
+    }
+
+    if (!fKnown)
+    {
+        while (vecBlockFileInfo[nFile].nSize + nAddSize >= MAX_BLOCKFILE_SIZE)
+        {
+            nFile++;
+            if (vecBlockFileInfo.size() <= nFile)
+            {
+                vecBlockFileInfo.resize(nFile + 1);
+            }
+        }
+        pos.nFile = nFile;
+        pos.nPos = vecBlockFileInfo[nFile].nSize;
+    }
+
+    if ((int)nFile != iLastBlockFile)
+    {
+        if (!fKnown)
+        {
+            LogPrintf("Leaving block file %i: %s\n", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
+        }
+        FlushBlockFile(!fKnown, vecBlockFileInfo[iLastBlockFile].nSize, vecBlockFileInfo[iLastBlockFile].nUndoSize);
+        iLastBlockFile = nFile;
+    }
+
+    vecBlockFileInfo[nFile].AddBlock(nHeight, nTime);
+    if (fKnown)
+        vecBlockFileInfo[nFile].nSize = std::max(pos.nPos + nAddSize, vecBlockFileInfo[nFile].nSize);
+    else
+        vecBlockFileInfo[nFile].nSize += nAddSize;
+
+    if (!fKnown)
+    {
+        unsigned int nOldChunks = (pos.nPos + BLOCKFILE_CHUNK_SIZE - 1) / BLOCKFILE_CHUNK_SIZE;
+        unsigned int nNewChunks = (vecBlockFileInfo[nFile].nSize + BLOCKFILE_CHUNK_SIZE - 1) / BLOCKFILE_CHUNK_SIZE;
+        if (nNewChunks > nOldChunks)
+        {
+            //            if (fPruneMode) todo
+            //                fCheckForPruning = true;
+            if (CheckDiskSpace(nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos))
+            {
+                FILE *file = OpenBlockFile(pos);
+                if (file)
+                {
+                    LogPrintf("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE,
+                              pos.nFile);
+                    AllocateFileRange(file, pos.nPos, nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos);
+                    fclose(file);
+                }
+            } else
+                return state.Error("out of disk space");
+        }
+    }
+
+    setDirtyFileInfo.insert(nFile);
+    return true;
+}
+
+/** Mark a block as having its data received and checked (up to BLOCK_VALID_TRANSACTIONS). */
+bool CBlockIndexManager::ReceivedBlockTransactions(const CBlock &block, CValidationState &state, CBlockIndex *pindexNew,
+                                                   const CDiskBlockPos &pos, const Consensus::Params &consensusParams)
+{
+    pindexNew->nTx = block.vtx.size();
+    pindexNew->nChainTx = 0;
+    pindexNew->nFile = pos.nFile;
+    pindexNew->nDataPos = pos.nPos;
+    pindexNew->nUndoPos = 0;
+    pindexNew->nStatus |= BLOCK_HAVE_DATA;
+    if (IsWitnessEnabled(pindexNew->pprev, consensusParams))
+    {
+        pindexNew->nStatus |= BLOCK_OPT_WITNESS;
+    }
+    pindexNew->RaiseValidity(BLOCK_VALID_TRANSACTIONS);
+    setDirtyBlockIndex.insert(pindexNew);
+
+    if (pindexNew->pprev == nullptr || pindexNew->pprev->nChainTx)
+    {
+        // If pindexNew is the genesis block or all parents are BLOCK_VALID_TRANSACTIONS.
+        std::deque<CBlockIndex *> queue;
+        queue.push_back(pindexNew);
+
+        // Recursively process any descendant blocks that now may be eligible to be connected.
+        while (!queue.empty())
+        {
+            CBlockIndex *pindex = queue.front();
+            queue.pop_front();
+            pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
+            {
+                //                LOCK(cs_nBlockSequenceId); todo
+                //                pindex->nSequenceId = nBlockSequenceId++;
+            }
+            if (cChainActive.Tip() == nullptr || !setBlockIndexCandidates.value_comp()(pindex, cChainActive.Tip()))
+            {
+                setBlockIndexCandidates.insert(pindex);
+            }
+            std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> range = mBlocksUnlinked.equal_range(
+                    pindex);
+            while (range.first != range.second)
+            {
+                std::multimap<CBlockIndex *, CBlockIndex *>::iterator it = range.first;
+                queue.push_back(it->second);
+                range.first++;
+                mBlocksUnlinked.erase(it);
+            }
+        }
+    } else
+    {
+        if (pindexNew->pprev && pindexNew->pprev->IsValid(BLOCK_VALID_TREE))
+        {
+            mBlocksUnlinked.insert(std::make_pair(pindexNew->pprev, pindexNew));
+        }
+    }
+
+    return true;
 }

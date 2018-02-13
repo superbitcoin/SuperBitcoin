@@ -273,10 +273,10 @@ ProcessNewBlockHeaders(const std::vector<CBlockHeader> &block, CValidationState 
 bool CheckDiskSpace(uint64_t nAdditionalBytes = 0);
 
 /** Open a block file (blk?????.dat) */
-FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+//FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 
 /** Translation to a filesystem path */
-fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
+//fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
 
 /** Import blocks from an external file */
 bool LoadExternalBlockFile(const CChainParams &chainparams, FILE *fileIn, CDiskBlockPos *dbp = nullptr);
@@ -433,6 +433,8 @@ public:
         return error;
     }
 };
+
+bool AbortNode(const std::string &strMessage, const std::string &userMessage = "");
 
 bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage = "");
 

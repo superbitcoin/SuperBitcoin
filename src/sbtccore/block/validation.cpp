@@ -41,6 +41,7 @@
 #include "framework/versionbits.h"
 #include "framework/warnings.h"
 #include "framework/base.hpp"
+#include "chaincontrol/blockfilemanager.h"
 
 #include <atomic>
 #include <sstream>
@@ -228,7 +229,7 @@ static void FindFilesToPruneManual(std::set<int> &setFilesToPrune, int nManualPr
 
 static void FindFilesToPrune(std::set<int> &setFilesToPrune, uint64_t nPruneAfterHeight);
 
-static FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+//static FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 
 bool CheckFinalTx(const CTransaction &tx, int flags)
 {
@@ -259,7 +260,7 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
                                ? chainActive.Tip()->GetMedianTimePast()
                                : GetAdjustedTime();
 
-//    GET_VERIFY_INTERFACE(ifVerifyObj);
+    //    GET_VERIFY_INTERFACE(ifVerifyObj);
     return tx.IsFinalTx(nBlockHeight, nBlockTime);
 }
 
@@ -382,27 +383,27 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
 // CBlock and CBlockIndex
 //
 
-static bool
-WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHeader::MessageStartChars &messageStart)
-{
-    // Open history file to append
-    CAutoFile fileout(OpenBlockFile(pos), SER_DISK, CLIENT_VERSION);
-    if (fileout.IsNull())
-        return error("WriteBlockToDisk: OpenBlockFile failed");
-
-    // Write index header
-    unsigned int nSize = GetSerializeSize(fileout, block);
-    fileout << FLATDATA(messageStart) << nSize;
-
-    // Write block
-    long fileOutPos = ftell(fileout.Get());
-    if (fileOutPos < 0)
-        return error("WriteBlockToDisk: ftell failed");
-    pos.nPos = (unsigned int)fileOutPos;
-    fileout << block;
-
-    return true;
-}
+//static bool
+//WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHeader::MessageStartChars &messageStart)
+//{
+//    // Open history file to append
+//    CAutoFile fileout(OpenBlockFile(pos), SER_DISK, CLIENT_VERSION);
+//    if (fileout.IsNull())
+//        return error("WriteBlockToDisk: OpenBlockFile failed");
+//
+//    // Write index header
+//    unsigned int nSize = GetSerializeSize(fileout, block);
+//    fileout << FLATDATA(messageStart) << nSize;
+//
+//    // Write block
+//    long fileOutPos = ftell(fileout.Get());
+//    if (fileOutPos < 0)
+//        return error("WriteBlockToDisk: ftell failed");
+//    pos.nPos = (unsigned int)fileOutPos;
+//    fileout << block;
+//
+//    return true;
+//}
 
 bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus::Params &consensusParams)
 {
@@ -811,52 +812,52 @@ void InitScriptExecutionCache()
 //namespace
 //{
 
-    bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint256 &hashBlock,
-                         const CMessageHeader::MessageStartChars &messageStart)
-    {
-        // Open history file to append
-        CAutoFile fileout(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
-        if (fileout.IsNull())
-            return error("%s: OpenUndoFile failed", __func__);
+bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint256 &hashBlock,
+                     const CMessageHeader::MessageStartChars &messageStart)
+{
+    // Open history file to append
+    CAutoFile fileout(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
+    if (fileout.IsNull())
+        return error("%s: OpenUndoFile failed", __func__);
 
-        // Write index header
-        unsigned int nSize = GetSerializeSize(fileout, blockundo);
-        fileout << FLATDATA(messageStart) << nSize;
+    // Write index header
+    unsigned int nSize = GetSerializeSize(fileout, blockundo);
+    fileout << FLATDATA(messageStart) << nSize;
 
-        // Write undo data
-        long fileOutPos = ftell(fileout.Get());
-        if (fileOutPos < 0)
-            return error("%s: ftell failed", __func__);
-        pos.nPos = (unsigned int)fileOutPos;
-        fileout << blockundo;
+    // Write undo data
+    long fileOutPos = ftell(fileout.Get());
+    if (fileOutPos < 0)
+        return error("%s: ftell failed", __func__);
+    pos.nPos = (unsigned int)fileOutPos;
+    fileout << blockundo;
 
-        // calculate & write checksum
-        CHashWriter hasher(SER_GETHASH, PROTOCOL_VERSION);
-        hasher << hashBlock;
-        hasher << blockundo;
-        fileout << hasher.GetHash();
+    // calculate & write checksum
+    CHashWriter hasher(SER_GETHASH, PROTOCOL_VERSION);
+    hasher << hashBlock;
+    hasher << blockundo;
+    fileout << hasher.GetHash();
 
-        return true;
-    }
+    return true;
+}
 
-    /** Abort with a message */
-    bool AbortNode(const std::string &strMessage, const std::string &userMessage = "")
-    {
-        SetMiscWarning(strMessage);
-        LogPrintf("*** %s\n", strMessage);
-        uiInterface.ThreadSafeMessageBox(
-                userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
-                                    : userMessage,
-                "", CClientUIInterface::MSG_ERROR);
-        StartShutdown();
-        return false;
-    }
+/** Abort with a message */
+bool AbortNode(const std::string &strMessage, const std::string &userMessage)
+{
+    SetMiscWarning(strMessage);
+    LogPrintf("*** %s\n", strMessage);
+    uiInterface.ThreadSafeMessageBox(
+            userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
+                                : userMessage,
+            "", CClientUIInterface::MSG_ERROR);
+    StartShutdown();
+    return false;
+}
 
-    bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage)
-    {
-        AbortNode(strMessage, userMessage);
-        return state.Error(strMessage);
-    }
+bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage)
+{
+    AbortNode(strMessage, userMessage);
+    return state.Error(strMessage);
+}
 
 //} // namespace
 
@@ -1278,7 +1279,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
 
         nInputs += tx.vin.size();
 
-//        GET_VERIFY_INTERFACE(ifVerifyObj);
+        //        GET_VERIFY_INTERFACE(ifVerifyObj);
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
@@ -1318,7 +1319,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
             if (!tx.CheckInputs(state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
-                             nScriptCheckThreads ? &vChecks : nullptr))
+                                nScriptCheckThreads ? &vChecks : nullptr))
                 return error("ConnectBlock(): CheckInputs on %s failed with %s",
                              tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
@@ -1936,7 +1937,7 @@ static bool ActivateBestChainStep(CValidationState &state, const CChainParams &c
     const CBlockIndex *pindexOldTip = chainActive.Tip();
     const CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
 
-    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    CTxMemPool *txmempool = (CTxMemPool *)appbase::CBase::Instance().FindComponent<CTxMemPool>();
 
     // Disconnect active blocks which are no longer in the best chain.
     bool fBlocksDisconnected = false;
@@ -2317,7 +2318,7 @@ bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, C
     bool pindex_was_in_chain = false;
     CBlockIndex *invalid_walk_tip = chainActive.Tip();
 
-    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    CTxMemPool *txmempool = (CTxMemPool *)appbase::CBase::Instance().FindComponent<CTxMemPool>();
 
     DisconnectedBlockTransactions disconnectpool;
     while (chainActive.Contains(pindex))
@@ -2670,7 +2671,7 @@ bool CheckBlock(const CBlock &block, CValidationState &state, const Consensus::P
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
 
     // Check transactions
-//    GET_VERIFY_INTERFACE(ifVerifyObj);
+    //    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (const auto &tx : block.vtx)
         if (!(*tx).CheckTransaction(state, false))
             return state.Invalid(false, state.GetRejectCode(), state.GetRejectReason(),
@@ -2826,7 +2827,7 @@ static bool ContextualCheckBlock(const CBlock &block, CValidationState &state, c
                               : block.GetBlockTime();
 
     // Check that all transactions are finalized
-//    GET_VERIFY_INTERFACE(ifVerifyObj);
+    //    GET_VERIFY_INTERFACE(ifVerifyObj);
     for (const auto &tx : block.vtx)
     {
         if (!(*tx).IsFinalTx(nHeight, nLockTimeCutoff))
@@ -3342,47 +3343,47 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes)
     return true;
 }
 
-static FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
-{
-    if (pos.IsNull())
-        return nullptr;
-    fs::path path = GetBlockPosFilename(pos, prefix);
-    fs::create_directories(path.parent_path());
-    FILE *file = fsbridge::fopen(path, "rb+");
-    if (!file && !fReadOnly)
-        file = fsbridge::fopen(path, "wb+");
-    if (!file)
-    {
-        LogPrintf("Unable to open file %s\n", path.string());
-        return nullptr;
-    }
-    if (pos.nPos)
-    {
-        if (fseek(file, pos.nPos, SEEK_SET))
-        {
-            LogPrintf("Unable to seek to position %u of %s\n", pos.nPos, path.string());
-            fclose(file);
-            return nullptr;
-        }
-    }
-    return file;
-}
+//static FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
+//{
+//    if (pos.IsNull())
+//        return nullptr;
+//    fs::path path = GetBlockPosFilename(pos, prefix);
+//    fs::create_directories(path.parent_path());
+//    FILE *file = fsbridge::fopen(path, "rb+");
+//    if (!file && !fReadOnly)
+//        file = fsbridge::fopen(path, "wb+");
+//    if (!file)
+//    {
+//        LogPrintf("Unable to open file %s\n", path.string());
+//        return nullptr;
+//    }
+//    if (pos.nPos)
+//    {
+//        if (fseek(file, pos.nPos, SEEK_SET))
+//        {
+//            LogPrintf("Unable to seek to position %u of %s\n", pos.nPos, path.string());
+//            fclose(file);
+//            return nullptr;
+//        }
+//    }
+//    return file;
+//}
 
-FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly)
-{
-    return OpenDiskFile(pos, "blk", fReadOnly);
-}
+//FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly)
+//{
+//    return OpenDiskFile(pos, "blk", fReadOnly);
+//}
 
 /** Open an undo file (rev?????.dat) */
-static FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly)
-{
-    return OpenDiskFile(pos, "rev", fReadOnly);
-}
+//static FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly)
+//{
+//    return OpenDiskFile(pos, "rev", fReadOnly);
+//}
 
-fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix)
-{
-    return GetDataDir() / "blocks" / strprintf("%s%05u.dat", prefix, pos.nFile);
-}
+//fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix)
+//{
+//    return GetDataDir() / "blocks" / strprintf("%s%05u.dat", prefix, pos.nFile);
+//}
 
 CBlockIndex *InsertBlockIndex(uint256 hash)
 {

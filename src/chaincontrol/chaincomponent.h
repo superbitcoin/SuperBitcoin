@@ -212,8 +212,8 @@ private:
 
 private:
     database _db;
+    bool bReIndex;
     bool bRequestShutdown;
-    CBlockFileManager cFileManager;
     CBlockIndexManager cIndexManager;
     CViewManager cViewManager;
 
@@ -270,8 +270,21 @@ private:
     CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams, bool fCheckPOW,
                bool fCheckMerkleRoot);
 
+    bool ContextualCheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams,
+                              const CBlockIndex *pindexPrev);
+
     bool LoadGenesisBlock(const CChainParams &chainparams);
 
     int VerifyBlocks();
+
+    bool ThreadImport();
+
+    bool LoadExternalBlockFile(const CChainParams &chainparams, FILE *fileIn, CDiskBlockPos *dbp);
+
+    bool
+    AcceptBlock(const std::shared_ptr<const CBlock> &pblock, CValidationState &state, const CChainParams &chainparams,
+                CBlockIndex **ppindex, bool fRequested, const CDiskBlockPos *dbp, bool *fNewBlock);
+
+    void NotifyHeaderTip();
 
 };

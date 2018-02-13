@@ -11,25 +11,42 @@
 #include "framework/sync.h"
 #include "chain.h"
 #include "utils/fs.h"
+#include "p2p/protocol.h"
+//
+//class CBlockFileManager
+//{
+//public:
+//    static fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
+//
+//    static FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly);
+//
+//    static FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+//
+//    static void Flush(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize = false);
+//
+//    void CleanupBlockRevFiles();
+//
+//private:
+//    CCriticalSection csLastBlockFile;
+//
+//    FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly);
+//};
 
-class CBlockFileManager
-{
-public:
-    fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
+extern CCriticalSection csLastBlockFile;
 
-    FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly);
+FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 
-    FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
+fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
 
-    void Flush(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize = false);
+FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly);
 
-    void CleanupBlockRevFiles();
+FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 
-private:
-    CCriticalSection csLastBlockFile;
+bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHeader::MessageStartChars &messageStart);
 
-    FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly);
-};
+void FlushBlockFile(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize = false);
+
+void CleanupBlockRevFiles();
 
 #endif // !defined(__SBTC_BLOCKFILEMANAGER_H__)
 

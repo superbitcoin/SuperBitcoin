@@ -114,6 +114,19 @@ public:
 
     bool NeedInitGenesisBlock(const CChainParams &chainparams);
 
+    bool AcceptBlockHeader(const CBlockHeader &block, CValidationState &state, const CChainParams &chainparams,
+                           CBlockIndex **ppindex);
+
+    bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight,
+                      uint64_t nTime, bool fKnown = false);
+
+    CBlockIndex *GetIndexBestHeader();
+
+    bool SetDirtyIndex(CBlockIndex *pIndex);
+
+    bool ReceivedBlockTransactions(const CBlock &block, CValidationState &state, CBlockIndex *pindexNew,
+                                   const CDiskBlockPos &pos, const Consensus::Params &consensusParams);
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;
@@ -127,6 +140,8 @@ private:
     std::set<CBlockIndex *, CBlockIndexWorkComparator> setBlockIndexCandidates;
     /** Dirty block index entries. */
     std::set<CBlockIndex *> setDirtyBlockIndex;
+    /** Dirty block file entries. */
+    std::set<int> setDirtyFileInfo;
     std::set<CBlockIndex *> setFailedBlocks;
     CBlockIndex *pIndexBestInvalid;
     CBlockIndex *pIndexBestHeader = nullptr;
@@ -154,6 +169,12 @@ private:
     void UnLoadBlockIndex();
 
     bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
+
+    bool CheckBlockHeader(const CBlockHeader &block, CValidationState &state, const Consensus::Params &consensusParams,
+                          bool fCheckPOW = true);
+
+    bool ContextualCheckBlockHeader(const CBlockHeader &block, CValidationState &state, const CChainParams &params,
+                                    const CBlockIndex *pindexPrev, int64_t nAdjustedTime);
 };
 
 #endif // !defined(__SBTC_BLOCKINDEXMANAGER_H__)
