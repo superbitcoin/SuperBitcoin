@@ -1794,63 +1794,63 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     {
         const CTransaction &tx = *(block.vtx[i]);
 
-        // todo
-        //        nInputs += tx.vin.size();
-        //
-        //        if (!tx.IsCoinBase())
-        //        {
-        //            if (!view.HaveInputs(tx))
-        //                return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
-        //                                 REJECT_INVALID, "bad-txns-inputs-missingorspent");
-        //
-        //            // Check that transaction is BIP68 final
-        //            // BIP68 lock checks (as opposed to nLockTime checks) must
-        //            // be in ConnectBlock because they require the UTXO set
-        //            prevheights.resize(tx.vin.size());
-        //            for (size_t j = 0; j < tx.vin.size(); j++)
-        //            {
-        //                prevheights[j] = view.AccessCoin(tx.vin[j].prevout).nHeight;
-        //            }
-        //
-        //            if (!txmempool->SequenceLocks(tx, nLockTimeFlags, &prevheights, *pindex))
-        //            {
-        //                return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
-        //                                 REJECT_INVALID, "bad-txns-nonfinal");
-        //            }
-        //        }
-        //
-        //        // GetTransactionSigOpCost counts 3 types of sigops:
-        //        // * legacy (always)
-        //        // * p2sh (when P2SH enabled in flags and excludes coinbase)
-        //        // * witness (when witness enabled in flags and excludes coinbase)
-        //        nSigOpsCost += txmempool->GetTransactionSigOpCost(tx, view, flags);
-        //        if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
-        //            return state.DoS(100, error("ConnectBlock(): too many sigops"),
-        //                             REJECT_INVALID, "bad-blk-sigops");
-        //
-        //        txdata.emplace_back(tx);
-        //        if (!tx.IsCoinBase())
-        //        {
-        //            nFees += view.GetValueIn(tx) - tx.GetValueOut();
-        //
-        //            std::vector<CScriptCheck> vChecks;
-        //            bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
-        //            if (!CheckInputs(tx, state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
-        //                             nScriptCheckThreads ? &vChecks : nullptr))
-        //                return error("ConnectBlock(): CheckInputs on %s failed with %s",
-        //                             tx.GetHash().ToString(), FormatStateMessage(state));
-        //            control.Add(vChecks);
-        //        }
-        //
-        //        CTxUndo undoDummy;
-        //        if (i > 0)
-        //        {
-        //            blockundo.vtxundo.push_back(CTxUndo());
-        //        }
-        //        cViewManager.UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
-        //
-        //        vPos.push_back(std::make_pair(tx.GetHash(), pos));
-        //        pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
+         //todo
+                nInputs += tx.vin.size();
+
+                if (!tx.IsCoinBase())
+                {
+                    if (!view.HaveInputs(tx))
+                        return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
+                                         REJECT_INVALID, "bad-txns-inputs-missingorspent");
+
+                    // Check that transaction is BIP68 final
+                    // BIP68 lock checks (as opposed to nLockTime checks) must
+                    // be in ConnectBlock because they require the UTXO set
+                    prevheights.resize(tx.vin.size());
+                    for (size_t j = 0; j < tx.vin.size(); j++)
+                    {
+                        prevheights[j] = view.AccessCoin(tx.vin[j].prevout).nHeight;
+                    }
+
+                    if (!tx.SequenceLocks(nLockTimeFlags, &prevheights, *pindex))
+                    {
+                        return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
+                                         REJECT_INVALID, "bad-txns-nonfinal");
+                    }
+                }
+
+                // GetTransactionSigOpCost counts 3 types of sigops:
+                // * legacy (always)
+                // * p2sh (when P2SH enabled in flags and excludes coinbase)
+                // * witness (when witness enabled in flags and excludes coinbase)
+                nSigOpsCost += tx.GetTransactionSigOpCost(view, flags);
+                if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
+                    return state.DoS(100, error("ConnectBlock(): too many sigops"),
+                                     REJECT_INVALID, "bad-blk-sigops");
+
+                txdata.emplace_back(tx);
+                if (!tx.IsCoinBase())
+                {
+                    nFees += view.GetValueIn(tx) - tx.GetValueOut();
+
+                    std::vector<CScriptCheck> vChecks;
+                    bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
+                    if (!tx.CheckInputs(state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
+                                     nScriptCheckThreads ? &vChecks : nullptr))
+                        return error("ConnectBlock(): CheckInputs on %s failed with %s",
+                                     tx.GetHash().ToString(), FormatStateMessage(state));
+                    control.Add(vChecks);
+                }
+
+                CTxUndo undoDummy;
+                if (i > 0)
+                {
+                    blockundo.vtxundo.push_back(CTxUndo());
+                }
+                cViewManager.UpdateCoins(tx, view, i == 0 ? undoDummy : blockundo.vtxundo.back(), pindex->nHeight);
+
+                vPos.push_back(std::make_pair(tx.GetHash(), pos));
+                pos.nTxOffset += ::GetSerializeSize(tx, SER_DISK, CLIENT_VERSION);
     }
     int64_t nTime3 = GetTimeMicros();
     nTimeConnect += nTime3 - nTime2;
