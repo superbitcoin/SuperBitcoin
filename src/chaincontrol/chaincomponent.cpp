@@ -48,6 +48,7 @@ bool CChainCommonent::ComponentInitialize()
 {
     std::cout << "initialize chain component \n";
 
+
     GET_BASE_INTERFACE(ifBaseObj);
     assert(ifBaseObj != nullptr);
 
@@ -67,7 +68,7 @@ bool CChainCommonent::ComponentInitialize()
     nPruneTarget = (uint64_t)iPruneArg * 1024 * 1024;
     if (iPruneArg == 1)
     {  // manual pruning: -prune=1
-        LogPrintf(
+        mlog.debug(
                 "Block pruning enabled.  Use RPC call pruneblockchain(height) to manually prune block and undo files.\n");
         nPruneTarget = std::numeric_limits<uint64_t>::max();
         fPruneMode = true;
@@ -78,7 +79,7 @@ bool CChainCommonent::ComponentInitialize()
             return InitError(strprintf(_("Prune configured below the minimum of %d MiB.  Please use a higher number."),
                                        MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
         }
-        LogPrintf("Prune configured to target %uMiB on disk for block and undo files.\n", nPruneTarget / 1024 / 1024);
+        mlog.debug("Prune configured to target %uMiB on disk for block and undo files.\n", nPruneTarget / 1024 / 1024);
         fPruneMode = true;
     }
 
@@ -98,9 +99,9 @@ bool CChainCommonent::ComponentInitialize()
                                     (iTotalCache / 4) + (1 << 23)); // use 25%-50% of the remainder for disk cache
     iCoinDBCache = std::min(iCoinDBCache, nMaxCoinsDBCache << 20); // cap total coins db cache
     iTotalCache -= iCoinDBCache;
-    LogPrintf("Cache configuration:\n");
-    LogPrintf("* Using %.1fMiB for block index database\n", iBlockTreeDBCache * (1.0 / 1024 / 1024));
-    LogPrintf("* Using %.1fMiB for chain state database\n", iCoinDBCache * (1.0 / 1024 / 1024));
+    mlog.debug("Cache configuration:\n");
+    mlog.debug("* Using %.1fMiB for block index database\n", iBlockTreeDBCache * (1.0 / 1024 / 1024));
+    mlog.debug("* Using %.1fMiB for chain state database\n", iCoinDBCache * (1.0 / 1024 / 1024));
 
     int64_t iStart;
     bool bLoaded = false;
@@ -240,7 +241,7 @@ bool CChainCommonent::ComponentInitialize()
                     bRequestShutdown = false;
                 } else
                 {
-                    LogPrintf("Aborted block database rebuild. Exiting.\n");
+                    mlog.fatal("Aborted block database rebuild. Exiting.\n");
                     return false;
                 }
             } else
@@ -255,12 +256,12 @@ bool CChainCommonent::ComponentInitialize()
     // As the program has not fully started yet, Shutdown() is possibly overkill.
     if (bRequestShutdown)
     {
-        LogPrintf("Shutdown requested. Exiting.\n");
+        mlog.debug("Shutdown requested. Exiting.\n");
         return false;
     }
     if (bLoaded)
     {
-        LogPrintf(" block index %15dms\n", GetTimeMillis() - iStart);
+        mlog.debug(" block index %15dms\n", GetTimeMillis() - iStart);
     }
     return true;
 }
@@ -385,8 +386,8 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
 {
     assert(xnode != nullptr);
 
-    LogPrint(BCLog::NET, "enter checkpoint\n");
-    LogPrint(BCLog::BENCH, "receive check block list====\n");
+    mlog.debug("enter checkpoint");
+    mlog.debug("receive check block list====");
 
     std::vector<Checkpoints::CCheckData> vdata;
     stream >> vdata;
@@ -411,10 +412,10 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
             }
         } else
         {
-            LogPrint(BCLog::NET, "check point signature check failed \n");
+            mlog.debug("check point signature check failed \n");
             break;
         }
-        LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
+        mlog.debug("block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
     }
 
     if (!toInsertCheckpoints.empty())
@@ -429,7 +430,7 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
         CValidationState state;
         if (!CheckActiveChain(state, chainparams))
         {
-            LogPrint(BCLog::NET, "CheckActiveChain error when receive  checkpoint\n");
+            mlog.error( "CheckActiveChain error when receive  checkpoint\n");
         }
     }
 
@@ -477,7 +478,7 @@ bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
         pindex = cIndexManager.GetChain().Next(pindex);
 
     int nLimit = 500;
-    LogPrint(BCLog::NET, "getblocks %d to %s limit %d from peer=%d\n", (pindex ? pindex->nHeight : -1),
+    mlog.debug("getblocks %d to %s limit %d from peer=%d", (pindex ? pindex->nHeight : -1),
              hashStop.IsNull() ? "end" : hashStop.ToString(), nLimit, xnode->nodeID);
 
     const CChainParams &chainparams = appbase::app().GetChainParams();
@@ -485,7 +486,7 @@ bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
     {
         if (pindex->GetBlockHash() == hashStop)
         {
-            LogPrint(BCLog::NET, "  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString());
+            mlog.debug("  getblocks stopping at %d %s", pindex->nHeight, pindex->GetBlockHash().ToString());
             break;
         }
         // If pruning, don't inv blocks unless we have on disk and are likely to still have
@@ -495,7 +496,7 @@ bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
         if (fPruneMode && (!(pindex->nStatus & BLOCK_HAVE_DATA) ||
                            pindex->nHeight <= Tip()->nHeight - nPrunedBlocksLikelyToHave))
         {
-            LogPrint(BCLog::NET, " getblocks stopping, pruned or too old block at %d %s\n", pindex->nHeight,
+            mlog.debug(" getblocks stopping, pruned or too old block at %d %s", pindex->nHeight,
                      pindex->GetBlockHash().ToString());
             break;
         }
@@ -504,7 +505,7 @@ bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
         {
             // When this block is requested, we'll send an inv that'll
             // trigger the peer to getblocks the next batch of inventory.
-            LogPrint(BCLog::NET, "  getblocks stopping at limit %d %s\n", pindex->nHeight,
+            mlog.debug("  getblocks stopping at limit %d %s", pindex->nHeight,
                      pindex->GetBlockHash().ToString());
             break;
         }
@@ -518,7 +519,7 @@ bool CChainCommonent::NetRequestHeaders(ExNode *xnode, CDataStream &stream)
 
     if (IsInitialBlockDownload() && !IsFlagsBitOn(xnode->flags, NF_WHITELIST))
     {
-        LogPrint(BCLog::NET, "Ignoring getheaders from peer=%d because node is in initial block download\n",
+        mlog.debug("Ignoring getheaders from peer=%d because node is in initial block download",
                  xnode->nodeID);
         return true;
     }
@@ -548,7 +549,7 @@ bool CChainCommonent::NetRequestHeaders(ExNode *xnode, CDataStream &stream)
     std::vector<CBlock> vHeaders;
     int nLimit = MAX_HEADERS_RESULTS;
 
-    LogPrint(BCLog::NET, "getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1),
+    mlog.debug("getheaders %d to %s from peer=%d\n", (pindex ? pindex->nHeight : -1),
              hashStop.IsNull() ? "end" : hashStop.ToString(), xnode->nodeID);
 
     for (; pindex; pindex = cIndexManager.GetChain().Next(pindex))
@@ -608,8 +609,7 @@ bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
         SendNetMessage(xnode->nodeID, NetMsgType::GETHEADERS, xnode->sendVersion, 0,
                        cIndexManager.GetChain().GetLocator(pindexBestHeader), uint256());
 
-        LogPrint(BCLog::NET,
-                 "received header %s: missing prev block %s, sending getheaders (%d) to end (peer=%d, nUnconnectingHeaders=%d)\n",
+        mlog.debug("received header %s: missing prev block %s, sending getheaders (%d) to end (peer=%d, nUnconnectingHeaders=%d)",
                  headers[0].GetHash().ToString(),
                  headers[0].hashPrevBlock.ToString(),
                  pindexBestHeader->nHeight,
@@ -698,7 +698,7 @@ bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     {
         if (xnode->nUnconnectingHeaders > 0)
         {
-            LogPrint(BCLog::NET, "peer=%d: resetting nUnconnectingHeaders (%d -> 0)\n", xnode->nodeID,
+            mlog.debug("peer=%d: resetting nUnconnectingHeaders (%d -> 0)\n", xnode->nodeID,
                      xnode->nUnconnectingHeaders);
         }
         xnode->nUnconnectingHeaders = 0;
@@ -720,7 +720,7 @@ bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
             // Headers message had its maximum size; the peer may have more headers.
             // TODO: optimize: if pindexLast is an ancestor of chainActive.Tip or pindexBestHeader, continue
             // from there instead.
-            LogPrint(BCLog::NET, "more getheaders (%d) to end to peer=%d (startheight:%d)\n", pindexLast->nHeight,
+            mlog.debug( "more getheaders (%d) to end to peer=%d (startheight:%d)\n", pindexLast->nHeight,
                      xnode->nodeID, xnode->startHeight);
 
             SendNetMessage(xnode->nodeID, NetMsgType::GETHEADERS, xnode->sendVersion, 0,
@@ -758,7 +758,7 @@ bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
             // direct fetch and rely on parallel download instead.
             if (!cIndexManager.GetChain().Contains(pindexWalk))
             {
-                LogPrint(BCLog::NET, "Large reorg, won't direct fetch to %s (%d)\n",
+                mlog.debug( "Large reorg, won't direct fetch to %s (%d)",
                          pindexLast->GetBlockHash().ToString(),
                          pindexLast->nHeight);
             } else
@@ -780,12 +780,12 @@ bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
 
                     vGetData.push_back(CInv(MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
                     // MarkBlockAsInFlight(pfrom->GetId(), pindex->GetBlockHash(), pindex);
-                    LogPrint(BCLog::NET, "Requesting block %s from  peer=%d\n",
+                    mlog.debug("Requesting block %s from  peer=%d",
                              pindex->GetBlockHash().ToString(), xnode->nodeID);
                 }
                 if (vGetData.size() > 1)
                 {
-                    LogPrint(BCLog::NET, "Downloading blocks toward %s (%d) via headers direct fetch\n",
+                    mlog.debug("Downloading blocks toward %s (%d) via headers direct fetch",
                              pindexLast->GetBlockHash().ToString(), pindexLast->nHeight);
                 }
                 if (vGetData.size() > 0)
@@ -894,7 +894,7 @@ bool CChainCommonent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
                                                 consensusParams) < nOneMonth);
             if (!isOK)
             {
-                LogPrintf("%s: ignoring request from peer=%i for old block that isn't in the main chain\n",
+                mlog.debug("%s: ignoring request from peer=%i for old block that isn't in the main chain",
                           __func__, xnode->nodeID);
             }
         }
@@ -908,7 +908,7 @@ bool CChainCommonent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
                                                           blockType == MSG_FILTERED_BLOCK) &&
         !IsFlagsBitOn(xnode->flags, NF_WHITELIST))
     {
-        LogPrint(BCLog::NET, "historical block serving limit reached, disconnect peer=%d\n",
+        mlog.debug( "historical block serving limit reached, disconnect peer=%d\n",
                  xnode->nodeID);
 
         //disconnect node
@@ -1006,7 +1006,7 @@ bool CChainCommonent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, ui
     stream >> *
             pblock;
 
-    LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock->GetHash().ToString(), xnode->nodeID);
+    mlog.debug("received block %s peer=%d", pblock->GetHash().ToString(), xnode->nodeID);
 
     bool forceProcessing = false;
     const uint256 hash(pblock->GetHash());
@@ -1057,7 +1057,7 @@ bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
     CBlockIndex *bi = cIndexManager.GetBlockIndex(req.blockhash);
     if (!bi || !(bi->nStatus & BLOCK_HAVE_DATA))
     {
-        LogPrintf("Peer %d sent us a getblocktxn for a block we don't have", xnode->nodeID);
+        mlog.debug("Peer %d sent us a getblocktxn for a block we don't have", xnode->nodeID);
         return true;
     }
 
@@ -1070,7 +1070,7 @@ bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
         // might maliciously send lots of getblocktxn requests to trigger
         // expensive disk reads, because it will require the peer to
         // actually receive all the data read from disk over the network.
-        LogPrint(BCLog::NET, "Peer %d sent us a getblocktxn for a block > %i deep", xnode->nodeID, MAX_BLOCKTXN_DEPTH);
+        mlog.debug("Peer %d sent us a getblocktxn for a block > %i deep", xnode->nodeID, MAX_BLOCKTXN_DEPTH);
         int blockType = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ? MSG_WITNESS_BLOCK : MSG_BLOCK;
         NetRequestBlockData(xnode, req.blockhash, blockType);
         return true;
@@ -1091,7 +1091,7 @@ bool CChainCommonent::NetSendBlockTransactions(ExNode *xnode, const BlockTransac
         if (req.indexes[i] >= block.vtx.size())
         {
             xnode->nMisbehavior = 100;
-            LogPrintf("Peer %d sent us a getblocktxn with out-of-bounds tx indices", xnode->nodeID);
+            mlog.debug("Peer %d sent us a getblocktxn with out-of-bounds tx indices", xnode->nodeID);
             return false;
         }
         resp.txn[i] = block.vtx[req.indexes[i]];
@@ -1124,7 +1124,7 @@ bool CChainCommonent::ReplayBlocks()
     if (vecHashHeads.size() != 2)
         return error("ReplayBlocks(): unknown inconsistent state");
 
-    LogPrintf("Replaying blocks\n");
+    mlog.info("Replaying blocks\n");
 
     const CBlockIndex *pIndexOld = nullptr;  // Old tip during the interrupted flush.
     const CBlockIndex *pIndexNew;            // New tip during the interrupted flush.
@@ -1159,7 +1159,7 @@ bool CChainCommonent::ReplayBlocks()
                              pIndexOld->GetBlockHash().ToString());
             }
 
-            LogPrintf("Rolling back %s (%i)\n", pIndexOld->GetBlockHash().ToString(), pIndexOld->nHeight);
+            mlog.info("Rolling back %s (%i)\n", pIndexOld->GetBlockHash().ToString(), pIndexOld->nHeight);
 
             DisconnectResult res = cViewManager.DisconnectBlock(block, pIndexOld, cache);
             if (res == DISCONNECT_FAILED)
@@ -1180,7 +1180,7 @@ bool CChainCommonent::ReplayBlocks()
     for (int nHeight = iForkHeight + 1; nHeight <= pIndexNew->nHeight; ++nHeight)
     {
         const CBlockIndex *pIndex = pIndexNew->GetAncestor(nHeight);
-        LogPrintf("Rolling forward %s (%i)\n", pIndex->GetBlockHash().ToString(), nHeight);
+        mlog.info("Rolling forward %s (%i)\n", pIndex->GetBlockHash().ToString(), nHeight);
         CBlock block;
         if (!ReadBlockFromDisk(block, pIndex, params.GetConsensus()))
         {
@@ -1246,7 +1246,7 @@ bool CChainCommonent::IsInitialBlockDownload()
         return true;
     if (Tip()->GetBlockTime() < (GetTime() - nMaxTipAge))
         return true;
-    LogPrintf("Leaving InitialBlockDownload (latching to false)\n");
+    mlog.info("Leaving InitialBlockDownload (latching to false)");
     latchToFalse.store(true, std::memory_order_relaxed);
     return false;
 }
@@ -1315,18 +1315,16 @@ void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
             DoWarning(strWarning);
         }
     }
-    LogPrintf(
-            "%s: new best=%s height=%d version=0x%08x log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo)",
-            __func__,
-            chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nVersion,
-            log(chainActive.Tip()->nChainWork.getdouble()) / log(2.0), (unsigned long)chainActive.Tip()->nChainTx,
-            DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-            GuessVerificationProgress(chainParams.TxData(), chainActive.Tip()),
-            cViewManager.GetCoinsTip()->DynamicMemoryUsage() * (1.0 / (1 << 20)),
+    mlog.debug(
+            "new best=%s height=%d version=0x%08x log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo)",\
+            chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nVersion,\
+            log(chainActive.Tip()->nChainWork.getdouble()) / log(2.0), (unsigned long)chainActive.Tip()->nChainTx,\
+            DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),\
+            GuessVerificationProgress(chainParams.TxData(), chainActive.Tip()),\
+            cViewManager.GetCoinsTip()->DynamicMemoryUsage() * (1.0 / (1 << 20)),\
             cViewManager.GetCoinsTip()->GetCacheSize());
     if (!warningMessages.empty())
-        LogPrintf(" warning='%s'", boost::algorithm::join(warningMessages, ", "));
-    LogPrintf("\n");
+        mlog.debug(" warning='%s'", boost::algorithm::join(warningMessages, ", "));
 
 }
 
@@ -1359,7 +1357,7 @@ bool CChainCommonent::DisconnectTip(CValidationState &state, const CChainParams 
         assert(bFlush);
     }
 
-    LogPrint(BCLog::BENCH, "- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
+    mlog.info("- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
 
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED, chainparams))
@@ -1712,8 +1710,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     int64_t nTime1 = GetTimeMicros();
     nTimeCheck += nTime1 - nTimeStart;
-    LogPrint(BCLog::BENCH, "    - Sanity checks: %.2fms [%.2fs]\n", 0.001 * (nTime1 - nTimeStart),
-             nTimeCheck * 0.000001);
+    mlog.info("- Sanity checks: %.2fms [%.2fs]\n", 0.001 * (nTime1 - nTimeStart),nTimeCheck * 0.000001);
 
     // Do not allow blocks that contain transactions which 'overwrite' older transactions,
     // unless those are already completely spent.
@@ -1772,7 +1769,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     int64_t nTime2 = GetTimeMicros();
     nTimeForks += nTime2 - nTime1;
-    LogPrint(BCLog::BENCH, "    - Fork checks: %.2fms [%.2fs]\n", 0.001 * (nTime2 - nTime1), nTimeForks * 0.000001);
+    mlog.info("    - Fork checks: %.2fms [%.2fs]\n", 0.001 * (nTime2 - nTime1), nTimeForks * 0.000001);
 
     CBlockUndo blockundo;
 
@@ -1854,7 +1851,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     }
     int64_t nTime3 = GetTimeMicros();
     nTimeConnect += nTime3 - nTime2;
-    LogPrint(BCLog::BENCH, "      - Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n",
+    mlog.debug("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n",
              (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(),
              nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
 
@@ -1870,7 +1867,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         return state.DoS(100, error("%s: CheckQueue failed", __func__), REJECT_INVALID, "block-validation-failed");
     int64_t nTime4 = GetTimeMicros();
     nTimeVerify += nTime4 - nTime2;
-    LogPrint(BCLog::BENCH, "    - Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1,
+    mlog.debug("- Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1,
              0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs - 1),
              nTimeVerify * 0.000001);
 
@@ -1907,11 +1904,11 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     int64_t nTime5 = GetTimeMicros();
     nTimeIndex += nTime5 - nTime4;
-    LogPrint(BCLog::BENCH, "    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimeIndex * 0.000001);
+    mlog.debug("    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimeIndex * 0.000001);
 
     int64_t nTime6 = GetTimeMicros();
     nTimeCallbacks += nTime6 - nTime5;
-    LogPrint(BCLog::BENCH, "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
+    mlog.debug("    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
     return true;
 }
 
@@ -1944,7 +1941,7 @@ bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &ch
     int64_t nTime2 = GetTimeMicros();
     nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
-    LogPrint(BCLog::BENCH, "  - Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001,
+    mlog.debug("- Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001,
              nTimeReadFromDisk * 0.000001);
     {
         CCoinsViewCache view(cViewManager.GetCoinsTip());
@@ -1958,20 +1955,20 @@ bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &ch
         }
         nTime3 = GetTimeMicros();
         nTimeConnectTotal += nTime3 - nTime2;
-        LogPrint(BCLog::BENCH, "  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001,
+        mlog.debug("  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001,
                  nTimeConnectTotal * 0.000001);
         bool flushed = view.Flush();
         assert(flushed);
     }
     int64_t nTime4 = GetTimeMicros();
     nTimeFlush += nTime4 - nTime3;
-    LogPrint(BCLog::BENCH, "  - Flush: %.2fms [%.2fs]\n", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
+    mlog.debug("  - Flush: %.2fms [%.2fs]\n", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED, chainparams))
         return false;
     int64_t nTime5 = GetTimeMicros();
     nTimeChainState += nTime5 - nTime4;
-    LogPrint(BCLog::BENCH, "  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001,
+    mlog.debug("  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001,
              nTimeChainState * 0.000001);
 
     // Remove conflicting transactions from the mempool.;
@@ -1984,9 +1981,9 @@ bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &ch
     int64_t nTime6 = GetTimeMicros();
     nTimePostConnect += nTime6 - nTime5;
     nTimeTotal += nTime6 - nTime1;
-    LogPrint(BCLog::BENCH, "  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001,
+    mlog.debug("  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001,
              nTimePostConnect * 0.000001);
-    LogPrint(BCLog::BENCH, "- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    mlog.debug("- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
 
     connectTrace.BlockConnected(pIndexNew, std::move(pthisBlock));
     return true;
@@ -2250,7 +2247,7 @@ bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainPara
     LOCK(cs);
 
     CBlockIndex *pOldTipIndex = Tip();  // 1. current block chain tip
-    LogPrint(BCLog::BENCH, "Current tip block:%s\n", pOldTipIndex->ToString().c_str());
+    mlog.info("Current tip block:%s\n", pOldTipIndex->ToString().c_str());
     MapCheckpoints checkpoints = chainparams.Checkpoints().mapCheckpoints;
 
     if (checkpoints.rbegin()->first < 1)
@@ -2313,7 +2310,7 @@ bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainPara
     if (!state.IsValid())
     {
 
-        LogPrint(BCLog::BENCH, "reject reason %s\n", state.GetRejectReason());
+        mlog.info("reject reason %s", state.GetRejectReason());
         return false;
 
     }
@@ -2329,7 +2326,7 @@ bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainPara
         uiInterface.NotifyBlockTip(IsInitialBlockDownload(), chainActive.Tip());
     }
 
-    LogPrint(BCLog::BENCH, "CheckActiveChain End====\n");
+    mlog.info( "CheckActiveChain End====");
 
     return true;
 }
@@ -2405,7 +2402,7 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
     {
         // In case we just added the genesis block, connect it now, so
         // that we always have a chainActive.Tip() when we return.
-        LogPrintf("%s: Connecting genesis block...\n", __func__);
+        mlog.info("%s: Connecting genesis block...", __func__);
         CValidationState state;
         if (!ActivateBestChain(state, chainparams, nullptr))
         {
@@ -2424,7 +2421,7 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
 
     cIndexManager.PruneBlockIndexCandidates();
 
-    LogPrintf("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f\n",
+    mlog.info("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f\n",
               chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
               GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
@@ -2472,12 +2469,12 @@ bool CChainCommonent::ThreadImport()
             FILE *file = OpenBlockFile(pos, true);
             if (!file)
                 break; // This error is logged in OpenBlockFile
-            LogPrintf("Reindexing block file blk%05u.dat...\n", (unsigned int)iFile);
+            mlog.info("Reindexing block file blk%05u.dat...", (unsigned int)iFile);
             LoadExternalBlockFile(chainParams, file, &pos);
             iFile++;
         }
 
-        LogPrintf("Reindexing finished\n");
+        mlog.info("Reindexing finished");
     }
 
     if (cIndexManager.NeedInitGenesisBlock(chainParams))
@@ -2496,12 +2493,12 @@ bool CChainCommonent::ThreadImport()
         if (file)
         {
             fs::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
-            LogPrintf("Importing bootstrap.dat...\n");
+            mlog.info("Importing bootstrap.dat...");
             LoadExternalBlockFile(chainParams, file, nullptr);
             RenameOver(pathBootstrap, pathBootstrapOld);
         } else
         {
-            LogPrintf("Warning: Could not open bootstrap file %s\n", pathBootstrap.string());
+            mlog.info("Warning: Could not open bootstrap file %s", pathBootstrap.string());
         }
     }
 
@@ -2510,11 +2507,11 @@ bool CChainCommonent::ThreadImport()
         FILE *file = fsbridge::fopen(strFile, "rb");
         if (file)
         {
-            LogPrintf("Importing blocks file %s...\n", strFile);
+            mlog.info("Importing blocks file %s...", strFile);
             LoadExternalBlockFile(chainParams, file, nullptr);
         } else
         {
-            LogPrintf("Warning: Could not open blocks file %s\n", strFile);
+            mlog.info("Warning: Could not open blocks file %s", strFile);
         }
     }
 
@@ -2522,13 +2519,13 @@ bool CChainCommonent::ThreadImport()
     CValidationState state;
     if (!ActivateBestChain(state, chainParams, nullptr))
     {
-        LogPrintf("Failed to connect best block");
+        mlog.info("Failed to connect best block");
         return false;
     }
 
     if (cArgs.GetArg<bool>("-stopafterblockimport", DEFAULT_STOPAFTERBLOCKIMPORT))
     {
-        LogPrintf("Stopping after block import\n");
+        mlog.info("Stopping after block import");
         return false;
     }
 }
@@ -2614,7 +2611,7 @@ bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 bool bParentNotFound = (cIndexManager.GetBlockIndex(block.hashPrevBlock) == nullptr) ? true : false;
                 if (hash != chainParams.GetConsensus().hashGenesisBlock && bParentNotFound)
                 {
-                    LogPrint(BCLog::REINDEX, "%s: Out of order block %s, parent %s not known\n", __func__,
+                    mlog.info("%s: Out of order block %s, parent %s not known\n", __func__,
                              hash.ToString(),
                              block.hashPrevBlock.ToString());
                     if (dbp)
@@ -2635,7 +2632,7 @@ bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 } else if (hash != chainParams.GetConsensus().hashGenesisBlock &&
                            cIndexManager.GetBlockIndex(hash)->nHeight % 1000 == 0)
                 {
-                    LogPrint(BCLog::REINDEX, "Block Import: already had block %s at height %d\n", hash.ToString(),
+                    mlog.info("Block Import: already had block %s at height %d", hash.ToString(),
                              mapBlockIndex[hash]->nHeight);
                 }
 
@@ -2666,7 +2663,7 @@ bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                         std::shared_ptr<CBlock> pblockrecursive = std::make_shared<CBlock>();
                         if (ReadBlockFromDisk(*pblockrecursive, it->second, chainParams.GetConsensus()))
                         {
-                            LogPrint(BCLog::REINDEX, "%s: Processing out of order child %s of %s\n", __func__,
+                            mlog.info("%s: Processing out of order child %s of %s\n", __func__,
                                      pblockrecursive->GetHash().ToString(),
                                      head.ToString());
                             LOCK(cs);
@@ -2684,7 +2681,7 @@ bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 }
             } catch (const std::exception &e)
             {
-                LogPrintf("%s: Deserialize or I/O error - %s\n", __func__, e.what());
+                mlog.info("%s: Deserialize or I/O error - %s", __func__, e.what());
             }
         }
     } catch (const std::runtime_error &e)
@@ -2692,7 +2689,7 @@ bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
         AbortNode(std::string("System error: ") + e.what());
     }
     if (nLoaded > 0)
-        LogPrintf("Loaded %i blocks from external file in %dms\n", nLoaded, GetTimeMillis() - nStart);
+        mlog.info("Loaded %i blocks from external file in %dms", nLoaded, GetTimeMillis() - nStart);
     return nLoaded > 0;
 }
 
@@ -2796,3 +2793,5 @@ bool CChainCommonent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, C
 
     return true;
 }
+
+log4cpp::Category & CChainCommonent::mlog = log4cpp::Category::getInstance(std::string("CChainCommonent"));

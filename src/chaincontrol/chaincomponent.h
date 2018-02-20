@@ -2,6 +2,7 @@
 
 #include <set>
 #include <map>
+#include <log4cpp/Category.hh>
 #include "interface/ichaincomponent.h"
 #include "blockfilemanager.h"
 #include "blockindexmanager.h"
@@ -286,5 +287,9 @@ private:
                 CBlockIndex **ppindex, bool fRequested, const CDiskBlockPos *dbp, bool *fNewBlock);
 
     void NotifyHeaderTip();
+
+public:
+    static log4cpp::Category & mlog;
+
 
 };

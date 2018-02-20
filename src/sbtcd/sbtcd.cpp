@@ -615,7 +615,7 @@ bool AppInit(int argc, char *argv[])
     return fRet;
 }
 
-
+#include <iostream>
 #include "base.hpp"
 #include "p2p/netcomponent.h"
 #include "rpc/rpccomponent.h"
@@ -623,9 +623,18 @@ bool AppInit(int argc, char *argv[])
 #include "chaincontrol/chaincomponent.h"
 #include "mempool/txmempool.h"
 # include "walletcomponent.h"
-
+#include "log4cpp/Category.hh"
+#include "log4cpp/PropertyConfigurator.hh"
 int main( int argc, char** argv )
 {
+
+    try{
+        log4cpp::PropertyConfigurator::configure("cppconf.ini");
+    }catch(log4cpp::ConfigureFailure& f){
+
+        std::cout<<f.what()<<std::endl;
+    }
+
     CBase& app = appbase::CBase::Instance();
     app.RegisterComponent(new CBaseComponent);
     app.RegisterComponent(new CChainCommonent);
