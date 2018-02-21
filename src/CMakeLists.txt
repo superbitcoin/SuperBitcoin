@@ -36,6 +36,9 @@ find_package(Secp256k1)
 find_package(Miniupnpc)
 find_package(OpenSSL)
 find_package(Event)
+find_package(log4cpp)
+
+
 
 add_subdirectory(sbtcd)
 add_subdirectory(sbtc-tx)
