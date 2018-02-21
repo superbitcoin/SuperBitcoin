@@ -37,7 +37,10 @@ public:
 
     virtual const char* whoru() const override { return "I am CWalletComponent\n"; }
 
+    log4cpp::Category &getLog() override;
+
     std::vector<CWalletRef>& GetWalletRef() { return vpWallets; }
+    static log4cpp::Category & mlog;
 };
 
 #endif //SUPERBITCOIN_WALLETCOMPONENT_H

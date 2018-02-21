@@ -52,6 +52,10 @@ inline log4cpp::Category &mlog() {
     return appbase::CApp::Instance().mlog;
 }
 
+#define _TXT__(x) #x
+#define EMTOSTR(EM) _TXT__(EM)
+
+
 // Application startup time (used for uptime calculation)
 int64_t GetStartupTime();
 

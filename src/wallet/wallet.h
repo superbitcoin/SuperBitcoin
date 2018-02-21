@@ -28,6 +28,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <log4cpp/Category.hh>
 
 typedef CWallet *CWalletRef;
 /**
@@ -321,6 +322,7 @@ private:
     const CWallet *pwallet;
 
 public:
+    static log4cpp::Category &mlog;
     /**
      * Key/value map with information about the transaction.
      *
@@ -722,6 +724,8 @@ private:
  */
 class CWallet : public CCryptoKeyStore, public CValidationInterface
 {
+public:
+    static log4cpp::Category &mlog;
 private:
     static std::atomic<bool> fFlushScheduled;
     std::atomic<bool> fAbortRescan;

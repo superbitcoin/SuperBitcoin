@@ -544,7 +544,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
         Dbc *pcursor = batch.GetCursor();
         if (!pcursor)
         {
-            LogPrintf("Error getting wallet database cursor\n");
+            mlog.error("Error getting wallet database cursor");
             return DB_CORRUPT;
         }
 
@@ -558,7 +558,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                 break;
             else if (ret != 0)
             {
-                LogPrintf("Error reading next record from wallet database\n");
+                mlog.error("Error reading next record from wallet database");
                 return DB_CORRUPT;
             }
 
@@ -581,7 +581,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                 }
             }
             if (!strErr.empty())
-                LogPrintf("%s\n", strErr);
+                mlog.error("%s", strErr);
         }
         pcursor->close();
     }
@@ -602,9 +602,9 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
     if (result != DB_LOAD_OK)
         return result;
 
-    LogPrintf("nFileVersion = %d\n", wss.nFileVersion);
+    mlog.info("nFileVersion = %d\n", wss.nFileVersion);
 
-    LogPrintf("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total\n",
+    mlog.info("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total\n",
               wss.nKeys, wss.nCKeys, wss.nKeyMeta, wss.nKeys + wss.nCKeys);
 
     // nTimeFirstKey is only reliable if all keys have metadata
@@ -652,7 +652,7 @@ DBErrors CWalletDB::FindWalletTx(std::vector<uint256> &vTxHash, std::vector<CWal
         Dbc *pcursor = batch.GetCursor();
         if (!pcursor)
         {
-            LogPrintf("Error getting wallet database cursor\n");
+            mlog.error("Error getting wallet database cursor");
             return DB_CORRUPT;
         }
 
@@ -666,7 +666,7 @@ DBErrors CWalletDB::FindWalletTx(std::vector<uint256> &vTxHash, std::vector<CWal
                 break;
             else if (ret != 0)
             {
-                LogPrintf("Error reading next record from wallet database\n");
+                mlog.error("Error reading next record from wallet database");
                 return DB_CORRUPT;
             }
 
@@ -731,7 +731,7 @@ DBErrors CWalletDB::ZapSelectTx(std::vector<uint256> &vTxHashIn, std::vector<uin
         {
             if (!EraseTx(hash))
             {
-                LogPrint(BCLog::DB, "Transaction was found for deletion but returned database error: %s\n",
+                mlog.error("Transaction was found for deletion but returned database error: %s\n",
                          hash.GetHex());
                 delerror = true;
             }
@@ -833,7 +833,7 @@ bool CWalletDB::RecoverKeysOnlyFilter(void *callbackData, CDataStream ssKey, CDa
         return false;
     if (!fReadOK)
     {
-        LogPrintf("WARNING: CWalletDB::Recover skipping %s: %s\n", strType, strErr);
+        mlog.error("WARNING: CWalletDB::Recover skipping %s: %s\n", strType, strErr);
         return false;
     }
 
@@ -871,6 +871,8 @@ bool CWalletDB::TxnBegin()
 {
     return batch.TxnBegin();
 }
+
+log4cpp::Category &CWalletDB::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
 
 bool CWalletDB::TxnCommit()
 {
