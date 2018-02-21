@@ -2796,7 +2796,7 @@ bool CChainCommonent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, C
     return true;
 }
 
-log4cpp::Category &CChainCommonent::mlog = log4cpp::Category::getInstance("CChainCommonent");
+log4cpp::Category &CChainCommonent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
 
 bool CChainCommonent::AbortNode(const std::string &strMessage, const std::string &userMessage)
 {

@@ -8,6 +8,7 @@
  ************************************/
 
 #include <walletcomponent.h>
+#include <utils/util.h>
 #include "../interface/ibasecomponent.h"
 #include "base.hpp"
 
@@ -56,4 +57,10 @@ bool CWalletComponent::ComponentShutdown()
     vpWallets.clear();
 
     return true;
+}
+
+log4cpp::Category &CWalletComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
+log4cpp::Category &CWalletComponent::getLog()
+{
+    return mlog;
 }

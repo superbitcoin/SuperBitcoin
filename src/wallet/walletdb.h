@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include "log4cpp/Category.hh"
 
 /**
  * Overview of wallet database classes:
@@ -292,6 +293,8 @@ public:
     //! Write wallet version
     bool WriteVersion(int nVersion);
 
+public:
+    static log4cpp::Category & mlog;
 private:
     CDB batch;
     CWalletDBWrapper &m_dbw;

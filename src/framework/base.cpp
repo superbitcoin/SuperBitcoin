@@ -110,7 +110,7 @@ bool CApp::Initialize(int argc, char **argv)
     return InitParams(argc, argv) && ForEachComponent(true, [](IComponent* component){ return component->Initialize(); });
 }
 
-log4cpp::Category &CApp::mlog = log4cpp::Category::getInstance("CApp");
+log4cpp::Category &CApp::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP));
 
 bool CApp::Startup()
 {
