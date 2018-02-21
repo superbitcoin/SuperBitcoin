@@ -577,7 +577,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                     if (strType == "tx")
                         ;
                         // Rescan if there is a bad transaction record:
-                        //TODO: appbase::app().GetArgsManager().SoftSetArg("-rescan", true);
+                        //TODO: appbase::app_bpo().GetArgsManager().SoftSetArg("-rescan", true);
                 }
             }
             if (!strErr.empty())
@@ -771,12 +771,12 @@ void MaybeCompactWalletDB()
     {
         return;
     }
-    if (!(appbase::app().GetArgsManager().GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
+    if (!(app().GetArgsManager().GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
     {
         return;
     }
 
-    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (CWalletRef pwallet : app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         CWalletDBWrapper &dbh = pwallet->GetDBHandle();
 

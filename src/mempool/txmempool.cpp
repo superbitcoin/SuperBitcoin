@@ -55,7 +55,7 @@ bool CTxMemPool::AcceptToMemoryPool(CValidationState &state, const CTransactionR
                         bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,
                         bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
 {
-    const CChainParams& chainparams = appbase::app().GetChainParams();
+    const CChainParams& chainparams = app().GetChainParams();
     return AcceptToMemoryPoolWithTime(chainparams, state, tx, fLimitFree, pfMissingInputs, GetTime(),
                                       plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee);
 }
@@ -110,7 +110,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
 
 
 //    // Reject transactions with witness before segregated witness activates (override with -prematurewitness)
-//    const CArgsManager &mArgs = appbase::app().GetArgsManager();
+//    const CArgsManager &mArgs = appbase::app_bpo().GetArgsManager();
 //    bool witnessEnabled = IsWitnessEnabled(chainActive.Tip(), chainparams.GetConsensus());
 //    if (!mArgs.GetArg<bool>("-prematurewitness", false) && tx.HasWitness() && !witnessEnabled)
 //    {
@@ -272,7 +272,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
             return state.DoS(0, false, REJECT_NONSTANDARD, "bad-txns-too-many-sigops", false,
                              strprintf("%d", nSigOpsCost));
 
-        const CArgsManager &mArgs = appbase::app().GetArgsManager();
+        const CArgsManager &mArgs = app().GetArgsManager();
         CAmount mempoolRejectFee = this->GetMinFee(
                 mArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nSize);
         if (mempoolRejectFee > 0 && nModifiedFees < mempoolRejectFee)
@@ -919,7 +919,7 @@ namespace
 
 void AddToCompactExtraTransactions(const CTransactionRef &tx)
 {
-    size_t max_extra_txn = appbase::app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
+    size_t max_extra_txn = app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
                                                                             DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
     if (max_extra_txn <= 0)
         return;
@@ -961,7 +961,7 @@ bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& t
 {
     assert(xnode != nullptr);
 
-    const CArgsManager& appArgs = appbase::app().GetArgsManager();
+    const CArgsManager& appArgs = app().GetArgsManager();
 
     // Stop processing the transaction early if
     // We are in blocks only mode and peer is either not whitelisted or whitelistrelay is off
@@ -2429,7 +2429,7 @@ bool CCoinsViewMemPool::GetCoin(const COutPoint &outpoint, Coin &coin) const
     // If an entry in the mempool exists, always return that one, as it's guaranteed to never
     // conflict with the underlying cache, and it cannot have pruned entries (as it contains full)
     // transactions. First checking the underlying cache risks returning a pruned entry instead.
-    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    CTxMemPool* txmempool = (CTxMemPool*)appbase::CApp::Instance().FindComponent<CTxMemPool>();
     CTransactionRef ptx = txmempool->get(outpoint.hash);
     if (ptx)
     {

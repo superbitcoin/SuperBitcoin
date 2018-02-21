@@ -208,7 +208,7 @@ void Shutdown()
     StopRPC();
     StopHTTPServer();
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (CWalletRef pwallet : app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         pwallet->Flush(false);
     }
@@ -226,7 +226,7 @@ void Shutdown()
     StopTorControl();
     if (fDumpMempoolLater && gArgs.GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
     {
-        CTxMemPool *txmempool = (CTxMemPool *)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+        CTxMemPool *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<CTxMemPool>();
         if (!txmempool)
         {
             LogPrintf("find txmempool component fail!\n");
@@ -279,7 +279,7 @@ void Shutdown()
         pblocktree = nullptr;
     }
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (CWalletRef pwallet : app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         pwallet->Flush(true);
     }
@@ -305,11 +305,11 @@ void Shutdown()
     UnregisterAllValidationInterfaces();
     GetMainSignals().UnregisterBackgroundSignalScheduler();
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (CWalletRef pwallet : app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         delete pwallet;
     }
-    appbase::app().FindComponent<CWalletComponent>()->GetWalletRef().clear();
+    app().FindComponent<CWalletComponent>()->GetWalletRef().clear();
 #endif
     globalVerifyHandle.reset();
     ECC_Stop();
@@ -856,7 +856,7 @@ void ThreadImport(std::vector<fs::path> vImportFiles)
     } // End scope of CImportingNow
     if (gArgs.GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
     {
-        CTxMemPool *txmempool = (CTxMemPool *)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+        CTxMemPool *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<CTxMemPool>();
         if (!txmempool)
         {
             LogPrintf("find txmempool component fail!\n");
@@ -2037,7 +2037,7 @@ bool AppInitMain(boost::thread_group &threadGroup, CScheduler &scheduler)
     uiInterface.InitMessage(_("Done loading"));
 
 #ifdef ENABLE_WALLET
-    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (CWalletRef pwallet : app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
         pwallet->postInitProcess(scheduler);
     }

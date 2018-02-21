@@ -22,7 +22,7 @@ void AppendParamsHelpMessages(std::string &strUsage, bool debugHelp)
     {
         strUsage += HelpMessageOpt("-regtest",
                                    "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
-                                           "This is intended for regression testing tools and app development.");
+                                           "This is intended for regression testing tools and app_bpo development.");
     }
 }
 

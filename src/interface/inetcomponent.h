@@ -41,4 +41,4 @@ public:
 };
 
 #define GET_NET_INTERFACE(ifObj) \
-    auto ifObj = appbase::CBase::Instance().FindComponent<INetComponent>()
+    auto ifObj = appbase::CApp::Instance().FindComponent<INetComponent>()

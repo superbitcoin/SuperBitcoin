@@ -3,6 +3,7 @@
 #include <map>
 #include <atomic>
 #include <memory>
+#include <interface/componentid.h>
 #include "icomponent.h"
 #include "utils/iterator.h"
 
@@ -12,10 +13,14 @@ class CBaseChainParams;
 
 namespace appbase
 {
-    class CBase
+    class CApp:public IComponent
     {
     public:
-        static CBase &Instance();
+        static CApp &Instance();
+
+        enum { ID = CID_APP };
+        virtual int GetID() const override { return ID; }
+
 
         uint64_t Version() const;
 
@@ -23,17 +28,24 @@ namespace appbase
 
         bool Initialize(int argc, char **argv);
 
-        bool Startup();
+        virtual  bool Startup() override ;
 
-        bool Shutdown();
+        virtual bool Shutdown() override ;
 
         void Run();
-
-        void Quit();
 
         void RequestShutdown() { bShutdown = true; }
 
         bool RegisterComponent(IComponent* component);
+
+
+
+        state GetState() const override;
+
+        bool Initialize() override;
+
+        log4cpp::Category &getLog() override;
+
 
         template<typename Component>
         Component* FindComponent() const
@@ -79,13 +91,13 @@ namespace appbase
 
     private:
 
-        CBase(); ///< private because CBase is a singleton that should be accessed via instance()
+        CApp(); ///< private because CBase is a singleton that should be accessed via instance()
 
-        ~CBase();
+        ~CApp();
 
-        CBase(const CBase& ) = delete;
+        CApp(const CApp& ) = delete;
 
-        CBase& operator=(const CBase& ) = delete;
+        CApp& operator=(const CApp& ) = delete;
 
         bool InitParams(int argc, char *argv[]);
 
@@ -99,11 +111,11 @@ namespace appbase
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
 
         std::map<int, std::unique_ptr<IComponent>> m_mapComponents; ///< all registered plugins ordered by id.
+    public:
+        static log4cpp::Category &mlog;
     };
 
-    inline CBase &app()
-    {
-        return CBase::Instance();
-    }
+
+
 }
 

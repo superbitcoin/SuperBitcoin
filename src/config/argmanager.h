@@ -135,7 +135,7 @@ protected:
     /**
      * reconfiguration
      */
-    bpo::options_description *app;
+    bpo::options_description *app_bpo;
     mutable CCriticalSection cs_args;
     std::map<std::string, std::string> mapArgs;
     std::map<std::string, std::vector<std::string> > mapMultiArgs;

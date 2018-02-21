@@ -80,7 +80,7 @@ static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUAR
 
 static void AddToCompactExtraTransactions(const CTransactionRef &tx)
 {
-    size_t max_extra_txn = appbase::app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
+    size_t max_extra_txn = app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
     if (max_extra_txn <= 0)
         return;
@@ -693,7 +693,7 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    int banscore = appbase::app().GetArgsManager().GetArg<int>("-banscore", DEFAULT_BANSCORE_THRESHOLD);
+    int banscore = app().GetArgsManager().GetArg<int>("-banscore", DEFAULT_BANSCORE_THRESHOLD);
     if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("%s: %s peer=%d (%d -> %d) BAN THRESHOLD EXCEEDED\n", __func__, state->name, pnode,
@@ -1113,11 +1113,11 @@ static bool ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::ve
 
 const CChainParams &PeerLogicValidation::Params()
 {
-    return appbase::app().GetChainParams();
+    return app().GetChainParams();
 }
 
 PeerLogicValidation::PeerLogicValidation(CConnman *connmanIn, CScheduler &scheduler)
-        : connman(connmanIn), m_stale_tip_check_time(0), appArgs(appbase::app().GetArgsManager())
+        : connman(connmanIn), m_stale_tip_check_time(0), appArgs(app().GetArgsManager())
 {
     // Initialize global variables that cannot be constructed at startup.
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
@@ -3420,7 +3420,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 //        return true;
 //    }
 //
-//    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+//    CTxMemPool* txmempool = (CTxMemPool*)appbase::CApp::Instance().FindComponent<CTxMemPool>();
 //    CTransactionRef ptx;
 //    vRecv >> ptx;
 //    const CTransaction &tx = *ptx;

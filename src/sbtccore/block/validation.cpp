@@ -1937,7 +1937,7 @@ static bool ActivateBestChainStep(CValidationState &state, const CChainParams &c
     const CBlockIndex *pindexOldTip = chainActive.Tip();
     const CBlockIndex *pindexFork = chainActive.FindFork(pindexMostWork);
 
-    CTxMemPool *txmempool = (CTxMemPool *)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    CTxMemPool *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<CTxMemPool>();
 
     // Disconnect active blocks which are no longer in the best chain.
     bool fBlocksDisconnected = false;
@@ -2318,7 +2318,7 @@ bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, C
     bool pindex_was_in_chain = false;
     CBlockIndex *invalid_walk_tip = chainActive.Tip();
 
-    CTxMemPool *txmempool = (CTxMemPool *)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    CTxMemPool *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<CTxMemPool>();
 
     DisconnectedBlockTransactions disconnectpool;
     while (chainActive.Contains(pindex))

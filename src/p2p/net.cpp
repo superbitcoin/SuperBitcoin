@@ -106,7 +106,7 @@ void CConnman::AddOneShot(const std::string &strDest)
 
 unsigned short GetListenPort()
 {
-    return (unsigned short)(appbase::app().GetArgsManager().GetArg<int32_t>("-port", appbase::app().GetChainParams().GetDefaultPort()));
+    return (unsigned short)(app().GetArgsManager().GetArg<int32_t>("-port", app().GetChainParams().GetDefaultPort()));
 }
 
 // find 'best' local address for a particular peer
@@ -307,7 +307,7 @@ bool IsReachable(const CNetAddr &addr)
 
 const CChainParams &CConnman::Params()
 {
-    return appbase::app().GetChainParams();
+    return app().GetChainParams();
 }
 
 CNode *CConnman::FindNode(const CNetAddr &ip)
@@ -541,7 +541,7 @@ void CConnman::Ban(const CSubNet &subNet, const BanReason &banReason, int64_t ba
     banEntry.banReason = banReason;
     if (bantimeoffset <= 0)
     {
-        bantimeoffset = appbase::app().GetArgsManager().GetArg<uint32_t>("-bantime", DEFAULT_MISBEHAVING_BANTIME);
+        bantimeoffset = app().GetArgsManager().GetArg<uint32_t>("-bantime", DEFAULT_MISBEHAVING_BANTIME);
         sinceUnixEpoch = false;
     }
     banEntry.nBanUntil = (sinceUnixEpoch ? 0 : GetTime()) + bantimeoffset;
@@ -1666,7 +1666,7 @@ void CConnman::ThreadDNSAddressSeed()
     //  creating fewer identifying DNS requests, reduces trust by giving seeds
     //  less influence on the network topology, and reduces traffic to the seeds.
     if ((addrman.size() > 0) &&
-        (!appbase::app().GetArgsManager().GetArg<bool>("-forcednsseed", DEFAULT_FORCEDNSSEED)))
+        (!app().GetArgsManager().GetArg<bool>("-forcednsseed", DEFAULT_FORCEDNSSEED)))
     {
         if (!interruptNet.sleep_for(std::chrono::seconds(11)))
             return;
@@ -1801,7 +1801,7 @@ int CConnman::GetExtraOutboundCount()
 
 void CConnman::ThreadOpenConnections()
 {
-    const CArgsManager& appArgs = appbase::app().GetArgsManager();
+    const CArgsManager& appArgs = app().GetArgsManager();
 
     // Connect to specific addresses
     if (appArgs.IsArgSet("-connect"))
@@ -2058,7 +2058,7 @@ void CConnman::ThreadOpenAddedConnections()
 {
     {
         LOCK(cs_vAddedNodes);
-        vAddedNodes = appbase::app().GetArgsManager().GetArgs("-addnode");
+        vAddedNodes = app().GetArgsManager().GetArgs("-addnode");
     }
 
     while (true)
@@ -2535,7 +2535,7 @@ bool CConnman::Start(CScheduler &scheduler, const Options &connOptions)
     threadSocketHandler = std::thread(&TraceThread<std::function<void()> >, "net",
                                       std::function<void()>(std::bind(&CConnman::ThreadSocketHandler, this)));
 
-    const CArgsManager& appArgs = appbase::app().GetArgsManager();
+    const CArgsManager& appArgs = app().GetArgsManager();
 
     if (!appArgs.GetArg<bool>("-dnsseed", true))
         LogPrintf("DNS seeding disabled\n");

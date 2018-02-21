@@ -1,5 +1,7 @@
 #pragma once
 
+#include <log4cpp/Category.hh>
+
 namespace appbase
 {
     class IComponent
@@ -13,7 +15,9 @@ namespace appbase
             stopped         ///< the plugin is no longer running
         };
 
-        virtual ~IComponent() {}
+        virtual ~IComponent()
+        {
+        }
 
         virtual int GetID() const = 0;
 
@@ -24,5 +28,17 @@ namespace appbase
         virtual bool Startup() = 0;
 
         virtual bool Shutdown() = 0;
+        virtual log4cpp::Category &getLog()
+        {
+            assert(nullptr == "this funtion must been never called");
+            return log4cpp::Category::getRoot();
+        };
+
+        template<typename... Args>
+        bool error(const char *fmt, const Args &... args)
+        {
+            getLog().error(fmt, args ...);
+            return false;
+        }
     };
 }

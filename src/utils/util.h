@@ -35,11 +35,22 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
+#include <framework/base.hpp>
+
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 using std::vector;
 using std::string;
+
+
+inline appbase::CApp &app()
+{
+    return appbase::CApp::Instance();
+}
+inline log4cpp::Category &mlog() {
+    return appbase::CApp::Instance().mlog;
+}
 
 // Application startup time (used for uptime calculation)
 int64_t GetStartupTime();
@@ -505,17 +516,17 @@ void RenameThread(const char *name);
 template<typename Callable>
 void TraceThread(const char *name, Callable func)
 {
-    std::string s = strprintf("bitcoin-%s", name);
+    std::string s = strprintf("sbtc-%s", name);
     RenameThread(s.c_str());
     try
     {
-        LogPrintf("%s thread start\n", name);
+        mlog().info("%s thread start\n", name);
         func();
-        LogPrintf("%s thread exit\n", name);
+        mlog().info("%s thread exit\n", name);
     }
     catch (const boost::thread_interrupted &)
     {
-        LogPrintf("%s thread interrupt\n", name);
+        mlog().info("%s thread interrupt\n", name);
         throw;
     }
     catch (const std::exception &e)
@@ -529,6 +540,7 @@ void TraceThread(const char *name, Callable func)
         throw;
     }
 }
+
 
 void
 GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char *> &argv_arr);

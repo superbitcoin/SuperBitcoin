@@ -8,7 +8,9 @@ namespace appbase
     class TComponent : public IComponent
     {
     public:
-        virtual ~TComponent() {}
+        virtual ~TComponent()
+        {
+        }
 
         virtual state GetState() const override
         {
@@ -24,7 +26,7 @@ namespace appbase
             if (_state == registered)
             {
                 _state = initialized;
-                return static_cast<Impl*>(this)->ComponentInitialize();
+                return static_cast<Impl *>(this)->ComponentInitialize();
             }
             return false;
         }
@@ -38,7 +40,7 @@ namespace appbase
             if (_state == initialized)
             {
                 _state = started;
-                return static_cast<Impl*>(this)->ComponentStartup();
+                return static_cast<Impl *>(this)->ComponentStartup();
             }
             return false;
         }
@@ -52,7 +54,7 @@ namespace appbase
             if (_state == started)
             {
                 _state = stopped;
-                return static_cast<Impl*>(this)->ComponentShutdown();
+                return static_cast<Impl *>(this)->ComponentShutdown();
             }
             return false;
         }

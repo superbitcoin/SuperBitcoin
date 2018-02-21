@@ -203,6 +203,8 @@ public:
 
     bool NetRequestBlockTxn(ExNode *xnode, CDataStream &stream) override;
 
+    log4cpp::Category &getLog() override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);
@@ -287,6 +289,12 @@ private:
                 CBlockIndex **ppindex, bool fRequested, const CDiskBlockPos *dbp, bool *fNewBlock);
 
     void NotifyHeaderTip();
+
+    /** Abort with a message */
+    bool AbortNode(const std::string &strMessage, const std::string &userMessage="");
+
+
+    bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage="");
 
 public:
     static log4cpp::Category & mlog;

@@ -537,7 +537,7 @@ void CWallet::Flush(bool shutdown)
 
 bool CWallet::Verify()
 {
-    const CArgsManager &mArgs = appbase::app().GetArgsManager();
+    const CArgsManager &mArgs = app().GetArgsManager();
     if (mArgs.GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
         return true;
 
@@ -4256,7 +4256,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
 CWallet *CWallet::CreateWalletFromFile(const std::string walletFile)
 {
     // needed to restore wallet transaction meta data after -zapwallettxes
-    const CArgsManager &mArgs = appbase::app().GetArgsManager();
+    const CArgsManager &mArgs = app().GetArgsManager();
 
     std::vector<CWalletTx> vWtx;
 
@@ -4465,20 +4465,20 @@ CWallet *CWallet::CreateWalletFromFile(const std::string walletFile)
 bool CWallet::InitLoadWallet()
 {
 
-    if (appbase::app().GetArgsManager().GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
+    if (app().GetArgsManager().GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
     {
         LogPrintf("Wallet disabled!\n");
         return true;
     }
 
-    for (const std::string &walletFile : appbase::app().GetArgsManager().GetArgs("-wallet"))
+    for (const std::string &walletFile : app().GetArgsManager().GetArgs("-wallet"))
     {
         CWallet *const pwallet = CreateWalletFromFile(walletFile);
         if (!pwallet)
         {
             return false;
         }
-        appbase::app().FindComponent<CWalletComponent>()->GetWalletRef().push_back(pwallet);
+        app().FindComponent<CWalletComponent>()->GetWalletRef().push_back(pwallet);
     }
 
     return true;
@@ -4501,7 +4501,7 @@ void CWallet::postInitProcess(CScheduler &scheduler)
 
 bool CWallet::ParameterInteraction()
 {
-//    const CArgsManager &mArgs = appbase::app().GetArgsManager();
+//    const CArgsManager &mArgs = appbase::app_bpo().GetArgsManager();
 //    mArgs.SoftSetArg("-wallet", string(DEFAULT_WALLET_DAT));
 //    vector<string> tmp_options = mArgs.GetArgs("-wallet");
 //    const bool is_multiwallet = tmp_options.size() > 1;
@@ -4698,6 +4698,6 @@ int CMerkleTx::GetBlocksToMaturity() const
 
 bool CMerkleTx::AcceptToMemoryPool(const CAmount &nAbsurdFee, CValidationState &state)
 {
-    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    CTxMemPool* txmempool = (CTxMemPool*)appbase::CApp::Instance().FindComponent<CTxMemPool>();
     return txmempool->AcceptToMemoryPool(state, tx, true, nullptr, nullptr, false, nAbsurdFee);//modified by sky
 }

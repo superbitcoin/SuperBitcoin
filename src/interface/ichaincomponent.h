@@ -40,4 +40,4 @@ public:
 };
 
 #define GET_CHAIN_INTERFACE(ifObj) \
-    auto ifObj = appbase::CBase::Instance().FindComponent<IChainComponent>()
+    auto ifObj = appbase::CApp::Instance().FindComponent<IChainComponent>()

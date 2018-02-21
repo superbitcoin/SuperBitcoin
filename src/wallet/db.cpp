@@ -123,7 +123,7 @@ bool CDBEnv::Open(const fs::path &pathIn)
     LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s\n", pathLogDir.string(), pathErrorFile.string());
 
     unsigned int nEnvFlags = 0;
-    if (appbase::app().GetArgsManager().GetArg<bool>("-privdb", DEFAULT_WALLET_PRIVDB))
+    if (app().GetArgsManager().GetArg<bool>("-privdb", DEFAULT_WALLET_PRIVDB))
         nEnvFlags |= DB_PRIVATE;
 
     dbenv->set_lg_dir(pathLogDir.string().c_str());
@@ -306,7 +306,7 @@ bool CDB::VerifyEnvironment(const std::string &walletFile, const fs::path &dataD
         if (!bitdb.Open(dataDir))
         {
             // if it still fails, it probably means we can't even create the database env
-            errorStr = strprintf(_("Error initializing wallet database environment %s!"), appbase::app().GetArgsManager().GetDataDir());
+            errorStr = strprintf(_("Error initializing wallet database environment %s!"), app().GetArgsManager().GetDataDir());
             return false;
         }
     }

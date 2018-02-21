@@ -30,8 +30,6 @@
 #endif
 
 
-
-
 #include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
 #include "compat/compat.h"
@@ -342,7 +340,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("zmqpubhashtx", bpo::value<string>(), "Enable publish hash transaction in <address>")
             ("zmqpubrawblock", bpo::value<string>(), "Enable publish raw block in <address>")
             ("zmqpubrawtx", bpo::value<string>(), "Enable publish raw transaction in <address>");
-    app->add(zmqOptionGroup);
+    app_bpo->add(zmqOptionGroup);
 #endif
     /******************************if ENABLE_ZMQ end*****************************************/
 
@@ -416,7 +414,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("testnet", "Use the test chain(parameters:: n, no, y, yes)")
             ("regtest",
              "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
-                     "This is intended for regression testing tools and app development(parameters:: n, no, y, yes).");
+                     "This is intended for regression testing tools and app_bpo development(parameters:: n, no, y, yes).");
     app->add(chainSelectionGroup);
 
     bpo::options_description nodeRelayGroup("Node relay options:");
@@ -625,17 +623,58 @@ bool AppInit(int argc, char *argv[])
 # include "walletcomponent.h"
 #include "log4cpp/Category.hh"
 #include "log4cpp/PropertyConfigurator.hh"
-int main( int argc, char** argv )
+#include "log4cpp/PatternLayout.hh"
+#include "log4cpp/RollingFileAppender.hh"
+#include "log4cpp/OstreamAppender.hh"
+
+static bool InitializeLogging()
 {
-
-    try{
+    bool bOk = true;
+    try
+    {
         log4cpp::PropertyConfigurator::configure("cppconf.ini");
-    }catch(log4cpp::ConfigureFailure& f){
-
-        std::cout<<f.what()<<std::endl;
+    } catch (log4cpp::ConfigureFailure &f)
+    {
+        std::cout << f.what() << std::endl;
+        std::cout << "using default log conf" << std::endl;
+        bOk = false;
     }
 
-    CBase& app = appbase::CBase::Instance();
+    if (!bOk)
+    {
+        try
+        {
+            log4cpp::PatternLayout *pLayout1 = new log4cpp::PatternLayout();//创建一个Layout;
+            pLayout1->setConversionPattern("%d: %p  %x: %m%n");//指定布局格式;
+
+            log4cpp::PatternLayout *pLayout2 = new log4cpp::PatternLayout();
+            pLayout2->setConversionPattern("%d: %p  %x: %m%n");
+
+            log4cpp::RollingFileAppender *rollfileAppender = new log4cpp::RollingFileAppender(
+                    "rollfileAppender", "sbtc.log", 100 * 1024, 1);
+            rollfileAppender->setLayout(pLayout1);
+            log4cpp::Category &root = log4cpp::Category::getRoot().getInstance("RootName");//从系统中得到Category的根;
+            root.addAppender(rollfileAppender);
+            root.setPriority(log4cpp::Priority::NOTICE);//设置Category的优先级;
+            log4cpp::OstreamAppender *osAppender = new log4cpp::OstreamAppender("osAppender", &std::cout);
+            osAppender->setLayout(pLayout2);
+            root.addAppender(osAppender);
+            root.notice("log conf is using defalt !");
+        } catch (...)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+
+int main(int argc, char **argv)
+{
+
+    InitializeLogging();
+    CApp &app = appbase::CApp::Instance();
     app.RegisterComponent(new CBaseComponent);
     app.RegisterComponent(new CChainCommonent);
     app.RegisterComponent(new CTxMemPool);
@@ -650,7 +689,6 @@ int main( int argc, char** argv )
             app.Run();
         }
     }
-
-    app.Quit();
+    app.Shutdown();
     return 0;
 }

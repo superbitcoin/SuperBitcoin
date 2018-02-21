@@ -8,32 +8,32 @@
 
 using namespace appbase;
 
-CBase &CBase::Instance()
+CApp &CApp::Instance()
 {
-    static CBase _app;
+    static  CApp _app;
     return _app;
 }
 
-CBase::CBase()
+CApp::CApp()
     : nVersion(1), bShutdown(false), cArgs(new CArgsManager)
 {
 }
 
-CBase::~CBase()
+CApp::~CApp()
 {
 }
 
-uint64_t CBase::Version() const
+uint64_t CApp::Version() const
 {
     return nVersion;
 }
 
-void CBase::SetVersion(uint64_t version)
+void CApp::SetVersion(uint64_t version)
 {
     nVersion = version;
 }
 
-bool CBase::InitParams(int argc, char *argv[])
+bool CApp::InitParams(int argc, char *argv[])
 {
     if (!cArgs->Init(argc, argv))
     {
@@ -95,32 +95,34 @@ bool CBase::InitParams(int argc, char *argv[])
     }
     catch (const std::exception &e)
     {
-        PrintExceptionContinue(&e, "CBase::initParams");
+        PrintExceptionContinue(&e, "CApp::initParams");
     }
     catch (...)
     {
-        PrintExceptionContinue(nullptr, "CBase::initParams");
+        PrintExceptionContinue(nullptr, "CApp::initParams");
     }
 
     return true;
 }
 
-bool CBase::Initialize(int argc, char **argv)
+bool CApp::Initialize(int argc, char **argv)
 {
     return InitParams(argc, argv) && ForEachComponent(true, [](IComponent* component){ return component->Initialize(); });
 }
 
-bool CBase::Startup()
+log4cpp::Category &CApp::mlog = log4cpp::Category::getInstance("CApp");
+
+bool CApp::Startup()
 {
     return ForEachComponent(true, [](IComponent* component){ return component->Startup(); });
 }
 
-bool CBase::Shutdown()
+bool CApp::Shutdown()
 {
     return ForEachComponent<std::function<bool(IComponent*)>, ReverseContainerIterator>(false, [](IComponent* component){ return component->Shutdown(); });
 }
 
-void CBase::Run()
+void CApp::Run()
 {
     while (!bShutdown)
     {
@@ -128,12 +130,8 @@ void CBase::Run()
     }
 }
 
-void CBase::Quit()
-{
-    Shutdown();
-}
 
-bool CBase::RegisterComponent(IComponent* component)
+bool CApp::RegisterComponent(IComponent* component)
 {
     if (component)
     {
@@ -148,8 +146,24 @@ bool CBase::RegisterComponent(IComponent* component)
     return false;
 }
 
-IComponent* CBase::FindComponent(int componentID) const
+IComponent* CApp::FindComponent(int componentID) const
 {
     auto it = m_mapComponents.find(componentID);
     return it != m_mapComponents.end() ? it->second.get() : nullptr;
+}
+
+
+IComponent::state CApp::GetState() const
+{
+    return initialized;
+}
+
+bool CApp::Initialize()
+{
+    return false;
+}
+
+log4cpp::Category &CApp::getLog()
+{
+    return mlog;
 }

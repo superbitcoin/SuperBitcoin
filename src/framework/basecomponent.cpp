@@ -22,7 +22,7 @@ CBaseComponent::~CBaseComponent()
 
 static void HandleSIGTERM(int)
 {
-    appbase::app().RequestShutdown();
+    app().RequestShutdown();
 }
 
 bool CBaseComponent::ComponentInitialize()
@@ -30,7 +30,7 @@ bool CBaseComponent::ComponentInitialize()
     std::cout << "initialize base component \n";
 
 #ifndef WIN32
-    const CArgsManager& appArgs = appbase::app().GetArgsManager();
+    const CArgsManager& appArgs = app().GetArgsManager();
     if (!appArgs.GetArg<bool>("sysperms", false))
         umask(077);
 

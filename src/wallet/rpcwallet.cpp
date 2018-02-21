@@ -38,7 +38,7 @@ static const std::string WALLET_ENDPOINT_BASE = "/wallet/";
 
 CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest &request)
 {
-    std::vector<CWalletRef> &vecWallet = appbase::app().FindComponent<CWalletComponent>()->GetWalletRef();
+    std::vector<CWalletRef> &vecWallet = app().FindComponent<CWalletComponent>()->GetWalletRef();
     if (request.URI.substr(0, WALLET_ENDPOINT_BASE.size()) == WALLET_ENDPOINT_BASE)
     {
         // wallet endpoint was used
@@ -68,7 +68,7 @@ bool EnsureWalletIsAvailable(CWallet *const pwallet, bool avoidException)
         return true;
     if (avoidException)
         return false;
-    if (appbase::app().FindComponent<CWalletComponent>()->GetWalletRef().empty())
+    if (app().FindComponent<CWalletComponent>()->GetWalletRef().empty())
     {
         // Note: It isn't currently possible to trigger this error because
         // wallet RPC methods aren't registered unless a wallet is loaded. But
@@ -2760,7 +2760,7 @@ UniValue listwallets(const JSONRPCRequest &request)
 
     UniValue obj(UniValue::VARR);
 
-    for (CWalletRef pwallet : appbase::app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (CWalletRef pwallet : app().FindComponent<CWalletComponent>()->GetWalletRef())
     {
 
         if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
@@ -3468,7 +3468,7 @@ static const CRPCCommand commands[] =
 
 void RegisterWalletRPCCommands(CRPCTable &t)
 {
-    if (appbase::app().GetArgsManager().GetArg("-disablewallet", false))
+    if (app().GetArgsManager().GetArg("-disablewallet", false))
         return;
 
     for (unsigned int vcidx = 0; vcidx < ARRAYLEN(commands); vcidx++)

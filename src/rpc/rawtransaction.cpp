@@ -1008,7 +1008,7 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         const Coin &existingCoin = view.AccessCoin(COutPoint(hashTx, o));
         fHaveChain = !existingCoin.IsSpent();
     }
-    CTxMemPool* txmempool = (CTxMemPool*)appbase::CBase::Instance().FindComponent<CTxMemPool>();
+    CTxMemPool* txmempool = (CTxMemPool*)appbase::CApp::Instance().FindComponent<CTxMemPool>();
     if(!txmempool)
     {
         throw std::runtime_error("find txmempool component fail!\n");

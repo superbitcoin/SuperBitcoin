@@ -67,7 +67,7 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("testnet", bpo::value<string>(), "Use the test chain")
             ("regtest", bpo::value<string>(),
              "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
-                     "This is intended for regression testing tools and app development.");
+                     "This is intended for regression testing tools and app_bpo development.");
     app->add(chainGroup);
 
     bpo::options_description rpcGroup("rpc options:");

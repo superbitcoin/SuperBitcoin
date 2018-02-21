@@ -26,8 +26,8 @@ namespace
         try
         {
             CHashWriter hasher(SER_DISK, CLIENT_VERSION);
-            stream << FLATDATA(appbase::app().GetChainParams().MessageStart()) << data;
-            hasher << FLATDATA(appbase::app().GetChainParams().MessageStart()) << data;
+            stream << FLATDATA(app().GetChainParams().MessageStart()) << data;
+            hasher << FLATDATA(app().GetChainParams().MessageStart()) << data;
             stream << hasher.GetHash();
         } catch (const std::exception &e)
         {
@@ -75,7 +75,7 @@ namespace
             unsigned char pchMsgTmp[4];
             verifier >> FLATDATA(pchMsgTmp);
             // ... verify the network matches ours
-            if (memcmp(pchMsgTmp, appbase::app().GetChainParams().MessageStart(), sizeof(pchMsgTmp)))
+            if (memcmp(pchMsgTmp, app().GetChainParams().MessageStart(), sizeof(pchMsgTmp)))
                 return error("%s: Invalid network magic number", __func__);
 
             // de-serialize data

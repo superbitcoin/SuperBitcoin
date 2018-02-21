@@ -27,4 +27,4 @@ public:
 };
 
 #define GET_BASE_INTERFACE(ifObj) \
-    auto ifObj = appbase::CBase::Instance().FindComponent<IBaseComponent>()
+    auto ifObj = appbase::CApp::Instance().FindComponent<IBaseComponent>()

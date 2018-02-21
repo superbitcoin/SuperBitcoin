@@ -57,4 +57,4 @@ public:
 };
 
 #define GET_TXMEMPOOL_INTERFACE(ifObj) \
-    auto ifObj = appbase::CBase::Instance().FindComponent<ITxMempoolComponent>()
+    auto ifObj = appbase::CApp::Instance().FindComponent<ITxMempoolComponent>()

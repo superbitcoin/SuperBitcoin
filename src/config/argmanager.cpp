@@ -86,7 +86,7 @@ bool CArgsManager::PreProc(std::function<void(bpo::options_description *app, bpo
         return false;
     }
 
-    this->app = app;
+    this->app_bpo = app;
     vm.clear();
     callback(app, vm, argc, argv, mode);
     return true;
@@ -305,7 +305,7 @@ void CArgsManager::InitPromOptions(bpo::options_description *app, bpo::variables
             ("zmqpubhashtx", bpo::value<string>(), "Enable publish hash transaction in <address>")
             ("zmqpubrawblock", bpo::value<string>(), "Enable publish raw block in <address>")
             ("zmqpubrawtx", bpo::value<string>(), "Enable publish raw transaction in <address>");
-    app->add(zmqOptionGroup);
+    app_bpo->add(zmqOptionGroup);
 #endif
     /******************************if ENABLE_ZMQ end*****************************************/
 
@@ -379,7 +379,7 @@ void CArgsManager::InitPromOptions(bpo::options_description *app, bpo::variables
             ("testnet", "Use the test chain(parameters:: n, no, y, yes)")
             ("regtest",
              "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
-                     "This is intended for regression testing tools and app development(parameters:: n, no, y, yes).");
+                     "This is intended for regression testing tools and app_bpo development(parameters:: n, no, y, yes).");
     app->add(chainSelectionGroup);
 
     bpo::options_description nodeRelayGroup("Node relay options:");
@@ -544,7 +544,7 @@ bool CArgsManager::PrintHelpMessage(std::function<void(void)> callback)
 {
     if (vm.count("help"))
     {
-        std::cout << *app << std::endl;
+        std::cout << *app_bpo << std::endl;
 
         return true;
     }
@@ -577,7 +577,7 @@ void CArgsManager::ReadConfigFile(const std::string &confPath)
 {
     bpo::variables_map vm_tmp;
     bfs::path config_file_name(GetConfigFile(confPath));
-    bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app, true), vm_tmp);
+    bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app_bpo, true), vm_tmp);
     merge_variable_map(vm, vm_tmp);
 }
 
@@ -625,7 +625,7 @@ const fs::path &CArgsManager::GetDataDir(bool fNetSpecific) const
         path = GetDefaultDataDir();
     }
     if (fNetSpecific)
-        path /= appbase::app().GetBaseChainParams().DataDir();
+        path /=  app().GetBaseChainParams().DataDir();
 
     fs::create_directories(path);
 

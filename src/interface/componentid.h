@@ -6,6 +6,7 @@
 enum SBTCComponentID
 {
     CID_INVALID     = MID_INVALID,
+    CID_APP         = MID_APP,
     CID_BASE        = MID_BASE,
     CID_DB          = MID_DB,
     CID_TX_MEMPOOL  = MID_TX_MEMPOOL,
