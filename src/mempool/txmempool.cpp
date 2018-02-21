@@ -517,7 +517,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
                             __func__, hash.ToString(), FormatStateMessage(state));
                 } else
                 {
-                    LogPrintf(
+                    mlog.notice(
                             "Warning: -promiscuousmempool flags set to not include currently enforced soft forks, this may break mining or otherwise cause instability!\n");
                 }
             }
@@ -717,7 +717,7 @@ bool CTxMemPool::LoadMempool(void)
     CAutoFile file(filestr, SER_DISK, CLIENT_VERSION);
     if (file.IsNull())
     {
-        LogPrintf("Failed to open mempool file from disk. Continuing anyway.\n");
+        mlog.notice("Failed to open mempool file from disk. Continuing anyway.\n");
         return false;
     }
 
@@ -778,11 +778,11 @@ bool CTxMemPool::LoadMempool(void)
         }
     } catch (const std::exception &e)
     {
-        LogPrintf("Failed to deserialize mempool data on disk: %s. Continuing anyway.\n", e.what());
+        mlog.notice("Failed to deserialize mempool data on disk: %s. Continuing anyway.\n", e.what());
         return false;
     }
 
-    LogPrintf("Imported mempool transactions from disk: %i successes, %i failed, %i expired\n", count, failed, skipped);
+    mlog.notice("Imported mempool transactions from disk: %i successes, %i failed, %i expired\n", count, failed, skipped);
     return true;
 }
 
@@ -831,10 +831,10 @@ void CTxMemPool::DumpMempool(void)
         file.fclose();
         RenameOver(GetDataDir() / "mempool.dat.new", GetDataDir() / "mempool.dat");
         int64_t last = GetTimeMicros();
-        LogPrintf("Dumped mempool: %gs to copy, %gs to dump\n", (mid - start) * 0.000001, (last - mid) * 0.000001);
+        mlog.notice("Dumped mempool: %gs to copy, %gs to dump\n", (mid - start) * 0.000001, (last - mid) * 0.000001);
     } catch (const std::exception &e)
     {
-        LogPrintf("Failed to dump mempool: %s. Continuing anyway.\n", e.what());
+        mlog.notice("Failed to dump mempool: %s. Continuing anyway.\n", e.what());
     }
 }
 
@@ -957,6 +957,8 @@ bool CTxMemPool::NetRequestTxData(ExNode* xnode, uint256 txHash, bool witness, i
     return false;
 }
 
+log4cpp::Category &CTxMemPool::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
+
 bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash)
 {
     assert(xnode != nullptr);
@@ -969,7 +971,7 @@ bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& t
         (!IsFlagsBitOn(xnode->flags, NF_WHITELIST) ||
          !appArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
     {
-        LogPrint(BCLog::NET, "transaction sent in violation of protocol peer=%d\n", xnode->nodeID);
+        mlog.notice("transaction sent in violation of protocol peer=%d", xnode->nodeID);
         return true;
     }
 
@@ -1158,14 +1160,14 @@ bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& t
             int nDoS = 0;
             if (!state.IsInvalid(nDoS) || nDoS == 0)
             {
-                LogPrintf("Force relaying tx %s from whitelisted peer=%d\n", tx.GetHash().ToString(),
+                mlog.notice("Force relaying tx %s from whitelisted peer=%d\n", tx.GetHash().ToString(),
                           xnode->nodeID);
 
                 ifNetObj->BroadcastTransaction(tx.GetHash());
             }
             else
             {
-                LogPrintf("Not relaying invalid transaction %s from whitelisted peer=%d (%s)\n",
+                mlog.notice("Not relaying invalid transaction %s from whitelisted peer=%d (%s)\n",
                           tx.GetHash().ToString(), xnode->nodeID, FormatStateMessage(state));
             }
         }
@@ -1177,7 +1179,7 @@ bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& t
     int nDoS = 0;
     if (state.IsInvalid(nDoS))
     {
-        LogPrint(BCLog::MEMPOOLREJ, "%s from peer=%d was not accepted: %s\n", tx.GetHash().ToString(),
+        mlog.error("%s from peer=%d was not accepted: %s", tx.GetHash().ToString(),
                  xnode->nodeID,
                  FormatStateMessage(state));
         if (state.GetRejectCode() > 0 &&
@@ -2207,7 +2209,7 @@ void CTxMemPool::PrioritiseTransaction(const uint256 &hash, const CAmount &nFeeD
             ++nTransactionsUpdated;
         }
     }
-    LogPrintf("PrioritiseTransaction: %s feerate += %s\n", hash.ToString(), FormatMoney(nFeeDelta));
+    mlog.notice("PrioritiseTransaction: %s feerate += %s\n", hash.ToString(), FormatMoney(nFeeDelta));
 }
 
 void CTxMemPool::ApplyDelta(const uint256 hash, CAmount &nFeeDelta) const
@@ -2417,6 +2419,11 @@ bool CTxMemPool::TransactionWithinChainLimit(const uint256 &txid, size_t chainLi
     auto it = mapTx.find(txid);
     return it == mapTx.end() || (it->GetCountWithAncestors() < chainLimit &&
                                  it->GetCountWithDescendants() < chainLimit);
+}
+
+log4cpp::Category &CTxMemPool::getLog()
+{
+    return mlog;
 }
 
 CCoinsViewMemPool::CCoinsViewMemPool(CCoinsView *baseIn, const CTxMemPool &mempoolIn) : CCoinsViewBacked(baseIn),

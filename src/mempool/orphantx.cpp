@@ -22,6 +22,8 @@ COrphanTx &COrphanTx::Instance()
     static COrphanTx _orphantx;
     return _orphantx;
 }
+log4cpp::Category &COrphanTx::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
+
 bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
 {
     const uint256 &hash = tx->GetHash();
@@ -38,7 +40,7 @@ bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
     unsigned int sz = GetTransactionWeight(*tx);
     if (sz >= MAX_STANDARD_TX_WEIGHT)
     {
-        LogPrint(BCLog::MEMPOOL, "ignoring large orphan tx (size: %u, hash: %s)\n", sz, hash.ToString());
+        mlog.notice( "ignoring large orphan tx (size: %u, hash: %s)", sz, hash.ToString());
         return false;
     }
 
@@ -51,7 +53,7 @@ bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
 
     AddToCompactExtraTransactions(tx);
 
-    LogPrint(BCLog::MEMPOOL, "stored orphan tx %s (mapsz %u outsz %u)\n", hash.ToString(),
+    mlog.notice("stored orphan tx %s (mapsz %u outsz %u)", hash.ToString(),
              m_mapOrphanTransactions.size(), m_mapOrphanTransactionsByPrev.size());
     return true;
 }
@@ -100,7 +102,7 @@ unsigned int COrphanTx::LimitOrphanTxSize(unsigned int nMaxOrphans)
         // Sweep again 5 minutes after the next entry that expires in order to batch the linear scan.
         nNextSweep = nMinExpTime + ORPHAN_TX_EXPIRE_INTERVAL;
         if (nErased > 0)
-            LogPrint(BCLog::MEMPOOL, "Erased %d orphan tx due to expiration\n", nErased);
+            mlog.notice("Erased %d orphan tx due to expiration", nErased);
     }
     while (m_mapOrphanTransactions.size() > nMaxOrphans)
     {
@@ -128,7 +130,7 @@ void COrphanTx::EraseOrphansFor(NodeId peer)
         }
     }
     if (nErased > 0)
-        LogPrint(BCLog::MEMPOOL, "Erased %d orphan tx from peer=%d\n", nErased, peer);
+        mlog.notice("Erased %d orphan tx from peer=%d", nErased, peer);
 }
 void COrphanTx::Clear()
 {

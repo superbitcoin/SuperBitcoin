@@ -445,6 +445,11 @@ private:
      *  removal.
      */
     void removeUnchecked(txiter entry, MemPoolRemovalReason reason = MemPoolRemovalReason::UNKNOWN);
+
+public:
+    static log4cpp::Category & mlog;
+
+    log4cpp::Category &getLog() override;
 };
 
 /** 

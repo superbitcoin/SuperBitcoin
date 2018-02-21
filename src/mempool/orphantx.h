@@ -50,6 +50,7 @@ private:
 private:
     std::map<uint256, _OrphanTx> m_mapOrphanTransactions GUARDED_BY(cs_main);
     std::map<COutPoint, std::set<std::map<uint256, _OrphanTx>::iterator, IteratorComparator>> m_mapOrphanTransactionsByPrev GUARDED_BY(cs_main);
-
+public:
+    static log4cpp::Category & mlog;
 };
 #endif //SUPERBITCOIN_ORPHANTX_H
