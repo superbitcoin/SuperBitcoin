@@ -519,6 +519,8 @@ private:
     std::atomic_bool m_try_another_outbound_peer;
 
     friend struct CConnmanTest;
+public:
+    static log4cpp::Category &mlog ;
 };
 
 extern std::unique_ptr<CConnman> g_connman;
@@ -978,6 +980,8 @@ public:
 
     //! Sets the addrName only if it was not previously set
     void MaybeSetAddrName(const std::string &addrNameIn);
+public:
+    static log4cpp::Category &mlog ;
 };
 
 

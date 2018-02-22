@@ -171,13 +171,7 @@ CAddress GetLocalAddress(const CNetAddr *paddrPeer, ServiceFlags nLocalServices)
     return ret;
 }
 
-int GetnScore(const CService &addr)
-{
-    LOCK(cs_mapLocalHost);
-    if (mapLocalHost.count(addr) == LOCAL_NONE)
-        return 0;
-    return mapLocalHost[addr].nScore;
-}
+
 
 // Is our peer's addrLocal potentially useful as an external IP source?
 bool IsPeerAddrLocalGood(CNode *pnode)
@@ -187,28 +181,7 @@ bool IsPeerAddrLocalGood(CNode *pnode)
            !IsLimited(addrLocal.GetNetwork());
 }
 
-// pushes our own address to a peer
-void AdvertiseLocal(CNode *pnode)
-{
-    if (fListen && pnode->fSuccessfullyConnected)
-    {
-        CAddress addrLocal = GetLocalAddress(&pnode->addr, pnode->GetLocalServices());
-        // If discovery is enabled, sometimes give our peer the address it
-        // tells us that it sees us as in case it has a better idea of our
-        // address than we do.
-        if (IsPeerAddrLocalGood(pnode) && (!addrLocal.IsRoutable() ||
-                                           GetRand((GetnScore(addrLocal) > LOCAL_MANUAL) ? 8 : 2) == 0))
-        {
-            addrLocal.SetIP(pnode->GetAddrLocal());
-        }
-        if (addrLocal.IsRoutable())
-        {
-            LogPrint(BCLog::NET, "AdvertiseLocal: advertising address %s\n", addrLocal.ToString());
-            FastRandomContext insecure_rand;
-            pnode->PushAddress(addrLocal, insecure_rand);
-        }
-    }
-}
+
 
 // learn a new local address
 bool AddLocal(const CService &addr, int nScore)
@@ -391,13 +364,13 @@ CNode *CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
         CNode *pnode = FindNode((CService)addrConnect);
         if (pnode)
         {
-            LogPrintf("Failed to open new connection, already connected\n");
+            mlog.notice("Failed to open new connection, already connected\n");
             return nullptr;
         }
     }
 
     /// debug print
-    LogPrint(BCLog::NET, "trying connection %s lastseen=%.1fhrs\n",
+    mlog.notice("trying connection %s lastseen=%.1fhrs\n",
              pszDest ? pszDest : addrConnect.ToString(),
              pszDest ? 0.0 : (double)(GetAdjustedTime() - addrConnect.nTime) / 3600.0);
 
@@ -410,7 +383,7 @@ CNode *CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
     {
         if (!IsSelectableSocket(hSocket))
         {
-            LogPrintf("Cannot create connection: non-selectable socket created (fd >= FD_SETSIZE ?)\n");
+            mlog.notice("Cannot create connection: non-selectable socket created (fd >= FD_SETSIZE ?)");
             CloseSocket(hSocket);
             return nullptr;
         }
@@ -427,7 +400,7 @@ CNode *CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
             {
                 pnode->MaybeSetAddrName(std::string(pszDest));
                 CloseSocket(hSocket);
-                LogPrintf("Failed to open new connection, already connected\n");
+                mlog.notice("Failed to open new connection, already connected\n");
                 return nullptr;
             }
         }
@@ -453,7 +426,7 @@ CNode *CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
 
     return nullptr;
 }
-
+log4cpp::Category &CConnman::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET));
 void CConnman::DumpBanlist()
 {
     SweepBanned(); // clean unused entries (if bantime has expired)
@@ -471,7 +444,7 @@ void CConnman::DumpBanlist()
         SetBannedSetDirty(false);
     }
 
-    LogPrint(BCLog::NET, "Flushed %d banned node ips/subnets to banlist.dat  %dms\n",
+    mlog.notice("Flushed %d banned node ips/subnets to banlist.dat  %dms\n",
              banmap.size(), GetTimeMillis() - nStart);
 }
 
@@ -481,7 +454,7 @@ void CNode::CloseSocketDisconnect()
     LOCK(cs_hSocket);
     if (hSocket != INVALID_SOCKET)
     {
-        LogPrint(BCLog::NET, "disconnecting peer=%d\n", id);
+        mlog.notice( "disconnecting peer=%d", id);
         CloseSocket(hSocket);
     }
 }
@@ -618,7 +591,7 @@ void CConnman::SweepBanned()
         {
             setBanned.erase(it++);
             setBannedIsDirty = true;
-            LogPrint(BCLog::NET, "%s: Removed banned node ip/subnet from banlist.dat: %s\n", __func__,
+            mlog.notice("%s: Removed banned node ip/subnet from banlist.dat: %s", __func__,
                      subNet.ToString());
         } else
             ++it;
@@ -654,6 +627,7 @@ std::string CNode::GetAddrName() const
     return addrName;
 }
 
+log4cpp::Category &CNode::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET));
 void CNode::MaybeSetAddrName(const std::string &addrNameIn)
 {
     LOCK(cs_addrName);
@@ -674,7 +648,7 @@ void CNode::SetAddrLocal(const CService &addrLocalIn)
     LOCK(cs_addrLocal);
     if (addrLocal.IsValid())
     {
-        error("Addr local already set for node: %i. Refusing to change from %s to %s", id, addrLocal.ToString(),
+        mlog.error("Addr local already set for node: %i. Refusing to change from %s to %s", id, addrLocal.ToString(),
               addrLocalIn.ToString());
     } else
     {

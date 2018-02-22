@@ -127,6 +127,8 @@ private:
     void CheckForStaleTipAndEvictPeers(const Consensus::Params &consensusParams);
 
     void EvictExtraOutboundPeers(int64_t time_in_seconds);
+    // pushes our own address to a peer
+    void AdvertiseLocal(CNode *pnode);
 
 
 private:
@@ -136,6 +138,9 @@ private:
     const CArgsManager& appArgs;
 
     const CChainParams &Params();
+
+public:
+   static  log4cpp::Category &mlog;
 };
 
 

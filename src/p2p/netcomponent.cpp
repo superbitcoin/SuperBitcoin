@@ -338,6 +338,8 @@ bool CNetComponent::MisbehaveNode(int64_t nodeID, int num)
     return false;
 }
 
+log4cpp::Category &CNetComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET));
+
 bool CNetComponent::OutboundTargetReached(bool historicalBlockServingLimit)
 {
     if (netConnMgr)
@@ -345,4 +347,9 @@ bool CNetComponent::OutboundTargetReached(bool historicalBlockServingLimit)
         return netConnMgr->OutboundTargetReached(historicalBlockServingLimit);
     }
     return true;
+}
+
+log4cpp::Category &CNetComponent::getLog()
+{
+    return mlog;
 }

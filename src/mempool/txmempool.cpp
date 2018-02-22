@@ -526,7 +526,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         // Remove conflicting transactions from the mempool
         for (const CTxMemPool::txiter it : allConflicting)
         {
-            LogPrint(BCLog::MEMPOOL, "replacing tx %s with %s for %s BTC additional fees, %d delta bytes\n",
+            mlog.notice("replacing tx %s with %s for %s BTC additional fees, %d delta bytes",
                      it->GetTx().GetHash().ToString(),
                      hash.ToString(),
                      FormatMoney(nModifiedFees - nConflictingFees),
@@ -621,7 +621,7 @@ void CTxMemPool::LimitMempoolSize(size_t limit, unsigned long age)
     int expired = this->Expire(GetTime() - age);
     if (expired != 0)
     {
-        LogPrint(BCLog::MEMPOOL, "Expired %i transactions from the memory pool\n", expired);
+        mlog.notice( "Expired %i transactions from the memory pool\n", expired);
     }
 
     std::vector<COutPoint> vNoSpendsRemaining;
@@ -1007,7 +1007,7 @@ bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& t
 
         SetFlagsBit(xnode->retFlags, NF_NEWTRANSACTION);
 
-        LogPrint(BCLog::MEMPOOL, "AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)\n",
+        mlog.notice("AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)",
                  xnode->nodeID,
                  tx.GetHash().ToString(),
                  size(), DynamicMemoryUsage() / 1000);
@@ -1040,7 +1040,7 @@ bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& t
                     continue;
                 if (AcceptToMemoryPool(stateDummy, porphanTx, true, &fMissingInputs2, &lRemovedTxn))
                 {
-                    LogPrint(BCLog::MEMPOOL, "   accepted orphan tx %s\n", orphanHash.ToString());
+                    mlog.notice("accepted orphan tx %s", orphanHash.ToString());
 
                     ifNetObj->BroadcastTransaction(orphanTx.GetHash());
 
@@ -1059,11 +1059,11 @@ bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& t
                         // Punish peer that gave us an invalid orphan tx
                         ifNetObj->MisbehaveNode(fromPeer, nDos);
                         setMisbehaving.insert(fromPeer);
-                        LogPrint(BCLog::MEMPOOL, "   invalid orphan tx %s\n", orphanHash.ToString());
+                        mlog.notice("invalid orphan tx %s\n", orphanHash.ToString());
                     }
                     // Has inputs but not accepted to mempool
                     // Probably non-standard or insufficient fee
-                    LogPrint(BCLog::MEMPOOL, "   removed orphan tx %s\n", orphanHash.ToString());
+                    mlog.notice("removed orphan tx %s", orphanHash.ToString());
                     vEraseQueue.push_back(orphanHash);
                     if (!orphanTx.HasWitness() && !stateDummy.CorruptionPossible())
                     {
@@ -1117,12 +1117,12 @@ bool CTxMemPool::NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& t
             unsigned int nEvicted = COrphanTx::Instance().LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
             {
-                LogPrint(BCLog::MEMPOOL, "mapOrphan overflow, removed %u tx\n", nEvicted);
+                mlog.notice( "mapOrphan overflow, removed %u tx\n", nEvicted);
             }
         }
         else
         {
-            LogPrint(BCLog::MEMPOOL, "not keeping orphan with rejected parents %s\n", tx.GetHash().ToString());
+            mlog.notice( "not keeping orphan with rejected parents %s\n", tx.GetHash().ToString());
             // We will continue to reject this tx since it has rejected
             // parents so avoid re-requesting it from other peers.
             recentRejects->insert(tx.GetHash());
@@ -1938,7 +1938,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
     if (GetRand(std::numeric_limits<uint32_t>::max()) >= nCheckFrequency)
         return;
 
-    LogPrint(BCLog::MEMPOOL, "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(),
+    mlog.notice( "Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(),
              (unsigned int)mapNextTx.size());
 
     uint64_t checkTotal = 0;
@@ -2408,7 +2408,7 @@ void CTxMemPool::TrimToSize(size_t sizelimit, std::vector<COutPoint> *pvNoSpends
 
     if (maxFeeRateRemoved > CFeeRate(0))
     {
-        LogPrint(BCLog::MEMPOOL, "Removed %u txn, rolling minimum fee bumped to %s\n", nTxnRemoved,
+        mlog.notice( "Removed %u txn, rolling minimum fee bumped to %s\n", nTxnRemoved,
                  maxFeeRateRemoved.ToString());
     }
 }

@@ -26,7 +26,9 @@ public:
 
     bool OutboundTargetReached(bool historicalBlockServingLimit) override;
 
+    log4cpp::Category &getLog() override;
 
+    static log4cpp::Category &mlog ;
 private:
     std::unique_ptr<CConnman>   netConnMgr;
     std::unique_ptr<PeerLogicValidation> peerLogic;

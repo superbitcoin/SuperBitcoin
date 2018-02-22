@@ -1158,7 +1158,7 @@ bool CChainCommonent::ReplayBlocks()
             if (!ReadBlockFromDisk(block, pIndexOld, params.GetConsensus()))
             {
                 return error("RollbackBlock(): ReadBlockFromDisk() failed at %d, hash=%s", pIndexOld->nHeight,
-                           pIndexOld->GetBlockHash().ToString());
+                             pIndexOld->GetBlockHash().ToString());
             }
 
             mlog.info("Rolling back %s (%i)\n", pIndexOld->GetBlockHash().ToString(), pIndexOld->nHeight);
@@ -1167,7 +1167,7 @@ bool CChainCommonent::ReplayBlocks()
             if (res == DISCONNECT_FAILED)
             {
                 return error("RollbackBlock(): DisconnectBlock failed at %d, hash=%s", pIndexOld->nHeight,
-                           pIndexOld->GetBlockHash().ToString());
+                             pIndexOld->GetBlockHash().ToString());
             }
             // If DISCONNECT_UNCLEAN is returned, it means a non-existing UTXO was deleted, or an existing UTXO was
             // overwritten. It corresponds to cases where the block-to-be-disconnect never had all its operations
@@ -1187,7 +1187,7 @@ bool CChainCommonent::ReplayBlocks()
         if (!ReadBlockFromDisk(block, pIndex, params.GetConsensus()))
         {
             return error("ReplayBlock(): ReadBlockFromDisk failed at %d, hash=%s", pIndex->nHeight,
-                       pIndex->GetBlockHash().ToString());
+                         pIndex->GetBlockHash().ToString());
         }
         if (!cViewManager.ConnectBlock(block, pIndex, cache))
             return false;
@@ -1799,8 +1799,8 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
-                        return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
-                                         REJECT_INVALID, "bad-txns-inputs-missingorspent");
+                return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
+                                 REJECT_INVALID, "bad-txns-inputs-missingorspent");
 
             // Check that transaction is BIP68 final
             // BIP68 lock checks (as opposed to nLockTime checks) must
@@ -1813,8 +1813,8 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
             if (!tx.SequenceLocks(nLockTimeFlags, &prevheights, *pindex))
             {
-                        return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
-                                         REJECT_INVALID, "bad-txns-nonfinal");
+                return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
+                                 REJECT_INVALID, "bad-txns-nonfinal");
             }
         }
 
@@ -1824,8 +1824,8 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         // * witness (when witness enabled in flags and excludes coinbase)
         nSigOpsCost += tx.GetTransactionSigOpCost(view, flags);
         if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
-                    return state.DoS(100, error("ConnectBlock(): too many sigops"),
-                                     REJECT_INVALID, "bad-blk-sigops");
+            return state.DoS(100, error("ConnectBlock(): too many sigops"),
+                             REJECT_INVALID, "bad-blk-sigops");
 
         txdata.emplace_back(tx);
         if (!tx.IsCoinBase())
@@ -1836,8 +1836,8 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
             if (!tx.CheckInputs(state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
                                 nScriptCheckThreads ? &vChecks : nullptr))
-                        return error("ConnectBlock(): CheckInputs on %s failed with %s",
-                           tx.GetHash().ToString(), FormatStateMessage(state));
+                return error("ConnectBlock(): CheckInputs on %s failed with %s",
+                             tx.GetHash().ToString(), FormatStateMessage(state));
             control.Add(vChecks);
         }
 
@@ -2805,7 +2805,7 @@ bool CChainCommonent::AbortNode(const std::string &strMessage, const std::string
     string message = userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
                                          : userMessage;
     mlog.error(message);
-    uiInterface.ThreadSafeMessageBox(message,"", CClientUIInterface::MSG_ERROR);
+    uiInterface.ThreadSafeMessageBox(message, "", CClientUIInterface::MSG_ERROR);
     StartShutdown();
     return false;
 }
