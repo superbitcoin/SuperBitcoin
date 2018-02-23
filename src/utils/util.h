@@ -43,7 +43,6 @@ namespace bfs = boost::filesystem;
 using std::vector;
 using std::string;
 
-
 inline appbase::CApp &app()
 {
     return appbase::CApp::Instance();
@@ -51,6 +50,8 @@ inline appbase::CApp &app()
 inline log4cpp::Category &mlog() {
     return appbase::CApp::Instance().mlog;
 }
+
+
 
 #define _TXT__(x) #x
 #define EMTOSTR(EM) _TXT__(EM)

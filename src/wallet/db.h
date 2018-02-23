@@ -19,12 +19,15 @@
 #include <vector>
 
 #include <db_cxx.h>
+#include <log4cpp/Category.hh>
 
 static const unsigned int DEFAULT_WALLET_DBLOGSIZE = 100;
 static const bool DEFAULT_WALLET_PRIVDB = true;
 
 class CDBEnv
 {
+public:
+    static log4cpp::Category &mlog;
 private:
     bool fDbEnvInit;
     bool fMockDb;
@@ -108,8 +111,10 @@ extern CDBEnv bitdb;
  **/
 class CWalletDBWrapper
 {
-    friend class CDB;
 
+    friend class CDB;
+public:
+    static log4cpp::Category &mlog;
 public:
     /** Create dummy DB handle */
     CWalletDBWrapper() : nUpdateCounter(0), nLastSeen(0), nLastFlushed(0), nLastWalletUpdate(0), env(nullptr)
@@ -201,6 +206,9 @@ public:
     /* verifies the database file */
     static bool VerifyDatabaseFile(const std::string &walletFile, const fs::path &dataDir, std::string &warningStr,
                                    std::string &errorStr, CDBEnv::recoverFunc_type recoverFunc);
+
+public:
+    static log4cpp::Category &mlog;
 
 private:
     CDB(const CDB &);
@@ -407,6 +415,7 @@ public:
     }
 
     bool static Rewrite(CWalletDBWrapper &dbw, const char *pszSkip = nullptr);
+
 };
 
 #endif // BITCOIN_WALLET_DB_H

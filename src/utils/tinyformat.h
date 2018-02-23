@@ -117,6 +117,8 @@
 
 namespace tinyformat
 {
+
+
 }
 //------------------------------------------------------------------------------
 // Config section.  Customize to your liking!
@@ -1115,11 +1117,17 @@ void printfln(const char* fmt, TINYFORMAT_VARARGS(n))                     \
         format(oss, fmt.c_str(), args...);
         return oss.str();
     }
+//    // Added for Bitcoin Core
+//    template<typename... Args>
+//    std::string strprintf(const std::string &fmt, const Args &... args)
+//    {
+//        std::ostringstream oss;
+//        format(oss, fmt.c_str(), args...);
+//        return oss.str();
+//    }
 
 } // namespace tinyformat
-#ifdef  CHEAT_IDE
-#define strprintf
-#else
-#define strprintf tfm::format
-#endif // CHEAT_IDE
+
+#define strprintf tinyformat::format
+
 #endif // TINYFORMAT_H_INCLUDED

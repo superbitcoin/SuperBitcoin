@@ -297,7 +297,7 @@ private:
     bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage="");
 
 public:
-    static log4cpp::Category & mlog;
+    static log4cpp::Category &  mlog;
 
 
 };
