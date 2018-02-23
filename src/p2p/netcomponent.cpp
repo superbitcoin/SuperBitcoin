@@ -1,4 +1,3 @@
-#include <iostream>
 #include <vector>
 #include <string>
 #include "netcomponent.h"
@@ -14,6 +13,7 @@
 #include "interface/ichaincomponent.h"
 
 CNetComponent::CNetComponent()
+    : mlog(log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET)))
 {
 }
 
@@ -23,11 +23,12 @@ CNetComponent::~CNetComponent()
 
 bool CNetComponent::ComponentInitialize()
 {
-    std::cout << "initialize net component \n";
+    mlog.info("initialize p2p net component.");
 
     if (!SetupNetworking())
     {
-        return InitError("Initializing networking failed");
+        mlog.error("Initializing networking failed");
+        return false;
     }
 
     GET_BASE_INTERFACE(ifBaseObj);
@@ -52,15 +53,18 @@ bool CNetComponent::ComponentInitialize()
     for (const std::string &cmt : appArgs.GetArgs("-uacomment"))
     {
         if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
-            return InitError(strprintf(_("User Agent comment (%s) contains unsafe characters."), cmt));
+        {
+            mlog.error("User Agent comment (%s) contains unsafe characters.", cmt);
+            return false;
+        }
         uacomments.push_back(cmt);
     }
     strSubVersion = FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, uacomments);
     if (strSubVersion.size() > MAX_SUBVERSION_LENGTH)
     {
-        return InitError(strprintf(
-                _("Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments."),
-                strSubVersion.size(), MAX_SUBVERSION_LENGTH));
+        mlog.error("Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.",
+                strSubVersion.size(), MAX_SUBVERSION_LENGTH);
+        return false;
     }
 
     if (appArgs.IsArgSet("-onlynet"))
@@ -70,7 +74,11 @@ bool CNetComponent::ComponentInitialize()
         {
             enum Network net = ParseNetwork(snet);
             if (net == NET_UNROUTABLE)
-                return InitError(strprintf(_("Unknown network specified in -onlynet: '%s'"), snet));
+            {
+                mlog.error("Unknown network specified in -onlynet: '%s'", snet);
+                return false;
+            }
+
             nets.insert(net);
         }
         for (int n = 0; n < NET_MAX; n++)
@@ -84,7 +92,7 @@ bool CNetComponent::ComponentInitialize()
     // Check for host lookup allowed before parsing any network related parameters
     fNameLookup = appArgs.GetArg("-dns", DEFAULT_NAME_LOOKUP);
 
-    bool proxyRandomize = appArgs.GetArg<int>("-proxyrandomize", DEFAULT_PROXYRANDOMIZE);
+    bool proxyRandomize = appArgs.GetArg<bool>("-proxyrandomize", DEFAULT_PROXYRANDOMIZE);
     // -proxy sets a proxy for all outgoing network traffic
     // -noproxy (or -proxy=0) as well as the empty string can be used to not set a proxy, this is the default
     std::string proxyArg = appArgs.GetArg<std::string>("-proxy", "");
@@ -94,12 +102,16 @@ bool CNetComponent::ComponentInitialize()
         CService proxyAddr;
         if (!Lookup(proxyArg.c_str(), proxyAddr, 9050, fNameLookup))
         {
-            return InitError(strprintf(_("Invalid -proxy address or hostname: '%s'"), proxyArg));
+            mlog.error("Invalid -proxy address or hostname: '%s'", proxyArg);
+            return false;
         }
 
         proxyType addrProxy = proxyType(proxyAddr, proxyRandomize);
         if (!addrProxy.IsValid())
-            return InitError(strprintf(_("Invalid -proxy address or hostname: '%s'"), proxyArg));
+        {
+            mlog.error("Invalid -proxy address or hostname: '%s'", proxyArg);
+            return false;
+        }
 
         SetProxy(NET_IPV4, addrProxy);
         SetProxy(NET_IPV6, addrProxy);
@@ -115,18 +127,25 @@ bool CNetComponent::ComponentInitialize()
     if (onionArg != "")
     {
         if (onionArg == "0")
-        { // Handle -noonion/-onion=0
+        {
+            // Handle -noonion/-onion=0
             SetLimited(NET_TOR); // set onions as unreachable
         } else
         {
             CService onionProxy;
             if (!Lookup(onionArg.c_str(), onionProxy, 9050, fNameLookup))
             {
-                return InitError(strprintf(_("Invalid -onion address or hostname: '%s'"), onionArg));
+                mlog.error("Invalid -onion address or hostname: '%s'", onionArg);
+                return false;
             }
+
             proxyType addrOnion = proxyType(onionProxy, proxyRandomize);
             if (!addrOnion.IsValid())
-                return InitError(strprintf(_("Invalid -onion address or hostname: '%s'"), onionArg));
+            {
+                mlog.error("Invalid -onion address or hostname: '%s'", onionArg);
+                return false;
+            }
+
             SetProxy(NET_TOR, addrOnion);
             SetLimited(NET_TOR, false);
         }
@@ -143,7 +162,10 @@ bool CNetComponent::ComponentInitialize()
         if (Lookup(strAddr.c_str(), addrLocal, GetListenPort(), fNameLookup) && addrLocal.IsValid())
             AddLocal(addrLocal, LOCAL_MANUAL);
         else
-            return InitError(strprintf(_("Cannot resolve externalip address: '%s'"), strAddr));
+        {
+            mlog.error("Cannot resolve externalip address: '%s'", strAddr);
+            return false;
+        }
     }
 
 #if ENABLE_ZMQ
@@ -162,10 +184,50 @@ bool CNetComponent::ComponentInitialize()
         nMaxOutboundLimit = appArgs.GetArg("maxuploadtarget", DEFAULT_MAX_UPLOAD_TARGET) * 1024 * 1024;
     }
 
+    // -bind and -whitebind can't be set when not listening
+    size_t nUserBind = appArgs.GetArgs("-bind").size() + gArgs.GetArgs("-whitebind").size();
+    if (nUserBind != 0 && !appArgs.GetArg<bool>("-listen", DEFAULT_LISTEN))
+    {
+        mlog.error("Cannot set -bind or -whitebind together with -listen=0");
+        return false;
+    }
+
+    // Make sure enough file descriptors are available
+    int nBind = std::max(nUserBind, size_t(1));
+    int nUserMaxConnections = appArgs.GetArg("-maxconnections", DEFAULT_MAX_PEER_CONNECTIONS);
+    int nMaxConnections = std::max(nUserMaxConnections, 0);
+
+#ifdef WIN32
+// Win32 LevelDB doesn't use filedescriptors, and the ones used for
+// accessing block files don't count towards the fd_set size limit
+// anyway.
+# define MIN_CORE_FILEDESCRIPTORS 0
+#else
+# define MIN_CORE_FILEDESCRIPTORS 150
+#endif
+
+    // Trim requested connection counts, to fit into system limitations
+    nMaxConnections = std::max(std::min(nMaxConnections, (int)(FD_SETSIZE - nBind - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS)), 0);
+    int nFD = RaiseFileDescriptorLimit(nMaxConnections + MIN_CORE_FILEDESCRIPTORS + MAX_ADDNODE_CONNECTIONS);
+    if (nFD < MIN_CORE_FILEDESCRIPTORS)
+    {
+        mlog.error("Not enough file descriptors available.");
+        return false;
+    }
+
+    nMaxConnections = std::min(nFD - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS, nMaxConnections);
+
+    if (nMaxConnections < nUserMaxConnections)
+    {
+        mlog.warn("Reducing -maxconnections from %d to %d, because of system limitations.", nUserMaxConnections, nMaxConnections);
+    }
+
+    mlog.info("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
+
     ///netConnOptions.nLocalServices = nLocalServices;
     ///netConnOptions.nRelevantServices = nRelevantServices;
-    ///netConnOptions.nMaxConnections = nMaxConnections;
-    netConnOptions.nMaxOutbound = std::min(MAX_OUTBOUND_CONNECTIONS, netConnOptions.nMaxConnections);
+    netConnOptions.nMaxConnections = nMaxConnections;
+    netConnOptions.nMaxOutbound = std::min(MAX_OUTBOUND_CONNECTIONS, nMaxConnections);
     netConnOptions.nMaxAddnode = MAX_ADDNODE_CONNECTIONS;
     netConnOptions.nMaxOutboundTimeframe = nMaxOutboundTimeframe;
     netConnOptions.nMaxOutboundLimit = nMaxOutboundLimit;
@@ -181,20 +243,24 @@ bool CNetComponent::ComponentInitialize()
         CService addrBind;
         if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
         {
-            return InitError(strprintf(_("Cannot resolve bind address: '%s'"), strBind));
+            mlog.error("Cannot resolve bind address: '%s'", strBind);
+            return false;
         }
         netConnOptions.vBinds.push_back(addrBind);
     }
+
     for (const std::string &strBind : appArgs.GetArgs("-whitebind"))
     {
         CService addrBind;
         if (!Lookup(strBind.c_str(), addrBind, 0, false))
         {
-            return InitError(strprintf(_("Cannot resolve whitebind address: '%s'"), strBind));
+            mlog.error("Cannot resolve whitebind address: '%s'", strBind);
+            return false;
         }
         if (addrBind.GetPort() == 0)
         {
-            return InitError(strprintf(_("Need to specify a port with -whitebind: '%s'"), strBind));
+            mlog.error("Need to specify a port with -whitebind: '%s'", strBind);
+            return false;
         }
         netConnOptions.vWhiteBinds.push_back(addrBind);
     }
@@ -204,7 +270,11 @@ bool CNetComponent::ComponentInitialize()
         CSubNet subnet;
         LookupSubNet(net.c_str(), subnet);
         if (!subnet.IsValid())
-            return InitError(strprintf(_("Invalid netmask specified in -whitelist: '%s'"), net));
+        {
+            mlog.error("Invalid netmask specified in -whitelist: '%s'", net);
+            return false;
+        }
+
         netConnOptions.vWhitelistedRange.push_back(subnet);
     }
 
@@ -218,7 +288,7 @@ bool CNetComponent::ComponentInitialize()
 
 bool CNetComponent::ComponentStartup()
 {
-    std::cout << "startup net component \n";
+    mlog.info("startup p2p net component.");
 
     if (!netConnMgr || !peerLogic)
     {
@@ -254,7 +324,7 @@ bool CNetComponent::ComponentStartup()
 
 bool CNetComponent::ComponentShutdown()
 {
-    std::cout << "shutdown net component \n";
+    mlog.info("shutdown p2p net component.");
 
     InterruptTorControl();
 
@@ -338,8 +408,6 @@ bool CNetComponent::MisbehaveNode(int64_t nodeID, int num)
     return false;
 }
 
-log4cpp::Category &CNetComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET));
-
 bool CNetComponent::OutboundTargetReached(bool historicalBlockServingLimit)
 {
     if (netConnMgr)
@@ -353,3 +421,5 @@ log4cpp::Category &CNetComponent::getLog()
 {
     return mlog;
 }
+
+

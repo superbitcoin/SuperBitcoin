@@ -28,8 +28,9 @@ public:
 
     log4cpp::Category &getLog() override;
 
-    static log4cpp::Category &mlog ;
 private:
+    log4cpp::Category &mlog;
+
     std::unique_ptr<CConnman>   netConnMgr;
     std::unique_ptr<PeerLogicValidation> peerLogic;
 

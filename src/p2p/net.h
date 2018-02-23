@@ -520,7 +520,7 @@ private:
 
     friend struct CConnmanTest;
 public:
-    static log4cpp::Category &mlog ;
+    log4cpp::Category &mlog ;
 };
 
 extern std::unique_ptr<CConnman> g_connman;

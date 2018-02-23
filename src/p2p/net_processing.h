@@ -135,12 +135,11 @@ private:
     CConnman *const connman;
     int64_t m_stale_tip_check_time; //! Next time to check for stale tip
 
-    const CArgsManager& appArgs;
+    const CArgsManager &appArgs;
 
     const CChainParams &Params();
 
-public:
-   static  log4cpp::Category &mlog;
+    log4cpp::Category &mlog;
 };
 
 

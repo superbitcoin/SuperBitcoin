@@ -426,7 +426,7 @@ CNode *CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
 
     return nullptr;
 }
-log4cpp::Category &CConnman::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET));
+
 void CConnman::DumpBanlist()
 {
     SweepBanned(); // clean unused entries (if bantime has expired)
@@ -2354,7 +2354,10 @@ void CConnman::SetNetworkActive(bool active)
     uiInterface.NotifyNetworkActiveChanged(fNetworkActive);
 }
 
-CConnman::CConnman(uint64_t nSeed0In, uint64_t nSeed1In) : nSeed0(nSeed0In), nSeed1(nSeed1In)
+CConnman::CConnman(uint64_t nSeed0In, uint64_t nSeed1In)
+        : nSeed0(nSeed0In), nSeed1(nSeed1In),
+          mlog(log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET)))
+
 {
     fNetworkActive = true;
     setBannedIsDirty = false;
