@@ -687,7 +687,7 @@ void PrintExceptionContinue(const std::exception *pex, const char *pszThread)
 {
     std::string message = FormatException(pex, pszThread);
     mlog().error("************************%s", message);
-    fprintf(stderr, "\n\n************************\n%s\n", message.c_str());
+    mlog().error("************************%s", message.c_str());
 }
 
 fs::path GetDefaultDataDir()

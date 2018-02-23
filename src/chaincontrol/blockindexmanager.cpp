@@ -335,7 +335,7 @@ void CBlockIndexManager::ReadBlockFileInfo()
 bool CBlockIndexManager::CheckBlockFileExist()
 {
     std::set<int> setBlkDataFiles;
-    for (const std::pair<uint256, CBlockIndex *> &item : mBlockIndex)
+    for (const auto &item : mBlockIndex)
     {
         CBlockIndex *pIndex = item.second;
         if (pIndex->nStatus & BLOCK_HAVE_DATA)
@@ -344,7 +344,7 @@ bool CBlockIndexManager::CheckBlockFileExist()
         }
     }
 
-    for (std::set<int>::iterator it = setBlkDataFiles.begin(); it != setBlkDataFiles.end(); it++)
+    for (auto it = setBlkDataFiles.begin(); it != setBlkDataFiles.end(); it++)
     {
         CDiskBlockPos pos(*it, 0);
         if (CAutoFile(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION).IsNull())
@@ -377,7 +377,7 @@ bool CBlockIndexManager::LoadBlockIndexDB(const CChainParams &chainparams)
     pBlcokTreee->ReadFlag("prunedblockfiles", bHavePruned);
     if (bHavePruned)
     {
-        LogPrintf("LoadBlockIndexDB(): Block files have previously been pruned\n");
+        mlog.info("LoadBlockIndexDB(): Block files have previously been pruned\n");
     }
 
     bool bReIndexing = false;
@@ -385,7 +385,7 @@ bool CBlockIndexManager::LoadBlockIndexDB(const CChainParams &chainparams)
     bReIndex |= bReIndexing;
 
     pBlcokTreee->ReadFlag("txindex", bTxIndex);
-    LogPrintf("transaction index %s\n", bTxIndex ? "enabled" : "disabled");
+    mlog.info("transaction index %s\n", bTxIndex ? "enabled" : "disabled");
 
     return true;
 }
@@ -457,7 +457,7 @@ CBlockIndex *CBlockIndexManager::GetBlockIndex(const uint256 hash)
 {
     if (mBlockIndex.count(hash) == 0)
     {
-        error("LastCommonAncestor(): reorganization to unknown block requested");
+        mlog.error("LastCommonAncestor(): reorganization to unknown block requested");
         return nullptr;
     }
 
@@ -479,13 +479,13 @@ void CBlockIndexManager::InvalidChainFound(CBlockIndex *pIndexNew)
     if (!pIndexBestInvalid || pIndexNew->nChainWork > pIndexBestInvalid->nChainWork)
         pIndexBestInvalid = pIndexNew;
 
-    LogPrintf("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s\n", __func__,
+    mlog.notice("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s", __func__,
               pIndexNew->GetBlockHash().ToString(), pIndexNew->nHeight,
               log(pIndexNew->nChainWork.getdouble()) / log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
                                                                                    pIndexNew->GetBlockTime()));
     CBlockIndex *tip = cChainActive.Tip();
     assert (tip);
-    LogPrintf("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s\n", __func__,
+    mlog.notice("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s", __func__,
               tip->GetBlockHash().ToString(), cChainActive.Height(), log(tip->nChainWork.getdouble()) / log(2.0),
               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
     //    CheckForkWarningConditions();
@@ -523,15 +523,17 @@ void CBlockIndexManager::CheckBlockIndex(const Consensus::Params &consensusParam
 
     // Build forward-pointing map of the entire block tree.
     std::multimap<CBlockIndex *, CBlockIndex *> forward;
-    for (BlockMap::iterator it = mBlockIndex.begin(); it != mBlockIndex.end(); it++)
+    for (auto it = mBlockIndex.begin(); it != mBlockIndex.end(); it++)
     {
         forward.insert(std::make_pair(it->second->pprev, it->second));
     }
 
     assert(forward.size() == mBlockIndex.size());
 
-    std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> rangeGenesis = forward.equal_range(
-            nullptr);
+//    std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> rangeGenesis = forward.equal_range(
+//            nullptr);
+    auto rangeGenesis = forward.equal_range(nullptr);
+
     CBlockIndex *pindex = rangeGenesis.first->second;
     rangeGenesis.first++;
     assert(rangeGenesis.first == rangeGenesis.second); // There is only one index entry with parent nullptr.
@@ -798,15 +800,14 @@ void CBlockIndexManager::CheckForkWarningConditions()
         }
         if (pIndexBestForkTip && pIndexBestForkBase)
         {
-            LogPrintf(
-                    "%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n",
+            mlog.warn("%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n",
                     __func__,
                     pIndexBestForkBase->nHeight, pIndexBestForkBase->phashBlock->ToString(),
                     pIndexBestForkTip->nHeight, pIndexBestForkTip->phashBlock->ToString());
             SetfLargeWorkForkFound(true);
         } else
         {
-            LogPrintf(
+            mlog.warn(
                     "%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n",
                     __func__);
             SetfLargeWorkInvalidChainFound(true);
@@ -871,7 +872,7 @@ bool CBlockIndexManager::NeedRewind(const int height, const Consensus::Params &p
 
 void CBlockIndexManager::RewindBlockIndex(const Consensus::Params &params)
 {
-    for (BlockMap::iterator it = mBlockIndex.begin(); it != mBlockIndex.end(); it++)
+    for (auto it = mBlockIndex.begin(); it != mBlockIndex.end(); it++)
     {
         CBlockIndex *pIndexIter = it->second;
 
@@ -939,7 +940,7 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
     AssertLockHeld(cs);
     // Check for duplicate
     uint256 hash = block.GetHash();
-    BlockMap::iterator miSelf = mBlockIndex.find(hash);
+    auto miSelf = mBlockIndex.find(hash);
     CBlockIndex *pindex = nullptr;
     if (hash != chainparams.GetConsensus().hashGenesisBlock)
     {
@@ -1011,7 +1012,7 @@ bool CBlockIndexManager::CheckBlockHeader(const CBlockHeader &block, CValidation
 
     return true;
 }
-
+log4cpp::Category &CBlockIndexManager::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
 /** Context-dependent validity checks.
  *  By "context", we mean only the previous block headers, but not the UTXO
  *  set; UTXO-related validity checks are done in ConnectBlock(). */
@@ -1096,7 +1097,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
     {
         if (!fKnown)
         {
-            LogPrintf("Leaving block file %i: %s\n", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
+            mlog.info("Leaving block file %i: %s\n", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
         }
         FlushBlockFile(!fKnown, vecBlockFileInfo[iLastBlockFile].nSize, vecBlockFileInfo[iLastBlockFile].nUndoSize);
         iLastBlockFile = nFile;
@@ -1121,7 +1122,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
                 FILE *file = OpenBlockFile(pos);
                 if (file)
                 {
-                    LogPrintf("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE,
+                    mlog.info("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE,
                               pos.nFile);
                     AllocateFileRange(file, pos.nPos, nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos);
                     fclose(file);

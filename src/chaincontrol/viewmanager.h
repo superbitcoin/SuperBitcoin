@@ -62,6 +62,8 @@ private:
     CCoinsViewCache *pCoinsTip;
 
     std::vector<uint256> getHeads();
+public:
+    static log4cpp::Category & mlog;
 
 };
 
