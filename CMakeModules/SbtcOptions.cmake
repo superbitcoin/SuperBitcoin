@@ -9,7 +9,7 @@ macro(configure_project)
 	option(ENABLE_WALLET  "ENABLE WALLET FLAG" ON)
     option(HAVE_CONFIG_H "Build with tests" ON)
     option(HAVE_SYS_SELECT_H "Build with tests" ON)
-    option(TESTS "Build with tests" OFF)
+    option(TESTS "Build with tests" ON)
     option(ENABLE_ZMQ_FLAG "Build with tests" OFF)
 
 	if (ENABLE_WALLET)

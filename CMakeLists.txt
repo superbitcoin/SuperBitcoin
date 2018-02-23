@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.9)
 project(SuperBitcoin)
 
+execute_process(COMMAND  sh -x ${PROJECT_SOURCE_DIR}/src/test/data/testshell.sh )
+
+
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_ROOT}/Modules")
 
@@ -59,7 +62,7 @@ LIST(APPEND BOOST_COMPONENTS thread
 SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 
 
-FIND_PACKAGE(Boost 1.62 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+FIND_PACKAGE(Boost 1.54 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
 # For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
 IF(NOT "${Boost_VERSION}" MATCHES "1.53(.*)")
     SET(BOOST_LIBRARIES_TEMP ${Boost_LIBRARIES})
