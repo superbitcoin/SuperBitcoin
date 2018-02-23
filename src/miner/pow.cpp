@@ -17,6 +17,11 @@ GetNextWorkRequired(const CBlockIndex *pindexLast, const CBlockHeader *pblock, c
     assert(pindexLast != nullptr);
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
+    // Special rule for regtest: we never retarget.
+    if (params.fPowNoRetargeting) {
+        return pindexLast->nBits;
+    }
+
     // active sbtc difficulty ajustment
     if (IsSBTCForkEnabled(params, pindexLast->nHeight + 1))
     {

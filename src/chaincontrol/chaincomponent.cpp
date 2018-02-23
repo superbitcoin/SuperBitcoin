@@ -2312,7 +2312,7 @@ bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainPara
     if (!state.IsValid())
     {
 
-        mlog.info("reject reason %s", state.GetRejectReason());
+        mlog.error("reject reason %s", state.GetRejectReason());
         return false;
 
     }

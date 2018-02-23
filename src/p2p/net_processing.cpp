@@ -1108,7 +1108,6 @@ static void RelayAddress(const CAddress &addr, bool fReachable, CConnman *connma
 
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 
 const CChainParams &PeerLogicValidation::Params()
@@ -1170,7 +1169,7 @@ void PeerLogicValidation::BlockConnected(const std::shared_ptr<const CBlock> &pb
         {
             nErased += COrphanTx::Instance().EraseOrphanTx(orphanHash);
         }
-        LogPrint(BCLog::MEMPOOL, "Erased %d orphan tx included or conflicted by block\n", nErased);
+        mlog.info("Erased %d orphan tx included or conflicted by block", nErased);
     }
 
     g_last_tip_update = GetTime();
@@ -1291,7 +1290,7 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
                                  !PeerHasHeader(&state, pindex) && PeerHasHeader(&state, pindex->pprev))
                              {
 
-                                 LogPrint(BCLog::NET, "%s sending header-and-ids %s to peer=%d\n",
+                                 mlog.info("%s sending header-and-ids %s to peer=%d\n",
                                           "PeerLogicValidation::NewPoWValidBlock",
                                           hashBlock.ToString(), pnode->GetId());
                                  connman->PushMessage(pnode, msgMaker.Make(NetMsgType::CMPCTBLOCK, *pcmpctblock));
@@ -1346,7 +1345,7 @@ bool PeerLogicValidation::ProcessMessages(CNode *pfrom, std::atomic<bool> &inter
     // Scan for message start
     if (memcmp(msg.hdr.pchMessageStart, chainparams.MessageStart(), CMessageHeader::MESSAGE_START_SIZE) != 0)
     {
-        LogPrintf("PROCESSMESSAGE: INVALID MESSAGESTART %s peer=%d\n", SanitizeString(msg.hdr.GetCommand()),
+        mlog.info("PROCESSMESSAGE: INVALID MESSAGESTART %s peer=%d", SanitizeString(msg.hdr.GetCommand()),
                   pfrom->GetId());
         pfrom->fDisconnect = true;
         return false;
@@ -1356,7 +1355,7 @@ bool PeerLogicValidation::ProcessMessages(CNode *pfrom, std::atomic<bool> &inter
     CMessageHeader &hdr = msg.hdr;
     if (!hdr.IsValid(chainparams.MessageStart()))
     {
-        LogPrintf("PROCESSMESSAGE: ERRORS IN HEADER %s peer=%d\n", SanitizeString(hdr.GetCommand()), pfrom->GetId());
+        mlog.error("PROCESSMESSAGE: ERRORS IN HEADER %s peer=%d", SanitizeString(hdr.GetCommand()), pfrom->GetId());
         return fMoreWork;
     }
     std::string strCommand = hdr.GetCommand();
@@ -1369,7 +1368,7 @@ bool PeerLogicValidation::ProcessMessages(CNode *pfrom, std::atomic<bool> &inter
     const uint256 &hash = msg.GetMessageHash();
     if (memcmp(hash.begin(), hdr.pchChecksum, CMessageHeader::CHECKSUM_SIZE) != 0)
     {
-        LogPrintf("%s(%s, %u bytes): CHECKSUM ERROR expected %s was %s\n", __func__,
+        mlog.error("%s(%s, %u bytes): CHECKSUM ERROR expected %s was %s", __func__,
                   SanitizeString(strCommand), nMessageSize,
                   HexStr(hash.begin(), hash.begin() + CMessageHeader::CHECKSUM_SIZE),
                   HexStr(hdr.pchChecksum, hdr.pchChecksum + CMessageHeader::CHECKSUM_SIZE));
@@ -1394,18 +1393,18 @@ bool PeerLogicValidation::ProcessMessages(CNode *pfrom, std::atomic<bool> &inter
         if (strstr(e.what(), "end of data"))
         {
             // Allow exceptions from under-length message on vRecv
-            LogPrintf(
-                    "%s(%s, %u bytes): Exception '%s' caught, normally caused by a message being shorter than its stated length\n",
+            mlog.error(
+                    "%s(%s, %u bytes): Exception '%s' caught, normally caused by a message being shorter than its stated length",
                     __func__, SanitizeString(strCommand), nMessageSize, e.what());
         } else if (strstr(e.what(), "size too large"))
         {
             // Allow exceptions from over-long size
-            LogPrintf("%s(%s, %u bytes): Exception '%s' caught\n", __func__, SanitizeString(strCommand), nMessageSize,
+            mlog.error("%s(%s, %u bytes): Exception '%s' caught\n", __func__, SanitizeString(strCommand), nMessageSize,
                       e.what());
         } else if (strstr(e.what(), "non-canonical ReadCompactSize()"))
         {
             // Allow exceptions from non-canonical encoding
-            LogPrintf("%s(%s, %u bytes): Exception '%s' caught\n", __func__, SanitizeString(strCommand), nMessageSize,
+            mlog.error("%s(%s, %u bytes): Exception '%s' caught\n", __func__, SanitizeString(strCommand), nMessageSize,
                       e.what());
         } else
         {
@@ -1422,7 +1421,7 @@ bool PeerLogicValidation::ProcessMessages(CNode *pfrom, std::atomic<bool> &inter
 
     if (!fRet)
     {
-        LogPrintf("%s(%s, %u bytes) FAILED peer=%d\n", __func__, SanitizeString(strCommand), nMessageSize,
+        mlog.error("%s(%s, %u bytes) FAILED peer=%d\n", __func__, SanitizeString(strCommand), nMessageSize,
                   pfrom->GetId());
     }
 

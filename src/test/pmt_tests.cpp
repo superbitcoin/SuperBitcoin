@@ -8,9 +8,8 @@
 #include "sbtccore/streams.h"
 #include "uint256.h"
 #include "utils/arith_uint256.h"
-#include "framwork/version.h"
+#include "framework/version.h"
 #include "test/test_bitcoin.h"
-
 #include <vector>
 
 #include <boost/test/unit_test.hpp>

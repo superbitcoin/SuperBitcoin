@@ -175,6 +175,10 @@ private:
 
     bool ContextualCheckBlockHeader(const CBlockHeader &block, CValidationState &state, const CChainParams &params,
                                     const CBlockIndex *pindexPrev, int64_t nAdjustedTime);
+
+
+public:
+    static log4cpp::Category & mlog;
 };
 
 #endif // !defined(__SBTC_BLOCKINDEXMANAGER_H__)
