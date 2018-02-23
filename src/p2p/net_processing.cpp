@@ -69,7 +69,7 @@ std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-static size_t vExtraTxnForCompactIt = 0;
+//static size_t vExtraTxnForCompactIt = 0;
 static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
 
 
@@ -78,17 +78,17 @@ static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUAR
 // mapOrphanTransactions
 //
 
-static void AddToCompactExtraTransactions(const CTransactionRef &tx)
-{
-    size_t max_extra_txn = app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
-                                                  DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
-    if (max_extra_txn <= 0)
-        return;
-    if (!vExtraTxnForCompact.size())
-        vExtraTxnForCompact.resize(max_extra_txn);
-    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
-    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
-}
+//static void AddToCompactExtraTransactions(const CTransactionRef &tx)
+//{
+//    size_t max_extra_txn = app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
+//                                                  DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
+//    if (max_extra_txn <= 0)
+//        return;
+//    if (!vExtraTxnForCompact.size())
+//        vExtraTxnForCompact.resize(max_extra_txn);
+//    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
+//    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
+//}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -773,14 +773,14 @@ bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     return true;
 }
 
-static void RelayTransaction(const CTransaction &tx, CConnman *connman)
-{
-    CInv inv(MSG_TX, tx.GetHash());
-    connman->ForEachNode([&inv](CNode *pnode)
-                         {
-                             pnode->PushInventory(inv);
-                         });
-}
+//static void RelayTransaction(const CTransaction &tx, CConnman *connman)
+//{
+//    CInv inv(MSG_TX, tx.GetHash());
+//    connman->ForEachNode([&inv](CNode *pnode)
+//                         {
+//                             pnode->PushInventory(inv);
+//                         });
+//}
 
 static void RelayAddress(const CAddress &addr, bool fReachable, CConnman *connman)
 {
@@ -4069,8 +4069,6 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
 
 void PeerLogicValidation::ProcessGetData(CNode *pfrom, const std::atomic<bool> &interruptMsgProc)
 {
-    const Consensus::Params &consensusParams = Params().GetConsensus();
-
     std::vector<CInv> vNotFound;
     const CNetMsgMaker msgMaker(pfrom->GetSendVersion());
     LOCK(cs_main);
