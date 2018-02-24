@@ -13,7 +13,6 @@
 #include "sbtccore/block/undo.h"
 #include "utils/merkleblock.h"
 #include "framework/base.hpp"
-#include "interface/ibasecomponent.h"
 #include "eventmanager/eventmanager.h"
 
 static int64_t nTimeCheck = 0;
@@ -49,11 +48,10 @@ bool CChainCommonent::ComponentInitialize()
     std::cout << "initialize chain component \n";
 
 
-    GET_BASE_INTERFACE(ifBaseObj);
-    assert(ifBaseObj != nullptr);
+//    GET_BASE_INTERFACE(ifBaseObj);
+//    assert(ifBaseObj != nullptr);
 
-    ifBaseObj->GetEventManager()->RegisterEventHandler(EID_NODE_DISCONNECTED, this,
-                                                       &CChainCommonent::OnNodeDisconnected);
+    app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this,&CChainCommonent::OnNodeDisconnected);
 
 
     const CChainParams &chainParams = app().GetChainParams();

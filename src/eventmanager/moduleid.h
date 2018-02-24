@@ -4,7 +4,6 @@
 enum SBTCModuleID
 {
     MID_INVALID     = 0,
-    MID_BASE        = 1,
     MID_DB          = 2,
     MID_TX_MEMPOOL  = 4,
     MID_BLOCK_CHAIN = 8,

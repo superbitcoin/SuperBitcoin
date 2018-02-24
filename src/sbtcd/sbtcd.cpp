@@ -617,7 +617,6 @@ bool AppInit(int argc, char *argv[])
 #include "base.hpp"
 #include "p2p/netcomponent.h"
 #include "rpc/rpccomponent.h"
-#include "framework/basecomponent.hpp"
 #include "chaincontrol/chaincomponent.h"
 #include "mempool/txmempool.h"
 # include "walletcomponent.h"
@@ -675,7 +674,6 @@ int main(int argc, char **argv)
 
     InitializeLogging();
     CApp &app = appbase::CApp::Instance();
-    app.RegisterComponent(new CBaseComponent);
     app.RegisterComponent(new CChainCommonent);
     app.RegisterComponent(new CTxMemPool);
     app.RegisterComponent(new CHttpRpcComponent);

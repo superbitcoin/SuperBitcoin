@@ -4,8 +4,12 @@
 #include <atomic>
 #include <memory>
 #include <interface/componentid.h>
+#include <thread>
+#include <eventmanager/eventmanager.h>
 #include "icomponent.h"
 #include "utils/iterator.h"
+#include "ui_interface.h"
+#include "scheduler.h"
 
 class CArgsManager;
 class CChainParams;
@@ -99,6 +103,7 @@ namespace appbase
 
         CApp& operator=(const CApp& ) = delete;
 
+        bool PreInit();
         bool InitParams(int argc, char *argv[]);
 
         IComponent* FindComponent(int componentID) const;
@@ -111,6 +116,22 @@ namespace appbase
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
 
         std::map<int, std::unique_ptr<IComponent>> m_mapComponents; ///< all registered plugins ordered by id.
+
+    public:
+
+        CScheduler& GetScheduler() ;
+
+        CEventManager& GetEventManager() ;
+
+        CClientUIInterface& GetUIInterface();
+
+
+    private:
+        std::thread schedulerThread;
+        std::unique_ptr<CScheduler>    scheduler;
+        std::unique_ptr<CEventManager> eventManager;
+        std::unique_ptr<CClientUIInterface> uiInterface;
+
     public:
         static log4cpp::Category &mlog;
     };

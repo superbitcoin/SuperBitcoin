@@ -9,7 +9,6 @@
 
 #include <walletcomponent.h>
 #include <utils/util.h>
-#include "../interface/ibasecomponent.h"
 #include "base.hpp"
 
 bool CWalletComponent::ComponentInitialize()
@@ -34,9 +33,8 @@ bool CWalletComponent::ComponentStartup()
     {
         return false;
     }
-    GET_BASE_INTERFACE(pBaseComponent);
     for (CWalletRef pwallet : vpWallets) {
-        pwallet->postInitProcess(*(pBaseComponent->GetScheduler()));
+        pwallet->postInitProcess(app().GetScheduler());
     }
 
     return true;

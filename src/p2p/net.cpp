@@ -24,7 +24,6 @@
 #include "framework/base.hpp"
 #include "framework/scheduler.h"
 #include "framework/ui_interface.h"
-#include "interface/ibasecomponent.h"
 #include "eventmanager/eventmanager.h"
 #include "utils/utilstrencodings.h"
 
@@ -427,6 +426,7 @@ CNode *CConnman::ConnectNode(CAddress addrConnect, const char *pszDest, bool fCo
     return nullptr;
 }
 
+log4cpp::Category &CConnman::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET));
 void CConnman::DumpBanlist()
 {
     SweepBanned(); // clean unused entries (if bantime has expired)
@@ -747,7 +747,7 @@ bool CNode::ReceiveMsgBytes(const char *pch, unsigned int nBytes, bool &complete
 
         if (msg.in_data && msg.hdr.nMessageSize > MAX_PROTOCOL_MESSAGE_LENGTH)
         {
-            LogPrint(BCLog::NET, "Oversized message from peer=%i, disconnecting\n", GetId());
+            mlog.notice("Oversized message from peer=%i, disconnecting\n", GetId());
             return false;
         }
 
@@ -782,7 +782,7 @@ void CNode::SetSendVersion(int nVersionIn)
     // set this twice is an error.
     if (nSendVersion != 0)
     {
-        error("Send version already set for node: %i. Refusing to change from %i to %i", id, nSendVersion, nVersionIn);
+        mlog.error("Send version already set for node: %i. Refusing to change from %i to %i", id, nSendVersion, nVersionIn);
     } else
     {
         nSendVersion = nVersionIn;
@@ -796,7 +796,7 @@ int CNode::GetSendVersion() const
     // has been called.
     if (nSendVersion == 0)
     {
-        error("Requesting unset send version for node: %i. Using %i", id, INIT_PROTO_VERSION);
+        mlog.error("Requesting unset send version for node: %i. Using %i", id, INIT_PROTO_VERSION);
         return INIT_PROTO_VERSION;
     }
     return nSendVersion;
@@ -906,7 +906,7 @@ size_t CConnman::SocketSendData(CNode *pnode) const
                 int nErr = WSAGetLastError();
                 if (nErr != WSAEWOULDBLOCK && nErr != WSAEMSGSIZE && nErr != WSAEINTR && nErr != WSAEINPROGRESS)
                 {
-                    LogPrintf("socket send error %s\n", NetworkErrorString(nErr));
+                    mlog.error("socket send error %s\n", NetworkErrorString(nErr));
                     pnode->CloseSocketDisconnect();
                 }
             }
@@ -1106,7 +1106,7 @@ void CConnman::AcceptConnection(const ListenSocket &hListenSocket)
     {
         if (!addr.SetSockAddr((const struct sockaddr *)&sockaddr))
         {
-            LogPrintf("Warning: Unknown socket family\n");
+            mlog.notice("Warning: Unknown socket family\n");
         }
     }
 
@@ -1122,20 +1122,20 @@ void CConnman::AcceptConnection(const ListenSocket &hListenSocket)
     {
         int nErr = WSAGetLastError();
         if (nErr != WSAEWOULDBLOCK)
-            LogPrintf("socket error accept failed: %s\n", NetworkErrorString(nErr));
+            mlog.notice("socket error accept failed: %s\n", NetworkErrorString(nErr));
         return;
     }
 
     if (!fNetworkActive)
     {
-        LogPrintf("connection from %s dropped: not accepting new connections\n", addr.ToString());
+        mlog.notice("connection from %s dropped: not accepting new connections\n", addr.ToString());
         CloseSocket(hSocket);
         return;
     }
 
     if (!IsSelectableSocket(hSocket))
     {
-        LogPrintf("connection from %s dropped: non-selectable socket\n", addr.ToString());
+        mlog.notice("connection from %s dropped: non-selectable socket\n", addr.ToString());
         CloseSocket(hSocket);
         return;
     }
@@ -1146,7 +1146,7 @@ void CConnman::AcceptConnection(const ListenSocket &hListenSocket)
 
     if (IsBanned(addr) && !whitelisted)
     {
-        LogPrintf("connection from %s dropped (banned)\n", addr.ToString());
+        mlog.info("connection from %s dropped (banned)", addr.ToString());
         CloseSocket(hSocket);
         return;
     }
@@ -1156,7 +1156,7 @@ void CConnman::AcceptConnection(const ListenSocket &hListenSocket)
         if (!AttemptToEvictConnection())
         {
             // No connection to evict, disconnect the new connection
-            LogPrint(BCLog::NET, "failed to find an eviction candidate - connection dropped (full)\n");
+            mlog.info( "failed to find an eviction candidate - connection dropped (full)");
             CloseSocket(hSocket);
             return;
         }
@@ -1172,7 +1172,7 @@ void CConnman::AcceptConnection(const ListenSocket &hListenSocket)
     pnode->fWhitelisted = whitelisted;
     m_msgproc->InitializeNode(pnode);
 
-    LogPrint(BCLog::NET, "connection from %s accepted\n", addr.ToString());
+    mlog.info("connection from %s accepted", addr.ToString());
 
     int totalNodeCount = 0;
     {
@@ -1181,8 +1181,7 @@ void CConnman::AcceptConnection(const ListenSocket &hListenSocket)
         totalNodeCount = (int)vNodes.size();
     }
 
-    GET_BASE_INTERFACE(ifBaseObj);
-    ifBaseObj->GetEventManager()->PostEvent(EID_NODE_CONNECTED, id, true, totalNodeCount);
+    app().GetEventManager().PostEvent(EID_NODE_CONNECTED, id, true, totalNodeCount);
 }
 
 void CConnman::ThreadSocketHandler()
@@ -1331,7 +1330,7 @@ void CConnman::ThreadSocketHandler()
             if (have_fds)
             {
                 int nErr = WSAGetLastError();
-                LogPrintf("socket select error %s\n", NetworkErrorString(nErr));
+                mlog.notice("socket select error %s\n", NetworkErrorString(nErr));
                 for (unsigned int i = 0; i <= hSocketMax; i++)
                     FD_SET(i, &fdsetRecv);
             }
@@ -1422,7 +1421,7 @@ void CConnman::ThreadSocketHandler()
                     // socket closed gracefully
                     if (!pnode->fDisconnect)
                     {
-                        LogPrint(BCLog::NET, "socket closed\n");
+                        mlog.notice("socket closed");
                     }
                     pnode->CloseSocketDisconnect();
                 } else if (nBytes < 0)
@@ -1432,7 +1431,7 @@ void CConnman::ThreadSocketHandler()
                     if (nErr != WSAEWOULDBLOCK && nErr != WSAEMSGSIZE && nErr != WSAEINTR && nErr != WSAEINPROGRESS)
                     {
                         if (!pnode->fDisconnect)
-                            LogPrintf("socket recv error %s\n", NetworkErrorString(nErr));
+                            mlog.error("socket recv error %s", NetworkErrorString(nErr));
                         pnode->CloseSocketDisconnect();
                     }
                 }
@@ -1459,25 +1458,25 @@ void CConnman::ThreadSocketHandler()
             {
                 if (pnode->nLastRecv == 0 || pnode->nLastSend == 0)
                 {
-                    LogPrint(BCLog::NET, "socket no message in first 60 seconds, %d %d from %d\n",
+                    mlog.notice("socket no message in first 60 seconds, %d %d from %d\n",
                              pnode->nLastRecv != 0, pnode->nLastSend != 0, pnode->GetId());
                     pnode->fDisconnect = true;
                 } else if (nTime - pnode->nLastSend > TIMEOUT_INTERVAL)
                 {
-                    LogPrintf("socket sending timeout: %is\n", nTime - pnode->nLastSend);
+                    mlog.notice("socket sending timeout: %is\n", nTime - pnode->nLastSend);
                     pnode->fDisconnect = true;
                 } else if (nTime - pnode->nLastRecv > (pnode->nVersion > BIP0031_VERSION ? TIMEOUT_INTERVAL : 90 * 60))
                 {
-                    LogPrintf("socket receive timeout: %is\n", nTime - pnode->nLastRecv);
+                    mlog.notice("socket receive timeout: %is\n", nTime - pnode->nLastRecv);
                     pnode->fDisconnect = true;
                 } else if (pnode->nPingNonceSent &&
                            pnode->nPingUsecStart + TIMEOUT_INTERVAL * 1000000 < GetTimeMicros())
                 {
-                    LogPrintf("ping timeout: %fs\n", 0.000001 * (GetTimeMicros() - pnode->nPingUsecStart));
+                    mlog.notice("ping timeout: %fs\n", 0.000001 * (GetTimeMicros() - pnode->nPingUsecStart));
                     pnode->fDisconnect = true;
                 } else if (!pnode->fSuccessfullyConnected)
                 {
-                    LogPrintf("version handshake timeout from %d\n", pnode->GetId());
+                    mlog.notice("version handshake timeout from %d\n", pnode->GetId());
                     pnode->fDisconnect = true;
                 }
             }
@@ -1653,7 +1652,7 @@ void CConnman::ThreadDNSAddressSeed()
         }
         if (nRelevant >= 2)
         {
-            LogPrintf("P2P peers available. Skipped DNS seeding.\n");
+            mlog.notice("P2P peers available. Skipped DNS seeding.\n");
             return;
         }
     }
@@ -1661,7 +1660,7 @@ void CConnman::ThreadDNSAddressSeed()
     const std::vector<CDNSSeedData> &vSeeds = Params().DNSSeeds();
     int found = 0;
 
-    LogPrintf("Loading addresses from DNS seeds (could take a while)\n");
+    mlog.notice("Loading addresses from DNS seeds (could take a while)\n");
 
     for (const CDNSSeedData &seed : vSeeds)
     {
@@ -1699,7 +1698,7 @@ void CConnman::ThreadDNSAddressSeed()
         }
     }
 
-    LogPrintf("%d addresses found from DNS seeds\n", found);
+    mlog.notice("%d addresses found from DNS seeds\n", found);
 }
 
 
@@ -1710,7 +1709,7 @@ void CConnman::DumpAddresses()
     CAddrDB adb;
     adb.Write(addrman);
 
-    LogPrint(BCLog::NET, "Flushed %d addresses to peers.dat  %dms\n",
+    mlog.notice("Flushed %d addresses to peers.dat  %dms\n",
              addrman.size(), GetTimeMillis() - nStart);
 }
 
@@ -1747,7 +1746,7 @@ bool CConnman::GetTryNewOutboundPeer()
 void CConnman::SetTryNewOutboundPeer(bool flag)
 {
     m_try_another_outbound_peer = flag;
-    LogPrint(BCLog::NET, "net: setting try another outbound peer=%s\n", flag ? "true" : "false");
+    mlog.notice("net: setting try another outbound peer=%s\n", flag ? "true" : "false");
 }
 
 // Return the number of peers we have over our outbound connection limit
@@ -1820,7 +1819,7 @@ void CConnman::ThreadOpenConnections()
             static bool done = false;
             if (!done)
             {
-                LogPrintf("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
+                mlog.notice("Adding fixed seed nodes as DNS doesn't seem to be available.\n");
                 CNetAddr local;
                 local.SetInternal("fixedseeds");
                 addrman.Add(convertSeed6(Params().FixedSeeds()), local);
@@ -2355,8 +2354,7 @@ void CConnman::SetNetworkActive(bool active)
 }
 
 CConnman::CConnman(uint64_t nSeed0In, uint64_t nSeed1In)
-        : nSeed0(nSeed0In), nSeed1(nSeed1In),
-          mlog(log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET)))
+        : nSeed0(nSeed0In), nSeed1(nSeed1In)
 
 {
     fNetworkActive = true;
@@ -2639,8 +2637,7 @@ void CConnman::DeleteNode(CNode *pnode)
         addrman.Connected(pnode->addr);
     }
 
-    GET_BASE_INTERFACE(ifBaseObj);
-    ifBaseObj->GetEventManager()->PostEvent(EID_NODE_DISCONNECTED, pnode->GetId(), pnode->fInbound, 0);
+    app().GetEventManager().PostEvent(EID_NODE_DISCONNECTED, pnode->GetId(), pnode->fInbound, 0);
 
     delete pnode;
 }
