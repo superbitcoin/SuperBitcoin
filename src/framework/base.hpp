@@ -1,15 +1,10 @@
 #pragma once
 
 #include <map>
-#include <atomic>
 #include <memory>
-#include <interface/componentid.h>
-#include <thread>
-#include <eventmanager/eventmanager.h>
 #include "icomponent.h"
 #include "utils/iterator.h"
-#include "ui_interface.h"
-#include "scheduler.h"
+#include "interface/componentid.h"
 
 class CArgsManager;
 class CChainParams;
@@ -17,44 +12,53 @@ class CBaseChainParams;
 
 namespace appbase
 {
-    class CApp:public IComponent
+    class CApp : public IComponent
     {
     public:
         static CApp &Instance();
 
-        enum { ID = CID_APP };
-        virtual int GetID() const override { return ID; }
+        static log4cpp::Category &mlog;
+
+        // the following four override methods were meaningless,
+        // only just make CApp become a non-abstract class.
+        int GetID() const override { return CID_APP; }
+
+        state GetState() const override { return initialized; }
+
+        bool Initialize() override { return false; }
+
+        log4cpp::Category &getLog() override { return mlog; }
 
 
-        uint64_t Version() const;
 
-        void SetVersion(uint64_t version);
+        uint64_t Version() const { return nVersion; }
 
-        bool Initialize(int argc, char **argv);
-
-        virtual  bool Startup() override ;
-
-        virtual bool Shutdown() override ;
-
-        void Run();
+        void SetVersion(uint64_t version) { nVersion = version; }
 
         void RequestShutdown() { bShutdown = true; }
 
+
+
+        bool Initialize(int argc, char **argv);
+
+        bool Startup() override;
+
+        bool Shutdown() override;
+
+        bool Run();
+
         bool RegisterComponent(IComponent* component);
-
-
-
-        state GetState() const override;
-
-        bool Initialize() override;
-
-        log4cpp::Category &getLog() override;
 
 
         template<typename Component>
         Component* FindComponent() const
         {
-            return static_cast<Component*>(FindComponent(Component::ID));
+            auto it = m_mapComponents.find(Component::ID);
+            if (it != m_mapComponents.end())
+            {
+                return static_cast<Component*>(it->second.get());
+            }
+            return nullptr;
         };
 
         template<typename F, template<typename C> class CI = ContainerIterator>
@@ -69,7 +73,8 @@ namespace appbase
                     if (!func(component))
                     {
                         isOk = false;
-                        if (breakIfFailed) {
+                        if (breakIfFailed)
+                        {
                             break;
                         }
                     }
@@ -94,49 +99,19 @@ namespace appbase
         }
 
     private:
-
         CApp(); ///< private because CBase is a singleton that should be accessed via instance()
-
-        ~CApp();
-
         CApp(const CApp& ) = delete;
-
         CApp& operator=(const CApp& ) = delete;
 
-        bool PreInit();
         bool InitParams(int argc, char *argv[]);
-
-        IComponent* FindComponent(int componentID) const;
 
     private:
         uint64_t nVersion;
-        std::atomic<bool> bShutdown;
+        volatile bool bShutdown;
         std::unique_ptr<CArgsManager> cArgs;
         std::unique_ptr<CChainParams> cChainParams;
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
-
         std::map<int, std::unique_ptr<IComponent>> m_mapComponents; ///< all registered plugins ordered by id.
-
-    public:
-
-        CScheduler& GetScheduler() ;
-
-        CEventManager& GetEventManager() ;
-
-        CClientUIInterface& GetUIInterface();
-
-
-    private:
-        std::thread schedulerThread;
-        std::unique_ptr<CScheduler>    scheduler;
-        std::unique_ptr<CEventManager> eventManager;
-        std::unique_ptr<CClientUIInterface> uiInterface;
-
-    public:
-        static log4cpp::Category &mlog;
     };
-
-
-
 }
 

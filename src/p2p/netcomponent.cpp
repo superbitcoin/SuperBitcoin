@@ -9,6 +9,7 @@
 #include "torcontrol.h"
 #include "config/argmanager.h"
 #include "utils/util.h"
+#include "interface/ibasecomponent.h"
 #include "interface/ichaincomponent.h"
 
 CNetComponent::CNetComponent()
@@ -30,19 +31,19 @@ bool CNetComponent::ComponentInitialize()
         return false;
     }
 
-//    GET_BASE_INTERFACE(ifBaseObj);
+    GET_BASE_INTERFACE(ifBaseObj);
     GET_CHAIN_INTERFACE(ifChainObj);
 
-//    CScheduler&scheduler = app().GetScheduler();
-//    if (!scheduler)
-//    {
-//        return false;
-//    }
+    CScheduler* scheduler = ifBaseObj->GetScheduler();
+    if (!scheduler)
+    {
+        return false;
+    }
 
     netConnMgr.reset(new CConnman(GetRand(std::numeric_limits<uint64_t>::max()),
                                   GetRand(std::numeric_limits<uint64_t>::max())));
 
-    peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), app().GetScheduler()));
+    peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), *scheduler));
     RegisterValidationInterface(peerLogic.get());
 
     const CArgsManager& appArgs = app().GetArgsManager();
@@ -232,7 +233,7 @@ bool CNetComponent::ComponentInitialize()
     netConnOptions.nMaxOutboundLimit = nMaxOutboundLimit;
     netConnOptions.nMaxFeeler = 1;
     netConnOptions.nBestHeight = ifChainObj->GetActiveChainHeight();
-    netConnOptions.uiInterface = &app().GetUIInterface();
+    netConnOptions.uiInterface = ifBaseObj->GetUIInterface();
     netConnOptions.m_msgproc = peerLogic.get();
     netConnOptions.nSendBufferMaxSize = 1000 * appArgs.GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
     netConnOptions.nReceiveFloodSize = 1000 * appArgs.GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
@@ -294,12 +295,12 @@ bool CNetComponent::ComponentStartup()
         return false;
     }
 
-//    GET_BASE_INTERFACE(ifbase);
-//    CScheduler* scheduler = ifbase->GetScheduler();
-//    if (!scheduler)
-//    {
-//        return false;
-//    }
+    GET_BASE_INTERFACE(ifbase);
+    CScheduler* scheduler = ifbase->GetScheduler();
+    if (!scheduler)
+    {
+        return false;
+    }
 
    const CArgsManager& appArgs = app().GetArgsManager();
 
@@ -313,12 +314,7 @@ bool CNetComponent::ComponentStartup()
     // Map ports with UPnP
     MapPort(appArgs.GetArg<bool>("upnp", DEFAULT_UPNP));
 
-    if (!netConnMgr->Start(app().GetScheduler(), netConnOptions))
-    {
-        return false;
-    }
-
-    return true;
+    return netConnMgr->Start(*scheduler, netConnOptions);
 }
 
 bool CNetComponent::ComponentShutdown()
