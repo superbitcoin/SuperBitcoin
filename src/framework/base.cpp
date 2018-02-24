@@ -1,8 +1,11 @@
 #include <thread>
 #include <chrono>
 #include <functional>
+#include <signal.h>
 #include "base.hpp"
 #include "config/argmanager.h"
+#include "config/chainparamsbase.h"
+#include "config/chainparams.h"
 
 using namespace appbase;
 
@@ -130,4 +133,60 @@ bool CApp::RegisterComponent(IComponent* component)
 
     return false;
 }
+
+
+static void HandleSIGTERM(int)
+{
+    app().RequestShutdown();
+}
+
+bool CApp::PreInit()
+{
+
+#ifndef WIN32
+    const CArgsManager &appArgs = app().GetArgsManager();
+    if (!appArgs.GetArg<bool>("sysperms", false))
+        umask(077);
+
+    // Clean shutdown on SIGTERM
+    signal(SIGTERM, (sighandler_t)HandleSIGTERM);
+    signal(SIGINT, (sighandler_t)HandleSIGTERM);
+
+    // Reopen debug.log on SIGHUP
+    // signal(SIGHUP, (sighandler_t)HandleSIGHUP);
+
+    // signal(SIGUSR1, (sighandler_t)reload_handler);
+
+    // Ignore SIGPIPE, otherwise it will bring the daemon down if the client closes unexpectedly
+    signal(SIGPIPE, SIG_IGN);
+#endif
+
+    // std::set_new_handler(new_handler_terminate);
+    //avoid mutity call
+    assert(scheduler == nullptr);
+    assert(eventManager == nullptr);
+    assert(uiInterface == nullptr);
+    scheduler.reset(new CScheduler);
+    eventManager.reset(new CEventManager);
+    uiInterface.reset(new CClientUIInterface);
+
+    return scheduler && eventManager;
+}
+
+
+CScheduler &CApp::GetScheduler()
+{
+    return *scheduler.get();
+}
+
+CEventManager &CApp::GetEventManager()
+{
+    return *eventManager.get();
+}
+
+CClientUIInterface &CApp::GetUIInterface()
+{
+    return *uiInterface.get();
+}
+
 
