@@ -48,7 +48,7 @@ inline appbase::CApp &app()
     return appbase::CApp::Instance();
 }
 inline log4cpp::Category &mlog() {
-    return appbase::CApp::Instance().mlog;
+    return appbase::CApp::mlog;
 }
 
 

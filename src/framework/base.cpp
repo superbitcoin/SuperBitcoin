@@ -3,8 +3,6 @@
 #include <functional>
 #include "base.hpp"
 #include "config/argmanager.h"
-#include "config/chainparamsbase.h"
-#include "config/chainparams.h"
 
 using namespace appbase;
 
@@ -44,7 +42,7 @@ bool CApp::InitParams(int argc, char *argv[])
     {
         if (!fs::is_directory(cArgs->GetDataDir(false)))
         {
-            fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n",
+            mlog.error("Error: Specified data directory \"%s\" does not exist.",
                     cArgs->GetArg<std::string>("-datadir", "").c_str());
             return false;
         }
@@ -55,7 +53,7 @@ bool CApp::InitParams(int argc, char *argv[])
         }
         catch (const std::exception &e)
         {
-            fprintf(stderr, "Error reading configuration file: %s\n", e.what());
+            mlog.error("Error reading configuration file: %s.", e.what());
             return false;
         }
 
@@ -66,7 +64,7 @@ bool CApp::InitParams(int argc, char *argv[])
             bool fTestNet = cArgs->IsArgSet("-testnet");
             if (fRegTest && fTestNet)
             {
-                fprintf(stderr, "Invalid combination of -regtest and -testnet.\n");
+                mlog.error("Invalid combination of -regtest and -testnet.");
                 return false;
             }
 
@@ -86,7 +84,7 @@ bool CApp::InitParams(int argc, char *argv[])
         }
         catch (const std::exception &e)
         {
-            fprintf(stderr, "Error: %s\n", e.what());
+            mlog.error("Error: %s.", e.what());
             return false;
         }
 

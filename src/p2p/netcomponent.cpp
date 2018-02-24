@@ -314,12 +314,7 @@ bool CNetComponent::ComponentStartup()
     // Map ports with UPnP
     MapPort(appArgs.GetArg<bool>("upnp", DEFAULT_UPNP));
 
-    if (!netConnMgr->Start(*scheduler, netConnOptions))
-    {
-        return false;
-    }
-
-    return true;
+    return netConnMgr->Start(*scheduler, netConnOptions);
 }
 
 bool CNetComponent::ComponentShutdown()
