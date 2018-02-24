@@ -6,6 +6,8 @@
 
 using namespace appbase;
 
+log4cpp::Category &CApp::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP));
+
 CApp &CApp::Instance()
 {
     static  CApp _app;
@@ -15,20 +17,6 @@ CApp &CApp::Instance()
 CApp::CApp()
     : nVersion(1), bShutdown(false), cArgs(new CArgsManager)
 {
-}
-
-CApp::~CApp()
-{
-}
-
-uint64_t CApp::Version() const
-{
-    return nVersion;
-}
-
-void CApp::SetVersion(uint64_t version)
-{
-    nVersion = version;
 }
 
 bool CApp::InitParams(int argc, char *argv[])
@@ -108,8 +96,6 @@ bool CApp::Initialize(int argc, char **argv)
     return InitParams(argc, argv) && ForEachComponent(true, [](IComponent* component){ return component->Initialize(); });
 }
 
-log4cpp::Category &CApp::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP));
-
 bool CApp::Startup()
 {
     return ForEachComponent(true, [](IComponent* component){ return component->Startup(); });
@@ -120,12 +106,13 @@ bool CApp::Shutdown()
     return ForEachComponent<std::function<bool(IComponent*)>, ReverseContainerIterator>(false, [](IComponent* component){ return component->Shutdown(); });
 }
 
-void CApp::Run()
+bool CApp::Run()
 {
     while (!bShutdown)
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
+    return true;
 }
 
 
@@ -144,24 +131,3 @@ bool CApp::RegisterComponent(IComponent* component)
     return false;
 }
 
-IComponent* CApp::FindComponent(int componentID) const
-{
-    auto it = m_mapComponents.find(componentID);
-    return it != m_mapComponents.end() ? it->second.get() : nullptr;
-}
-
-
-IComponent::state CApp::GetState() const
-{
-    return initialized;
-}
-
-bool CApp::Initialize()
-{
-    return false;
-}
-
-log4cpp::Category &CApp::getLog()
-{
-    return mlog;
-}

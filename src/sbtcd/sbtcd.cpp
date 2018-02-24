@@ -672,8 +672,8 @@ static bool InitializeLogging()
 
 int main(int argc, char **argv)
 {
-
     InitializeLogging();
+
     CApp &app = appbase::CApp::Instance();
     app.RegisterComponent(new CBaseComponent);
     app.RegisterComponent(new CChainCommonent);
@@ -681,14 +681,7 @@ int main(int argc, char **argv)
     app.RegisterComponent(new CHttpRpcComponent);
     app.RegisterComponent(new CNetComponent);
     app.RegisterComponent(new CWalletComponent);
-
-    if (app.Initialize(argc, argv))
-    {
-        if (app.Startup())
-        {
-            app.Run();
-        }
-    }
+    app.Initialize(argc, argv) && app.Startup() && app.Run();
     app.Shutdown();
     return 0;
 }

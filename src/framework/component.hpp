@@ -59,6 +59,19 @@ namespace appbase
             return false;
         }
 
+        virtual log4cpp::Category &getLog() override
+        {
+            assert(nullptr == "this funtion must been never called");
+            return log4cpp::Category::getRoot();
+        };
+
+        template<typename... Args>
+        bool error(const char *fmt, const Args &... args)
+        {
+            getLog().error(fmt, args ...);
+            return false;
+        }
+
     private:
         state _state = IComponent::registered;
     };
