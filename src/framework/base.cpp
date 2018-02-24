@@ -24,7 +24,8 @@ CApp::CApp()
 
 bool CApp::InitParams(int argc, char *argv[])
 {
-    if (!cArgs->Init(argc, argv))
+
+    if (!PreInit() || !cArgs->Init(argc, argv))
     {
         return false;
     }
