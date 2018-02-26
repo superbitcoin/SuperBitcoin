@@ -25,7 +25,7 @@ CApp::CApp()
 bool CApp::InitParams(int argc, char *argv[])
 {
 
-    if (!PreInit() || !cArgs->Init(argc, argv))
+    if (!cArgs->Init(argc, argv) || !PreInit())
     {
         return false;
     }
@@ -170,6 +170,8 @@ bool CApp::PreInit()
     scheduler.reset(new CScheduler);
     eventManager.reset(new CEventManager);
     uiInterface.reset(new CClientUIInterface);
+
+    schedulerThread = std::thread(&CScheduler::serviceQueue, scheduler.get());
 
     return scheduler && eventManager;
 }
