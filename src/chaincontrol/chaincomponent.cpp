@@ -1021,10 +1021,7 @@ bool CChainCommonent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, ui
     //    }
 
     bool fNewBlock = false;
-
-    ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock
-
-    );
+    ::ProcessNewBlock(app().GetChainParams(), pblock, forceProcessing, &fNewBlock);
     if (fNewBlock)
     {
         SetFlagsBit(xnode->retFlags, NF_NEWBLOCK);
@@ -1081,6 +1078,44 @@ bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
     assert(ret);
 
     return NetSendBlockTransactions(xnode, req, block);
+}
+
+bool CChainCommonent::ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
+{
+    return ::ProcessNewBlock(app().GetChainParams(), pblock, fForceProcessing, fNewBlock);
+
+//    const CChainParams &chainparams = app().GetChainParams();
+//    {
+//        CBlockIndex *pindex = nullptr;
+//        if (fNewBlock)
+//            *fNewBlock = false;
+//        CValidationState state;
+//        // Ensure that CheckBlock() passes before calling AcceptBlock, as
+//        // belt-and-suspenders.
+//        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus());
+//
+//        LOCK(cs_main);
+//
+//        if (ret)
+//        {
+//            // Store to disk
+//            ret = AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
+//        }
+//        CheckBlockIndex(chainparams.GetConsensus());
+//        if (!ret)
+//        {
+//            GetMainSignals().BlockChecked(*pblock, state);
+//            return error("%s: AcceptBlock FAILED", __func__);
+//        }
+//    }
+//
+//    NotifyHeaderTip();
+//
+//    CValidationState state; // Only used to report errors, not invalidity - ignore it
+//    if (!ActivateBestChain(state, chainparams, pblock))
+//        return error("%s: ActivateBestChain failed", __func__);
+//
+//    return true;
 }
 
 bool CChainCommonent::NetSendBlockTransactions(ExNode *xnode, const BlockTransactionsRequest &req, const CBlock &block)

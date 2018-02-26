@@ -3771,7 +3771,8 @@ bool PeerLogicValidation::ProcessBlockTxnMsg(CNode *pfrom, CDataStream &vRecv)
         // disk-space attacks), but this should be safe due to the
         // protections in the compact block handler -- see related comment
         // in compact block optimistic reconstruction handling.
-        ProcessNewBlock(Params(), pblock, /*fForceProcessing=*/true, &fNewBlock);
+        GET_CHAIN_INTERFACE(ifChainObj);
+        ifChainObj->ProcessNewBlock(pblock, /*fForceProcessing=*/true, &fNewBlock);
         if (fNewBlock)
         {
             pfrom->nLastBlockTime = GetTime();

@@ -203,6 +203,8 @@ public:
 
     bool NetRequestBlockTxn(ExNode *xnode, CDataStream &stream) override;
 
+    bool ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock) override;
+
     log4cpp::Category &getLog() override;
 
 private:
