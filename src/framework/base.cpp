@@ -145,9 +145,9 @@ bool CApp::PreInit()
 {
 
 #ifndef WIN32
-    const CArgsManager &appArgs = app().GetArgsManager();
-    if (!appArgs.GetArg<bool>("sysperms", false))
-        umask(077);
+//    const CArgsManager &appArgs = app().GetArgsManager();
+//    if (!appArgs.GetArg<bool>("sysperms", false))
+//        umask(077);
 
     // Clean shutdown on SIGTERM
     signal(SIGTERM, (sighandler_t)HandleSIGTERM);

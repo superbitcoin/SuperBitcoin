@@ -7,6 +7,7 @@
 #include "chaincontrol/chain.h"
 #include "chaincontrol/coins.h"
 #include "chaincontrol/validation.h"
+#include "chaincontrol/blockfilemanager.h"
 #include "sbtccore/core_io.h"
 #include "framework/init.h"
 #include "framework/base.hpp"
@@ -1008,8 +1009,8 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         const Coin &existingCoin = view.AccessCoin(COutPoint(hashTx, o));
         fHaveChain = !existingCoin.IsSpent();
     }
-    CTxMemPool* txmempool = (CTxMemPool*)appbase::CApp::Instance().FindComponent<CTxMemPool>();
-    if(!txmempool)
+    CTxMemPool *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<CTxMemPool>();
+    if (!txmempool)
     {
         throw std::runtime_error("find txmempool component fail!\n");
     }
@@ -1021,7 +1022,7 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         bool fMissingInputs;
         bool fLimitFree = true;
         if (!txmempool->AcceptToMemoryPool(state, std::move(tx), fLimitFree, &fMissingInputs, nullptr, false,
-                                nMaxRawTxFee))
+                                           nMaxRawTxFee))
         {
             if (state.IsInvalid())
             {

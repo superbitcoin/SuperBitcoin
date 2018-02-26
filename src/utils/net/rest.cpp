@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "chaincontrol/chain.h"
+#include "chaincontrol/blockfilemanager.h"
 #include "config/chainparams.h"
 #include "sbtccore/core_io.h"
 #include "block/block.h"

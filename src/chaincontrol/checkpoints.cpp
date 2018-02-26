@@ -17,10 +17,8 @@
 #include <stdint.h>
 #include <univalue/include/univalue.h>
 
-
 namespace Checkpoints
 {
-
 
     CBlockIndex *GetLastCheckpoint(const CCheckpointData &data)
     {
@@ -37,7 +35,6 @@ namespace Checkpoints
         return nullptr;
     }
 
-
     CBlockIndex const *GetLastCheckPointBlockIndex(const CCheckpointData &data)
     {
         LOCK(cs_main);
@@ -52,7 +49,6 @@ namespace Checkpoints
         }
         return nullptr;
     }
-
 
     bool GetCheckpointByHeight(const int nHeight, std::vector<CCheckData> &vnCheckPoints)
     {
@@ -69,7 +65,6 @@ namespace Checkpoints
         }
         return !vnCheckPoints.empty();
     }
-
 
     CCheckData::CCheckData()
     {
@@ -102,7 +97,6 @@ namespace Checkpoints
         }
         return true;
     }
-
 
     UniValue CCheckData::ToJsonObj()
     {
@@ -146,7 +140,6 @@ namespace Checkpoints
     {
         CCheckData::m_vchSig = m_vchSig;
     }
-
 
     CCheckPointDB::CCheckPointDB() : db(GetDataDir() / ("checkpoint" + Params().NetworkIDString()), 0)
     {
@@ -194,6 +187,5 @@ namespace Checkpoints
 
         return values.size() > 0;
     }
-
 
 } // namespace Checkpoints

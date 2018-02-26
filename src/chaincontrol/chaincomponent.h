@@ -185,6 +185,7 @@ public:
 
     bool GetActiveChainTipHash(uint256 &tipHash) override;
 
+    CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) override;
 
     // P2P network message response.
     bool NetRequestCheckPoint(ExNode *xnode, int height) override;
@@ -282,7 +283,7 @@ private:
 
     int VerifyBlocks();
 
-    bool ThreadImport();
+    void ThreadImport();
 
     bool LoadExternalBlockFile(const CChainParams &chainparams, FILE *fileIn, CDiskBlockPos *dbp);
 
@@ -293,13 +294,15 @@ private:
     void NotifyHeaderTip();
 
     /** Abort with a message */
-    bool AbortNode(const std::string &strMessage, const std::string &userMessage="");
+    bool AbortNode(const std::string &strMessage, const std::string &userMessage = "");
 
 
-    bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage="");
+    bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage = "");
+
+    bool LoadCheckPoint();
 
 public:
-    static log4cpp::Category &  mlog;
+    static log4cpp::Category &mlog;
 
 
 };

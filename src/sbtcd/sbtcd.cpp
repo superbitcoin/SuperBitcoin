@@ -42,7 +42,7 @@
 #include "utils/net/httpserver.h"
 #include "utils/net/httprpc.h"
 #include "utils/utilstrencodings.h"
-#include "config/checkpoints.h"
+#include "chaincontrol/checkpoints.h"
 
 #include <csignal>
 #include <string>
@@ -102,25 +102,6 @@ void WaitForShutdown(boost::thread_group *threadGroup)
         Interrupt(*threadGroup);
         threadGroup->join_all();
     }
-}
-
-
-bool LoadCheckPoint()
-{
-    Checkpoints::CCheckPointDB cCheckPointDB;
-    std::map<int, Checkpoints::CCheckData> values;
-
-    if (cCheckPointDB.LoadCheckPoint(values))
-    {
-        std::map<int, Checkpoints::CCheckData>::iterator it = values.begin();
-        while (it != values.end())
-        {
-            Checkpoints::CCheckData data1 = it->second;
-            Params().AddCheckPoint(data1.getHeight(), data1.getHash());
-            it++;
-        }
-    }
-    return true;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -491,126 +472,6 @@ void PrintVersion()
 {
     std::cout << strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" +
                  FormatParagraph(LicenseInfo()) << std::endl;
-}
-
-
-bool AppInit(int argc, char *argv[])
-{
-    boost::thread_group threadGroup;
-    CScheduler scheduler;
-
-    bool fRet = false;
-
-    //
-    // Parameters
-    //
-    // If Qt is used, parameters/bitcoin.conf are parsed in qt/bitcoin.cpp's main()
-    vector<string> argv_arr_tmp;
-    vector<const char *> argv_arr;
-    GenerateOptFormat(argc, (const char **)argv, argv_arr_tmp, argv_arr);
-    bpo::options_description *app = new bpo::options_description("sbtcd");
-    if (!gArgs.InitPromOptions(InitPromOptions, app, argv_arr.size(), &argv_arr[0], HMM_BITCOIND))
-    {
-        return false;
-    }
-
-    if (gArgs.PrintHelpMessage(PrintVersion))
-    {
-        return true;
-    }
-
-    try
-    {
-        if (!fs::is_directory(GetDataDir(false)))
-        {
-            fprintf(stderr, "Error: Specified data directory \"%s\" does not exist.\n",
-                    gArgs.GetArg<std::string>("-datadir", "").c_str());
-            return false;
-        }
-        try
-        {
-            gArgs.ReadConfigFile(gArgs.GetArg<std::string>("-conf", BITCOIN_CONF_FILENAME));
-        } catch (const std::exception &e)
-        {
-            fprintf(stderr, "Error reading configuration file: %s\n", e.what());
-            return false;
-        }
-        // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
-        try
-        {
-            SelectParams(ChainNameFromCommandLine());
-        } catch (const std::exception &e)
-        {
-            fprintf(stderr, "Error: %s\n", e.what());
-            return false;
-        }
-
-        // -server defaults to true for bitcoind but not for the GUI so do this here
-        gArgs.SoftSetArg("-server", true);
-
-        // Set this early so that parameter interactions go to console
-        InitLogging();
-        InitParameterInteraction();
-        if (!AppInitBasicSetup())
-        {
-            // InitError will have been called with detailed error, which ends up on console
-            exit(EXIT_FAILURE);
-        }
-        if (!AppInitParameterInteraction())
-        {
-            // InitError will have been called with detailed error, which ends up on console
-            exit(EXIT_FAILURE);
-        }
-        if (!AppInitSanityChecks())
-        {
-            // InitError will have been called with detailed error, which ends up on console
-            exit(EXIT_FAILURE);
-        }
-        if (gArgs.GetArg<bool>("-daemon", false))
-        {
-#if HAVE_DECL_DAEMON
-            fprintf(stdout, "Bitcoin server starting\n");
-
-            // Daemonize
-            if (daemon(1, 0))
-            { // don't chdir (1), do close FDs (0)
-                fprintf(stderr, "Error: daemon() failed: %s\n", strerror(errno));
-                return false;
-            }
-#else
-            fprintf(stderr, "Error: -daemon is not supported on this operating system\n");
-            return false;
-#endif // HAVE_DECL_DAEMON
-        }
-        // Lock data directory after daemonization
-        if (!AppInitLockDataDirectory())
-        {
-            // If locking the data directory failed, exit immediately
-            exit(EXIT_FAILURE);
-        }
-
-        LoadCheckPoint();
-        fRet = AppInitMain(threadGroup, scheduler);
-    }
-    catch (const std::exception &e)
-    {
-        PrintExceptionContinue(&e, "AppInit()");
-    } catch (...)
-    {
-        PrintExceptionContinue(nullptr, "AppInit()");
-    }
-
-    if (!fRet)
-    {
-        Interrupt(threadGroup);
-        threadGroup.join_all();
-    } else
-    {
-        WaitForShutdown(&threadGroup);
-    }
-    Shutdown();
-
-    return fRet;
 }
 
 #include <iostream>

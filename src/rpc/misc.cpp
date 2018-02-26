@@ -38,7 +38,7 @@
 #endif
 
 #include <univalue.h>
-#include <config/checkpoints.h>
+#include <chaincontrol/checkpoints.h>
 #include <chaincontrol/validation.h>
 #include <p2p/netmessagemaker.h>
 

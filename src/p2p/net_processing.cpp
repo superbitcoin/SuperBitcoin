@@ -38,7 +38,8 @@
 #include "interface/imempoolcomponent.h"
 #include "interface/exchangeformat.h"
 #include "interface/ichaincomponent.h"
-#include "config/checkpoints.h"
+#include "chaincontrol/checkpoints.h"
+#include "chaincontrol/blockfilemanager.h"
 
 #if defined(NDEBUG)
 # error "Super Bitcoin cannot be compiled without assertions."

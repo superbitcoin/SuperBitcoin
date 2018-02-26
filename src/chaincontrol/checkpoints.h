@@ -23,7 +23,6 @@ struct CCheckpointData;
 namespace Checkpoints
 {
 
-
     class CCheckData
     {
     public:
@@ -85,7 +84,6 @@ namespace Checkpoints
     protected:
         CDBWrapper db;
     };
-
 
     //! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
     CBlockIndex *GetLastCheckpoint(const CCheckpointData &data);

@@ -14,7 +14,7 @@
 #include <script/standard.h>
 
 #include "chainparamsseeds.h"
-#include "checkpoints.h"
+#include "chaincontrol/checkpoints.h"
 #include "utils/base58.h"
 
 
