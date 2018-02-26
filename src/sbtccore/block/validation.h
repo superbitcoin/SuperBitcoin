@@ -443,12 +443,6 @@ void AlertNotify(const std::string &strMessage);
 /** Initializes the script-execution cache */
 void InitScriptExecutionCache();
 
-
-/** Functions for disk access for blocks */
-bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus::Params &consensusParams);
-
-bool ReadBlockFromDisk(CBlock &block, const CBlockIndex *pindex, const Consensus::Params &consensusParams);
-
 /** Functions for validating blocks and updating the block tree */
 
 /** Context-independent validity checks */

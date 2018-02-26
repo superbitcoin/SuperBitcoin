@@ -7,6 +7,7 @@
 #include "utils/base58.h"
 #include "chaincontrol/chain.h"
 #include "chaincontrol/validation.h"
+#include "chaincontrol/blockfilemanager.h"
 #include "sbtccore/core_io.h"
 #include "framework/init.h"
 #include "utils/net/httpserver.h"

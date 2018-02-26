@@ -74,6 +74,8 @@ public:
 
     CBlockIndex *AddToBlockIndex(const CBlockHeader &block);
 
+    CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator);
+
     CBlockIndex *FindMostWorkIndex();
 
     int LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, const CChainParams &chainparams);
@@ -178,7 +180,7 @@ private:
 
 
 public:
-    static log4cpp::Category & mlog;
+    static log4cpp::Category &mlog;
 };
 
 #endif // !defined(__SBTC_BLOCKINDEXMANAGER_H__)

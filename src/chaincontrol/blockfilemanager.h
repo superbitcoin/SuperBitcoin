@@ -42,6 +42,11 @@ FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
 
 FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 
+/** Functions for disk access for blocks */
+bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus::Params &consensusParams);
+
+bool ReadBlockFromDisk(CBlock &block, const CBlockIndex *pindex, const Consensus::Params &consensusParams);
+
 bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHeader::MessageStartChars &messageStart);
 
 void FlushBlockFile(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize = false);

@@ -29,6 +29,26 @@ std::vector<CBlockFileInfo> CBlockIndexManager::GetBlockFileInfo()
     return vecBlockFileInfo;
 }
 
+CBlockIndex *CBlockIndexManager::FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator)
+{
+    // Find the first block the caller has in the main chain
+    for (const uint256 &hash : locator.vHave)
+    {
+        BlockMap::iterator mi = mBlockIndex.find(hash);
+        if (mi != mBlockIndex.end())
+        {
+            CBlockIndex *pindex = (*mi).second;
+            if (chain.Contains(pindex))
+                return pindex;
+            if (pindex->GetAncestor(chain.Height()) == chain.Tip())
+            {
+                return chain.Tip();
+            }
+        }
+    }
+    return chain.Genesis();
+}
+
 CBlockIndex *CBlockIndexManager::FindMostWorkIndex()
 {
     do
@@ -480,14 +500,14 @@ void CBlockIndexManager::InvalidChainFound(CBlockIndex *pIndexNew)
         pIndexBestInvalid = pIndexNew;
 
     mlog.notice("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s", __func__,
-              pIndexNew->GetBlockHash().ToString(), pIndexNew->nHeight,
-              log(pIndexNew->nChainWork.getdouble()) / log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
-                                                                                   pIndexNew->GetBlockTime()));
+                pIndexNew->GetBlockHash().ToString(), pIndexNew->nHeight,
+                log(pIndexNew->nChainWork.getdouble()) / log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
+                                                                                     pIndexNew->GetBlockTime()));
     CBlockIndex *tip = cChainActive.Tip();
     assert (tip);
     mlog.notice("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s", __func__,
-              tip->GetBlockHash().ToString(), cChainActive.Height(), log(tip->nChainWork.getdouble()) / log(2.0),
-              DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
+                tip->GetBlockHash().ToString(), cChainActive.Height(), log(tip->nChainWork.getdouble()) / log(2.0),
+                DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
     //    CheckForkWarningConditions();
 }
 
@@ -530,8 +550,8 @@ void CBlockIndexManager::CheckBlockIndex(const Consensus::Params &consensusParam
 
     assert(forward.size() == mBlockIndex.size());
 
-//    std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> rangeGenesis = forward.equal_range(
-//            nullptr);
+    //    std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> rangeGenesis = forward.equal_range(
+    //            nullptr);
     auto rangeGenesis = forward.equal_range(nullptr);
 
     CBlockIndex *pindex = rangeGenesis.first->second;
@@ -800,7 +820,8 @@ void CBlockIndexManager::CheckForkWarningConditions()
         }
         if (pIndexBestForkTip && pIndexBestForkBase)
         {
-            mlog.warn("%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n",
+            mlog.warn(
+                    "%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n",
                     __func__,
                     pIndexBestForkBase->nHeight, pIndexBestForkBase->phashBlock->ToString(),
                     pIndexBestForkTip->nHeight, pIndexBestForkTip->phashBlock->ToString());
@@ -1012,7 +1033,9 @@ bool CBlockIndexManager::CheckBlockHeader(const CBlockHeader &block, CValidation
 
     return true;
 }
+
 log4cpp::Category &CBlockIndexManager::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
+
 /** Context-dependent validity checks.
  *  By "context", we mean only the previous block headers, but not the UTXO
  *  set; UTXO-related validity checks are done in ConnectBlock(). */

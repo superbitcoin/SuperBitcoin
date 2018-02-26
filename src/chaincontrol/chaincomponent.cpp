@@ -1,4 +1,6 @@
 #include <iostream>
+#include<thread>      //std::thread
+
 #include "chaincomponent.h"
 #include "sbtccore/streams.h"
 #include "interface/inetcomponent.h"
@@ -48,14 +50,16 @@ bool CChainCommonent::ComponentInitialize()
     std::cout << "initialize chain component \n";
 
 
-//    GET_BASE_INTERFACE(ifBaseObj);
-//    assert(ifBaseObj != nullptr);
+    //    GET_BASE_INTERFACE(ifBaseObj);
+    //    assert(ifBaseObj != nullptr);
 
-    app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this,&CChainCommonent::OnNodeDisconnected);
+    app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainCommonent::OnNodeDisconnected);
 
 
     const CChainParams &chainParams = app().GetChainParams();
     const CArgsManager &cArgs = app().GetArgsManager();
+
+    LoadCheckPoint();
 
     // block pruning; get the amount of disk space (in MiB) to allot for block & undo files
     int64_t iPruneArg = cArgs.GetArg<int32_t>("-prune", 0);
@@ -269,7 +273,8 @@ bool CChainCommonent::ComponentStartup()
     std::cout << "startup chain component \n";
     bRequestShutdown = false;
 
-    return ThreadImport();
+    std::thread t(std::bind(&CChainCommonent::ThreadImport, this));
+    return true;
 }
 
 bool CChainCommonent::ComponentShutdown()
@@ -470,7 +475,7 @@ bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
     LOCK(cs_main);
 
     // Find the last block the caller has in the main chain
-    const CBlockIndex *pindex = FindForkInGlobalIndex(chainActive, locator);
+    const CBlockIndex *pindex = cIndexManager.FindForkInGlobalIndex(chainActive, locator);
 
     // Send the rest of the chain
     if (pindex)
@@ -539,7 +544,7 @@ bool CChainCommonent::NetRequestHeaders(ExNode *xnode, CDataStream &stream)
     } else
     {
         // Find the last block the caller has in the main chain
-        pindex = FindForkInGlobalIndex(cIndexManager.GetChain(), locator);
+        pindex = cIndexManager.FindForkInGlobalIndex(cIndexManager.GetChain(), locator);
         if (pindex)
             pindex = cIndexManager.GetChain().Next(pindex);
     }
@@ -2451,7 +2456,7 @@ int CChainCommonent::VerifyBlocks()
     return OK_CHAIN;
 }
 
-bool CChainCommonent::ThreadImport()
+void CChainCommonent::ThreadImport()
 {
     RenameThread("bitcoin-loadblk");
 
@@ -2481,7 +2486,7 @@ bool CChainCommonent::ThreadImport()
     {
         if (!LoadGenesisBlock(chainParams))
         {
-            return false;
+            return;
         }
     }
 
@@ -2520,13 +2525,13 @@ bool CChainCommonent::ThreadImport()
     if (!ActivateBestChain(state, chainParams, nullptr))
     {
         mlog.info("Failed to connect best block");
-        return false;
+        return;
     }
 
     if (cArgs.GetArg<bool>("-stopafterblockimport", DEFAULT_STOPAFTERBLOCKIMPORT))
     {
         mlog.info("Stopping after block import");
-        return false;
+        return;
     }
 }
 
@@ -2812,6 +2817,31 @@ bool CChainCommonent::AbortNode(CValidationState &state, const std::string &strM
 {
     AbortNode(strMessage, userMessage);
     return state.Error(strMessage);
+}
+
+bool CChainCommonent::LoadCheckPoint()
+{
+    Checkpoints::CCheckPointDB cCheckPointDB;
+    std::map<int, Checkpoints::CCheckData> values;
+
+    const CChainParams &chainParams = app().GetChainParams();
+
+    if (cCheckPointDB.LoadCheckPoint(values))
+    {
+        std::map<int, Checkpoints::CCheckData>::iterator it = values.begin();
+        while (it != values.end())
+        {
+            Checkpoints::CCheckData data1 = it->second;
+            chainParams.AddCheckPoint(data1.getHeight(), data1.getHash());
+            it++;
+        }
+    }
+    return true;
+}
+
+CBlockIndex *CChainCommonent::FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator)
+{
+    return cIndexManager.FindForkInGlobalIndex(chain, locator);
 }
 
 log4cpp::Category &CChainCommonent::getLog()
