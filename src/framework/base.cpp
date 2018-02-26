@@ -171,6 +171,8 @@ bool CApp::PreInit()
     eventManager.reset(new CEventManager);
     uiInterface.reset(new CClientUIInterface);
 
+    schedulerThread = std::thread(&CScheduler::serviceQueue, scheduler.get());
+
     return scheduler && eventManager;
 }
 

@@ -1,15 +1,15 @@
 #pragma once
 
 #include <map>
-#include <atomic>
 #include <memory>
-#include <interface/componentid.h>
 #include <thread>
-#include <eventmanager/eventmanager.h>
 #include "icomponent.h"
 #include "utils/iterator.h"
 #include "ui_interface.h"
 #include "scheduler.h"
+#include "interface/componentid.h"
+#include "eventmanager/eventmanager.h"
+
 class CArgsManager;
 class CChainParams;
 class CBaseChainParams;
@@ -102,27 +102,24 @@ namespace appbase
             return *cBaseChainParams.get();
         }
 
-
     public:
-        bool PreInit();
-
         CScheduler& GetScheduler() ;
 
         CEventManager& GetEventManager() ;
 
         CClientUIInterface& GetUIInterface();
 
-
     private:
         std::thread schedulerThread;
         std::unique_ptr<CScheduler>    scheduler;
         std::unique_ptr<CEventManager> eventManager;
         std::unique_ptr<CClientUIInterface> uiInterface;
+
     private:
-        CApp(); ///< private because CBase is a singleton that should be accessed via instance()
+        CApp();
         CApp(const CApp& ) = delete;
         CApp& operator=(const CApp& ) = delete;
-
+        bool PreInit();
         bool InitParams(int argc, char *argv[]);
 
     private:
