@@ -52,12 +52,12 @@ bool CTxMemPool::ComponentShutdown()
 }
 
 bool CTxMemPool::AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                        bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,
-                        bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
+                        bool *pfMissingInputs, bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
 {
+    std::list<CTransactionRef> TxnReplaced;
     const CChainParams& chainparams = app().GetChainParams();
     return AcceptToMemoryPoolWithTime(chainparams, state, tx, fLimitFree, pfMissingInputs, GetTime(),
-                                      plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee);
+                                      &TxnReplaced, fOverrideMempoolLimit, nAbsurdFee);
 }
 
 /** (try to) add transaction to memory pool with a specified acceptance time **/
@@ -589,7 +589,7 @@ void CTxMemPool::UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnect
         // ignore validation errors in resurrected transactions
         CValidationState stateDummy;
         if (!fAddToMempool || (*it)->IsCoinBase() ||
-            !AcceptToMemoryPool(stateDummy, *it, false, nullptr, nullptr, true))
+            !AcceptToMemoryPool(stateDummy, *it, false, nullptr, true))
         {
             // If the transaction doesn't make it in to the mempool, remove any
             // transactions that depend on it (which would now be orphans).

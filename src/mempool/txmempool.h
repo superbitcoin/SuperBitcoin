@@ -183,12 +183,7 @@ public:
     /** (try to) add transaction to memory pool
         * plTxnReplaced will be appended to with all transactions replaced from mempool **/
     virtual bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                                        bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced = nullptr,
-                                        bool fOverrideMempoolLimit = false, const CAmount nAbsurdFee = 0);
-
-//    bool AcceptToMemoryPool(CTxMemPool& pool, CValidationState &state, const CTransactionRef &tx,
-//                            bool* pfMissingInputs, std::list<CTransactionRef>* plTxnReplaced,
-//                            bool bypass_limits, const CAmount nAbsurdFee);
+                                    bool *pfMissingInputs, bool fOverrideMempoolLimit = false, const CAmount nAbsurdFee = 0);
 
     /** (try to) add transaction to memory pool with a specified acceptance time **/
     bool AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CValidationState &state,
@@ -210,13 +205,13 @@ public:
     bool CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &view,
                                         unsigned int flags, bool cacheSigStore, PrecomputedTransactionData &txdata);
 
-    virtual void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool fAddToMempool);
+    void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool fAddToMempool);
 
     /** Dump the mempool to disk. */
-    virtual void DumpMempool();
+    void DumpMempool();
 
     /** Load the mempool from disk. */
-    virtual bool LoadMempool();
+    bool LoadMempool();
 
     /**
      * Check if transaction will be BIP 68 final in the next block to be created.
@@ -229,7 +224,7 @@ public:
      *
      * See consensus/consensus.h for flag definitions.
      */
-    virtual bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
+    bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
 
 private:
     typedef std::map<txiter, setEntries, CompareIteratorByHash> cacheMap;
