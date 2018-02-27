@@ -13,6 +13,7 @@
 class CArgsManager;
 class CChainParams;
 class CBaseChainParams;
+class ECCVerifyHandle;
 
 namespace appbase
 {
@@ -102,25 +103,34 @@ namespace appbase
             return *cBaseChainParams.get();
         }
 
-    public:
-        CScheduler& GetScheduler() ;
+        CScheduler& GetScheduler()
+        {
+            return *scheduler.get();
+        }
 
-        CEventManager& GetEventManager() ;
+        CEventManager& GetEventManager()
+        {
+            return *eventManager.get();
+        }
 
-        CClientUIInterface& GetUIInterface();
-
-    private:
-        std::thread schedulerThread;
-        std::unique_ptr<CScheduler>    scheduler;
-        std::unique_ptr<CEventManager> eventManager;
-        std::unique_ptr<CClientUIInterface> uiInterface;
+        CClientUIInterface& GetUIInterface()
+        {
+            return *uiInterface.get();
+        }
 
     private:
         CApp();
         CApp(const CApp& ) = delete;
         CApp& operator=(const CApp& ) = delete;
-        bool PreInit();
-        bool InitParams(int argc, char *argv[]);
+
+        void InitParameterInteraction();
+        bool AppInitBasicSetup();
+        bool AppInitParameterInteraction();
+        bool AppInitSanityChecks();
+        bool AppInitLockDataDirectory();
+
+        bool AppInitialize(int argc, char *argv[]);
+        bool ComponentInitialize();
 
     private:
         uint64_t nVersion;
@@ -128,6 +138,13 @@ namespace appbase
         std::unique_ptr<CArgsManager> cArgs;
         std::unique_ptr<CChainParams> cChainParams;
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
+
+        std::thread schedulerThread;
+        std::unique_ptr<CScheduler>    scheduler;
+        std::unique_ptr<CEventManager> eventManager;
+        std::unique_ptr<CClientUIInterface> uiInterface;
+        std::unique_ptr<ECCVerifyHandle> globalVerifyHandle;
+
         std::map<int, std::unique_ptr<IComponent>> m_mapComponents; ///< all registered plugins ordered by id.
     };
 }
