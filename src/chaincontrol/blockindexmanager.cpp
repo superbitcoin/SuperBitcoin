@@ -9,6 +9,7 @@
 #include "blockfilemanager.h"
 #include "framework/warnings.h"
 #include "chain.h"
+#include "utils/timedata.h"
 
 CBlockIndexManager::CBlockIndexManager()
 {
@@ -1298,7 +1299,7 @@ bool CBlockIndexManager::ResetBlockFailureFlags(CBlockIndex *pindex)
 }
 
 int64_t CBlockIndexManager::GetBlockProofEquivalentTime(uint256 hashAssumeValid, const CBlockIndex *pindex,
-                                                     const CChainParams &params)
+                                                        const CChainParams &params)
 {
     // We've been configured with the hash of a block which has been externally verified to have a valid history.
     // A suitable default value is included with the software and updated from time to time.  Because validity

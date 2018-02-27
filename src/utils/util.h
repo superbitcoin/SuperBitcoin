@@ -35,7 +35,10 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
-#include <framework/base.hpp>
+#include "framework/base.hpp"
+#include "config/argmanager.h"
+
+#define USING_LOG4CPP
 
 
 namespace bpo = boost::program_options;
@@ -51,7 +54,8 @@ inline log4cpp::Category &mlog() {
     return appbase::CApp::mlog;
 }
 
-
+class CArgsManager;
+extern CArgsManager gArgs;
 
 #define _TXT__(x) #x
 #define EMTOSTR(EM) _TXT__(EM)
@@ -174,6 +178,9 @@ static inline void MarkUsed(const T &t, const Args &... args)
     MarkUsed(args...);
 }
 
+#ifdef USING_LOG4CPP
+# define USE_COVERAGE
+#endif
 #ifdef USE_COVERAGE
 #define LogPrintf(...) do { MarkUsed(__VA_ARGS__); } while(0)
 #define LogPrint(category, ...) do { MarkUsed(__VA_ARGS__); } while(0)
@@ -215,7 +222,7 @@ static inline void MarkUsed(const T &t, const Args &... args)
 template<typename... Args>
 bool error(const char *fmt, const Args &... args)
 {
-    LogPrintStr("ERROR: " + tfm::format(fmt, args...) + "\n");
+    //LogPrintStr("ERROR: " + tfm::format(fmt, args...) + "\n");
     return false;
 }
 
@@ -267,227 +274,6 @@ inline bool IsSwitchChar(char c)
 #endif
 }
 
-class ArgsManager
-{
-private:
-    // if the option has multiple arguments, add to this arr
-    vector<string> options_arr;
-
-private:
-    bool merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source);
-
-    const std::string SubPrefix(std::string str);
-
-protected:
-    CCriticalSection cs_args;
-    std::map<std::string, std::string> mapArgs;
-    std::map<std::string, std::vector<std::string> > mapMultiArgs;
-
-    /************reconfiguration****************/
-    bpo::options_description *app;
-    bpo::variables_map vm;
-    //    std::string version;
-    /************reconfiguration****************/
-public:
-    ArgsManager()
-    {
-        options_arr =
-                {
-                        "loadblock",
-                        "addnode",
-                        "bind",
-                        "connect",
-                        "externalip",
-                        "onlynet",
-                        "seednode",
-                        "whitebind",
-                        "whitelist",
-                        "wallet",
-                        "uacomment",
-                        "vbparams",
-                        "debug",
-                        "debugexclude",
-                        "rpcbind",
-                        "rpcauth",
-                        "rpcallowip"
-                };
-
-    }
-
-    static bool InterpretBool(const std::string &strValue);
-
-    void ParseParameters(int argc, const char *const argv[]);
-
-    void ReadConfigFile(const std::string &confPath);
-
-    std::vector<std::string> GetArgs(const std::string &strArg);
-    //    const std::string& GetVersion() const { return version; }
-
-    bool PrintHelpMessage(std::function<void(void)>);   // because of compilation
-
-    /**
-     * Return true if initialize program options seccess
-     *
-     * @param callback Argument to execute initialization
-     * @param argc the number of arguments
-     * @param argv arguments
-     * @param mode The help message mode determines what help message to show
-     * @return true if the argument has been set
-     */
-    bool InitPromOptions(
-            std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv,
-                               HelpMessageMode mode)> callback, bpo::options_description *app, int argc,
-            const char **argv, HelpMessageMode mode);
-
-    /**
-     * Return true if the given argument has been manually set
-     *
-     * @param strArg Argument to get (e.g. "--foo")
-     * @return true if the argument has been set
-     */
-    bool IsArgSet(const std::string &strArg);
-
-    /**
-     * Return string argument or default value
-     *
-     * @param strArg Argument to get (e.g. "--foo")
-     * @param strDefault (e.g. "1")
-     * @return command-line argument or default value
-     */
-
-    template<class T>
-    const T GetArg(const std::string &strArg, T const &tDefault)
-    {
-        LOCK(cs_args);
-        std::string tmp_strArg = SubPrefix(strArg);
-        if (vm.count(tmp_strArg))
-        {
-            if (typeid(T) == typeid(bool))
-            {
-                std::string str = vm[tmp_strArg].as<std::string>();
-                bool te = InterpretBool(str);
-                T *pte = (T *)&te;
-                return *pte;
-            } else
-            {
-                return vm[tmp_strArg].as<T>();
-            }
-        }
-        return tDefault;
-    };
-
-    //    template <class T ,class  T2>
-    //    const T GetArg(const T2 strArg, const T& strDefault);
-    /**
-     * Set an argument if it doesn't already have a value
-     *
-     * @param strArg Argument to set (e.g. "--foo")
-     * @param strValue Value (e.g. "1")
-     * @return true if argument gets set, false if it already had a value
-     */
-    template<typename T>
-    bool SoftSetArg(const std::string &strArg, const T &value)
-    {
-        LOCK(cs_args);
-
-        std::string tmp_strArg = SubPrefix(strArg);
-        if (vm.count(tmp_strArg))
-        {
-            return false;
-        }
-
-        if (typeid(T) == typeid(bool))
-        {
-            bool const *const pbool = (bool const *const)&value;
-            string value_tmp = *pbool ? "yes" : "no";
-            vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(string(value_tmp)), false)));
-            return true;
-        }
-
-        if (typeid(T) == typeid(std::string))
-        {
-            vector<string>::iterator ite = find(options_arr.begin(), options_arr.end(), tmp_strArg);
-
-            // not an array
-            if (ite == options_arr.end())
-            {
-                auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(T(value)),
-                                                                                    false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
-                return res.second;
-            }
-
-            // the option is an array
-            auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<T>({value})),
-                                                                                false)));   // std::pair< map<string, bpo::variable_value>::iterator, bool >
-            return res.second;
-        }
-
-        vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(T(value)), false)));
-        return true;
-    }
-
-    //    bool SoftSetArg(const std::string& strArg, const std::string& strValue);
-    //
-    //    /**
-    //     * Set an argument if it doesn't already have a value
-    //     *
-    //     * @param strArg Argument to set (e.g. "--foo")
-    //     * @param strValue Value (e.g. "1")
-    //     * @return true if argument gets set, false if it already had a value
-    //     */
-    //    bool SoftSetArg(const std::string& strArg, const uint64_t& intValue);
-    //
-    //    /**
-    //     * Set an argument if it doesn't already have a value
-    //     *
-    //     * @param strArg Argument to set (e.g. "--foo")
-    //     * @param strValue Value (e.g. 1)
-    //     * @return true if argument gets set, false if it already had a value
-    //     */
-    //    bool SoftSetArg(const std::string& strArg, const int32_t& value);
-    //
-    //    /**
-    //     * Set an argument if it doesn't already have a value
-    //     *
-    //     * @param strArg Argument to set (e.g. "--foo")
-    //     * @param strValue Value (e.g. 1)
-    //     * @return true if argument gets set, false if it already had a value
-    //     */
-    //    bool SoftSetArg(const std::string& strArg, const uint32_t& intValue);
-    //
-    //    /**
-    //     * Set an argument if it doesn't already have a value
-    //     *
-    //     * @param strArg Argument to set (e.g. "--foo")
-    //     * @param strValue Value (e.g. 1L)
-    //     * @return true if argument gets set, false if it already had a value
-    //     */
-    //    bool SoftSetArg(const std::string& strArg, const int64_t& value);
-    //
-    //    /**
-    //     * Set an argument if it doesn't already have a value
-    //     *
-    //     * @param strArg Argument to set (e.g. "--foo")
-    //     * @param strValue Values
-    //     * @return true if argument gets set, false if it already had a value
-    //     */
-    //    bool SoftSetArg(const std::string& strArg, const std::vector< std::string >& value);
-    //
-    //    /**
-    //     * Set a boolean argument if it doesn't already have a value
-    //     *
-    //     * @param strArg Argument to set (e.g. "--foo")
-    //     * @param fValue Value (e.g. false)
-    //     * @return true if argument gets set, false if it already had a value
-    //     */
-    //    bool SoftSetArg(const std::string &strArg, bool fValue);
-
-    void ForceSetArg(const std::string &, const std::string &);
-
-    void ForceSetArg(const std::string &, const unsigned int);
-};
-
-extern ArgsManager gArgs;
 
 /**
  * Format a string to be used as group of options in help messages

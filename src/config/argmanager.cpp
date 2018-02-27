@@ -7,6 +7,39 @@
 
 #include "base.hpp"
 #include "argmanager.h"
+#include "chainparams.h"
+#include "chainparamsbase.h"
+#include "chaincontrol/checkpoints.h"
+
+#include "sbtccore/clientversion.h"
+#include "compat/compat.h"
+#include "framework/sync.h"
+#include "framework/init.h"
+#include "framework/noui.h"
+#include "framework/scheduler.h"
+#include "utils/util.h"
+#include "utils/net/httpserver.h"
+#include "utils/net/httprpc.h"
+#include "utils/utilstrencodings.h"
+
+
+#include "transaction/txdb.h"
+#include "p2p/net_processing.h"
+#include "sbtccore/transaction/policy.h"
+#include "block/validation.h"
+#include "p2p/netbase.h"
+#include "utils/net/torcontrol.h"
+#include "script/sigcache.h"
+#include "utils/utilmoneystr.h"
+#include "script/standard.h"
+#include "rpc/protocol.h"
+#include "wallet/wallet.h"
+#include "wallet/db.h"
+#include "wallet/walletdb.h"
+#include "framework/init.h"
+#include "rpc/protocol.h"
+
+CArgsManager gArgs;
 
 CArgsManager::~CArgsManager()
 {
@@ -47,7 +80,7 @@ void CArgsManager::ForceSetArg(const std::string &strArg, const unsigned int val
 }
 
 
-const std::vector<std::string> CArgsManager::GetArgs(const std::string &strArg)const
+const std::vector<std::string> CArgsManager::GetArgs(const std::string &strArg) const
 {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
@@ -121,12 +154,12 @@ void CArgsManager::InitPromOptions(bpo::options_description *app, bpo::variables
                     testnetChainParams->GetConsensus().defaultAssumeValid.GetHex()).c_str())
             ("conf", bpo::value<string>(), "Specify configuration file")
 
-#if mode == HMM_BITCOIND
-#if HAVE_DECL_DAEMON
-            ("daemon", bpo::value<string>(),
-             "Run in the background as a daemon and accept commands(parameters: n, no, y, yes)") // dependence : mode, HAVE_DECL_DAEMON
-#endif
-#endif
+//if mode == HMM_BITCOIND
+//#if HAVE_DECL_DAEMON
+//            ("daemon", bpo::value<string>(),
+//             "Run in the background as a daemon and accept commands(parameters: n, no, y, yes)") // dependence : mode, HAVE_DECL_DAEMON
+//#endif
+//#endif
 
             ("datadir", bpo::value<string>(), "Specify data directory")
             ("dbbatchsize", bpo::value<int64_t>(), "Maximum database write batch size in bytes")  // -help-debug
@@ -452,12 +485,6 @@ void CArgsManager::InitPromOptions(bpo::options_description *app, bpo::variables
     bpo::store(bpo::parse_command_line(argc, argv, *app), vm);
 }
 
-void CArgsManager::PrintVersion()
-{
-    std::cout << strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" +
-                 FormatParagraph(LicenseInfo()) << std::endl;
-}
-
 bool CArgsManager::Init(int argc, char *argv[])
 {
     vector<string> argv_arr_tmp;
@@ -533,19 +560,23 @@ bool CArgsManager::merge_variable_map(bpo::variables_map &desc, bpo::variables_m
     return true;
 }
 
-
-void CArgsManager::ParseParameters(int argc, const char *const argv[])
+std::string CArgsManager::GetHelpMessage() const
 {
+    if (!app_bpo)
+    {
+        return std::string();
+    }
 
+    std::ostringstream oss;
+    oss << *app_bpo << std::endl;
+    return oss.str();
 }
-
 
 bool CArgsManager::PrintHelpMessage(std::function<void(void)> callback)
 {
     if (vm.count("help"))
     {
         std::cout << *app_bpo << std::endl;
-
         return true;
     }
 
@@ -555,9 +586,6 @@ bool CArgsManager::PrintHelpMessage(std::function<void(void)> callback)
         {
             callback();
             return true;
-        } else
-        {
-            return false;
         }
     }
 
@@ -577,7 +605,8 @@ void CArgsManager::ReadConfigFile(const std::string &confPath)
 {
     bpo::variables_map vm_tmp;
     bfs::path config_file_name(GetConfigFile(confPath));
-    bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app_bpo, true), vm_tmp);
+    bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app_bpo, true),
+               vm_tmp);
     merge_variable_map(vm, vm_tmp);
 }
 
@@ -625,7 +654,7 @@ const fs::path &CArgsManager::GetDataDir(bool fNetSpecific) const
         path = GetDefaultDataDir();
     }
     if (fNetSpecific)
-        path /=  app().GetBaseChainParams().DataDir();
+        path /= app().GetBaseChainParams().DataDir();
 
     fs::create_directories(path);
 

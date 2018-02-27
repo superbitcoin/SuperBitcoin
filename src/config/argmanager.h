@@ -21,43 +21,53 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
 
-
-#include "chainparams.h"
-#include "chainparamsbase.h"
-#include "chaincontrol/checkpoints.h"
-
-#include "sbtccore/clientversion.h"
-#include "compat/compat.h"
-#include "framework/sync.h"
-#include "framework/init.h"
-#include "framework/noui.h"
-#include "framework/scheduler.h"
-#include "utils/util.h"
-#include "utils/net/httpserver.h"
-#include "utils/net/httprpc.h"
-#include "utils/utilstrencodings.h"
+#include "utils/fs.h"
 
 
-#include "transaction/txdb.h"
-#include "p2p/net_processing.h"
-#include "sbtccore/transaction/policy.h"
-#include "block/validation.h"
-#include "p2p/netbase.h"
-#include "utils/net/torcontrol.h"
-#include "script/sigcache.h"
-#include "utils/utilmoneystr.h"
-#include "script/standard.h"
-#include "rpc/protocol.h"
-#include "wallet/wallet.h"
-#include "wallet/db.h"
-#include "wallet/walletdb.h"
-#include "framework/init.h"
-#include "rpc/protocol.h"
+//#include "chainparams.h"
+//#include "chainparamsbase.h"
+//#include "chaincontrol/checkpoints.h"
+
+//#include "sbtccore/clientversion.h"
+//#include "compat/compat.h"
+//#include "framework/sync.h"
+//#include "framework/init.h"
+//#include "framework/noui.h"
+//#include "framework/scheduler.h"
+//#include "utils/util.h"
+//#include "utils/net/httpserver.h"
+//#include "utils/net/httprpc.h"
+//#include "utils/utilstrencodings.h"
+
+
+//#include "transaction/txdb.h"
+//#include "p2p/net_processing.h"
+//#include "sbtccore/transaction/policy.h"
+//#include "block/validation.h"
+//#include "p2p/netbase.h"
+//#include "utils/net/torcontrol.h"
+//#include "script/sigcache.h"
+//#include "utils/utilmoneystr.h"
+//#include "script/standard.h"
+//#include "rpc/protocol.h"
+//#include "wallet/wallet.h"
+//#include "wallet/db.h"
+//#include "wallet/walletdb.h"
+//#include "framework/init.h"
+//#include "rpc/protocol.h"
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 using std::vector;
 using std::string;
+
+/** The help message mode determines what help message to show */
+enum HelpMessageMode
+{
+    HMM_BITCOIND,
+    HMM_BITCOIN_QT,
+    HMM_EMPTY
+};
 
 class CArgsManager
 {
@@ -97,7 +107,7 @@ public:
         return tDefault;
     }
 
-    const std::vector<std::string> GetArgs(const std::string &strArg) const ;
+    const std::vector<std::string> GetArgs(const std::string &strArg) const;
 
     void
     GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char *> &argv_arr);
@@ -113,11 +123,9 @@ public:
 
     bool IsArgSet(const std::string &strArg) const;
 
-    void ParseParameters(int argc, const char *const argv[]);
+    std::string GetHelpMessage() const;
 
     bool PrintHelpMessage(std::function<void(void)> callback);
-
-    void PrintVersion();
 
     fs::path GetConfigFile(const std::string &confPath);
 

@@ -9,6 +9,8 @@
 #include "torcontrol.h"
 #include "config/argmanager.h"
 #include "utils/util.h"
+#include "utils/utilstrencodings.h"
+#include "sbtccore/clientversion.h"
 #include "interface/ichaincomponent.h"
 
 CNetComponent::CNetComponent()
@@ -85,7 +87,7 @@ bool CNetComponent::ComponentInitialize()
     // Check for host lookup allowed before parsing any network related parameters
     fNameLookup = appArgs.GetArg("-dns", DEFAULT_NAME_LOOKUP);
 
-    bool proxyRandomize = appArgs.GetArg<bool>("-proxyrandomize", DEFAULT_PROXYRANDOMIZE);
+    bool proxyRandomize = appArgs.GetArg<bool>("-proxyrandomize", true);
     // -proxy sets a proxy for all outgoing network traffic
     // -noproxy (or -proxy=0) as well as the empty string can be used to not set a proxy, this is the default
     std::string proxyArg = appArgs.GetArg<std::string>("-proxy", "");

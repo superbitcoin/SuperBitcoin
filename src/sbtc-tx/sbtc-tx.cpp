@@ -41,7 +41,7 @@ static int AppInitRawTx(int argc, char *argv[])
     //
     // Parameters
     //
-    gArgs.ParseParameters(argc, argv);
+    gArgs.Init(argc, argv);
 
     // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
     try

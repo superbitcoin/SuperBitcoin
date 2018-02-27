@@ -8,6 +8,20 @@
 #include "config/chainparamsbase.h"
 #include "config/chainparams.h"
 #include "compat/sanity.h"
+#include "config/sbtc-config.h"
+#include "sbtccore/clientversion.h"
+#include "utils/util.h"
+#include "utils/utilstrencodings.h"
+#include "p2p/net.h"
+#include "p2p/netbase.h"
+#include "utils/arith_uint256.h"
+#include "utils/utilmoneystr.h"
+#include "utils/net/torcontrol.h"
+#include "wallet/key.h"
+#include "wallet/feerate.h"
+#include "sbtccore/block/validation.h"
+#include "sbtccore/transaction/policy.h"
+#include "config/consensus.h"
 
 using namespace appbase;
 
@@ -15,12 +29,12 @@ log4cpp::Category &CApp::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP))
 
 CApp &CApp::Instance()
 {
-    static  CApp _app;
+    static CApp _app;
     return _app;
 }
 
 CApp::CApp()
-    : nVersion(1), bShutdown(false), cArgs(new CArgsManager)
+        : nVersion(1), bShutdown(false), cArgs(new CArgsManager)
 {
 }
 
@@ -253,18 +267,18 @@ bool CApp::AppInitParameterInteraction()
         mlog.warn("Unsupported argument -blockminsize ignored.");
 
     //TODO: mempool component init.
-//    // Checkmempool and checkblockindex default to true in regtest mode
-//    int ratio = std::min<int>(
-//            std::max<int>(cArgs->GetArg<int32_t>("-checkmempool", chainparams.DefaultConsistencyChecks() ? 1 : 0), 0),
-//            1000000);
-//    if (ratio != 0)
-//    {
-//        mempool.setSanityCheck(1.0 / ratio);
-//    }
+    //    // Checkmempool and checkblockindex default to true in regtest mode
+    //    int ratio = std::min<int>(
+    //            std::max<int>(cArgs->GetArg<int32_t>("-checkmempool", chainparams.DefaultConsistencyChecks() ? 1 : 0), 0),
+    //            1000000);
+    //    if (ratio != 0)
+    //    {
+    //        mempool.setSanityCheck(1.0 / ratio);
+    //    }
 
     //TODO: remove these temp variables.
-//    fCheckBlockIndex = cArgs->GetArg<bool>("-checkblockindex", chainparams.DefaultConsistencyChecks());
-//    fCheckpointsEnabled = cArgs->GetArg<bool>("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
+    //    fCheckBlockIndex = cArgs->GetArg<bool>("-checkblockindex", chainparams.DefaultConsistencyChecks());
+    //    fCheckpointsEnabled = cArgs->GetArg<bool>("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
 
     uint256 hashAssumeValid = uint256S(
             cArgs->GetArg<std::string>("-assumevalid", chainparams.GetConsensus().defaultAssumeValid.GetHex()));
@@ -295,7 +309,8 @@ bool CApp::AppInitParameterInteraction()
 
     // mempool limits
     int64_t nMempoolSizeMax = cArgs->GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
-    int64_t nMempoolSizeMin = cArgs->GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000 * 40;
+    int64_t nMempoolSizeMin =
+            cArgs->GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000 * 40;
     if (nMempoolSizeMax < 0 || nMempoolSizeMax < nMempoolSizeMin)
     {
         mlog.error("-maxmempool must be at least %d MB", std::ceil(nMempoolSizeMin / 1000000.0));
@@ -345,7 +360,7 @@ bool CApp::AppInitParameterInteraction()
         if (nPruneTarget < MIN_DISK_SPACE_FOR_BLOCK_FILES)
         {
             mlog.error("Prune configured below the minimum of %d MiB.  Please use a higher number.",
-                                       MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024);
+                       MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024);
             return false;
         }
         mlog.notice("Prune configured to target %uMiB on disk for block and undo files.", nPruneTarget / 1024 / 1024);
@@ -408,10 +423,10 @@ bool CApp::AppInitParameterInteraction()
 
     nBytesPerSigOp = cArgs->GetArg<uint32_t>("-bytespersigop", nBytesPerSigOp);
 
-//#ifdef ENABLE_WALLET
-//    if (!CWallet::ParameterInteraction())
-//        return false;
-//#endif
+    //#ifdef ENABLE_WALLET
+    //    if (!CWallet::ParameterInteraction())
+    //        return false;
+    //#endif
 
     fIsBareMultisigStd = cArgs->GetArg<bool>("-permitbaremultisig", DEFAULT_PERMIT_BAREMULTISIG);
     fAcceptDatacarrier = cArgs->GetArg<bool>("-datacarrier", DEFAULT_ACCEPT_DATACARRIER);
@@ -421,14 +436,14 @@ bool CApp::AppInitParameterInteraction()
     SetMockTime(cArgs->GetArg<int32_t>("-mocktime", 0)); // SetMockTime(0) is a no-op
 
     //TODO: localServies.
-//    if (cArgs->GetArg<bool>("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
-//        nLocalServices = ServiceFlags(nLocalServices | NODE_BLOOM);
-//
-//    if (cArgs->GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) < 0)
-//        return InitError("rpcserialversion must be non-negative.");
-//
-//    if (cArgs->GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) > 1)
-//        return InitError("unknown rpcserialversion requested.");
+    //    if (cArgs->GetArg<bool>("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
+    //        nLocalServices = ServiceFlags(nLocalServices | NODE_BLOOM);
+    //
+    //    if (cArgs->GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) < 0)
+    //        return InitError("rpcserialversion must be non-negative.");
+    //
+    //    if (cArgs->GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) > 1)
+    //        return InitError("unknown rpcserialversion requested.");
 
     nMaxTipAge = cArgs->GetArg<int64_t>("maxtipage", DEFAULT_MAX_TIP_AGE);
 
@@ -470,7 +485,7 @@ bool CApp::AppInitParameterInteraction()
                     UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
                     found = true;
                     mlog.notice("Setting version bits activation parameters for %s to start=%ld, timeout=%ld\n",
-                              vDeploymentParams[0], nStartTime, nTimeout);
+                                vDeploymentParams[0], nStartTime, nTimeout);
                     break;
                 }
             }
@@ -520,8 +535,8 @@ static bool LockDataDirectory(bool probeOnly)
         if (!lock.try_lock())
         {
             CApp::mlog.error("Cannot obtain a lock on data directory %s. %s is probably already running.",
-                                       strDataDir, PACKAGE_NAME);
-            return  false;
+                             strDataDir, PACKAGE_NAME);
+            return false;
         }
         if (probeOnly)
         {
@@ -531,7 +546,7 @@ static bool LockDataDirectory(bool probeOnly)
     {
         CApp::mlog.error(
                 "Cannot obtain a lock on data directory %s. %s is probably already running. %s.",
-                          strDataDir, _(PACKAGE_NAME), e.what());
+                strDataDir, _(PACKAGE_NAME), e.what());
         return false;
     }
     return true;
@@ -572,6 +587,37 @@ bool CApp::AppInitLockDataDirectory()
     return true;
 }
 
+static std::string LicenseInfo()
+{
+    const std::string URL_SOURCE_CODE = "<https://github.com/bitcoin/bitcoin>";
+    const std::string URL_WEBSITE = "<https://bitcoincore.org>";
+
+    return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR) + " ") + "\n" +
+           "\n" +
+           strprintf(_("Please contribute if you find %s useful. "
+                               "Visit %s for further information about the software."),
+                     PACKAGE_NAME, URL_WEBSITE) +
+           "\n" +
+           strprintf(_("The source code is available from %s."),
+                     URL_SOURCE_CODE) +
+           "\n" +
+           "\n" +
+           _("This is experimental software.") + "\n" +
+           strprintf(_("Distributed under the MIT software license, see the accompanying file %s or %s"), "COPYING",
+                     "<https://opensource.org/licenses/MIT>") + "\n" +
+           "\n" +
+           strprintf(
+                   _("This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit %s and cryptographic software written by Eric Young and UPnP software written by Thomas Bernard."),
+                   "<https://www.openssl.org>") +
+           "\n";
+}
+
+static void PrintVersion()
+{
+    std::cout << strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" +
+                 FormatParagraph(LicenseInfo()) << std::endl;
+}
+
 bool CApp::AppInitialize(int argc, char *argv[])
 {
 
@@ -580,12 +626,24 @@ bool CApp::AppInitialize(int argc, char *argv[])
         return false;
     }
 
+    if (cArgs->IsArgSet("help") || cArgs->IsArgSet("usage"))
+    {
+        std::cout << cArgs->GetHelpMessage();
+        return false;
+    }
+
+    if (cArgs->IsArgSet("version"))
+    {
+        PrintVersion();
+        return false;
+    }
+
     try
     {
         if (!fs::is_directory(cArgs->GetDataDir(false)))
         {
             mlog.error("Error: Specified data directory \"%s\" does not exist.",
-                    cArgs->GetArg<std::string>("-datadir", "").c_str());
+                       cArgs->GetArg<std::string>("-datadir", "").c_str());
             return false;
         }
 
@@ -698,7 +756,8 @@ bool CApp::AppInitialize(int argc, char *argv[])
 
 bool CApp::ComponentInitialize()
 {
-    return ForEachComponent(true, [](IComponent* component){ return component->Initialize(); });
+    return ForEachComponent(true, [](IComponent *component)
+    { return component->Initialize(); });
 }
 
 bool CApp::Initialize(int argc, char **argv)
@@ -708,12 +767,15 @@ bool CApp::Initialize(int argc, char **argv)
 
 bool CApp::Startup()
 {
-    return ForEachComponent(true, [](IComponent* component){ return component->Startup(); });
+    return ForEachComponent(true, [](IComponent *component)
+    { return component->Startup(); });
 }
 
 bool CApp::Shutdown()
 {
-    return ForEachComponent<std::function<bool(IComponent*)>, ReverseContainerIterator>(false, [](IComponent* component){ return component->Shutdown(); });
+    return ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false,
+                                                                                         [](IComponent *component)
+                                                                                         { return component->Shutdown(); });
 }
 
 bool CApp::Run()
@@ -725,7 +787,7 @@ bool CApp::Run()
     return true;
 }
 
-bool CApp::RegisterComponent(IComponent* component)
+bool CApp::RegisterComponent(IComponent *component)
 {
     if (component)
     {

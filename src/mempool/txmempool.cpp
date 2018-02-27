@@ -5,6 +5,7 @@
 
 #include "txmempool.h"
 
+#include "sbtccore/clientversion.h"
 #include "config/consensus.h"
 #include "config/argmanager.h"
 #include "chaincontrol/validation.h"
