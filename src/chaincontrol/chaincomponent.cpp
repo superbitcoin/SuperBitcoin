@@ -3115,3 +3115,8 @@ bool CChainCommonent::PreciousBlock(CValidationState &state, const CChainParams 
     GET_CHAIN_INTERFACE(ifChainObj);
     return ifChainObj->ActivateBestChain(state, params, nullptr);
 }
+
+bool CChainCommonent::ResetBlockFailureFlags(CBlockIndex *pindex)
+{
+    return cIndexManager.ResetBlockFailureFlags(pindex);
+}

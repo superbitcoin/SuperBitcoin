@@ -1249,3 +1249,45 @@ bool CBlockIndexManager::PreciousBlock(CValidationState &state, const CChainPara
         }
     }
 }
+
+bool CBlockIndexManager::ResetBlockFailureFlags(CBlockIndex *pindex)
+{
+    AssertLockHeld(cs);
+
+    int nHeight = pindex->nHeight;
+
+    // Remove the invalidity flag from this block and all its descendants.
+    BlockMap::iterator it = mBlockIndex.begin();
+    while (it != mBlockIndex.end())
+    {
+        if (!it->second->IsValid() && it->second->GetAncestor(nHeight) == pindex)
+        {
+            it->second->nStatus &= ~BLOCK_FAILED_MASK;
+            setDirtyBlockIndex.insert(it->second);
+            if (it->second->IsValid(BLOCK_VALID_TRANSACTIONS) && it->second->nChainTx &&
+                setBlockIndexCandidates.value_comp()(cChainActive.Tip(), it->second))
+            {
+                setBlockIndexCandidates.insert(it->second);
+            }
+            if (it->second == pIndexBestInvalid)
+            {
+                // Reset invalid block marker if it was pointing to one of those.
+                pIndexBestInvalid = nullptr;
+            }
+            setFailedBlocks.erase(it->second);
+        }
+        it++;
+    }
+
+    // Remove the invalidity flag from all ancestors too.
+    while (pindex != nullptr)
+    {
+        if (pindex->nStatus & BLOCK_FAILED_MASK)
+        {
+            pindex->nStatus &= ~BLOCK_FAILED_MASK;
+            setDirtyBlockIndex.insert(pindex);
+        }
+        pindex = pindex->pprev;
+    }
+    return true;
+}

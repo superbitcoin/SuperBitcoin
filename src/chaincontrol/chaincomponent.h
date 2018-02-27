@@ -232,6 +232,8 @@ public:
 
     bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex) override;
 
+    bool ResetBlockFailureFlags(CBlockIndex *pindex) override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);
