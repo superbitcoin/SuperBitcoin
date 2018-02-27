@@ -8,6 +8,7 @@
 #include "chain.h"
 #include "config/chainparams.h"
 #include "coins.h"
+#include "blockindexmanager.h"
 
 class CBlock;
 
@@ -46,9 +47,15 @@ public:
 
     virtual bool DoesBlockExist(uint256 hash) = 0;
 
+    virtual CBlockIndex *GetBlockIndex(uint256 hash) = 0;
+
+    virtual int GetSpendHeight(const CCoinsViewCache &inputs) = 0;
+
     virtual int GetActiveChainHeight() = 0;
 
     virtual bool GetActiveChainTipHash(uint256 &tipHash) = 0;
+
+    virtual std::set<const CBlockIndex *, CompareBlocksByHeight> GetTips() = 0;
 
     virtual CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) = 0;
 

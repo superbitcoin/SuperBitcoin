@@ -18,6 +18,8 @@
 #include "mempool/txmempool.h"
 #include "utils/utilstrencodings.h"
 #include "framework/version.h"
+#include "framework/base.hpp"
+#include "interface/ichaincomponent.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -157,8 +159,8 @@ static bool rest_headers(HTTPRequest *req,
     headers.reserve(count);
     {
         LOCK(cs_main);
-        BlockMap::const_iterator it = mapBlockIndex.find(hash);
-        const CBlockIndex *pindex = (it != mapBlockIndex.end()) ? it->second : nullptr;
+        GET_CHAIN_INTERFACE(ifChainObj);
+        const CBlockIndex *pindex = ifChainObj->GetBlockIndex(hash);
         while (pindex != nullptr && chainActive.Contains(pindex))
         {
             headers.push_back(pindex);
@@ -230,10 +232,11 @@ static bool rest_block(HTTPRequest *req,
     CBlockIndex *pblockindex = nullptr;
     {
         LOCK(cs_main);
-        if (mapBlockIndex.count(hash) == 0)
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if (!ifChainObj->DoesBlockExist(hash))
             return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not found");
 
-        pblockindex = mapBlockIndex[hash];
+        pblockindex = ifChainObj->GetBlockIndex(hash);
         if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
             return RESTERR(req, HTTP_NOT_FOUND, hashStr + " not available (pruned data)");
 

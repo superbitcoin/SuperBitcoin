@@ -26,6 +26,7 @@
 #include "mempool/txmempool.h"
 #include "uint256.h"
 #include "utils/utilstrencodings.h"
+#include "interface/ichaincomponent.h"
 
 #ifdef ENABLE_WALLET
 
@@ -51,10 +52,10 @@ void TxToJSON(const CTransaction &tx, const uint256 hashBlock, UniValue &entry)
     if (!hashBlock.IsNull())
     {
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));
-        BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
-        if (mi != mapBlockIndex.end() && (*mi).second)
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CBlockIndex *pindex = ifChainObj->GetBlockIndex(hashBlock);
+        if (pindex != nullptr)
         {
-            CBlockIndex *pindex = (*mi).second;
             if (chainActive.Contains(pindex))
             {
                 entry.push_back(Pair("confirmations", 1 + chainActive.Height() - pindex->nHeight));
@@ -201,6 +202,8 @@ UniValue gettxoutproof(const JSONRPCRequest &request)
                         "\"data\"           (string) A string that is a serialized, hex-encoded data for the proof.\n"
         );
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+
     std::set<uint256> setTxids;
     uint256 oneTxid;
     UniValue txids = request.params[0].get_array();
@@ -225,9 +228,9 @@ UniValue gettxoutproof(const JSONRPCRequest &request)
     if (!request.params[1].isNull())
     {
         hashBlock = uint256S(request.params[1].get_str());
-        if (!mapBlockIndex.count(hashBlock))
+        if (!ifChainObj->DoesBlockExist(hashBlock))
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
-        pblockindex = mapBlockIndex[hashBlock];
+        pblockindex = ifChainObj->GetBlockIndex(hashBlock);
     } else
     {
         // Loop through txids and try to find which block they're in. Exit loop once a block is found.
@@ -247,9 +250,9 @@ UniValue gettxoutproof(const JSONRPCRequest &request)
         CTransactionRef tx;
         if (!GetTransaction(oneTxid, tx, Params().GetConsensus(), hashBlock, false) || hashBlock.IsNull())
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Transaction not yet in block");
-        if (!mapBlockIndex.count(hashBlock))
+        if (!ifChainObj->DoesBlockExist(hashBlock))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "Transaction index corrupt");
-        pblockindex = mapBlockIndex[hashBlock];
+        pblockindex = ifChainObj->GetBlockIndex(hashBlock);
     }
 
     CBlock block;
@@ -297,8 +300,9 @@ UniValue verifytxoutproof(const JSONRPCRequest &request)
 
     LOCK(cs_main);
 
-    if (!mapBlockIndex.count(merkleBlock.header.GetHash()) ||
-        !chainActive.Contains(mapBlockIndex[merkleBlock.header.GetHash()]))
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CBlockIndex *pIndex = ifChainObj->GetBlockIndex(merkleBlock.header.GetHash());
+    if (!pIndex || !chainActive.Contains(pIndex))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found in chain");
 
     for (const uint256 &hash : vMatch)

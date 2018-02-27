@@ -8,6 +8,7 @@
 #include "blockindexmanager.h"
 #include "blockfilemanager.h"
 #include "framework/warnings.h"
+#include "chain.h"
 
 CBlockIndexManager::CBlockIndexManager()
 {
@@ -16,7 +17,11 @@ CBlockIndexManager::CBlockIndexManager()
 
 CBlockIndexManager::~CBlockIndexManager()
 {
-
+    // block headers
+    BlockMap::iterator it1 = mBlockIndex.begin();
+    for (; it1 != mBlockIndex.end(); it1++)
+        delete (*it1).second;
+    mBlockIndex.clear();
 }
 
 int CBlockIndexManager::GetLastBlockFile()
@@ -1290,4 +1295,60 @@ bool CBlockIndexManager::ResetBlockFailureFlags(CBlockIndex *pindex)
         pindex = pindex->pprev;
     }
     return true;
+}
+
+int64_t CBlockIndexManager::GetBlockProofEquivalentTime(uint256 hashAssumeValid, const CBlockIndex *pindex,
+                                                     const CChainParams &params)
+{
+    // We've been configured with the hash of a block which has been externally verified to have a valid history.
+    // A suitable default value is included with the software and updated from time to time.  Because validity
+    //  relative to a piece of software is an objective fact these defaults can be easily reviewed.
+    // This setting doesn't force the selection of any particular chain but makes validating some faster by
+    //  effectively caching the result of part of the verification.
+    BlockMap::const_iterator it = mBlockIndex.find(hashAssumeValid);
+    if (it != mBlockIndex.end())
+    {
+        if (it->second->GetAncestor(pindex->nHeight) == pindex &&
+            pIndexBestHeader->GetAncestor(pindex->nHeight) == pindex &&
+            pIndexBestHeader->nChainWork >= nMinimumChainWork)
+        {
+            // This block is a member of the assumed verified chain and an ancestor of the best header.
+            // The equivalent time check discourages hash power from extorting the network via DOS attack
+            //  into accepting an invalid block through telling users they must manually set assumevalid.
+            //  Requiring a software change or burying the invalid block, regardless of the setting, makes
+            //  it hard to hide the implication of the demand.  This also avoids having release candidates
+            //  that are hardly doing any signature verification at all in testing without having to
+            //  artificially set the default assumed verified block further back.
+            // The test against nMinimumChainWork prevents the skipping when denied access to any chain at
+            //  least as good as the expected chain.
+            ::GetBlockProofEquivalentTime(*pIndexBestHeader, *pindex, *pIndexBestHeader, params.GetConsensus());
+        }
+    }
+}
+
+std::set<const CBlockIndex *, CompareBlocksByHeight> CBlockIndexManager::GetTips()
+{
+    std::set<const CBlockIndex *, CompareBlocksByHeight> setTips;
+    std::set<const CBlockIndex *> setOrphans;
+    std::set<const CBlockIndex *> setPrevs;
+
+    for (const std::pair<const uint256, CBlockIndex *> &item : mBlockIndex)
+    {
+        if (!cChainActive.Contains(item.second))
+        {
+            setOrphans.insert(item.second);
+            setPrevs.insert(item.second->pprev);
+        }
+    }
+
+    for (std::set<const CBlockIndex *>::iterator it = setOrphans.begin(); it != setOrphans.end(); ++it)
+    {
+        if (setPrevs.erase(*it) == 0)
+        {
+            setTips.insert(*it);
+        }
+    }
+
+    // Always report the currently active tip.
+    setTips.insert(cChainActive.Tip());
 }

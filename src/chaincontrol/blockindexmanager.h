@@ -26,6 +26,21 @@
 
 using namespace appbase;
 
+/** Comparison function for sorting the getchaintips heads.  */
+struct CompareBlocksByHeight
+{
+    bool operator()(const CBlockIndex *a, const CBlockIndex *b) const
+    {
+        /* Make sure that unequal blocks with the same height do not compare
+           equal. Use the pointers themselves to make a distinction. */
+
+        if (a->nHeight != b->nHeight)
+            return (a->nHeight > b->nHeight);
+
+        return a < b;
+    }
+};
+
 struct CBlockIndexWorkComparator
 {
     bool operator()(const CBlockIndex *pa, const CBlockIndex *pb) const
@@ -139,6 +154,10 @@ public:
 
     bool ResetBlockFailureFlags(CBlockIndex *pindex);
 
+    int64_t GetBlockProofEquivalentTime(uint256 hashAssumeValid, const CBlockIndex *pindex, const CChainParams &params);
+
+    std::set<const CBlockIndex *, CompareBlocksByHeight> GetTips();
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;
@@ -186,6 +205,15 @@ private:
     void UnLoadBlockIndex();
 
     bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
+
+    //! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
+    CBlockIndex *GetLastCheckpoint(const CCheckpointData &data);
+
+    CBlockIndex const *GetLastCheckPointBlockIndex(const CCheckpointData &data);
+
+    bool IsAgainstCheckPoint(const CChainParams &chainparams, const CBlockIndex *pindex);
+
+    bool IsAgainstCheckPoint(const CChainParams &chainparams, const int &nHeight, const uint256 &hash);
 
 public:
     static log4cpp::Category &mlog;

@@ -1266,9 +1266,10 @@ void CWallet::MarkConflicted(const uint256 &hashBlock, const uint256 &hashTx)
     LOCK2(cs_main, cs_wallet);
 
     int conflictconfirms = 0;
-    if (mapBlockIndex.count(hashBlock))
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CBlockIndex *pindex = ifChainObj->GetBlockIndex(hashBlock);
+    if (pindex != nullptr)
     {
-        CBlockIndex *pindex = mapBlockIndex[hashBlock];
         if (chainActive.Contains(pindex))
         {
             conflictconfirms = -(chainActive.Height() - pindex->nHeight + 1);
@@ -4031,16 +4032,17 @@ void CWallet::GetKeyBirthTimes(std::map<CTxDestination, int64_t> &mapKeyBirth) c
         return;
 
     // find first block that affects those keys, if there are any left
+    GET_CHAIN_INTERFACE(ifChainObj);
     std::vector<CKeyID> vAffected;
     for (std::map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); it++)
     {
         // iterate over all wallet transactions...
         const CWalletTx &wtx = (*it).second;
-        BlockMap::const_iterator blit = mapBlockIndex.find(wtx.hashBlock);
-        if (blit != mapBlockIndex.end() && chainActive.Contains(blit->second))
+        CBlockIndex *pIndex = ifChainObj->GetBlockIndex(wtx.hashBlock);
+        if (pIndex != nullptr && chainActive.Contains(pIndex))
         {
             // ... which are already in a block
-            int nHeight = blit->second->nHeight;
+            int nHeight = pIndex->nHeight;
             for (const CTxOut &txout : wtx.tx->vout)
             {
                 // iterate over all their outputs
@@ -4050,7 +4052,7 @@ void CWallet::GetKeyBirthTimes(std::map<CTxDestination, int64_t> &mapKeyBirth) c
                     // ... and all their affected keys
                     std::map<CKeyID, CBlockIndex *>::iterator rit = mapKeyFirstBlock.find(keyid);
                     if (rit != mapKeyFirstBlock.end() && nHeight < rit->second->nHeight)
-                        rit->second = blit->second;
+                        rit->second = pIndex;
                 }
                 vAffected.clear();
             }
@@ -4089,7 +4091,8 @@ unsigned int CWallet::ComputeTimeSmart(const CWalletTx &wtx) const
     unsigned int nTimeSmart = wtx.nTimeReceived;
     if (!wtx.hashUnset())
     {
-        if (mapBlockIndex.count(wtx.hashBlock))
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if (ifChainObj->DoesBlockExist(wtx.hashBlock))
         {
             int64_t latestNow = wtx.nTimeReceived;
             int64_t latestEntry = 0;
@@ -4128,7 +4131,7 @@ unsigned int CWallet::ComputeTimeSmart(const CWalletTx &wtx) const
                 }
             }
 
-            int64_t blocktime = mapBlockIndex[wtx.hashBlock]->GetBlockTime();
+            int64_t blocktime = (ifChainObj->GetBlockIndex(wtx.hashBlock))->GetBlockTime();
             nTimeSmart = std::max(latestEntry, std::min(blocktime, latestNow));
         } else
         {
@@ -4687,10 +4690,8 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex *&pindexRet) const
     AssertLockHeld(cs_main);
 
     // Find the block it claims to be in
-    BlockMap::iterator mi = mapBlockIndex.find(hashBlock);
-    if (mi == mapBlockIndex.end())
-        return 0;
-    CBlockIndex *pindex = (*mi).second;
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CBlockIndex *pindex = ifChainObj->GetBlockIndex(hashBlock);
     if (!pindex || !chainActive.Contains(pindex))
         return 0;
 

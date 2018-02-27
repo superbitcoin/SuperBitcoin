@@ -695,10 +695,11 @@ UniValue getblockheader(const JSONRPCRequest &request)
     if (!request.params[1].isNull())
         fVerbose = request.params[1].get_bool();
 
-    if (mapBlockIndex.count(hash) == 0)
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->DoesBlockExist(hash))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
-    CBlockIndex *pblockindex = mapBlockIndex[hash];
+    CBlockIndex *pblockindex = ifChainObj->GetBlockIndex(hash);
 
     if (!fVerbose)
     {
@@ -775,11 +776,12 @@ UniValue getblock(const JSONRPCRequest &request)
             verbosity = request.params[1].get_bool() ? 1 : 0;
     }
 
-    if (mapBlockIndex.count(hash) == 0)
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->DoesBlockExist(hash))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
     CBlock block;
-    CBlockIndex *pblockindex = mapBlockIndex[hash];
+    CBlockIndex *pblockindex = ifChainObj->GetBlockIndex(hash);;
 
     if (fHavePruned && !(pblockindex->nStatus & BLOCK_HAVE_DATA) && pblockindex->nTx > 0)
         throw JSONRPCError(RPC_MISC_ERROR, "Block not available (pruned data)");
@@ -848,7 +850,8 @@ static bool GetUTXOStats(CCoinsView *view, CCoinsStats &stats)
     stats.hashBlock = pcursor->GetBestBlock();
     {
         LOCK(cs_main);
-        stats.nHeight = mapBlockIndex.find(stats.hashBlock)->second->nHeight;
+        GET_CHAIN_INTERFACE(ifChainObj);
+        stats.nHeight = ifChainObj->GetBlockIndex(stats.hashBlock)->nHeight;
     }
     ss << stats.hashBlock;
     uint256 prevkey;
@@ -1047,8 +1050,8 @@ UniValue gettxout(const JSONRPCRequest &request)
         }
     }
 
-    BlockMap::iterator it = mapBlockIndex.find(pcoinsTip->GetBestBlock());
-    CBlockIndex *pindex = it->second;
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CBlockIndex *pindex = ifChainObj->GetBlockIndex(pcoinsTip->GetBestBlock());
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if (coin.nHeight == MEMPOOL_HEIGHT)
     {
@@ -1267,21 +1270,6 @@ UniValue getblockchaininfo(const JSONRPCRequest &request)
     return obj;
 }
 
-/** Comparison function for sorting the getchaintips heads.  */
-struct CompareBlocksByHeight
-{
-    bool operator()(const CBlockIndex *a, const CBlockIndex *b) const
-    {
-        /* Make sure that unequal blocks with the same height do not compare
-           equal. Use the pointers themselves to make a distinction. */
-
-        if (a->nHeight != b->nHeight)
-            return (a->nHeight > b->nHeight);
-
-        return a < b;
-    }
-};
-
 UniValue getchaintips(const JSONRPCRequest &request)
 {
     if (request.fHelp || request.params.size() != 0)
@@ -1324,29 +1312,8 @@ UniValue getchaintips(const JSONRPCRequest &request)
      *  - Iterate through the orphan blocks. If the block isn't pointed to by another orphan, it is a chain tip.
      *  - add chainActive.Tip()
      */
-    std::set<const CBlockIndex *, CompareBlocksByHeight> setTips;
-    std::set<const CBlockIndex *> setOrphans;
-    std::set<const CBlockIndex *> setPrevs;
-
-    for (const std::pair<const uint256, CBlockIndex *> &item : mapBlockIndex)
-    {
-        if (!chainActive.Contains(item.second))
-        {
-            setOrphans.insert(item.second);
-            setPrevs.insert(item.second->pprev);
-        }
-    }
-
-    for (std::set<const CBlockIndex *>::iterator it = setOrphans.begin(); it != setOrphans.end(); ++it)
-    {
-        if (setPrevs.erase(*it) == 0)
-        {
-            setTips.insert(*it);
-        }
-    }
-
-    // Always report the currently active tip.
-    setTips.insert(chainActive.Tip());
+    GET_CHAIN_INTERFACE(ifChainObj);
+    std::set<const CBlockIndex *, CompareBlocksByHeight> setTips(ifChainObj->GetTips());
 
     /* Construct the output array.  */
     UniValue res(UniValue::VARR);
@@ -1451,10 +1418,12 @@ UniValue preciousblock(const JSONRPCRequest &request)
 
     {
         LOCK(cs_main);
-        if (mapBlockIndex.count(hash) == 0)
+
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if (!ifChainObj->DoesBlockExist(hash))
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
-        pblockindex = mapBlockIndex[hash];
+        pblockindex = ifChainObj->GetBlockIndex(hash);
     }
 
     CValidationState state;
@@ -1490,10 +1459,12 @@ UniValue invalidateblock(const JSONRPCRequest &request)
 
     {
         LOCK(cs_main);
-        if (mapBlockIndex.count(hash) == 0)
+
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if (!ifChainObj->DoesBlockExist(hash))
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
-        CBlockIndex *pblockindex = mapBlockIndex[hash];
+        CBlockIndex *pblockindex = ifChainObj->GetBlockIndex(hash);
         ifChainObj->InvalidateBlock(state, Params(), pblockindex);
     }
 
@@ -1532,10 +1503,12 @@ UniValue reconsiderblock(const JSONRPCRequest &request)
 
     {
         LOCK(cs_main);
-        if (mapBlockIndex.count(hash) == 0)
+
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if (!ifChainObj->DoesBlockExist(hash))
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
-        CBlockIndex *pblockindex = mapBlockIndex[hash];
+        CBlockIndex *pblockindex = ifChainObj->GetBlockIndex(hash);
         ifChainObj->ResetBlockFailureFlags(pblockindex);
     }
 
@@ -1589,12 +1562,11 @@ UniValue getchaintxstats(const JSONRPCRequest &request)
         LOCK(cs_main);
         if (havehash)
         {
-            auto it = mapBlockIndex.find(hash);
-            if (it == mapBlockIndex.end())
-            {
+            GET_CHAIN_INTERFACE(ifChainObj);
+            if (!ifChainObj->DoesBlockExist(hash))
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
-            }
-            pindex = it->second;
+
+            CBlockIndex *pindex = ifChainObj->GetBlockIndex(hash);
             if (!chainActive.Contains(pindex))
             {
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Block is not in main chain");

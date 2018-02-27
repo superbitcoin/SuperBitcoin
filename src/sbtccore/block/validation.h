@@ -174,7 +174,7 @@ extern CCriticalSection cs_main;
 extern CBlockPolicyEstimator feeEstimator;
 extern CTxMemPool mempool;
 typedef std::unordered_map<uint256, CBlockIndex *, BlockHasher> BlockMap;
-extern BlockMap mapBlockIndex;
+//extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockWeight;
 extern const std::string strMessageMagic;
@@ -272,10 +272,6 @@ bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
                        std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
 
 CAmount GetBlockSubsidy(int nHeight, const Consensus::Params &consensusParams);
-
-bool IsAgainstCheckPoint(const CChainParams &chainparams, const CBlockIndex *pindex);
-
-bool IsAgainstCheckPoint(const CChainParams &chainparams, const int &nHeight, const uint256 &hash);
 
 bool CheckActiveChain(CValidationState &state, const CChainParams &chainparams);
 
@@ -421,13 +417,6 @@ extern CCoinsViewCache *pcoinsTip;
 
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
-
-/**
- * Return the spend height, which is one more than the inputs.GetBestBlock().
- * While checking, GetBestBlock() refers to the parent block. (protected by cs_main)
- * This is also true for mempool checks.
- */
-int GetSpendHeight(const CCoinsViewCache &inputs);
 
 extern VersionBitsCache versionbitscache;
 

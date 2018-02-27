@@ -4,8 +4,10 @@
 
 #include "checkpoints.h"
 
-#include "chaincontrol/chain.h"
+#include "chain.h"
 #include "chainparams.h"
+#include "chaincomponent.h"
+#include "blockindexmanager.h"
 #include "reverse_iterator.h"
 #include "block/validation.h"
 #include "uint256.h"
@@ -19,37 +21,6 @@
 
 namespace Checkpoints
 {
-
-    CBlockIndex *GetLastCheckpoint(const CCheckpointData &data)
-    {
-        LOCK(cs_main);
-        const MapCheckpoints &checkpoints = data.mapCheckpoints;
-
-        for (const MapCheckpoints::value_type &i : reverse_iterate(checkpoints))
-        {
-            const uint256 &hash = i.second;
-            BlockMap::const_iterator t = mapBlockIndex.find(hash);
-            if (t != mapBlockIndex.end())
-                return t->second;
-        }
-        return nullptr;
-    }
-
-    CBlockIndex const *GetLastCheckPointBlockIndex(const CCheckpointData &data)
-    {
-        LOCK(cs_main);
-        const MapCheckpoints &checkpoints = data.mapCheckpoints;
-        auto lastItem = checkpoints.rbegin();
-
-        for (auto it = lastItem; it != checkpoints.rend(); it++)
-        {
-            auto t = mapBlockIndex.find(it->second);
-            if (t != mapBlockIndex.end())
-                return t->second;
-        }
-        return nullptr;
-    }
-
     bool GetCheckpointByHeight(const int nHeight, std::vector<CCheckData> &vnCheckPoints)
     {
         CCheckPointDB db;
@@ -189,3 +160,73 @@ namespace Checkpoints
     }
 
 } // namespace Checkpoints
+
+CBlockIndex *CBlockIndexManager::GetLastCheckpoint(const CCheckpointData &data)
+{
+    LOCK(cs);
+    const MapCheckpoints &checkpoints = data.mapCheckpoints;
+
+    for (const MapCheckpoints::value_type &i : reverse_iterate(checkpoints))
+    {
+        const uint256 &hash = i.second;
+        auto t = GetBlockIndex(hash);
+        if (t != nullptr)
+            return t;
+    }
+    return nullptr;
+}
+
+CBlockIndex const *CBlockIndexManager::GetLastCheckPointBlockIndex(const CCheckpointData &data)
+{
+    LOCK(cs);
+    const MapCheckpoints &checkpoints = data.mapCheckpoints;
+    auto lastItem = checkpoints.rbegin();
+
+    for (auto it = lastItem; it != checkpoints.rend(); it++)
+    {
+        auto t = GetBlockIndex(it->second);
+        if (t != nullptr)
+            return t;
+    }
+    return nullptr;
+}
+
+bool CBlockIndexManager::IsAgainstCheckPoint(const CChainParams &chainparams, const CBlockIndex *pindex)
+{
+
+    auto lastpioint = GetLastCheckPointBlockIndex(chainparams.Checkpoints());
+
+    if (lastpioint == nullptr)
+    {
+        return false;
+    }
+
+    if (pindex->nHeight >= lastpioint->nHeight)
+    {
+
+        if (pindex->GetAncestor(lastpioint->nHeight)->GetBlockHash() == lastpioint->GetBlockHash())
+        {
+            return false;
+        }
+
+    } else
+    {
+        if (lastpioint->GetAncestor(pindex->nHeight)->GetBlockHash() == pindex->GetBlockHash())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CBlockIndexManager::IsAgainstCheckPoint(const CChainParams &chainparams, const int &nHeight, const uint256 &hash)
+{
+    const auto tPoint = chainparams.Checkpoints();
+    auto test = tPoint.mapCheckpoints.find(nHeight);
+    if (test != tPoint.mapCheckpoints.end())
+    {
+        if (test->second != hash)
+            return true;
+    }
+    return false;
+}

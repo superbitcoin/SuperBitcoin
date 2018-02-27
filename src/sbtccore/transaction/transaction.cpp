@@ -17,6 +17,8 @@
 #include "utils/utilstrencodings.h"
 #include "chain.h"
 #include "policy.h"
+#include "framework/base.hpp"
+#include "interface/ichaincomponent.h"
 //#include "block.h"
 
 
@@ -454,7 +456,8 @@ bool CTransaction::CheckInputs(CValidationState &state, const CCoinsViewCache &i
     if (!IsCoinBase())
     {
 //        GET_VERIFY_INTERFACE(ifVerifyObj);
-        if (!CheckTxInputs(state, inputs, GetSpendHeight(inputs)))
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if (!CheckTxInputs(state, inputs, ifChainObj->GetSpendHeight(inputs)))
             return false;
 
         if (pvChecks)

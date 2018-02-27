@@ -25,6 +25,7 @@
 #include "utils/utilstrencodings.h"
 #include "framework/validationinterface.h"
 #include "framework/warnings.h"
+#include "framework/base.hpp"
 #include "interface/ichaincomponent.h"
 
 #include <memory>
@@ -387,6 +388,7 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
         );
 
     LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
 
     std::string strMode = "template";
     UniValue lpval = NullUniValue;
@@ -416,10 +418,9 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
                 throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
 
             uint256 hash = block.GetHash();
-            BlockMap::iterator mi = mapBlockIndex.find(hash);
-            if (mi != mapBlockIndex.end())
+            if (ifChainObj->DoesBlockExist(hash))
             {
-                CBlockIndex *pindex = mi->second;
+                CBlockIndex *pindex = ifChainObj->GetBlockIndex(hash);
                 if (pindex->IsValid(BLOCK_VALID_SCRIPTS))
                     return "duplicate";
                 if (pindex->nStatus & BLOCK_FAILED_MASK)
@@ -432,7 +433,6 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
             if (block.hashPrevBlock != pindexPrev->GetBlockHash())
                 return "inconclusive-not-best-prevblk";
             CValidationState state;
-            GET_CHAIN_INTERFACE(ifChainObj);
             ifChainObj->TestBlockValidity(state, Params(), block, pindexPrev, false, true);
             return BIP22ValidationResult(state);
         }
@@ -465,7 +465,6 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     if (g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0)
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
 
-    GET_CHAIN_INTERFACE(ifChainObj);
     if (ifChainObj->IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitcoin is downloading blocks...");
 
@@ -762,6 +761,8 @@ UniValue submitblock(const JSONRPCRequest &request)
         );
     }
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+
     std::shared_ptr<CBlock> blockptr = std::make_shared<CBlock>();
     CBlock &block = *blockptr;
     if (!DecodeHexBlk(block, request.params[0].get_str()))
@@ -778,10 +779,9 @@ UniValue submitblock(const JSONRPCRequest &request)
     bool fBlockPresent = false;
     {
         LOCK(cs_main);
-        BlockMap::iterator mi = mapBlockIndex.find(hash);
-        if (mi != mapBlockIndex.end())
+        if (ifChainObj->DoesBlockExist(hash))
         {
-            CBlockIndex *pindex = mi->second;
+            CBlockIndex *pindex = ifChainObj->GetBlockIndex(hash);
             if (pindex->IsValid(BLOCK_VALID_SCRIPTS))
             {
                 return "duplicate";
@@ -797,16 +797,16 @@ UniValue submitblock(const JSONRPCRequest &request)
 
     {
         LOCK(cs_main);
-        BlockMap::iterator mi = mapBlockIndex.find(block.hashPrevBlock);
-        if (mi != mapBlockIndex.end())
+        if (ifChainObj->DoesBlockExist(block.hashPrevBlock))
         {
-            UpdateUncommittedBlockStructures(block, mi->second, Params().GetConsensus());
+            CBlockIndex *pindexPrev = ifChainObj->GetBlockIndex(block.hashPrevBlock);
+            UpdateUncommittedBlockStructures(block, pindexPrev, Params().GetConsensus());
         }
     }
 
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    GET_CHAIN_INTERFACE(ifChainObj);
+
     bool fAccepted = ifChainObj->ProcessNewBlock(blockptr, true, nullptr);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)

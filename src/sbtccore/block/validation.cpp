@@ -61,7 +61,7 @@
 
 CCriticalSection cs_main;
 
-BlockMap mapBlockIndex;
+//BlockMap mapBlockIndex;
 CChain chainActive;
 CBlockIndex *pindexBestHeader = nullptr;
 CWaitableCriticalSection csBestBlock;
@@ -295,14 +295,6 @@ bool CScriptCheck::operator()()
                         CachingTransactionSignatureChecker(ptxTo, nIn, amount, cacheStore, *txdata), &error);
 }
 
-int GetSpendHeight(const CCoinsViewCache &inputs)
-{
-    LOCK(cs_main);
-    CBlockIndex *pindexPrev = mapBlockIndex.find(inputs.GetBestBlock())->second;
-    return pindexPrev->nHeight + 1;
-}
-
-
 static CuckooCache::cache<uint256, SignatureCacheHasher> scriptExecutionCache;
 static uint256 scriptExecutionCacheNonce(GetRandHash());
 
@@ -524,47 +516,6 @@ public:
     }
 };
 
-bool IsAgainstCheckPoint(const CChainParams &chainparams, const CBlockIndex *pindex)
-{
-
-    auto lastpioint = Checkpoints::GetLastCheckPointBlockIndex(chainparams.Checkpoints());
-
-    if (lastpioint == nullptr)
-    {
-        return false;
-    }
-
-    if (pindex->nHeight >= lastpioint->nHeight)
-    {
-
-        if (pindex->GetAncestor(lastpioint->nHeight)->GetBlockHash() == lastpioint->GetBlockHash())
-        {
-            return false;
-        }
-
-    } else
-    {
-        if (lastpioint->GetAncestor(pindex->nHeight)->GetBlockHash() == pindex->GetBlockHash())
-        {
-            return false;
-        }
-    }
-    return true;
-}
-
-
-bool IsAgainstCheckPoint(const CChainParams &chainparams, const int &nHeight, const uint256 &hash)
-{
-    const auto tPoint = chainparams.Checkpoints();
-    auto test = tPoint.mapCheckpoints.find(nHeight);
-    if (test != tPoint.mapCheckpoints.end())
-    {
-        if (test->second != hash)
-            return true;
-    }
-    return false;
-}
-
 bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params)
 {
     LOCK(cs_main);
@@ -713,19 +664,3 @@ double GuessVerificationProgress(const ChainTxData &data, CBlockIndex *pindex)
     return pindex->nChainTx / fTxTotal;
 }
 
-class CMainCleanup
-{
-public:
-    CMainCleanup()
-    {
-    }
-
-    ~CMainCleanup()
-    {
-        // block headers
-        BlockMap::iterator it1 = mapBlockIndex.begin();
-        for (; it1 != mapBlockIndex.end(); it1++)
-            delete (*it1).second;
-        mapBlockIndex.clear();
-    }
-} instance_of_cmaincleanup;

@@ -305,6 +305,11 @@ bool CChainCommonent::IsInitialBlockDownload() const
 bool CChainCommonent::DoesBlockExist(uint256 hash)
 {
     //TODO:
+    return (cIndexManager.GetBlockIndex(hash) != nullptr);
+}
+
+CBlockIndex *CChainCommonent::GetBlockIndex(uint256 hash)
+{
     return cIndexManager.GetBlockIndex(hash);
 }
 
@@ -349,6 +354,11 @@ bool CChainCommonent::GetActiveChainTipHash(uint256 &tipHash)
     }
 
     return false;
+}
+
+std::set<const CBlockIndex *, CompareBlocksByHeight> CChainCommonent::GetTips()
+{
+    return cIndexManager.GetTips();
 }
 
 void CChainCommonent::OnNodeDisconnected(int64_t nodeID, bool /*bInBound*/, int /*disconnectReason*/)
@@ -1729,31 +1739,8 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     bool fScriptChecks = true;
     if (!hashAssumeValid.IsNull())
     {
-        // We've been configured with the hash of a block which has been externally verified to have a valid history.
-        // A suitable default value is included with the software and updated from time to time.  Because validity
-        //  relative to a piece of software is an objective fact these defaults can be easily reviewed.
-        // This setting doesn't force the selection of any particular chain but makes validating some faster by
-        //  effectively caching the result of part of the verification.
-        BlockMap::const_iterator it = mapBlockIndex.find(hashAssumeValid);
-        if (it != mapBlockIndex.end())
-        {
-            if (it->second->GetAncestor(pindex->nHeight) == pindex &&
-                pindexBestHeader->GetAncestor(pindex->nHeight) == pindex &&
-                pindexBestHeader->nChainWork >= nMinimumChainWork)
-            {
-                // This block is a member of the assumed verified chain and an ancestor of the best header.
-                // The equivalent time check discourages hash power from extorting the network via DOS attack
-                //  into accepting an invalid block through telling users they must manually set assumevalid.
-                //  Requiring a software change or burying the invalid block, regardless of the setting, makes
-                //  it hard to hide the implication of the demand.  This also avoids having release candidates
-                //  that are hardly doing any signature verification at all in testing without having to
-                //  artificially set the default assumed verified block further back.
-                // The test against nMinimumChainWork prevents the skipping when denied access to any chain at
-                //  least as good as the expected chain.
-                fScriptChecks = (GetBlockProofEquivalentTime(*pindexBestHeader, *pindex, *pindexBestHeader,
-                                                             chainparams.GetConsensus()) <= 60 * 60 * 24 * 7 * 2);
-            }
-        }
+        int64_t etime = cIndexManager.GetBlockProofEquivalentTime(hashAssumeValid, pindex, chainparams);
+        fScriptChecks = (etime <= 60 * 60 * 24 * 7 * 2);
     }
 
     int64_t nTime1 = GetTimeMicros();
@@ -2681,7 +2668,7 @@ bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                            cIndexManager.GetBlockIndex(hash)->nHeight % 1000 == 0)
                 {
                     mlog.info("Block Import: already had block %s at height %d", hash.ToString(),
-                              mapBlockIndex[hash]->nHeight);
+                              cIndexManager.GetBlockIndex(hash)->nHeight);
                 }
 
                 // Activate the genesis block so normal node progress can continue
@@ -3119,4 +3106,15 @@ bool CChainCommonent::PreciousBlock(CValidationState &state, const CChainParams 
 bool CChainCommonent::ResetBlockFailureFlags(CBlockIndex *pindex)
 {
     return cIndexManager.ResetBlockFailureFlags(pindex);
+}
+
+int CChainCommonent::GetSpendHeight(const CCoinsViewCache &inputs)
+{
+    LOCK(cs);
+    CBlockIndex *pindexPrev = cIndexManager.GetBlockIndex(inputs.GetBestBlock());
+    if(pindexPrev == nullptr)
+    {
+        return 1;
+    }
+    return pindexPrev->nHeight + 1;
 }

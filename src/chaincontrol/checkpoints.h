@@ -85,12 +85,7 @@ namespace Checkpoints
         CDBWrapper db;
     };
 
-    //! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
-    CBlockIndex *GetLastCheckpoint(const CCheckpointData &data);
-
     bool GetCheckpointByHeight(const int nHeight, std::vector<CCheckData> &vnCheckPoints);
-
-    CBlockIndex const *GetLastCheckPointBlockIndex(const CCheckpointData &data);
 
 } //namespace Checkpoints
 

@@ -431,12 +431,13 @@ namespace
 
         if (!state->hashLastUnknownBlock.IsNull())
         {
-            BlockMap::iterator itOld = mapBlockIndex.find(state->hashLastUnknownBlock);
-            if (itOld != mapBlockIndex.end() && itOld->second->nChainWork > 0)
+            GET_CHAIN_INTERFACE(ifChainObj);
+            CBlockIndex *pIndexOld = ifChainObj->GetBlockIndex(state->hashLastUnknownBlock);
+            if ((pIndexOld != nullptr) && (pIndexOld->nChainWork > 0))
             {
                 if (state->pindexBestKnownBlock == nullptr ||
-                    itOld->second->nChainWork >= state->pindexBestKnownBlock->nChainWork)
-                    state->pindexBestKnownBlock = itOld->second;
+                    pIndexOld->nChainWork >= state->pindexBestKnownBlock->nChainWork)
+                    state->pindexBestKnownBlock = pIndexOld;
                 state->hashLastUnknownBlock.SetNull();
             }
         }
@@ -450,13 +451,14 @@ namespace
 
         ProcessBlockAvailability(nodeid);
 
-        BlockMap::iterator it = mapBlockIndex.find(hash);
-        if (it != mapBlockIndex.end() && it->second->nChainWork > 0)
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CBlockIndex *pIndex = ifChainObj->GetBlockIndex(hash);
+        if ((pIndex != nullptr) && (pIndex->nChainWork > 0))
         {
             // An actually better block was announced.
             if (state->pindexBestKnownBlock == nullptr ||
-                it->second->nChainWork >= state->pindexBestKnownBlock->nChainWork)
-                state->pindexBestKnownBlock = it->second;
+                pIndex->nChainWork >= state->pindexBestKnownBlock->nChainWork)
+                state->pindexBestKnownBlock = pIndex;
         } else
         {
             // An unknown block was announced; just assume that the latest one is the best one.
@@ -764,7 +766,8 @@ bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
         }
         case MSG_BLOCK:
         case MSG_WITNESS_BLOCK:
-            return mapBlockIndex.count(inv.hash);
+            GET_CHAIN_INTERFACE(ifChainObj);
+            return ifChainObj->DoesBlockExist(inv.hash);
     }
     // Don't know what it is, just say we already got one
     return true;
@@ -1591,9 +1594,8 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
                 // headers that aren't on chainActive, give up.
                 for (const uint256 &hash : pto->vBlockHashesToAnnounce)
                 {
-                    BlockMap::iterator mi = mapBlockIndex.find(hash);
-                    assert(mi != mapBlockIndex.end());
-                    const CBlockIndex *pindex = mi->second;
+                    const CBlockIndex *pindex = ifChainObj->GetBlockIndex(hash);
+                    assert(pindex != nullptr);
                     if (chainActive[pindex->nHeight] != pindex)
                     {
                         // Bail out if we reorged away from this block
@@ -1702,9 +1704,8 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
                 if (!pto->vBlockHashesToAnnounce.empty())
                 {
                     const uint256 &hashToAnnounce = pto->vBlockHashesToAnnounce.back();
-                    BlockMap::iterator mi = mapBlockIndex.find(hashToAnnounce);
-                    assert(mi != mapBlockIndex.end());
-                    const CBlockIndex *pindex = mi->second;
+                    const CBlockIndex *pindex = ifChainObj->GetBlockIndex(hashToAnnounce);
+                    assert(pindex != nullptr);
 
                     // Warn if we're announcing a block that is not on the main chain.
                     // This should be very rare and could be optimized out.
@@ -3802,7 +3803,7 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
     bool received_new_header = false;
     {
         LOCK(cs_main);
-        if (mapBlockIndex.find(cmpctblock.header.hashPrevBlock) == mapBlockIndex.end())
+        if (!ifChainObj->DoesBlockExist(cmpctblock.header.hashPrevBlock))
         {
             // Doesn't connect (or is genesis), instead of DoSing in AcceptBlockHeader, request deeper headers
             if (!ifChainObj->IsInitialBlockDownload())
@@ -3814,7 +3815,7 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
             return true;
         }
 
-        if (mapBlockIndex.find(cmpctblock.header.GetHash()) == mapBlockIndex.end())
+        if (!ifChainObj->DoesBlockExist(cmpctblock.header.GetHash()))
         {
             received_new_header = true;
         }

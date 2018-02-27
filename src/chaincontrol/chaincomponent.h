@@ -181,9 +181,13 @@ public:
 
     bool DoesBlockExist(uint256 hash) override;
 
+    CBlockIndex *GetBlockIndex(uint256 hash) override;
+
     int GetActiveChainHeight() override;
 
     bool GetActiveChainTipHash(uint256 &tipHash) override;
+
+    std::set<const CBlockIndex *, CompareBlocksByHeight> GetTips() override;
 
     CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) override;
 
@@ -233,6 +237,8 @@ public:
     bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex) override;
 
     bool ResetBlockFailureFlags(CBlockIndex *pindex) override;
+
+    int GetSpendHeight(const CCoinsViewCache &inputs) override;
 
 private:
 

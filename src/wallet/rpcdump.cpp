@@ -18,6 +18,9 @@
 
 #include "rpcwallet.h"
 
+#include "framework/base.hpp"
+#include "interface/ichaincomponent.h"
+
 #include <fstream>
 #include <stdint.h>
 
@@ -349,8 +352,9 @@ UniValue importprunedfunds(const JSONRPCRequest &request)
 
         LOCK(cs_main);
 
-        if (!mapBlockIndex.count(merkleBlock.header.GetHash()) ||
-            !chainActive.Contains(mapBlockIndex[merkleBlock.header.GetHash()]))
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if (!ifChainObj->DoesBlockExist(merkleBlock.header.GetHash()) ||
+            !chainActive.Contains(ifChainObj->GetBlockIndex(merkleBlock.header.GetHash())))
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found in chain");
 
         std::vector<uint256>::const_iterator it;

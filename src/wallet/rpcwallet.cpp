@@ -30,6 +30,7 @@
 #include "base.hpp"
 #include "argmanager.h"
 #include "walletcomponent.h"
+#include "interface/ichaincomponent.h"
 
 #include <stdint.h>
 
@@ -94,6 +95,7 @@ void EnsureWalletIsUnlocked(CWallet *const pwallet)
 
 void WalletTxToJSON(const CWalletTx &wtx, UniValue &entry)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
     int confirms = wtx.GetDepthInMainChain();
     entry.push_back(Pair("confirmations", confirms));
     if (wtx.IsCoinBase())
@@ -102,7 +104,7 @@ void WalletTxToJSON(const CWalletTx &wtx, UniValue &entry)
     {
         entry.push_back(Pair("blockhash", wtx.hashBlock.GetHex()));
         entry.push_back(Pair("blockindex", wtx.nIndex));
-        entry.push_back(Pair("blocktime", mapBlockIndex[wtx.hashBlock]->GetBlockTime()));
+        entry.push_back(Pair("blocktime", ifChainObj->GetBlockIndex(wtx.hashBlock)->GetBlockTime()));
     } else
     {
         entry.push_back(Pair("trusted", wtx.IsTrusted()));
@@ -1956,15 +1958,17 @@ UniValue listsinceblock(const JSONRPCRequest &request)
 
     if (!request.params[0].isNull() && !request.params[0].get_str().empty())
     {
+        GET_CHAIN_INTERFACE(ifChainObj);
         uint256 blockId;
 
         blockId.SetHex(request.params[0].get_str());
-        BlockMap::iterator it = mapBlockIndex.find(blockId);
-        if (it == mapBlockIndex.end())
+
+        paltindex = pindex = ifChainObj->GetBlockIndex(blockId);
+        if (pindex == nullptr)
         {
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
         }
-        paltindex = pindex = it->second;
+
         if (chainActive[pindex->nHeight] != pindex)
         {
             // the block being asked for is a part of a deactivated chain;
