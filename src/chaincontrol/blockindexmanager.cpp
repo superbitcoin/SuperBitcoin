@@ -1218,3 +1218,34 @@ bool CBlockIndexManager::ReceivedBlockTransactions(const CBlock &block, CValidat
 
     return true;
 }
+
+bool CBlockIndexManager::PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex)
+{
+    {
+        LOCK(cs);
+        if (pindex->nChainWork < cChainActive.Tip()->nChainWork)
+        {
+            // Nothing to do, this block is not at the tip.
+            return true;
+        }
+        if (cChainActive.Tip()->nChainWork > nLastPreciousChainwork)
+        {
+            // The chain has been extended since the last call, reset the counter.
+            nBlockReverseSequenceId = -1;
+        }
+        nLastPreciousChainwork = cChainActive.Tip()->nChainWork;
+        setBlockIndexCandidates.erase(pindex);
+        pindex->nSequenceId = nBlockReverseSequenceId;
+        if (nBlockReverseSequenceId > std::numeric_limits<int32_t>::min())
+        {
+            // We can't keep reducing the counter if somebody really wants to
+            // call preciousblock 2**31-1 times on the same set of tips...
+            nBlockReverseSequenceId--;
+        }
+        if (pindex->IsValid(BLOCK_VALID_TRANSACTIONS) && pindex->nChainTx)
+        {
+            setBlockIndexCandidates.insert(pindex);
+            PruneBlockIndexCandidates();
+        }
+    }
+}

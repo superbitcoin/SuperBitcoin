@@ -230,6 +230,8 @@ public:
 
     void FlushStateToDisk() override;
 
+    bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex) override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);

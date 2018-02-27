@@ -1458,7 +1458,8 @@ UniValue preciousblock(const JSONRPCRequest &request)
     }
 
     CValidationState state;
-    PreciousBlock(state, Params(), pblockindex);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    ifChainObj->PreciousBlock(state, Params(), pblockindex);
 
     if (!state.IsValid())
     {

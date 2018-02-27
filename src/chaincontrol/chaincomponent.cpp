@@ -3107,3 +3107,11 @@ void CChainCommonent::PruneBlockFilesManual(int nManualPruneHeight)
     //    const CChainParams &chainparams = Params();
     //    FlushStateToDisk(chainparams, state, FLUSH_STATE_NONE, nManualPruneHeight);
 }
+
+bool CChainCommonent::PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex)
+{
+    cIndexManager.PreciousBlock(state, params, pindex);
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    return ifChainObj->ActivateBestChain(state, params, nullptr);
+}

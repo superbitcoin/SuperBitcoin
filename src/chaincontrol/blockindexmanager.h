@@ -135,6 +135,8 @@ public:
     bool ContextualCheckBlockHeader(const CBlockHeader &block, CValidationState &state, const CChainParams &params,
                                     const CBlockIndex *pindexPrev, int64_t nAdjustedTime);
 
+    bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex);
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;
@@ -159,6 +161,11 @@ private:
     CChain cChainActive;
 
     CCriticalSection cs;
+
+    /** Decreasing counter (used by subsequent preciousblock calls). */
+    int32_t nBlockReverseSequenceId = -1;
+    /** chainwork for the last block that preciousblock has been applied to. */
+    arith_uint256 nLastPreciousChainwork = 0;
 
     bool Init(int64_t iBlockTreeDBCache, bool bReIndex, const CChainParams &chainparams);
 
