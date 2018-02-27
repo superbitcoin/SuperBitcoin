@@ -47,7 +47,7 @@ void CArgsManager::ForceSetArg(const std::string &strArg, const unsigned int val
 }
 
 
-const std::vector<std::string> CArgsManager::GetArgs(const std::string &strArg)const
+const std::vector<std::string> CArgsManager::GetArgs(const std::string &strArg) const
 {
     LOCK(cs_args);
     std::string tmp_strArg = SubPrefix(strArg);
@@ -452,12 +452,6 @@ void CArgsManager::InitPromOptions(bpo::options_description *app, bpo::variables
     bpo::store(bpo::parse_command_line(argc, argv, *app), vm);
 }
 
-void CArgsManager::PrintVersion()
-{
-    std::cout << strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" +
-                 FormatParagraph(LicenseInfo()) << std::endl;
-}
-
 bool CArgsManager::Init(int argc, char *argv[])
 {
     vector<string> argv_arr_tmp;
@@ -533,36 +527,53 @@ bool CArgsManager::merge_variable_map(bpo::variables_map &desc, bpo::variables_m
     return true;
 }
 
-
-void CArgsManager::ParseParameters(int argc, const char *const argv[])
+std::string CArgsManager::GetHelpMessage() const
 {
-
-}
-
-
-bool CArgsManager::PrintHelpMessage(std::function<void(void)> callback)
-{
-    if (vm.count("help"))
+    if (!app_bpo)
     {
-        std::cout << *app_bpo << std::endl;
-
-        return true;
+        return std::string();
     }
 
-    if (vm.count("version"))
-    {
-        if (callback)
-        {
-            callback();
-            return true;
-        } else
-        {
-            return false;
-        }
-    }
-
-    return false;
+    std::ostringstream oss;
+    oss << *app_bpo << std::endl;
+    return oss.str();
 }
+
+//void CArgsManager::ParseParameters(int argc, const char *const argv[])
+//{
+//
+//}
+//
+//
+//bool CArgsManager::PrintHelpMessage(std::function<void(void)> callback)
+//{
+//    if (vm.count("help"))
+//    {
+//        std::cout << *app_bpo << std::endl;
+//
+//        return true;
+//    }
+//
+//    if (vm.count("version"))
+//    {
+//        if (callback)
+//        {
+//            callback();
+//            return true;
+//        } else
+//        {
+//            return false;
+//        }
+//    }
+//
+//    return false;
+//}
+//
+//void CArgsManager::PrintVersion()
+//{
+//    std::cout << strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" +
+//                 FormatParagraph(LicenseInfo()) << std::endl;
+//}
 
 fs::path CArgsManager::GetConfigFile(const std::string &confPath)
 {
@@ -577,7 +588,8 @@ void CArgsManager::ReadConfigFile(const std::string &confPath)
 {
     bpo::variables_map vm_tmp;
     bfs::path config_file_name(GetConfigFile(confPath));
-    bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app_bpo, true), vm_tmp);
+    bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app_bpo, true),
+               vm_tmp);
     merge_variable_map(vm, vm_tmp);
 }
 
@@ -625,7 +637,7 @@ const fs::path &CArgsManager::GetDataDir(bool fNetSpecific) const
         path = GetDefaultDataDir();
     }
     if (fNetSpecific)
-        path /=  app().GetBaseChainParams().DataDir();
+        path /= app().GetBaseChainParams().DataDir();
 
     fs::create_directories(path);
 

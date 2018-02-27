@@ -97,7 +97,7 @@ public:
         return tDefault;
     }
 
-    const std::vector<std::string> GetArgs(const std::string &strArg) const ;
+    const std::vector<std::string> GetArgs(const std::string &strArg) const;
 
     void
     GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char *> &argv_arr);
@@ -113,11 +113,13 @@ public:
 
     bool IsArgSet(const std::string &strArg) const;
 
-    void ParseParameters(int argc, const char *const argv[]);
+    std::string GetHelpMessage() const;
 
-    bool PrintHelpMessage(std::function<void(void)> callback);
-
-    void PrintVersion();
+    //    void ParseParameters(int argc, const char *const argv[]);
+    //
+    //    bool PrintHelpMessage(std::function<void(void)> callback);
+    //
+    //    void PrintVersion();
 
     fs::path GetConfigFile(const std::string &confPath);
 
