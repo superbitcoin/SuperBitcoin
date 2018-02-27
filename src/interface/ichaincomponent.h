@@ -94,6 +94,8 @@ public:
     virtual bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex) = 0;
 
     virtual void FlushStateToDisk() = 0;
+
+    virtual bool ResetBlockFailureFlags(CBlockIndex *pindex) = 0;
     //add other interface methods here ...
 };
 

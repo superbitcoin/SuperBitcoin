@@ -410,18 +410,6 @@ void UpdateUncommittedBlockStructures(CBlock &block, const CBlockIndex *pindexPr
 std::vector<unsigned char>
 GenerateCoinbaseCommitment(CBlock &block, const CBlockIndex *pindexPrev, const Consensus::Params &consensusParams);
 
-/** Replay blocks that aren't fully applied to the database. */
-bool ReplayBlocks(const CChainParams &params, CCoinsView *view);
-
-/** Find the last common block between the parameter chain and a locator. */
-CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator);
-
-/** Mark a block as precious and reorganize. */
-bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex);
-
-/** Remove invalidity status from a block and its descendants. */
-bool ResetBlockFailureFlags(CBlockIndex *pindex);
-
 /** The currently-connected chain of blocks (protected by cs_main). */
 extern CChain chainActive;
 

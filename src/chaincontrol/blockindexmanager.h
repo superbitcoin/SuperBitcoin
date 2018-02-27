@@ -137,6 +137,8 @@ public:
 
     bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex);
 
+    bool ResetBlockFailureFlags(CBlockIndex *pindex);
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;

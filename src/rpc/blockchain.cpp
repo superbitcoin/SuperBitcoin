@@ -1528,16 +1528,17 @@ UniValue reconsiderblock(const JSONRPCRequest &request)
     std::string strHash = request.params[0].get_str();
     uint256 hash(uint256S(strHash));
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+
     {
         LOCK(cs_main);
         if (mapBlockIndex.count(hash) == 0)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
         CBlockIndex *pblockindex = mapBlockIndex[hash];
-        ResetBlockFailureFlags(pblockindex);
+        ifChainObj->ResetBlockFailureFlags(pblockindex);
     }
 
-    GET_CHAIN_INTERFACE(ifChainObj);
     CValidationState state;
     ifChainObj->ActivateBestChain(state, Params(), nullptr);
 
