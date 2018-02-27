@@ -2,6 +2,7 @@
 #include<thread>      //std::thread
 
 #include "chaincomponent.h"
+#include "checkpoints.h"
 #include "sbtccore/streams.h"
 #include "interface/inetcomponent.h"
 #include "utils/net/netmessagehelper.h"
@@ -10,11 +11,13 @@
 #include "interface/imempoolcomponent.h"
 #include "framework/warnings.h"
 #include "utils/util.h"
+#include "utils/timedata.h"
 #include "sbtccore/block/merkle.h"
 #include "sbtccore/checkqueue.h"
 #include "sbtccore/block/undo.h"
 #include "utils/merkleblock.h"
 #include "framework/base.hpp"
+#include "framework/validationinterface.h"
 #include "eventmanager/eventmanager.h"
 
 static int64_t nTimeCheck = 0;
@@ -30,6 +33,11 @@ static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 static int64_t nTimeTotal = 0;
 static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
+
+static const bool DEFAULT_PROXYRANDOMIZE = true;
+static const bool DEFAULT_REST_ENABLE = false;
+static const bool DEFAULT_DISABLE_SAFEMODE = false;
+static const bool DEFAULT_STOPAFTERBLOCKIMPORT = false;
 
 void CChainCommonent::ThreadScriptCheck()
 {

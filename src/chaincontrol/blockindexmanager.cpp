@@ -8,6 +8,7 @@
 #include "blockindexmanager.h"
 #include "blockfilemanager.h"
 #include "framework/warnings.h"
+#include "utils/timedata.h"
 
 CBlockIndexManager::CBlockIndexManager()
 {

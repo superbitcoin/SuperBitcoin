@@ -140,10 +140,10 @@ static int AppInitRPC(int argc, char *argv[])
     vector<const char *> argv_arr;
     GenerateOptFormat(argc, (const char **)argv, argv_arr_tmp, argv_arr);
     bpo::options_description *app = new bpo::options_description(strHead.c_str());
-    if (!gArgs.InitPromOptions(InitPromOptions, app, argv_arr.size(), &argv_arr[0], HMM_EMPTY))
-    {
-        return EXIT_FAILURE;
-    }
+//    if (!gArgs.InitPromOptions(InitPromOptions, app, argv_arr.size(), &argv_arr[0], HMM_EMPTY))
+//    {
+//        return EXIT_FAILURE;
+//    }
 
     if (gArgs.PrintHelpMessage(PrintVersion))
     {

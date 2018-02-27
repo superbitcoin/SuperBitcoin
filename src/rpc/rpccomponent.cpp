@@ -2,10 +2,13 @@
 #include "rpccomponent.h"
 #include "rpc/server.h"
 #include "rpc/register.h"
+#include "utils/util.h"
 #include "utils/net/httpserver.h"
 #include "utils/net/httprpc.h"
 #include "framework/base.hpp"
 #include "config/argmanager.h"
+
+log4cpp::Category &CHttpRpcComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_HTTP_RPC));
 
 CHttpRpcComponent::CHttpRpcComponent()
 {
@@ -19,7 +22,7 @@ CHttpRpcComponent::~CHttpRpcComponent()
 
 bool CHttpRpcComponent::ComponentInitialize()
 {
-    std::cout << "initialize http rpc component \n";
+    mlog.notice("initialize http rpc component.");
 
     RegisterAllCoreRPCCommands(tableRPC);
 
@@ -28,7 +31,7 @@ bool CHttpRpcComponent::ComponentInitialize()
 
 bool CHttpRpcComponent::ComponentStartup()
 {
-    std::cout << "startup http rpc component \n";
+    mlog.notice("startup http rpc component.");
 
     const CArgsManager& appArgs = app().GetArgsManager();
 
@@ -40,19 +43,19 @@ bool CHttpRpcComponent::ComponentStartup()
 //    RPCServer::OnPreCommand(&OnRPCPreCommand);
 
     if (!InitHTTPServer())
-        return InitError(_("Unable to init HTTP server. See debug log for details."));
+        return error("Unable to init HTTP server. See debug log for details.");
 
     if (!StartRPC())
-        return InitError(_("Unable to start RPC server. See debug log for details."));
+        return error("Unable to start RPC server. See debug log for details.");
 
     if (!StartHTTPRPC())
-        return InitError(_("Unable to start HTTP RPC server. See debug log for details."));
+        return error("Unable to start HTTP RPC server. See debug log for details.");
 
-    if (appArgs.GetArg<bool>("-rest", DEFAULT_REST_ENABLE) && !StartREST())
-        return InitError(_("Unable to start REST server. See debug log for details."));
+    if (appArgs.GetArg<bool>("-rest", false) && !StartREST())
+        return error("Unable to start REST server. See debug log for details.");
 
     if (!StartHTTPServer())
-        return InitError(_("Unable to start HTTP server. See debug log for details."));
+        return error("Unable to start HTTP server. See debug log for details.");
 
     SetRPCWarmupFinished();
 
@@ -61,7 +64,7 @@ bool CHttpRpcComponent::ComponentStartup()
 
 bool CHttpRpcComponent::ComponentShutdown()
 {
-    std::cout << "shutdown http rpc component \n";
+    mlog.notice("shutdown http rpc component.");
 
     InterruptHTTPServer();
     InterruptHTTPRPC();
