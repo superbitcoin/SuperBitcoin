@@ -1089,6 +1089,8 @@ CBlockIndex *CBlockIndexManager::GetIndexBestHeader()
 bool CBlockIndexManager::SetDirtyIndex(CBlockIndex *pIndex)
 {
     setDirtyBlockIndex.insert(pIndex);
+
+    return true;
 }
 
 bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize,

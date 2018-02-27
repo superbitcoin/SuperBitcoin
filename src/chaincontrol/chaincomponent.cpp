@@ -1026,7 +1026,7 @@ bool CChainCommonent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, ui
     //    }
 
     bool fNewBlock = false;
-    ::ProcessNewBlock(app().GetChainParams(), pblock, forceProcessing, &fNewBlock);
+    ProcessNewBlock(app().GetChainParams(), pblock, forceProcessing, &fNewBlock);
     if (fNewBlock)
     {
         SetFlagsBit(xnode->retFlags, NF_NEWBLOCK);
@@ -1085,42 +1085,43 @@ bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
     return NetSendBlockTransactions(xnode, req, block);
 }
 
-bool CChainCommonent::ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
+bool
+CChainCommonent::ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
 {
-    return ::ProcessNewBlock(app().GetChainParams(), pblock, fForceProcessing, fNewBlock);
+    return ProcessNewBlock(app().GetChainParams(), pblock, fForceProcessing, fNewBlock);
 
-//    const CChainParams &chainparams = app().GetChainParams();
-//    {
-//        CBlockIndex *pindex = nullptr;
-//        if (fNewBlock)
-//            *fNewBlock = false;
-//        CValidationState state;
-//        // Ensure that CheckBlock() passes before calling AcceptBlock, as
-//        // belt-and-suspenders.
-//        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus());
-//
-//        LOCK(cs_main);
-//
-//        if (ret)
-//        {
-//            // Store to disk
-//            ret = AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
-//        }
-//        CheckBlockIndex(chainparams.GetConsensus());
-//        if (!ret)
-//        {
-//            GetMainSignals().BlockChecked(*pblock, state);
-//            return error("%s: AcceptBlock FAILED", __func__);
-//        }
-//    }
-//
-//    NotifyHeaderTip();
-//
-//    CValidationState state; // Only used to report errors, not invalidity - ignore it
-//    if (!ActivateBestChain(state, chainparams, pblock))
-//        return error("%s: ActivateBestChain failed", __func__);
-//
-//    return true;
+    //    const CChainParams &chainparams = app().GetChainParams();
+    //    {
+    //        CBlockIndex *pindex = nullptr;
+    //        if (fNewBlock)
+    //            *fNewBlock = false;
+    //        CValidationState state;
+    //        // Ensure that CheckBlock() passes before calling AcceptBlock, as
+    //        // belt-and-suspenders.
+    //        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus());
+    //
+    //        LOCK(cs_main);
+    //
+    //        if (ret)
+    //        {
+    //            // Store to disk
+    //            ret = AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
+    //        }
+    //        CheckBlockIndex(chainparams.GetConsensus());
+    //        if (!ret)
+    //        {
+    //            GetMainSignals().BlockChecked(*pblock, state);
+    //            return error("%s: AcceptBlock FAILED", __func__);
+    //        }
+    //    }
+    //
+    //    NotifyHeaderTip();
+    //
+    //    CValidationState state; // Only used to report errors, not invalidity - ignore it
+    //    if (!ActivateBestChain(state, chainparams, pblock))
+    //        return error("%s: ActivateBestChain failed", __func__);
+    //
+    //    return true;
 }
 
 bool CChainCommonent::NetSendBlockTransactions(ExNode *xnode, const BlockTransactionsRequest &req, const CBlock &block)
@@ -1267,6 +1268,13 @@ bool CChainCommonent::FlushStateToDisk(CValidationState &state, FlushStateMode m
     return true;
 }
 
+void CChainCommonent::FlushStateToDisk()
+{
+    CValidationState state;
+    const CChainParams &params = app().GetChainParams();
+    FlushStateToDisk(state, FLUSH_STATE_ALWAYS, params);
+}
+
 bool CChainCommonent::IsInitialBlockDownload()
 {
     // Once this function has returned false, it must remain false.
@@ -1309,7 +1317,7 @@ void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
 
     chainActive.SetTip(pindexNew);
 
-    ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
+    //    ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
     // New best block
     //    txmempool->AddTransactionsUpdated(1); todo
 
@@ -2483,7 +2491,7 @@ int CChainCommonent::VerifyBlocks()
     const CArgsManager &cArgs = app().GetArgsManager();
     uint32_t checkLevel = cArgs.GetArg<uint32_t>("-checklevel", DEFAULT_CHECKLEVEL);
     int checkBlocks = cArgs.GetArg<int>("-checkblocks", DEFAULT_CHECKBLOCKS);
-    if (CVerifyDB().VerifyDB(chainParams, cViewManager.GetCoinViewDB(), checkLevel, checkBlocks))
+    if (VerifyDB(chainParams, cViewManager.GetCoinViewDB(), checkLevel, checkBlocks))
     {
         return ERR_VERIFY_DB;
     }
@@ -2884,3 +2892,218 @@ log4cpp::Category &CChainCommonent::getLog()
     return mlog;
 }
 
+bool CChainCommonent::VerifyDB(const CChainParams &chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth)
+{
+    uiInterface.ShowProgress(_("Verifying blocks..."), 0);
+
+    CChain &chainActive = cIndexManager.GetChain();
+    if (chainActive.Tip() == nullptr || chainActive.Tip()->pprev == nullptr)
+        return true;
+
+    // Verify blocks in the best chain
+    if (nCheckDepth <= 0 || nCheckDepth > chainActive.Height())
+        nCheckDepth = chainActive.Height();
+    nCheckLevel = std::max(0, std::min(4, nCheckLevel));
+    LogPrintf("Verifying last %i blocks at level %i\n", nCheckDepth, nCheckLevel);
+    CCoinsViewCache coins(coinsview);
+    CBlockIndex *pindexState = chainActive.Tip();
+    CBlockIndex *pindexFailure = nullptr;
+    int nGoodTransactions = 0;
+    CValidationState state;
+    int reportDone = 0;
+    LogPrintf("[0%%]...");
+    for (CBlockIndex *pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)
+    {
+        boost::this_thread::interruption_point();
+        int percentageDone = std::max(1, std::min(99, (int)(((double)(chainActive.Height() - pindex->nHeight)) /
+                                                            (double)nCheckDepth * (nCheckLevel >= 4 ? 50 : 100))));
+        if (reportDone < percentageDone / 10)
+        {
+            // report every 10% step
+            LogPrintf("[%d%%]...", percentageDone);
+            reportDone = percentageDone / 10;
+        }
+        uiInterface.ShowProgress(_("Verifying blocks..."), percentageDone);
+        if (pindex->nHeight < chainActive.Height() - nCheckDepth)
+            break;
+        if (fPruneMode && !(pindex->nStatus & BLOCK_HAVE_DATA))
+        {
+            // If pruning, only go back as far as we have data.
+            LogPrintf("VerifyDB(): block verification stopping at height %d (pruning, no data)\n", pindex->nHeight);
+            break;
+        }
+        CBlock block;
+        // check level 0: read from disk
+        if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
+            return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight,
+                         pindex->GetBlockHash().ToString());
+        // check level 1: verify block validity
+        if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams.GetConsensus(), false, false))
+            return error("%s: *** found bad block at %d, hash=%s (%s)\n", __func__,
+                         pindex->nHeight, pindex->GetBlockHash().ToString(), FormatStateMessage(state));
+        // check level 2: verify undo validity
+        if (nCheckLevel >= 2 && pindex)
+        {
+            CBlockUndo undo;
+            CDiskBlockPos pos = pindex->GetUndoPos();
+            if (!pos.IsNull())
+            {
+                if (!UndoReadFromDisk(undo, pos, pindex->pprev->GetBlockHash()))
+                    return error("VerifyDB(): *** found bad undo data at %d, hash=%s\n", pindex->nHeight,
+                                 pindex->GetBlockHash().ToString());
+            }
+        }
+        // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
+        if (nCheckLevel >= 3 && pindex == pindexState &&
+            (coins.DynamicMemoryUsage() + pcoinsTip->DynamicMemoryUsage()) <= nCoinCacheUsage)
+        {
+            assert(coins.GetBestBlock() == pindex->GetBlockHash());
+            DisconnectResult res = cViewManager.DisconnectBlock(block, pindex, coins);
+            if (res == DISCONNECT_FAILED)
+            {
+                return error("VerifyDB(): *** irrecoverable inconsistency in block data at %d, hash=%s",
+                             pindex->nHeight, pindex->GetBlockHash().ToString());
+            }
+            pindexState = pindex->pprev;
+            if (res == DISCONNECT_UNCLEAN)
+            {
+                nGoodTransactions = 0;
+                pindexFailure = pindex;
+            } else
+            {
+                nGoodTransactions += block.vtx.size();
+            }
+        }
+        if (ShutdownRequested())
+            return true;
+    }
+    if (pindexFailure)
+        return error(
+                "VerifyDB(): *** coin database inconsistencies found (last %i blocks, %i good transactions before that)\n",
+                chainActive.Height() - pindexFailure->nHeight + 1, nGoodTransactions);
+
+    // check level 4: try reconnecting blocks
+    if (nCheckLevel >= 4)
+    {
+        CBlockIndex *pindex = pindexState;
+        while (pindex != chainActive.Tip())
+        {
+            boost::this_thread::interruption_point();
+            uiInterface.ShowProgress(_("Verifying blocks..."), std::max(1, std::min(99, 100 - (int)(((double)(
+                    chainActive.Height() - pindex->nHeight)) / (double)nCheckDepth * 50))));
+            pindex = chainActive.Next(pindex);
+            CBlock block;
+            if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
+                return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight,
+                             pindex->GetBlockHash().ToString());
+            if (!ConnectBlock(block, state, pindex, coins, chainparams))
+                return error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight,
+                             pindex->GetBlockHash().ToString());
+        }
+    }
+
+    LogPrintf("[DONE].\n");
+    LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n",
+              chainActive.Height() - pindexState->nHeight, nGoodTransactions);
+
+    uiInterface.ShowProgress("", 100);
+
+    return true;
+}
+
+// Exposed wrapper for AcceptBlockHeader
+bool CChainCommonent::ProcessNewBlockHeaders(const std::vector<CBlockHeader> &headers, CValidationState &state,
+                                             const CChainParams &chainparams, const CBlockIndex **ppindex,
+                                             CBlockHeader *first_invalid)
+{
+    if (first_invalid != nullptr)
+        first_invalid->SetNull();
+    {
+        LOCK(cs_main);
+        for (const CBlockHeader &header : headers)
+        {
+            CBlockIndex *pindex = nullptr; // Use a temp pindex instead of ppindex to avoid a const_cast
+            if (!cIndexManager.AcceptBlockHeader(header, state, chainparams, &pindex))
+            {
+                if (first_invalid)
+                    *first_invalid = header;
+                return false;
+            }
+            if (ppindex)
+            {
+                *ppindex = pindex;
+            }
+        }
+    }
+    NotifyHeaderTip();
+    return true;
+}
+
+bool CChainCommonent::ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock,
+                                      bool fForceProcessing,
+                                      bool *fNewBlock)
+{
+    {
+        CBlockIndex *pindex = nullptr;
+        if (fNewBlock)
+            *fNewBlock = false;
+        CValidationState state;
+        // Ensure that CheckBlock() passes before calling AcceptBlock, as
+        // belt-and-suspenders.
+        bool ret = CheckBlock(*pblock, state, chainparams.GetConsensus(), false, false);
+
+        LOCK(cs_main);
+
+        if (ret)
+        {
+            // Store to disk
+            ret = AcceptBlock(pblock, state, chainparams, &pindex, fForceProcessing, nullptr, fNewBlock);
+        }
+        cIndexManager.CheckBlockIndex(chainparams.GetConsensus());
+        if (!ret)
+        {
+            GetMainSignals().BlockChecked(*pblock, state);
+            return error("%s: AcceptBlock FAILED", __func__);
+        }
+    }
+
+    NotifyHeaderTip();
+
+    CValidationState state; // Only used to report errors, not invalidity - ignore it
+    if (!ActivateBestChain(state, chainparams, pblock))
+        return error("%s: ActivateBestChain failed", __func__);
+
+    return true;
+}
+
+bool CChainCommonent::TestBlockValidity(CValidationState &state, const CChainParams &chainparams, const CBlock &block,
+                                        CBlockIndex *pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
+{
+    AssertLockHeld(cs_main);
+    assert(pindexPrev && pindexPrev == chainActive.Tip());
+    CCoinsViewCache viewNew(pcoinsTip);
+    CBlockIndex indexDummy(block);
+    indexDummy.pprev = pindexPrev;
+    indexDummy.nHeight = pindexPrev->nHeight + 1;
+
+    // NOTE: CheckBlockHeader is called by CheckBlock
+    if (!cIndexManager.ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, GetAdjustedTime()))
+        return error("%s: Consensus::ContextualCheckBlockHeader: %s", __func__, FormatStateMessage(state));
+    if (!CheckBlock(block, state, chainparams.GetConsensus(), fCheckPOW, fCheckMerkleRoot))
+        return error("%s: Consensus::CheckBlock: %s", __func__, FormatStateMessage(state));
+    if (!ContextualCheckBlock(block, state, chainparams.GetConsensus(), pindexPrev))
+        return error("%s: Consensus::ContextualCheckBlock: %s", __func__, FormatStateMessage(state));
+    if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true))
+        return false;
+    assert(state.IsValid());
+
+    return true;
+}
+
+/* This function is called from the RPC code for pruneblockchain */
+void CChainCommonent::PruneBlockFilesManual(int nManualPruneHeight)
+{
+    //    CValidationState state;
+    //    const CChainParams &chainparams = Params();
+    //    FlushStateToDisk(chainparams, state, FLUSH_STATE_NONE, nManualPruneHeight);
+}

@@ -12,6 +12,7 @@
 #include "mempool/txmempool.h"
 #include "validation.h"
 #include "utils/util.h"
+#include "interface/ichaincomponent.h"
 
 #include <unordered_map>
 
@@ -221,7 +222,8 @@ ReadStatus PartiallyDownloadedBlock::FillBlock(CBlock &block, const std::vector<
         return READ_STATUS_INVALID;
 
     CValidationState state;
-    if (!CheckBlock(block, state, Params().GetConsensus()))
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->CheckBlock(block, state, Params().GetConsensus(), false, false))
     {
         // TODO: We really want to just check merkle tree manually here,
         // but that is expensive, and CheckBlock caches a block's

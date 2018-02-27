@@ -187,6 +187,9 @@ public:
 
     CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) override;
 
+    bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
+                           std::shared_ptr<const CBlock> pblock) override;
+
     // P2P network message response.
     bool NetRequestCheckPoint(ExNode *xnode, int height) override;
 
@@ -207,6 +210,25 @@ public:
     bool ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock) override;
 
     log4cpp::Category &getLog() override;
+
+    bool VerifyDB(const CChainParams &chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth) override;
+
+    bool ProcessNewBlockHeaders(const std::vector<CBlockHeader> &headers, CValidationState &state,
+                                const CChainParams &chainparams, const CBlockIndex **ppindex,
+                                CBlockHeader *first_invalid) override;
+
+    bool TestBlockValidity(CValidationState &state, const CChainParams &chainparams, const CBlock &block,
+                           CBlockIndex *pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot) override;
+
+    void PruneBlockFilesManual(int nManualPruneHeight) override;
+
+    bool
+    CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams, bool fCheckPOW,
+               bool fCheckMerkleRoot) override;
+
+    bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex) override;
+
+    void FlushStateToDisk() override;
 
 private:
 
@@ -261,20 +283,11 @@ private:
                                const std::shared_ptr<const CBlock> &pblock, bool &fInvalidFound,
                                ConnectTrace &connectTrace);
 
-    bool
-    ActivateBestChain(CValidationState &state, const CChainParams &chainparams, std::shared_ptr<const CBlock> pblock);
-
     bool FlushStateToDisk(CValidationState &state, FlushStateMode mode, const CChainParams &chainparams);
-
-    bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex);
 
     bool CheckActiveChain(CValidationState &state, const CChainParams &chainparams);
 
     bool RewindBlock(const CChainParams &params);
-
-    bool
-    CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams, bool fCheckPOW,
-               bool fCheckMerkleRoot);
 
     bool ContextualCheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams,
                               const CBlockIndex *pindexPrev);
@@ -300,6 +313,10 @@ private:
     bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage = "");
 
     bool LoadCheckPoint();
+
+    bool
+    ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing,
+                    bool *fNewBlock);
 
 public:
     static log4cpp::Category &mlog;

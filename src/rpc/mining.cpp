@@ -25,6 +25,7 @@
 #include "utils/utilstrencodings.h"
 #include "framework/validationinterface.h"
 #include "framework/warnings.h"
+#include "interface/ichaincomponent.h"
 
 #include <memory>
 #include <stdint.h>
@@ -124,6 +125,9 @@ generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, ui
     }
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+
     while (nHeight < nHeightEnd)
     {
         std::unique_ptr<CBlockTemplate> pblocktemplate(
@@ -150,7 +154,7 @@ generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, ui
             continue;
         }
         std::shared_ptr<const CBlock> shared_pblock = std::make_shared<const CBlock>(*pblock);
-        if (!ProcessNewBlock(Params(), shared_pblock, true, nullptr))
+        if (!ifChainObj->ProcessNewBlock(shared_pblock, true, nullptr))
             throw JSONRPCError(RPC_INTERNAL_ERROR, "ProcessNewBlock, block not accepted");
         ++nHeight;
         blockHashes.push_back(pblock->GetHash().GetHex());
@@ -428,7 +432,8 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
             if (block.hashPrevBlock != pindexPrev->GetBlockHash())
                 return "inconclusive-not-best-prevblk";
             CValidationState state;
-            TestBlockValidity(state, Params(), block, pindexPrev, false, true);
+            GET_CHAIN_INTERFACE(ifChainObj);
+            ifChainObj->TestBlockValidity(state, Params(), block, pindexPrev, false, true);
             return BIP22ValidationResult(state);
         }
 
@@ -460,7 +465,8 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     if (g_connman->GetNodeCount(CConnman::CONNECTIONS_ALL) == 0)
         throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "Bitcoin is not connected!");
 
-    if (IsInitialBlockDownload())
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (ifChainObj->IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "Bitcoin is downloading blocks...");
 
     static unsigned int nTransactionsUpdatedLast;
@@ -800,7 +806,8 @@ UniValue submitblock(const JSONRPCRequest &request)
 
     submitblock_StateCatcher sc(block.GetHash());
     RegisterValidationInterface(&sc);
-    bool fAccepted = ProcessNewBlock(Params(), blockptr, true, nullptr);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool fAccepted = ifChainObj->ProcessNewBlock(blockptr, true, nullptr);
     UnregisterValidationInterface(&sc);
     if (fBlockPresent)
     {

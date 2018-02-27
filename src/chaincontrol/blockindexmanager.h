@@ -129,6 +129,12 @@ public:
     bool ReceivedBlockTransactions(const CBlock &block, CValidationState &state, CBlockIndex *pindexNew,
                                    const CDiskBlockPos &pos, const Consensus::Params &consensusParams);
 
+    bool CheckBlockHeader(const CBlockHeader &block, CValidationState &state, const Consensus::Params &consensusParams,
+                          bool fCheckPOW = true);
+
+    bool ContextualCheckBlockHeader(const CBlockHeader &block, CValidationState &state, const CChainParams &params,
+                                    const CBlockIndex *pindexPrev, int64_t nAdjustedTime);
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;
@@ -171,13 +177,6 @@ private:
     void UnLoadBlockIndex();
 
     bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
-
-    bool CheckBlockHeader(const CBlockHeader &block, CValidationState &state, const Consensus::Params &consensusParams,
-                          bool fCheckPOW = true);
-
-    bool ContextualCheckBlockHeader(const CBlockHeader &block, CValidationState &state, const CChainParams &params,
-                                    const CBlockIndex *pindexPrev, int64_t nAdjustedTime);
-
 
 public:
     static log4cpp::Category &mlog;

@@ -6,8 +6,11 @@
 #include "utils/uint256.h"
 #include "framework/component.hpp"
 #include "chain.h"
+#include "config/chainparams.h"
+#include "coins.h"
 
 class CBlock;
+
 class CDataStream;
 
 class IChainComponent : public appbase::TComponent<IChainComponent>
@@ -49,6 +52,15 @@ public:
 
     virtual CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) = 0;
 
+    virtual bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
+                                   std::shared_ptr<const CBlock> pblock) = 0;
+
+    virtual bool VerifyDB(const CChainParams &chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth) = 0;
+
+    virtual bool ProcessNewBlockHeaders(const std::vector<CBlockHeader> &headers, CValidationState &state,
+                                        const CChainParams &chainparams, const CBlockIndex **ppindex,
+                                        CBlockHeader *first_invalid) = 0;
+
     virtual bool NetRequestCheckPoint(ExNode *xnode, int height) = 0;
 
     virtual bool NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream) = 0;
@@ -65,8 +77,21 @@ public:
 
     virtual bool NetRequestBlockTxn(ExNode *xnode, CDataStream &stream) = 0;
 
-    virtual bool ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock) = 0;
+    virtual bool
+    ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock) = 0;
 
+    virtual bool TestBlockValidity(CValidationState &state, const CChainParams &chainparams, const CBlock &block,
+                                   CBlockIndex *pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot) = 0;
+
+    virtual void PruneBlockFilesManual(int nManualPruneHeight) = 0;
+
+    virtual bool
+    CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams, bool fCheckPOW,
+               bool fCheckMerkleRoot) = 0;
+
+    virtual bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex) = 0;
+
+    virtual void FlushStateToDisk() = 0;
     //add other interface methods here ...
 };
 

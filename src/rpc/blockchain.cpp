@@ -12,6 +12,7 @@
 #include "chaincontrol/coins.h"
 #include "chaincontrol/validation.h"
 #include "chaincontrol/blockfilemanager.h"
+#include "interface/ichaincomponent.h"
 #include "block/validation.h"
 #include "sbtccore/core_io.h"
 #include "wallet/feerate.h"
@@ -929,7 +930,8 @@ UniValue pruneblockchain(const JSONRPCRequest &request)
         height = chainHeight - MIN_BLOCKS_TO_KEEP;
     }
 
-    PruneBlockFilesManual(height);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    ifChainObj->PruneBlockFilesManual(height);
     return uint64_t(height);
 }
 
@@ -959,7 +961,8 @@ UniValue gettxoutsetinfo(const JSONRPCRequest &request)
     UniValue ret(UniValue::VOBJ);
 
     CCoinsStats stats;
-    FlushStateToDisk();
+    GET_CHAIN_INTERFACE(ifChainObj);
+    ifChainObj->FlushStateToDisk();
     if (GetUTXOStats(pcoinsdbview, stats))
     {
         ret.push_back(Pair("height", (int64_t)stats.nHeight));
@@ -1090,7 +1093,8 @@ UniValue verifychain(const JSONRPCRequest &request)
     if (!request.params[1].isNull())
         nCheckDepth = request.params[1].get_int();
 
-    return CVerifyDB().VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    return ifChainObj->VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
 }
 
 /** Implementation of IsSuperMajority with better feedback */
@@ -1481,6 +1485,7 @@ UniValue invalidateblock(const JSONRPCRequest &request)
     std::string strHash = request.params[0].get_str();
     uint256 hash(uint256S(strHash));
     CValidationState state;
+    GET_CHAIN_INTERFACE(ifChainObj);
 
     {
         LOCK(cs_main);
@@ -1488,12 +1493,12 @@ UniValue invalidateblock(const JSONRPCRequest &request)
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 
         CBlockIndex *pblockindex = mapBlockIndex[hash];
-        InvalidateBlock(state, Params(), pblockindex);
+        ifChainObj->InvalidateBlock(state, Params(), pblockindex);
     }
 
     if (state.IsValid())
     {
-        ActivateBestChain(state, Params());
+        ifChainObj->ActivateBestChain(state, Params(), nullptr);
     }
 
     if (!state.IsValid())
@@ -1531,8 +1536,9 @@ UniValue reconsiderblock(const JSONRPCRequest &request)
         ResetBlockFailureFlags(pblockindex);
     }
 
+    GET_CHAIN_INTERFACE(ifChainObj);
     CValidationState state;
-    ActivateBestChain(state, Params());
+    ifChainObj->ActivateBestChain(state, Params(), nullptr);
 
     if (!state.IsValid())
     {

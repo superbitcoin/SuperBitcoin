@@ -232,43 +232,6 @@ static const unsigned int DEFAULT_CHECKLEVEL = 3;
 // Setting the target to > than 550MB will make it likely we can respect the target.
 static const uint64_t MIN_DISK_SPACE_FOR_BLOCK_FILES = 550 * 1024 * 1024;
 
-/** 
- * Process an incoming block. This only returns after the best known valid
- * block is made active. Note that it does not, however, guarantee that the
- * specific block passed to it has been checked for validity!
- *
- * If you want to *possibly* get feedback on whether pblock is valid, you must
- * install a CValidationInterface (see validationinterface.h) - this will have
- * its BlockChecked method called whenever *any* block completes validation.
- *
- * Note that we guarantee that either the proof-of-work is valid on pblock, or
- * (and possibly also) BlockChecked will have been called.
- * 
- * Call without cs_main held.
- *
- * @param[in]   pblock  The block we want to process.
- * @param[in]   fForceProcessing Process this block even if unrequested; used for non-network block sources and whitelisted peers.
- * @param[out]  fNewBlock A boolean which is set to indicate if the block was first received via this call
- * @return True if state.IsValid()
- */
-bool ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing,
-                     bool *fNewBlock);
-
-/**
- * Process incoming block headers.
- *
- * Call without cs_main held.
- *
- * @param[in]  block The block headers themselves
- * @param[out] state This may be set to an Error state if any error occurred processing them
- * @param[in]  chainparams The params for the chain we want to connect to
- * @param[out] ppindex If set, the pointer will be set to point to the last new block index object for the given headers
- * @param[out] first_invalid First header that fails validation, if one exists
- */
-bool
-ProcessNewBlockHeaders(const std::vector<CBlockHeader> &block, CValidationState &state, const CChainParams &chainparams,
-                       const CBlockIndex **ppindex = nullptr, CBlockHeader *first_invalid = nullptr);
-
 /** Check whether enough disk space is available for an incoming block */
 bool CheckDiskSpace(uint64_t nAdditionalBytes = 0);
 
@@ -328,18 +291,6 @@ void PruneOneBlockFile(const int fileNumber);
  *  Actually unlink the specified files
  */
 void UnlinkPrunedFiles(const std::set<int> &setFilesToPrune);
-
-/** Create a new block index entry for a given block hash */
-CBlockIndex *InsertBlockIndex(uint256 hash);
-
-/** Flush all state, indexes and buffers to disk. */
-void FlushStateToDisk();
-
-/** Prune block files and flush state to disk. */
-void PruneAndFlush();
-
-/** Prune block files up to a given height */
-void PruneBlockFilesManual(int nManualPruneHeight);
 
 /** Convert CValidationState to a human-readable message for logging */
 std::string FormatStateMessage(const CValidationState &state);
@@ -445,14 +396,6 @@ void InitScriptExecutionCache();
 
 /** Functions for validating blocks and updating the block tree */
 
-/** Context-independent validity checks */
-bool CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams,
-                bool fCheckPOW = true, bool fCheckMerkleRoot = true);
-
-/** Check a block is completely valid from start to finish (only works on top of our current best block, with cs_main held) */
-bool TestBlockValidity(CValidationState &state, const CChainParams &chainparams, const CBlock &block,
-                       CBlockIndex *pindexPrev, bool fCheckPOW = true, bool fCheckMerkleRoot = true);
-
 /** Check whether witness commitments are required for block. */
 bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
 
@@ -467,17 +410,6 @@ void UpdateUncommittedBlockStructures(CBlock &block, const CBlockIndex *pindexPr
 std::vector<unsigned char>
 GenerateCoinbaseCommitment(CBlock &block, const CBlockIndex *pindexPrev, const Consensus::Params &consensusParams);
 
-/** RAII wrapper for VerifyDB: Verify consistency of the block and coin databases */
-class CVerifyDB
-{
-public:
-    CVerifyDB();
-
-    ~CVerifyDB();
-
-    bool VerifyDB(const CChainParams &chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth);
-};
-
 /** Replay blocks that aren't fully applied to the database. */
 bool ReplayBlocks(const CChainParams &params, CCoinsView *view);
 
@@ -486,9 +418,6 @@ CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &loc
 
 /** Mark a block as precious and reorganize. */
 bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex);
-
-/** Mark a block as invalid. */
-bool InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex);
 
 /** Remove invalidity status from a block and its descendants. */
 bool ResetBlockFailureFlags(CBlockIndex *pindex);

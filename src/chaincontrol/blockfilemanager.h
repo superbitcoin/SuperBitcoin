@@ -12,6 +12,8 @@
 #include "chain.h"
 #include "utils/fs.h"
 #include "p2p/protocol.h"
+#include "sbtccore/block/undo.h"
+
 //
 //class CBlockFileManager
 //{
@@ -46,6 +48,8 @@ FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
 bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus::Params &consensusParams);
 
 bool ReadBlockFromDisk(CBlock &block, const CBlockIndex *pindex, const Consensus::Params &consensusParams);
+
+bool UndoReadFromDisk(CBlockUndo &blockundo, const CDiskBlockPos &pos, const uint256 &hashBlock);
 
 bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHeader::MessageStartChars &messageStart);
 

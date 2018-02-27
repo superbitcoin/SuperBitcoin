@@ -25,6 +25,7 @@
 #include "utils/util.h"
 #include "utils/utilmoneystr.h"
 #include "framework/validationinterface.h"
+#include "interface/ichaincomponent.h"
 
 #include <algorithm>
 #include <queue>
@@ -183,8 +184,9 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     pblock->nNonce = 0;
     pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * (*pblock->vtx[0]).GetLegacySigOpCount();
 
+    GET_CHAIN_INTERFACE(ifChainObj);
     CValidationState state;
-    if (!TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false))
+    if (!ifChainObj->TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false))
     {
         throw std::runtime_error(strprintf("%s: TestBlockValidity failed: %s", __func__, FormatStateMessage(state)));
     }

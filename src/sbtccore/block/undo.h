@@ -10,6 +10,7 @@
 #include "config/consensus.h"
 #include "transaction/transaction.h"
 #include "sbtccore/serialize.h"
+#include "chaincontrol/coins.h"
 
 /** Undo information for a CTxIn
  *
