@@ -351,9 +351,6 @@ void UpdateUncommittedBlockStructures(CBlock &block, const CBlockIndex *pindexPr
 std::vector<unsigned char>
 GenerateCoinbaseCommitment(CBlock &block, const CBlockIndex *pindexPrev, const Consensus::Params &consensusParams);
 
-/** Global variable that points to the active CCoinsView (protected by cs_main) */
-extern CCoinsViewCache *pcoinsTip;
-
 /** Global variable that points to the active block tree (protected by cs_main) */
 extern CBlockTreeDB *pblocktree;
 

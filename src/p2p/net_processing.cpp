@@ -749,6 +749,7 @@ bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
     CChain& chainActive = ifChainObj->GetActiveChain();
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
 
     switch (inv.type)
     {

@@ -560,6 +560,8 @@ static bool rest_getutxos(HTTPRequest *req, const std::string &strURIPart)
         CCoinsView viewDummy;
         CCoinsViewCache view(&viewDummy);
 
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
         CCoinsViewCache &viewChain = *pcoinsTip;
         CCoinsViewMemPool viewMempool(&viewChain, mempool);
 

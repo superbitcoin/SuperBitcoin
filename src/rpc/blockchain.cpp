@@ -1076,6 +1076,9 @@ UniValue gettxout(const JSONRPCRequest &request)
     if (!request.params[2].isNull())
         fMempool = request.params[2].get_bool();
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+
     Coin coin;
     if (fMempool)
     {
@@ -1093,7 +1096,6 @@ UniValue gettxout(const JSONRPCRequest &request)
         }
     }
 
-    GET_CHAIN_INTERFACE(ifChainObj);
     CBlockIndex *pindex = ifChainObj->GetBlockIndex(pcoinsTip->GetBestBlock());
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if (coin.nHeight == MEMPOOL_HEIGHT)
@@ -1140,6 +1142,8 @@ UniValue verifychain(const JSONRPCRequest &request)
         nCheckDepth = request.params[1].get_int();
 
     GET_CHAIN_INTERFACE(ifChainObj);
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+
     return ifChainObj->VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
 }
 

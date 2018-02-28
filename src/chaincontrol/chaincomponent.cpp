@@ -2935,7 +2935,7 @@ bool CChainCommonent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
         }
         // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
         if (nCheckLevel >= 3 && pindex == pindexState &&
-            (coins.DynamicMemoryUsage() + pcoinsTip->DynamicMemoryUsage()) <= nCoinCacheUsage)
+            (coins.DynamicMemoryUsage() + GetCoinsTip()->DynamicMemoryUsage()) <= nCoinCacheUsage)
         {
             assert(coins.GetBestBlock() == pindex->GetBlockHash());
             DisconnectResult res = cViewManager.DisconnectBlock(block, pindex, coins);
@@ -3061,7 +3061,7 @@ bool CChainCommonent::TestBlockValidity(CValidationState &state, const CChainPar
 {
     AssertLockHeld(cs_main);
     assert(pindexPrev && pindexPrev == cIndexManager.GetChain().Tip());
-    CCoinsViewCache viewNew(pcoinsTip);
+    CCoinsViewCache viewNew(cViewManager.GetCoinsTip());
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
@@ -3139,4 +3139,9 @@ CAmount CChainCommonent::GetBlockSubsidy(int nHeight)
 CCoinsView *CChainCommonent::GetCoinViewDB()
 {
     return cViewManager.GetCoinViewDB();
+}
+
+CCoinsViewCache *CChainCommonent::GetCoinsTip()
+{
+
 }

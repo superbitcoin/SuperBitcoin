@@ -94,7 +94,6 @@ CScript COINBASE_FLAGS;
 const std::string strMessageMagic = "Bitcoin Signed Message:\n";
 // Internal stuff
 
-CCoinsViewCache *pcoinsTip = nullptr;
 CBlockTreeDB *pblocktree = nullptr;
 
 bool CheckFinalTx(const CTransaction &tx, int flags)
@@ -200,6 +199,8 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
 
     if (fAllowSlow)
     { // use coin database to locate block that contains transaction, and scan it
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
         const Coin &coin = AccessByTxid(*pcoinsTip, hash);
         if (!coin.IsSpent())
             pindexSlow = chainActive[coin.nHeight];

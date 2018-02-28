@@ -250,6 +250,8 @@ public:
 
     CCoinsView *GetCoinViewDB() override;
 
+    CCoinsViewCache *GetCoinsTip() override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);
