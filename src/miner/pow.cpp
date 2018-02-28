@@ -10,6 +10,7 @@
 #include "block/block.h"
 #include "uint256.h"
 #include "block/validation.h"
+#include "interface/ichaincomponent.h"
 
 unsigned int
 GetNextWorkRequired(const CBlockIndex *pindexLast, const CBlockHeader *pblock, const Consensus::Params &params)
@@ -18,12 +19,14 @@ GetNextWorkRequired(const CBlockIndex *pindexLast, const CBlockHeader *pblock, c
     unsigned int nProofOfWorkLimit = UintToArith256(params.powLimit).GetCompact();
 
     // Special rule for regtest: we never retarget.
-    if (params.fPowNoRetargeting) {
+    if (params.fPowNoRetargeting)
+    {
         return pindexLast->nBits;
     }
 
+    GET_CHAIN_INTERFACE(ifChainObj);
     // active sbtc difficulty ajustment
-    if (IsSBTCForkEnabled(params, pindexLast->nHeight + 1))
+    if (ifChainObj->IsSBTCForkEnabled(pindexLast->nHeight + 1))
     {
         return GetNextSBTCWorkRequired(pindexLast, pblock, params);
     }
@@ -152,7 +155,8 @@ unsigned int GetNextSBTCWorkRequired(const CBlockIndex *pindexPrev,
     const CBlockIndex *pindexLast = GetSuitableBlock(pindexPrev);
     assert(pindexLast);
 
-    if (IsSBTCForkEnabled(params, nCurHeight) && nCurHeight - 149 < params.SBTCForkHeight)
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (ifChainObj->IsSBTCForkEnabled(nCurHeight) && nCurHeight - 149 < params.SBTCForkHeight)
     {
         nextTarget = GetChangelessTarget(pindexPrev, params);
     } else

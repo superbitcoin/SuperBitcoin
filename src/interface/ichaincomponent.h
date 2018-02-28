@@ -59,6 +59,12 @@ public:
 
     virtual std::set<const CBlockIndex *, CompareBlocksByHeight> GetTips() = 0;
 
+    virtual CCoinsView *GetCoinViewDB() = 0;
+
+    virtual CCoinsViewCache *GetCoinsTip() = 0;
+
+    virtual CBlockTreeDB *GetBlockTreeDB() = 0;
+
     virtual CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) = 0;
 
     virtual bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
@@ -109,6 +115,8 @@ public:
     virtual void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight) = 0;
 
     virtual CAmount GetBlockSubsidy(int nHeight) = 0;
+
+    virtual bool IsSBTCForkEnabled(const int height) = 0;
 
     //add other interface methods here ...
 };

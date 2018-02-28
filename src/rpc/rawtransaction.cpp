@@ -223,6 +223,7 @@ UniValue gettxoutproof(const JSONRPCRequest &request)
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
     CChain& chainActive = ifChainObj->GetActiveChain();
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
 
     CBlockIndex *pblockindex = nullptr;
 
@@ -651,6 +652,8 @@ UniValue combinerawtransaction(const JSONRPCRequest &request)
     {
         LOCK(cs_main);
         LOCK(mempool.cs);
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
         CCoinsViewCache &viewChain = *pcoinsTip;
         CCoinsViewMemPool viewMempool(&viewChain, mempool);
         view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
@@ -777,6 +780,8 @@ UniValue signrawtransaction(const JSONRPCRequest &request)
     CCoinsViewCache view(&viewDummy);
     {
         LOCK(mempool.cs);
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
         CCoinsViewCache &viewChain = *pcoinsTip;
         CCoinsViewMemPool viewMempool(&viewChain, mempool);
         view.SetBackend(viewMempool); // temporarily switch cache backend to db+mempool view
@@ -1009,6 +1014,8 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
     if (request.params.size() > 1 && request.params[1].get_bool())
         nMaxRawTxFee = 0;
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
     CCoinsViewCache &view = *pcoinsTip;
     bool fHaveChain = false;
     for (size_t o = 0; !fHaveChain && o < tx->vout.size(); o++)

@@ -25,6 +25,7 @@
 #include "interface/ichaincomponent.h"
 #include "utils/net/netmessagehelper.h"
 #include "orphantx.h"
+#include "chaincontrol/utils.h"
 
 using namespace appbase;
 
@@ -76,8 +77,9 @@ bool CTxMemPool::AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CVa
                                         plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, coins_to_uncache);
     if (!res)
     {
+        GET_CHAIN_INTERFACE(ifChainObj);
         for (const COutPoint &hashTx : coins_to_uncache)
-            pcoinsTip->Uncache(hashTx);
+            ifChainObj->GetCoinsTip()->Uncache(hashTx);
     }
     // After we've (potentially) uncached entries, ensure our coins cache is still within its size limits
     CValidationState stateDummy;
@@ -186,6 +188,10 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         LockPoints lp;
         {
             LOCK(this->cs);
+
+            GET_CHAIN_INTERFACE(ifChainObj);
+            CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+
             CCoinsViewMemPool viewMemPool(pcoinsTip, *this);
             view.SetBackend(viewMemPool);
 
@@ -616,6 +622,7 @@ void CTxMemPool::UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnect
     this->UpdateTransactionsFromBlock(vHashUpdate);
 
     GET_CHAIN_INTERFACE(ifChainObj);
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
     // We also need to remove any now-immature transactions
     this->removeForReorg(pcoinsTip, ifChainObj->GetActiveChain().Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
     // Re-limit mempool size, in case we added any transactions
@@ -631,6 +638,9 @@ void CTxMemPool::LimitMempoolSize(size_t limit, unsigned long age)
     {
         mlog.notice("Expired %i transactions from the memory pool\n", expired);
     }
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
 
     std::vector<COutPoint> vNoSpendsRemaining;
     this->TrimToSize(limit, &vNoSpendsRemaining);
@@ -664,6 +674,7 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
     } else
     {
         // pcoinsTip contains the UTXO set for chainActive.Tip()
+        CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
         CCoinsViewMemPool viewMemPool(pcoinsTip, mempool);
         std::vector<int> prevheights;
         prevheights.resize(tx.vin.size());
@@ -862,6 +873,10 @@ CTxMemPool::CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationSt
     LOCK(this->cs);
 
     assert(!tx.IsCoinBase());
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+
     for (const CTxIn &txin : tx.vin)
     {
         const Coin &coin = view.AccessCoin(txin.prevout);
@@ -1008,6 +1023,8 @@ bool CTxMemPool::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uint256 &t
     if (!DoesTransactionExist(tx.GetHash()) &&
         AcceptToMemoryPool(state, ptx, true, &fMissingInputs, &lRemovedTxn))
     {
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
         check(pcoinsTip);
         ifNetObj->BroadcastTransaction(tx.GetHash());
 

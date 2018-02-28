@@ -9,6 +9,7 @@
 #include "chaincontrol/checkpoints.h"
 #include "chaincontrol/chain.h"
 #include "chaincontrol/blockfilemanager.h"
+#include "chaincontrol/utils.h"
 #include "wallet/coincontrol.h"
 #include "config/consensus.h"
 #include "chaincontrol/validation.h"

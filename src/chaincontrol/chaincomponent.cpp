@@ -19,6 +19,7 @@
 #include "framework/base.hpp"
 #include "framework/validationinterface.h"
 #include "eventmanager/eventmanager.h"
+#include "utils.h"
 
 static int64_t nTimeCheck = 0;
 static int64_t nTimeForks = 0;
@@ -1550,25 +1551,20 @@ bool CChainCommonent::CheckBlock(const CBlock &block, CValidationState &state, c
     return true;
 }
 
-// Compute at which vout of the block's coinbase transaction the witness
-// commitment occurs, or -1 if not found.
-static int GetWitnessCommitmentIndex(const CBlock &block)
+static bool IsSBTCForkEnabled(const Consensus::Params &params, const CBlockIndex *pindex)
 {
-    int commitpos = -1;
-    if (!block.vtx.empty())
-    {
-        for (size_t o = 0; o < block.vtx[0]->vout.size(); o++)
-        {
-            if (block.vtx[0]->vout[o].scriptPubKey.size() >= 38 && block.vtx[0]->vout[o].scriptPubKey[0] == OP_RETURN &&
-                block.vtx[0]->vout[o].scriptPubKey[1] == 0x24 && block.vtx[0]->vout[o].scriptPubKey[2] == 0xaa &&
-                block.vtx[0]->vout[o].scriptPubKey[3] == 0x21 && block.vtx[0]->vout[o].scriptPubKey[4] == 0xa9 &&
-                block.vtx[0]->vout[o].scriptPubKey[5] == 0xed)
-            {
-                commitpos = o;
-            }
-        }
-    }
-    return commitpos;
+    return pindex->nHeight >= params.SBTCForkHeight;
+}
+
+bool CChainCommonent::IsSBTCForkEnabled(const int height)
+{
+    const CChainParams &chainParams = app().GetChainParams();
+    return height >= chainParams.GetConsensus().SBTCForkHeight;
+}
+
+bool CChainCommonent::IsSBTCForkHeight(const Consensus::Params &params, const int &height)
+{
+    return params.SBTCForkHeight == height;
 }
 
 static unsigned int GetBlockScriptFlags(const CBlockIndex *pindex, const Consensus::Params &consensusparams)
@@ -1666,7 +1662,7 @@ bool CChainCommonent::ContextualCheckBlock(const CBlock &block, CValidationState
     if (VersionBitsState(pindexPrev, consensusParams, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) ==
         THRESHOLD_ACTIVE)
     {
-        int commitpos = GetWitnessCommitmentIndex(block);
+        int commitpos = ::GetWitnessCommitmentIndex(block);
         if (commitpos != -1)
         {
             bool malleated = false;
@@ -1945,7 +1941,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     }
 
     if (fTxIndex)
-        if (!pblocktree->WriteTxIndex(vPos))
+        if (!GetBlockTreeDB()->WriteTxIndex(vPos))
             return AbortNode(state, "Failed to write transaction index");
 
     // add this block to the view's block chain
@@ -2846,24 +2842,6 @@ bool CChainCommonent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, C
 
 log4cpp::Category &CChainCommonent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
 
-bool CChainCommonent::AbortNode(const std::string &strMessage, const std::string &userMessage)
-{
-    SetMiscWarning(strMessage);
-    mlog.error(strMessage);
-    string message = userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
-                                         : userMessage;
-    mlog.error(message);
-    uiInterface.ThreadSafeMessageBox(message, "", CClientUIInterface::MSG_ERROR);
-    app().RequestShutdown();
-    return false;
-}
-
-bool CChainCommonent::AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage)
-{
-    AbortNode(strMessage, userMessage);
-    return state.Error(strMessage);
-}
-
 bool CChainCommonent::LoadCheckPoint()
 {
     Checkpoints::CCheckPointDB cCheckPointDB;
@@ -2957,7 +2935,7 @@ bool CChainCommonent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
         }
         // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
         if (nCheckLevel >= 3 && pindex == pindexState &&
-            (coins.DynamicMemoryUsage() + pcoinsTip->DynamicMemoryUsage()) <= nCoinCacheUsage)
+            (coins.DynamicMemoryUsage() + GetCoinsTip()->DynamicMemoryUsage()) <= nCoinCacheUsage)
         {
             assert(coins.GetBestBlock() == pindex->GetBlockHash());
             DisconnectResult res = cViewManager.DisconnectBlock(block, pindex, coins);
@@ -3083,7 +3061,7 @@ bool CChainCommonent::TestBlockValidity(CValidationState &state, const CChainPar
 {
     AssertLockHeld(cs_main);
     assert(pindexPrev && pindexPrev == cIndexManager.GetChain().Tip());
-    CCoinsViewCache viewNew(pcoinsTip);
+    CCoinsViewCache viewNew(cViewManager.GetCoinsTip());
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
     indexDummy.nHeight = pindexPrev->nHeight + 1;
@@ -3156,4 +3134,19 @@ CAmount CChainCommonent::GetBlockSubsidy(int nHeight)
     // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
     nSubsidy >>= halvings;
     return nSubsidy;
+}
+
+CCoinsView *CChainCommonent::GetCoinViewDB()
+{
+    return cViewManager.GetCoinViewDB();
+}
+
+CCoinsViewCache *CChainCommonent::GetCoinsTip()
+{
+    return cViewManager.GetCoinsTip();
+}
+
+CBlockTreeDB *CChainCommonent::GetBlockTreeDB()
+{
+    return cIndexManager.GetBlockTreeDB();
 }

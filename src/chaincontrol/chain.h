@@ -7,6 +7,7 @@
 #define BITCOIN_CHAIN_H
 
 #include "utils/arith_uint256.h"
+#include "utils/utiltime.h"
 #include "block/block.h"
 #include "miner/pow.h"
 #include "tinyformat.h"
@@ -69,7 +70,13 @@ public:
         SetNull();
     }
 
-    std::string ToString() const;
+    std::string ToString() const
+    {
+        return strprintf("CBlockFileInfo(blocks=%u, size=%u, heights=%u...%u, time=%s...%s)", nBlocks, nSize,
+                         nHeightFirst,
+                         nHeightLast, DateTimeStrFormat("%Y-%m-%d", nTimeFirst),
+                         DateTimeStrFormat("%Y-%m-%d", nTimeLast));
+    }
 
     /** update statistics (does not update nSize) */
     void AddBlock(unsigned int nHeightIn, uint64_t nTimeIn)

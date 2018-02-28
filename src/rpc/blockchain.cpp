@@ -12,6 +12,7 @@
 #include "chaincontrol/coins.h"
 #include "chaincontrol/validation.h"
 #include "chaincontrol/blockfilemanager.h"
+#include "chaincontrol/utils.h"
 #include "interface/ichaincomponent.h"
 #include "block/validation.h"
 #include "sbtccore/core_io.h"
@@ -47,6 +48,30 @@ static std::condition_variable cond_blockchange;
 static CUpdatedBlock latestblock;
 
 extern void TxToJSON(const CTransaction &tx, const uint256 hashBlock, UniValue &entry);
+
+ThresholdState VersionBitsTipState(const Consensus::Params &params, Consensus::DeploymentPos pos)
+{
+    LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain &chainActive = ifChainObj->GetActiveChain();
+    return VersionBitsState(chainActive.Tip(), params, pos, versionbitscache);
+}
+
+BIP9Stats VersionBitsTipStatistics(const Consensus::Params &params, Consensus::DeploymentPos pos)
+{
+    LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain &chainActive = ifChainObj->GetActiveChain();
+    return VersionBitsStatistics(chainActive.Tip(), params, pos);
+}
+
+int VersionBitsTipStateSinceHeight(const Consensus::Params &params, Consensus::DeploymentPos pos)
+{
+    LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain &chainActive = ifChainObj->GetActiveChain();
+    return VersionBitsStateSinceHeight(chainActive.Tip(), params, pos, versionbitscache);
+}
 
 double GetDifficulty(const CBlockIndex *blockindex)
 {
@@ -984,7 +1009,7 @@ UniValue gettxoutsetinfo(const JSONRPCRequest &request)
     CCoinsStats stats;
     GET_CHAIN_INTERFACE(ifChainObj);
     ifChainObj->FlushStateToDisk();
-    if (GetUTXOStats(pcoinsdbview, stats))
+    if (GetUTXOStats(ifChainObj->GetCoinViewDB(), stats))
     {
         ret.push_back(Pair("height", (int64_t)stats.nHeight));
         ret.push_back(Pair("bestblock", stats.hashBlock.GetHex()));
@@ -1051,6 +1076,9 @@ UniValue gettxout(const JSONRPCRequest &request)
     if (!request.params[2].isNull())
         fMempool = request.params[2].get_bool();
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+
     Coin coin;
     if (fMempool)
     {
@@ -1068,7 +1096,6 @@ UniValue gettxout(const JSONRPCRequest &request)
         }
     }
 
-    GET_CHAIN_INTERFACE(ifChainObj);
     CBlockIndex *pindex = ifChainObj->GetBlockIndex(pcoinsTip->GetBestBlock());
     ret.push_back(Pair("bestblock", pindex->GetBlockHash().GetHex()));
     if (coin.nHeight == MEMPOOL_HEIGHT)
@@ -1115,6 +1142,8 @@ UniValue verifychain(const JSONRPCRequest &request)
         nCheckDepth = request.params[1].get_int();
 
     GET_CHAIN_INTERFACE(ifChainObj);
+    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+
     return ifChainObj->VerifyDB(Params(), pcoinsTip, nCheckLevel, nCheckDepth);
 }
 

@@ -246,6 +246,14 @@ public:
 
     CAmount GetBlockSubsidy(int nHeight) override;
 
+    bool IsSBTCForkEnabled(const int height) override;
+
+    CCoinsView *GetCoinViewDB() override;
+
+    CCoinsViewCache *GetCoinsTip() override;
+
+    CBlockTreeDB *GetBlockTreeDB() override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);
@@ -322,17 +330,15 @@ private:
 
     void NotifyHeaderTip();
 
-    /** Abort with a message */
-    bool AbortNode(const std::string &strMessage, const std::string &userMessage = "");
-
-
-    bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage = "");
-
     bool LoadCheckPoint();
 
     bool
     ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing,
                     bool *fNewBlock);
+
+    /** check whether is check point height */
+    bool IsSBTCForkHeight(const Consensus::Params &params, const int &height);
+
 
 public:
     static log4cpp::Category &mlog;
