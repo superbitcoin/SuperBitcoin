@@ -15,17 +15,3 @@
 
 std::unique_ptr<CConnman> g_connman;
 std::unique_ptr<PeerLogicValidation> peerLogic;
-
-std::atomic<bool> fRequestShutdown(false);
-std::atomic<bool> fDumpMempoolLater(false);
-
-void StartShutdown()
-{
-    fRequestShutdown = true;
-}
-
-bool ShutdownRequested()
-{
-    return fRequestShutdown;
-}
-

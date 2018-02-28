@@ -62,7 +62,7 @@ namespace
 }
 
 CCoinsViewDB::CCoinsViewDB(size_t nCacheSize, bool fMemory, bool fWipe) : db(GetDataDir() / "chainstate", nCacheSize,
-                                                                             fMemory, fWipe, true)
+                                                                             fMemory, fWipe, true), shutdown(false)
 {
 }
 
@@ -430,14 +430,14 @@ bool CCoinsViewDB::Upgrade()
     LogPrintf("[0%%]...");
     size_t batch_size = 1 << 24;
     CDBBatch batch(db);
-    uiInterface.SetProgressBreakAction(StartShutdown);
+    //uiInterface.SetProgressBreakAction(StartShutdown);
     int reportDone = 0;
     std::pair<unsigned char, uint256> key;
     std::pair<unsigned char, uint256> prev_key = {DB_COINS, uint256()};
     while (pcursor->Valid())
     {
         boost::this_thread::interruption_point();
-        if (ShutdownRequested())
+        if (shutdown)
         {
             break;
         }
@@ -490,6 +490,6 @@ bool CCoinsViewDB::Upgrade()
     db.WriteBatch(batch);
     db.CompactRange({DB_COINS, uint256()}, key);
     uiInterface.SetProgressBreakAction(std::function<void(void)>());
-    LogPrintf("[%s].\n", ShutdownRequested() ? "CANCELLED" : "DONE");
-    return !ShutdownRequested();
+    LogPrintf("[%s].\n", shutdown ? "CANCELLED" : "DONE");
+    return !shutdown;
 }

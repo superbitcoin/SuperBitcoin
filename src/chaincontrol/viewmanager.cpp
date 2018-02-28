@@ -186,3 +186,11 @@ void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, 
     CTxUndo txundo;
     UpdateCoins(tx, inputs, txundo, nHeight);
 }
+
+void CViewManager::RequestShutdown()
+{
+    if (pCoinsViewDB)
+    {
+        pCoinsViewDB->RequestShutdown();
+    }
+}

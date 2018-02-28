@@ -304,29 +304,29 @@ bool CScriptCheck::operator()()
 static CuckooCache::cache<uint256, SignatureCacheHasher> scriptExecutionCache;
 static uint256 scriptExecutionCacheNonce(GetRandHash());
 
-//namespace
+////namespace
+////{
+//
+///** Abort with a message */
+//bool AbortNode(const std::string &strMessage, const std::string &userMessage)
 //{
-
-/** Abort with a message */
-bool AbortNode(const std::string &strMessage, const std::string &userMessage)
-{
-    SetMiscWarning(strMessage);
-    LogPrintf("*** %s\n", strMessage);
-    uiInterface.ThreadSafeMessageBox(
-            userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
-                                : userMessage,
-            "", CClientUIInterface::MSG_ERROR);
-    StartShutdown();
-    return false;
-}
-
-bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage)
-{
-    AbortNode(strMessage, userMessage);
-    return state.Error(strMessage);
-}
-
-//} // namespace
+//    SetMiscWarning(strMessage);
+//    LogPrintf("*** %s\n", strMessage);
+//    uiInterface.ThreadSafeMessageBox(
+//            userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
+//                                : userMessage,
+//            "", CClientUIInterface::MSG_ERROR);
+//    StartShutdown();
+//    return false;
+//}
+//
+//bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage)
+//{
+//    AbortNode(strMessage, userMessage);
+//    return state.Error(strMessage);
+//}
+//
+////} // namespace
 
 enum DisconnectResult
 {
@@ -604,7 +604,7 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes)
 
     // Check for nMinDiskSpace bytes (currently 50MB)
     if (nFreeBytesAvailable < nMinDiskSpace + nAdditionalBytes)
-        return AbortNode("Disk space is low!", _("Error: Disk space is low!"));
+        return false; //AbortNode("Disk space is low!", _("Error: Disk space is low!"));
 
     return true;
 }

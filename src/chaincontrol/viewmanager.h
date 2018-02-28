@@ -55,6 +55,8 @@ public:
 
     void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight);
 
+    void RequestShutdown();
+
 private:
     CChain cChian;
     CCoinsViewDB *pCoinsViewDB;
