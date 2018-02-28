@@ -303,7 +303,7 @@ bool CChainCommonent::IsImporting() const
 bool CChainCommonent::IsReindexing() const
 {
     //TODO:
-    return fReindex;
+    return bReIndex;
 }
 
 bool CChainCommonent::IsInitialBlockDownload() const
@@ -1311,7 +1311,7 @@ bool CChainCommonent::IsInitialBlockDownload()
     LOCK(cs);
     if (latchToFalse.load(std::memory_order_relaxed))
         return false;
-    if (fImporting || fReindex)
+    if (fImporting || IsReindexing())
         return true;
     if (Tip() == nullptr)
         return true;
