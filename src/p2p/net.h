@@ -523,7 +523,13 @@ public:
     static log4cpp::Category &mlog ;
 };
 
-extern std::unique_ptr<CConnman> g_connman;
+template<typename T>
+struct NoopDeleter
+{
+    void operator()(T*){}
+};
+
+extern std::unique_ptr<CConnman, NoopDeleter<CConnman>> g_connman;
 
 void Discover();
 void Discover(boost::thread_group &threadGroup);

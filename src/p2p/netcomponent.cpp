@@ -13,6 +13,8 @@
 #include "sbtccore/clientversion.h"
 #include "interface/ichaincomponent.h"
 
+std::unique_ptr<CConnman, NoopDeleter<CConnman>> g_connman;
+
 CNetComponent::CNetComponent()
     : mlog(log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET)))
 {
@@ -40,6 +42,8 @@ bool CNetComponent::ComponentInitialize()
 
     peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), app().GetScheduler()));
     RegisterValidationInterface(peerLogic.get());
+
+    g_connman.reset(netConnMgr.get());
 
     const CArgsManager& appArgs = app().GetArgsManager();
 
@@ -327,12 +331,18 @@ bool CNetComponent::ComponentShutdown()
         netConnMgr->Stop();
     }
 
+    g_connman.reset();
     peerLogic.reset();
     netConnMgr.reset();
 
     StopTorControl();
 
     return true;
+}
+
+log4cpp::Category &CNetComponent::getLog()
+{
+    return mlog;
 }
 
 bool CNetComponent::SendNetMessage(int64_t nodeID, const std::string& command, const std::vector<unsigned char>& data)
@@ -401,9 +411,14 @@ bool CNetComponent::OutboundTargetReached(bool historicalBlockServingLimit)
     return true;
 }
 
-log4cpp::Category &CNetComponent::getLog()
+int CNetComponent:: GetNodeCount(int flags)
 {
-    return mlog;
+    if (netConnMgr)
+    {
+        return (int)netConnMgr->GetNodeCount((CConnman::NumConnections)flags);
+    }
+    return 0;
 }
+
 
 
