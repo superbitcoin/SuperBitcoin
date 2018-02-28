@@ -102,7 +102,7 @@ bool CheckFinalTx(const CTransaction &tx, int flags)
 {
     AssertLockHeld(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     // By convention a negative value for flags indicates that the
     // current network-enforced consensus rules should be used. In
@@ -139,7 +139,7 @@ bool TestLockPointValidity(const LockPoints *lp)
     assert(lp);
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     // If there are relative lock times then the maxInputBlock will be set
     // If there are no relative lock times, the LockPoints don't depend on the chain
@@ -174,7 +174,7 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     CTransactionRef ptx = mempool.get(hash);
     if (ptx)
@@ -233,23 +233,6 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
     }
 
     return false;
-}
-
-CAmount GetBlockSubsidy(int nHeight, const Consensus::Params &consensusParams)
-{
-    if (IsSBTCForkHeight(consensusParams, nHeight))
-    {
-        return 210000 * COIN;
-    }
-    int halvings = nHeight / consensusParams.nSubsidyHalvingInterval;
-    // Force block reward to zero when right shift is undefined.
-    if (halvings >= 64)
-        return 0;
-
-    CAmount nSubsidy = 50 * COIN;
-    // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
-    nSubsidy >>= halvings;
-    return nSubsidy;
 }
 
 void AlertNotify(const std::string &strMessage)
@@ -515,7 +498,7 @@ ThresholdState VersionBitsTipState(const Consensus::Params &params, Consensus::D
 {
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
     return VersionBitsState(chainActive.Tip(), params, pos, versionbitscache);
 }
 
@@ -523,7 +506,7 @@ BIP9Stats VersionBitsTipStatistics(const Consensus::Params &params, Consensus::D
 {
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
     return VersionBitsStatistics(chainActive.Tip(), params, pos);
 }
 
@@ -531,7 +514,7 @@ int VersionBitsTipStateSinceHeight(const Consensus::Params &params, Consensus::D
 {
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
     return VersionBitsStateSinceHeight(chainActive.Tip(), params, pos, versionbitscache);
 }
 

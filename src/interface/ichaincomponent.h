@@ -108,6 +108,8 @@ public:
 
     virtual void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight) = 0;
 
+    virtual CAmount GetBlockSubsidy(int nHeight) = 0;
+
     //add other interface methods here ...
 };
 
