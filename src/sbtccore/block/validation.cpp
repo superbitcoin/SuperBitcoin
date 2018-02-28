@@ -270,29 +270,6 @@ void AlertNotify(const std::string &strMessage)
     boost::thread t(runCommand, strCmd); // thread runs free
 }
 
-void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
-{
-    // mark inputs spent
-    if (!tx.IsCoinBase())
-    {
-        txundo.vprevout.reserve(tx.vin.size());
-        for (const CTxIn &txin : tx.vin)
-        {
-            txundo.vprevout.emplace_back();
-            bool is_spent = inputs.SpendCoin(txin.prevout, &txundo.vprevout.back());
-            assert(is_spent);
-        }
-    }
-    // add outputs
-    AddCoins(inputs, tx, nHeight);
-}
-
-void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight)
-{
-    CTxUndo txundo;
-    UpdateCoins(tx, inputs, txundo, nHeight);
-}
-
 bool CScriptCheck::operator()()
 {
     const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
@@ -304,74 +281,6 @@ bool CScriptCheck::operator()()
 static CuckooCache::cache<uint256, SignatureCacheHasher> scriptExecutionCache;
 static uint256 scriptExecutionCacheNonce(GetRandHash());
 
-////namespace
-////{
-//
-///** Abort with a message */
-//bool AbortNode(const std::string &strMessage, const std::string &userMessage)
-//{
-//    SetMiscWarning(strMessage);
-//    LogPrintf("*** %s\n", strMessage);
-//    uiInterface.ThreadSafeMessageBox(
-//            userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
-//                                : userMessage,
-//            "", CClientUIInterface::MSG_ERROR);
-//    StartShutdown();
-//    return false;
-//}
-//
-//bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage)
-//{
-//    AbortNode(strMessage, userMessage);
-//    return state.Error(strMessage);
-//}
-//
-////} // namespace
-
-enum DisconnectResult
-{
-    DISCONNECT_OK,      // All good.
-    DISCONNECT_UNCLEAN, // Rolled back, but UTXO set was inconsistent with block.
-    DISCONNECT_FAILED   // Something else went wrong.
-};
-
-/**
- * Restore the UTXO in a Coin at a given COutPoint
- * @param undo The Coin to be restored.
- * @param view The coins view to which to apply the changes.
- * @param out The out point that corresponds to the tx input.
- * @return A DisconnectResult as an int
- */
-int ApplyTxInUndo(Coin &&undo, CCoinsViewCache &view, const COutPoint &out)
-{
-    bool fClean = true;
-
-    if (view.HaveCoin(out))
-        fClean = false; // overwriting transaction output
-
-    if (undo.nHeight == 0)
-    {
-        // Missing undo metadata (height and coinbase). Older versions included this
-        // information only in undo records for the last spend of a transactions'
-        // outputs. This implies that it must be present for some other output of the same tx.
-        const Coin &alternate = AccessByTxid(view, out.hash);
-        if (!alternate.IsSpent())
-        {
-            undo.nHeight = alternate.nHeight;
-            undo.fCoinBase = alternate.fCoinBase;
-        } else
-        {
-            return DISCONNECT_FAILED; // adding output for transaction without known metadata
-        }
-    }
-    // The potential_overwrite parameter to AddCoin is only allowed to be false if we know for
-    // sure that the coin did not already exist in the cache. As we have queried for that above
-    // using HaveCoin, we don't need to guess. When fClean is false, a coin already existed and
-    // it is an overwrite.
-    view.AddCoin(out, std::move(undo), !fClean);
-
-    return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
-}
 
 static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 
@@ -594,19 +503,6 @@ GenerateCoinbaseCommitment(CBlock &block, const CBlockIndex *pindexPrev, const C
     }
     UpdateUncommittedBlockStructures(block, pindexPrev, consensusParams);
     return commitment;
-}
-
-bool CheckDiskSpace(uint64_t nAdditionalBytes)
-{
-    fs::path path = GetDataDir();
-    std::string tmp = path.string();
-    uint64_t nFreeBytesAvailable = fs::space(GetDataDir()).available;
-
-    // Check for nMinDiskSpace bytes (currently 50MB)
-    if (nFreeBytesAvailable < nMinDiskSpace + nAdditionalBytes)
-        return false; //AbortNode("Disk space is low!", _("Error: Disk space is low!"));
-
-    return true;
 }
 
 std::string CBlockFileInfo::ToString() const

@@ -194,3 +194,42 @@ void CViewManager::RequestShutdown()
         pCoinsViewDB->RequestShutdown();
     }
 }
+
+/**
+ * Restore the UTXO in a Coin at a given COutPoint
+ * @param undo The Coin to be restored.
+ * @param view The coins view to which to apply the changes.
+ * @param out The out point that corresponds to the tx input.
+ * @return A DisconnectResult as an int
+ */
+int CViewManager::ApplyTxInUndo(Coin &&undo, CCoinsViewCache &view, const COutPoint &out)
+{
+    bool fClean = true;
+
+    if (view.HaveCoin(out))
+        fClean = false; // overwriting transaction output
+
+    if (undo.nHeight == 0)
+    {
+        // Missing undo metadata (height and coinbase). Older versions included this
+        // information only in undo records for the last spend of a transactions'
+        // outputs. This implies that it must be present for some other output of the same tx.
+        const Coin &alternate = AccessByTxid(view, out.hash);
+        if (!alternate.IsSpent())
+        {
+            undo.nHeight = alternate.nHeight;
+            undo.fCoinBase = alternate.fCoinBase;
+        } else
+        {
+            return DISCONNECT_FAILED; // adding output for transaction without known metadata
+        }
+    }
+    // The potential_overwrite parameter to AddCoin is only allowed to be false if we know for
+    // sure that the coin did not already exist in the cache. As we have queried for that above
+    // using HaveCoin, we don't need to guess. When fClean is false, a coin already existed and
+    // it is an overwrite.
+    view.AddCoin(out, std::move(undo), !fClean);
+
+    return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
+}
+

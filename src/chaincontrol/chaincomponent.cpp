@@ -3133,3 +3133,8 @@ int CChainCommonent::GetSpendHeight(const CCoinsViewCache &inputs)
     }
     return pindexPrev->nHeight + 1;
 }
+
+void CChainCommonent::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight)
+{
+    cViewManager.UpdateCoins(tx, inputs, nHeight);
+}
