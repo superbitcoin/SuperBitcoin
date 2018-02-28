@@ -35,6 +35,8 @@ public:
     //!check if the outbound target is reached
     virtual bool OutboundTargetReached(bool historicalBlockServingLimit) = 0;
 
+    virtual int  GetNodeCount(int flags) = 0; //flags value:  1: Inbound; 2 : OutBound; 3 : Inbound + OutBound.
+
     //add other interface methods here ...
 
 

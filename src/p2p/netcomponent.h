@@ -16,6 +16,8 @@ public:
     bool ComponentShutdown() override;
     const char* whoru() const override { return "I am CNetComponent\n";}
 
+    log4cpp::Category &getLog() override;
+
     bool SendNetMessage(int64_t nodeID, const std::string& command, const std::vector<unsigned char>& data) override;
 
     bool BroadcastTransaction(uint256 txHash) override;
@@ -26,7 +28,8 @@ public:
 
     bool OutboundTargetReached(bool historicalBlockServingLimit) override;
 
-    log4cpp::Category &getLog() override;
+    int  GetNodeCount(int flags) override;
+
 
 private:
     log4cpp::Category &mlog;
