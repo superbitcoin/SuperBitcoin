@@ -1009,7 +1009,7 @@ UniValue gettxoutsetinfo(const JSONRPCRequest &request)
     CCoinsStats stats;
     GET_CHAIN_INTERFACE(ifChainObj);
     ifChainObj->FlushStateToDisk();
-    if (GetUTXOStats(pcoinsdbview, stats))
+    if (GetUTXOStats(ifChainObj->GetCoinViewDB(), stats))
     {
         ret.push_back(Pair("height", (int64_t)stats.nHeight));
         ret.push_back(Pair("bestblock", stats.hashBlock.GetHex()));

@@ -3135,3 +3135,8 @@ CAmount CChainCommonent::GetBlockSubsidy(int nHeight)
     nSubsidy >>= halvings;
     return nSubsidy;
 }
+
+CCoinsView *CChainCommonent::GetCoinViewDB()
+{
+    return cViewManager.GetCoinViewDB();
+}

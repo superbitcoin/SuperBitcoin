@@ -94,7 +94,6 @@ CScript COINBASE_FLAGS;
 const std::string strMessageMagic = "Bitcoin Signed Message:\n";
 // Internal stuff
 
-CCoinsViewDB *pcoinsdbview = nullptr;
 CCoinsViewCache *pcoinsTip = nullptr;
 CBlockTreeDB *pblocktree = nullptr;
 

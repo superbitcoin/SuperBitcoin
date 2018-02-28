@@ -59,6 +59,8 @@ public:
 
     virtual std::set<const CBlockIndex *, CompareBlocksByHeight> GetTips() = 0;
 
+    virtual CCoinsView *GetCoinViewDB() = 0;
+
     virtual CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) = 0;
 
     virtual bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
