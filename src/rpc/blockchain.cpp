@@ -12,6 +12,7 @@
 #include "chaincontrol/coins.h"
 #include "chaincontrol/validation.h"
 #include "chaincontrol/blockfilemanager.h"
+#include "chaincontrol/utils.h"
 #include "interface/ichaincomponent.h"
 #include "block/validation.h"
 #include "sbtccore/core_io.h"
@@ -47,6 +48,30 @@ static std::condition_variable cond_blockchange;
 static CUpdatedBlock latestblock;
 
 extern void TxToJSON(const CTransaction &tx, const uint256 hashBlock, UniValue &entry);
+
+ThresholdState VersionBitsTipState(const Consensus::Params &params, Consensus::DeploymentPos pos)
+{
+    LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain &chainActive = ifChainObj->GetActiveChain();
+    return VersionBitsState(chainActive.Tip(), params, pos, versionbitscache);
+}
+
+BIP9Stats VersionBitsTipStatistics(const Consensus::Params &params, Consensus::DeploymentPos pos)
+{
+    LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain &chainActive = ifChainObj->GetActiveChain();
+    return VersionBitsStatistics(chainActive.Tip(), params, pos);
+}
+
+int VersionBitsTipStateSinceHeight(const Consensus::Params &params, Consensus::DeploymentPos pos)
+{
+    LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain &chainActive = ifChainObj->GetActiveChain();
+    return VersionBitsStateSinceHeight(chainActive.Tip(), params, pos, versionbitscache);
+}
 
 double GetDifficulty(const CBlockIndex *blockindex)
 {

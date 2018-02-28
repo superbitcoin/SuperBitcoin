@@ -5,6 +5,8 @@
 #ifndef BITCOIN_RPC_BLOCKCHAIN_H
 #define BITCOIN_RPC_BLOCKCHAIN_H
 
+#include "framework/versionbits.h"
+
 class CBlock;
 
 class CBlockIndex;
@@ -34,6 +36,15 @@ UniValue mempoolToJSON(bool fVerbose = false);
 
 /** Block header to JSON */
 UniValue blockheaderToJSON(const CBlockIndex *blockindex);
+
+/** Get the BIP9 state for a given deployment at the current tip. */
+ThresholdState VersionBitsTipState(const Consensus::Params &params, Consensus::DeploymentPos pos);
+
+/** Get the numerical statistics for the BIP9 state for a given deployment at the current tip. */
+BIP9Stats VersionBitsTipStatistics(const Consensus::Params &params, Consensus::DeploymentPos pos);
+
+/** Get the block height at which the BIP9 deployment switched into the state for the block building on the current tip. */
+int VersionBitsTipStateSinceHeight(const Consensus::Params &params, Consensus::DeploymentPos pos);
 
 #endif
 

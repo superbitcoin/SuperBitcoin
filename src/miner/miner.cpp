@@ -26,6 +26,7 @@
 #include "utils/utilmoneystr.h"
 #include "framework/validationinterface.h"
 #include "interface/ichaincomponent.h"
+#include "chaincontrol/utils.h"
 
 #include <algorithm>
 #include <queue>
@@ -44,6 +45,38 @@
 
 uint64_t nLastBlockTx = 0;
 uint64_t nLastBlockWeight = 0;
+
+std::vector<unsigned char>
+GenerateCoinbaseCommitment(CBlock &block, const CBlockIndex *pindexPrev, const Consensus::Params &consensusParams)
+{
+    std::vector<unsigned char> commitment;
+    int commitpos = GetWitnessCommitmentIndex(block);
+    std::vector<unsigned char> ret(32, 0x00);
+    if (consensusParams.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout != 0)
+    {
+        if (commitpos == -1)
+        {
+            uint256 witnessroot = BlockWitnessMerkleRoot(block, nullptr);
+            CHash256().Write(witnessroot.begin(), 32).Write(ret.data(), 32).Finalize(witnessroot.begin());
+            CTxOut out;
+            out.nValue = 0;
+            out.scriptPubKey.resize(38);
+            out.scriptPubKey[0] = OP_RETURN;
+            out.scriptPubKey[1] = 0x24;
+            out.scriptPubKey[2] = 0xaa;
+            out.scriptPubKey[3] = 0x21;
+            out.scriptPubKey[4] = 0xa9;
+            out.scriptPubKey[5] = 0xed;
+            memcpy(&out.scriptPubKey[6], witnessroot.begin(), 32);
+            commitment = std::vector<unsigned char>(out.scriptPubKey.begin(), out.scriptPubKey.end());
+            CMutableTransaction tx(*block.vtx[0]);
+            tx.vout.push_back(out);
+            block.vtx[0] = MakeTransactionRef(std::move(tx));
+        }
+    }
+    UpdateUncommittedBlockStructures(block, pindexPrev, consensusParams);
+    return commitment;
+}
 
 int64_t UpdateTime(CBlockHeader *pblock, const Consensus::Params &consensusParams, const CBlockIndex *pindexPrev)
 {
@@ -233,7 +266,7 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries &packa
 {
     for (const CTxMemPool::txiter it : package)
     {
-//        GET_VERIFY_INTERFACE(ifVerifyObj);
+        //        GET_VERIFY_INTERFACE(ifVerifyObj);
         if (!it->GetTx().IsFinalTx(nHeight, nLockTimeCutoff))
             return false;
         if (!fIncludeWitness && it->GetTx().HasWitness())

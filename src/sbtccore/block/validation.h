@@ -261,49 +261,6 @@ bool IsInitialBlockDownload();
 bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::Params &params, uint256 &hashBlock,
                     bool fAllowSlow = false);
 
-/** Find the best known block, and make it the tip of the block chain */
-bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
-                       std::shared_ptr<const CBlock> pblock = std::shared_ptr<const CBlock>());
-
-bool CheckActiveChain(CValidationState &state, const CChainParams &chainparams);
-
-/** Guess verification progress (as a fraction between 0.0=genesis and 1.0=current tip). */
-double GuessVerificationProgress(const ChainTxData &data, CBlockIndex *pindex);
-
-/**
- *  Mark one block file as pruned.
- */
-void PruneOneBlockFile(const int fileNumber);
-
-/**
- *  Actually unlink the specified files
- */
-void UnlinkPrunedFiles(const std::set<int> &setFilesToPrune);
-
-/** Convert CValidationState to a human-readable message for logging */
-std::string FormatStateMessage(const CValidationState &state);
-
-/** Get the BIP9 state for a given deployment at the current tip. */
-ThresholdState VersionBitsTipState(const Consensus::Params &params, Consensus::DeploymentPos pos);
-
-/** Get the numerical statistics for the BIP9 state for a given deployment at the current tip. */
-BIP9Stats VersionBitsTipStatistics(const Consensus::Params &params, Consensus::DeploymentPos pos);
-
-/** Get the block height at which the BIP9 deployment switched into the state for the block building on the current tip. */
-int VersionBitsTipStateSinceHeight(const Consensus::Params &params, Consensus::DeploymentPos pos);
-
-
-/** Check is SBTC  has activated. */
-bool IsSBTCForkEnabled(const Consensus::Params &params, const CBlockIndex *pindex);
-
-bool IsSBTCForkEnabled(const Consensus::Params &params, const int height);
-
-/** check whether is check point height */
-bool IsSBTCForkHeight(const Consensus::Params &params, const int &height);
-
-/** Apply the effects of this transaction on the UTXO set represented by view */
-void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight);
-
 /** Transaction validation functions */
 
 /**
@@ -373,12 +330,6 @@ public:
     }
 };
 
-bool AbortNode(const std::string &strMessage, const std::string &userMessage = "");
-
-bool AbortNode(CValidationState &state, const std::string &strMessage, const std::string &userMessage = "");
-
-void AlertNotify(const std::string &strMessage);
-
 /** Initializes the script-execution cache */
 void InitScriptExecutionCache();
 
@@ -389,6 +340,8 @@ bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &pa
 
 /** When there are blocks in the active chain with missing data, rewind the chainstate and remove them from the block index */
 bool RewindBlockIndex(const CChainParams &params);
+
+int GetWitnessCommitmentIndex(const CBlock &block);
 
 /** Update uncommitted block structures (currently: only the witness nonce). This is safe for submitted blocks. */
 void UpdateUncommittedBlockStructures(CBlock &block, const CBlockIndex *pindexPrev,
@@ -421,9 +374,5 @@ int32_t ComputeBlockVersion(const CBlockIndex *pindexPrev, const Consensus::Para
 static const unsigned int REJECT_INTERNAL = 0x100;
 /** Too high fee. Can not be triggered by P2P transactions */
 static const unsigned int REJECT_HIGHFEE = 0x100;
-
-/** Get block file info entry for one block file */
-CBlockFileInfo *GetBlockFileInfo(size_t n);
-
 
 #endif // BITCOIN_VALIDATION_H

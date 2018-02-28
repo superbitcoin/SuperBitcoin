@@ -25,6 +25,7 @@
 #include "interface/ichaincomponent.h"
 #include "utils/net/netmessagehelper.h"
 #include "orphantx.h"
+#include "chaincontrol/utils.h"
 
 using namespace appbase;
 

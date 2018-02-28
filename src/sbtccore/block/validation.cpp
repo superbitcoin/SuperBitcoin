@@ -157,15 +157,6 @@ bool TestLockPointValidity(const LockPoints *lp)
     return true;
 }
 
-/** Convert CValidationState to a human-readable message for logging */
-std::string FormatStateMessage(const CValidationState &state)
-{
-    return strprintf("%s%s (code %i)",
-                     state.GetRejectReason(),
-                     state.GetDebugMessage().empty() ? "" : ", " + state.GetDebugMessage(),
-                     state.GetRejectCode());
-}
-
 /** Return transaction in txOut, and if it was found inside a block, its hash is placed in hashBlock */
 bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus::Params &consensusParams,
                     uint256 &hashBlock, bool fAllowSlow)
@@ -233,24 +224,6 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
     }
 
     return false;
-}
-
-void AlertNotify(const std::string &strMessage)
-{
-    uiInterface.NotifyAlertChanged();
-    std::string strCmd = gArgs.GetArg<std::string>("-alertnotify", "");
-    if (strCmd.empty())
-        return;
-
-    // Alert text should be plain ascii coming from a trusted source, but to
-    // be safe we first strip anything not in safeChars, then add single quotes around
-    // the whole string before passing it to the shell:
-    std::string singleQuote("'");
-    std::string safeStatus = SanitizeString(strMessage);
-    safeStatus = singleQuote + safeStatus + singleQuote;
-    boost::replace_all(strCmd, "%s", safeStatus);
-
-    boost::thread t(runCommand, strCmd); // thread runs free
 }
 
 bool CScriptCheck::operator()()
@@ -422,7 +395,7 @@ bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &pa
 
 // Compute at which vout of the block's coinbase transaction the witness
 // commitment occurs, or -1 if not found.
-static int GetWitnessCommitmentIndex(const CBlock &block)
+int GetWitnessCommitmentIndex(const CBlock &block)
 {
     int commitpos = -1;
     if (!block.vtx.empty())
@@ -455,102 +428,7 @@ UpdateUncommittedBlockStructures(CBlock &block, const CBlockIndex *pindexPrev, c
     }
 }
 
-std::vector<unsigned char>
-GenerateCoinbaseCommitment(CBlock &block, const CBlockIndex *pindexPrev, const Consensus::Params &consensusParams)
-{
-    std::vector<unsigned char> commitment;
-    int commitpos = GetWitnessCommitmentIndex(block);
-    std::vector<unsigned char> ret(32, 0x00);
-    if (consensusParams.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout != 0)
-    {
-        if (commitpos == -1)
-        {
-            uint256 witnessroot = BlockWitnessMerkleRoot(block, nullptr);
-            CHash256().Write(witnessroot.begin(), 32).Write(ret.data(), 32).Finalize(witnessroot.begin());
-            CTxOut out;
-            out.nValue = 0;
-            out.scriptPubKey.resize(38);
-            out.scriptPubKey[0] = OP_RETURN;
-            out.scriptPubKey[1] = 0x24;
-            out.scriptPubKey[2] = 0xaa;
-            out.scriptPubKey[3] = 0x21;
-            out.scriptPubKey[4] = 0xa9;
-            out.scriptPubKey[5] = 0xed;
-            memcpy(&out.scriptPubKey[6], witnessroot.begin(), 32);
-            commitment = std::vector<unsigned char>(out.scriptPubKey.begin(), out.scriptPubKey.end());
-            CMutableTransaction tx(*block.vtx[0]);
-            tx.vout.push_back(out);
-            block.vtx[0] = MakeTransactionRef(std::move(tx));
-        }
-    }
-    UpdateUncommittedBlockStructures(block, pindexPrev, consensusParams);
-    return commitment;
-}
-
-std::string CBlockFileInfo::ToString() const
-{
-    return strprintf("CBlockFileInfo(blocks=%u, size=%u, heights=%u...%u, time=%s...%s)", nBlocks, nSize, nHeightFirst,
-                     nHeightLast, DateTimeStrFormat("%Y-%m-%d", nTimeFirst), DateTimeStrFormat("%Y-%m-%d", nTimeLast));
-}
-
-ThresholdState VersionBitsTipState(const Consensus::Params &params, Consensus::DeploymentPos pos)
-{
-    LOCK(cs_main);
-    GET_CHAIN_INTERFACE(ifChainObj);
-    CChain &chainActive = ifChainObj->GetActiveChain();
-    return VersionBitsState(chainActive.Tip(), params, pos, versionbitscache);
-}
-
-BIP9Stats VersionBitsTipStatistics(const Consensus::Params &params, Consensus::DeploymentPos pos)
-{
-    LOCK(cs_main);
-    GET_CHAIN_INTERFACE(ifChainObj);
-    CChain &chainActive = ifChainObj->GetActiveChain();
-    return VersionBitsStatistics(chainActive.Tip(), params, pos);
-}
-
-int VersionBitsTipStateSinceHeight(const Consensus::Params &params, Consensus::DeploymentPos pos)
-{
-    LOCK(cs_main);
-    GET_CHAIN_INTERFACE(ifChainObj);
-    CChain &chainActive = ifChainObj->GetActiveChain();
-    return VersionBitsStateSinceHeight(chainActive.Tip(), params, pos, versionbitscache);
-}
 
 
-bool IsSBTCForkEnabled(const Consensus::Params &params, const CBlockIndex *pindex)
-{
-    return pindex->nHeight >= params.SBTCForkHeight;
-}
 
-bool IsSBTCForkEnabled(const Consensus::Params &params, const int height)
-{
-    return height >= params.SBTCForkHeight;
-}
-
-bool IsSBTCForkHeight(const Consensus::Params &params, const int &height)
-{
-    return params.SBTCForkHeight == height;
-}
-
-//! Guess how far we are in the verification process at the given block index
-double GuessVerificationProgress(const ChainTxData &data, CBlockIndex *pindex)
-{
-    if (pindex == nullptr)
-        return 0.0;
-
-    int64_t nNow = time(nullptr);
-
-    double fTxTotal;
-
-    if (pindex->nChainTx <= data.nTxCount)
-    {
-        fTxTotal = data.nTxCount + (nNow - data.nTime) * data.dTxRate;
-    } else
-    {
-        fTxTotal = pindex->nChainTx + (nNow - pindex->GetBlockTime()) * data.dTxRate;
-    }
-
-    return pindex->nChainTx / fTxTotal;
-}
 

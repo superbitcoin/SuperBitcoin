@@ -110,6 +110,8 @@ public:
 
     virtual CAmount GetBlockSubsidy(int nHeight) = 0;
 
+    virtual bool IsSBTCForkEnabled(const int height) = 0;
+
     //add other interface methods here ...
 };
 
