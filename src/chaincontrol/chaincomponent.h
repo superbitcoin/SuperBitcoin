@@ -244,6 +244,8 @@ public:
 
     void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight) override;
 
+    CAmount GetBlockSubsidy(int nHeight) override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);

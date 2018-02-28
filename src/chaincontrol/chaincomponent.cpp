@@ -1904,7 +1904,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
                nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
 
     CAmount blockReward = 0;
-    blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());
+    blockReward = nFees + GetBlockSubsidy(pindex->nHeight);
     if (block.vtx[0]->GetValueOut() > blockReward)
         return state.DoS(100,
                          error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
@@ -3135,4 +3135,23 @@ int CChainCommonent::GetSpendHeight(const CCoinsViewCache &inputs)
 void CChainCommonent::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight)
 {
     cViewManager.UpdateCoins(tx, inputs, nHeight);
+}
+
+CAmount CChainCommonent::GetBlockSubsidy(int nHeight)
+{
+    const CChainParams &chainParams = app().GetChainParams();
+
+    if (IsSBTCForkHeight(chainParams.GetConsensus(), nHeight))
+    {
+        return 210000 * COIN;
+    }
+    int halvings = nHeight / chainParams.GetConsensus().nSubsidyHalvingInterval;
+    // Force block reward to zero when right shift is undefined.
+    if (halvings >= 64)
+        return 0;
+
+    CAmount nSubsidy = 50 * COIN;
+    // Subsidy is cut in half every 210,000 blocks which will occur approximately every 4 years.
+    nSubsidy >>= halvings;
+    return nSubsidy;
 }
