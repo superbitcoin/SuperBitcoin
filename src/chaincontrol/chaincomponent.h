@@ -242,6 +242,8 @@ public:
 
     int GetSpendHeight(const CCoinsViewCache &inputs) override;
 
+    void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight) override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);

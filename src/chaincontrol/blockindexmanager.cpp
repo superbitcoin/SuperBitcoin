@@ -7,6 +7,7 @@
 
 #include "blockindexmanager.h"
 #include "blockfilemanager.h"
+#include "utils.h"
 #include "framework/warnings.h"
 #include "chain.h"
 #include "utils/timedata.h"

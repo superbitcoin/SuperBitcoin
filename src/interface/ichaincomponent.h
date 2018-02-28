@@ -105,6 +105,9 @@ public:
     virtual void FlushStateToDisk() = 0;
 
     virtual bool ResetBlockFailureFlags(CBlockIndex *pindex) = 0;
+
+    virtual void UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight) = 0;
+
     //add other interface methods here ...
 };
 

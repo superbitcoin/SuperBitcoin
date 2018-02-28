@@ -62,8 +62,11 @@ private:
     CCoinsViewCache *pCoinsTip;
 
     std::vector<uint256> getHeads();
+
+    int ApplyTxInUndo(Coin &&undo, CCoinsViewCache &view, const COutPoint &out);
+
 public:
-    static log4cpp::Category & mlog;
+    static log4cpp::Category &mlog;
 
 };
 

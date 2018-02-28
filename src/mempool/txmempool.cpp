@@ -2047,7 +2047,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             bool fCheckResult = tx.IsCoinBase() ||
                                 tx.CheckTxInputs(state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
-            UpdateCoins(tx, mempoolDuplicate, 1000000);
+            ifChainObj->UpdateCoins(tx, mempoolDuplicate, 1000000);
         }
     }
     unsigned int stepsSinceLastRemove = 0;
@@ -2066,7 +2066,7 @@ void CTxMemPool::check(const CCoinsViewCache *pcoins) const
             bool fCheckResult =
                     entry->GetTx().IsCoinBase() || entry->GetTx().CheckTxInputs(state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
-            UpdateCoins(entry->GetTx(), mempoolDuplicate, 1000000);
+            ifChainObj->UpdateCoins(entry->GetTx(), mempoolDuplicate, 1000000);
             stepsSinceLastRemove = 0;
         }
     }
