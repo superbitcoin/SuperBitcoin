@@ -252,6 +252,8 @@ public:
 
     CCoinsViewCache *GetCoinsTip() override;
 
+    CBlockTreeDB *GetBlockTreeDB() override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);

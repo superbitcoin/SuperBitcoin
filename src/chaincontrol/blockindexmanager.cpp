@@ -1354,3 +1354,8 @@ std::set<const CBlockIndex *, CompareBlocksByHeight> CBlockIndexManager::GetTips
     // Always report the currently active tip.
     setTips.insert(cChainActive.Tip());
 }
+
+CBlockTreeDB *CBlockIndexManager::GetBlockTreeDB()
+{
+    return pBlcokTreee.get();
+}

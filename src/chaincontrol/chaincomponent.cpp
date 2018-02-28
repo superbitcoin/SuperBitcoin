@@ -1941,7 +1941,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     }
 
     if (fTxIndex)
-        if (!pblocktree->WriteTxIndex(vPos))
+        if (!GetBlockTreeDB()->WriteTxIndex(vPos))
             return AbortNode(state, "Failed to write transaction index");
 
     // add this block to the view's block chain
@@ -3143,5 +3143,10 @@ CCoinsView *CChainCommonent::GetCoinViewDB()
 
 CCoinsViewCache *CChainCommonent::GetCoinsTip()
 {
+    return cViewManager.GetCoinsTip();
+}
 
+CBlockTreeDB *CChainCommonent::GetBlockTreeDB()
+{
+    return cIndexManager.GetBlockTreeDB();
 }

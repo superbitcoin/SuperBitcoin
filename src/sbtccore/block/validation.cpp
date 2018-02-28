@@ -94,8 +94,6 @@ CScript COINBASE_FLAGS;
 const std::string strMessageMagic = "Bitcoin Signed Message:\n";
 // Internal stuff
 
-CBlockTreeDB *pblocktree = nullptr;
-
 bool CheckFinalTx(const CTransaction &tx, int flags)
 {
     AssertLockHeld(cs_main);
@@ -175,7 +173,7 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
     if (fTxIndex)
     {
         CDiskTxPos postx;
-        if (pblocktree->ReadTxIndex(hash, postx))
+        if (ifChainObj->GetBlockTreeDB()->ReadTxIndex(hash, postx))
         {
             CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
             if (file.IsNull())

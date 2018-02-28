@@ -63,6 +63,8 @@ public:
 
     virtual CCoinsViewCache *GetCoinsTip() = 0;
 
+    virtual CBlockTreeDB *GetBlockTreeDB() = 0;
+
     virtual CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) = 0;
 
     virtual bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,

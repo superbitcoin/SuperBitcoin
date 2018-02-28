@@ -158,6 +158,8 @@ public:
 
     std::set<const CBlockIndex *, CompareBlocksByHeight> GetTips();
 
+    CBlockTreeDB *GetBlockTreeDB();
+
 private:
     bool bReIndex = false;
     bool bTxIndex = false;
