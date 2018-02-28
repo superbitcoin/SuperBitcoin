@@ -52,6 +52,9 @@ unsigned int ParseConfirmTarget(const UniValue &value)
  */
 UniValue GetNetworkHashPS(int lookup, int height)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     CBlockIndex *pb = chainActive.Tip();
 
     if (height >= 0 && height < chainActive.Height())
@@ -119,6 +122,9 @@ generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, ui
     int nHeightEnd = 0;
     int nHeight = 0;
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     {   // Don't keep cs_main locked
         LOCK(cs_main);
         nHeight = chainActive.Height();
@@ -126,8 +132,6 @@ generateBlocks(std::shared_ptr<CReserveScript> coinbaseScript, int nGenerate, ui
     }
     unsigned int nExtraNonce = 0;
     UniValue blockHashes(UniValue::VARR);
-
-    GET_CHAIN_INTERFACE(ifChainObj);
 
     while (nHeight < nHeightEnd)
     {
@@ -227,6 +231,8 @@ UniValue getmininginfo(const JSONRPCRequest &request)
 
 
     LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("blocks", (int)chainActive.Height()));
@@ -389,6 +395,7 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     std::string strMode = "template";
     UniValue lpval = NullUniValue;

@@ -55,6 +55,8 @@ public:
 
     virtual bool GetActiveChainTipHash(uint256 &tipHash) = 0;
 
+    virtual CChain &GetActiveChain() = 0;
+
     virtual std::set<const CBlockIndex *, CompareBlocksByHeight> GetTips() = 0;
 
     virtual CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) = 0;

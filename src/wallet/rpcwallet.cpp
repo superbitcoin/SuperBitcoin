@@ -1299,6 +1299,8 @@ UniValue addwitnessaddress(const JSONRPCRequest &request)
 
     {
         LOCK(cs_main);
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CChain& chainActive = ifChainObj->GetActiveChain();
         if (!IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus()) &&
             !gArgs.GetArg<bool>("-walletprematurewitness", false))
         {
@@ -1951,6 +1953,9 @@ UniValue listsinceblock(const JSONRPCRequest &request)
 
     LOCK2(cs_main, pwallet->cs_wallet);
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     const CBlockIndex *pindex = nullptr;    // Block index of the specified block or the common ancestor, if the block provided was in a deactivated chain.
     const CBlockIndex *paltindex = nullptr; // Block index of the specified block, even if it's in a deactivated chain.
     int target_confirms = 1;
@@ -1958,9 +1963,7 @@ UniValue listsinceblock(const JSONRPCRequest &request)
 
     if (!request.params[0].isNull() && !request.params[0].get_str().empty())
     {
-        GET_CHAIN_INTERFACE(ifChainObj);
         uint256 blockId;
-
         blockId.SetHex(request.params[0].get_str());
 
         paltindex = pindex = ifChainObj->GetBlockIndex(blockId);

@@ -51,8 +51,10 @@ void TxToJSON(const CTransaction &tx, const uint256 hashBlock, UniValue &entry)
 
     if (!hashBlock.IsNull())
     {
-        entry.push_back(Pair("blockhash", hashBlock.GetHex()));
         GET_CHAIN_INTERFACE(ifChainObj);
+        CChain& chainActive = ifChainObj->GetActiveChain();
+
+        entry.push_back(Pair("blockhash", hashBlock.GetHex()));
         CBlockIndex *pindex = ifChainObj->GetBlockIndex(hashBlock);
         if (pindex != nullptr)
         {
@@ -202,8 +204,6 @@ UniValue gettxoutproof(const JSONRPCRequest &request)
                         "\"data\"           (string) A string that is a serialized, hex-encoded data for the proof.\n"
         );
 
-    GET_CHAIN_INTERFACE(ifChainObj);
-
     std::set<uint256> setTxids;
     uint256 oneTxid;
     UniValue txids = request.params[0].get_array();
@@ -221,6 +221,8 @@ UniValue gettxoutproof(const JSONRPCRequest &request)
     }
 
     LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     CBlockIndex *pblockindex = nullptr;
 
@@ -299,8 +301,9 @@ UniValue verifytxoutproof(const JSONRPCRequest &request)
         return res;
 
     LOCK(cs_main);
-
     GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     CBlockIndex *pIndex = ifChainObj->GetBlockIndex(merkleBlock.header.GetHash());
     if (!pIndex || !chainActive.Contains(pIndex))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found in chain");

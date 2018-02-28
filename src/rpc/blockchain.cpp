@@ -50,6 +50,9 @@ extern void TxToJSON(const CTransaction &tx, const uint256 hashBlock, UniValue &
 
 double GetDifficulty(const CBlockIndex *blockindex)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     if (blockindex == nullptr)
     {
         if (chainActive.Tip() == nullptr)
@@ -79,6 +82,9 @@ double GetDifficulty(const CBlockIndex *blockindex)
 
 UniValue blockheaderToJSON(const CBlockIndex *blockindex)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
     int confirmations = -1;
@@ -107,6 +113,9 @@ UniValue blockheaderToJSON(const CBlockIndex *blockindex)
 
 UniValue blockToJSON(const CBlock &block, const CBlockIndex *blockindex, bool txDetails)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
     int confirmations = -1;
@@ -163,6 +172,9 @@ UniValue getblockcount(const JSONRPCRequest &request)
         );
 
     LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     return chainActive.Height();
 }
 
@@ -180,6 +192,9 @@ UniValue getbestblockhash(const JSONRPCRequest &request)
         );
 
     LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     return chainActive.Tip()->GetBlockHash().GetHex();
 }
 
@@ -641,6 +656,8 @@ UniValue getblockhash(const JSONRPCRequest &request)
         );
 
     LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     int nHeight = request.params[0].get_int();
     if (nHeight < 0 || nHeight > chainActive.Height())
@@ -903,6 +920,8 @@ UniValue pruneblockchain(const JSONRPCRequest &request)
         throw JSONRPCError(RPC_MISC_ERROR, "Cannot prune blocks because node is not in prune mode.");
 
     LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     int heightParam = request.params[0].get_int();
     if (heightParam < 0)
@@ -933,7 +952,6 @@ UniValue pruneblockchain(const JSONRPCRequest &request)
         height = chainHeight - MIN_BLOCKS_TO_KEEP;
     }
 
-    GET_CHAIN_INTERFACE(ifChainObj);
     ifChainObj->PruneBlockFilesManual(height);
     return uint64_t(height);
 }
@@ -1235,6 +1253,8 @@ UniValue getblockchaininfo(const JSONRPCRequest &request)
         );
 
     LOCK(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain", Params().NetworkIDString()));
@@ -1313,6 +1333,8 @@ UniValue getchaintips(const JSONRPCRequest &request)
      *  - add chainActive.Tip()
      */
     GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     std::set<const CBlockIndex *, CompareBlocksByHeight> setTips(ifChainObj->GetTips());
 
     /* Construct the output array.  */
@@ -1560,9 +1582,11 @@ UniValue getchaintxstats(const JSONRPCRequest &request)
 
     {
         LOCK(cs_main);
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CChain& chainActive = ifChainObj->GetActiveChain();
+
         if (havehash)
         {
-            GET_CHAIN_INTERFACE(ifChainObj);
             if (!ifChainObj->DoesBlockExist(hash))
                 throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found");
 

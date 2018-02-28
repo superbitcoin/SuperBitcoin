@@ -263,7 +263,8 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
             }
         }
 
-        CTxMemPoolEntry entry(ptx, nFees, nAcceptTime, chainActive.Height(),
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CTxMemPoolEntry entry(ptx, nFees, nAcceptTime, ifChainObj->GetActiveChain().Height(),
                               fSpendsCoinbase, nSigOpsCost, lp);
         unsigned int nSize = entry.GetTxSize();
 
@@ -614,8 +615,9 @@ void CTxMemPool::UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnect
     // the disconnectpool that were added back and cleans up the mempool state.
     this->UpdateTransactionsFromBlock(vHashUpdate);
 
+    GET_CHAIN_INTERFACE(ifChainObj);
     // We also need to remove any now-immature transactions
-    this->removeForReorg(pcoinsTip, chainActive.Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
+    this->removeForReorg(pcoinsTip, ifChainObj->GetActiveChain().Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
     // Re-limit mempool size, in case we added any transactions
     LimitMempoolSize(gArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
                      gArgs.GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
@@ -641,7 +643,8 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
     AssertLockHeld(cs_main);
     AssertLockHeld(mempool.cs);
 
-    CBlockIndex *tip = chainActive.Tip();
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CBlockIndex *tip = ifChainObj->GetActiveChain().Tip();
     CBlockIndex index;
     index.pprev = tip;
     // CheckSequenceLocks() uses chainActive.Height()+1 to evaluate

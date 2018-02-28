@@ -187,6 +187,8 @@ public:
 
     bool GetActiveChainTipHash(uint256 &tipHash) override;
 
+    CChain &GetActiveChain() override;
+
     std::set<const CBlockIndex *, CompareBlocksByHeight> GetTips() override;
 
     CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) override;

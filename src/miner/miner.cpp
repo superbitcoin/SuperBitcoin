@@ -129,7 +129,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     pblocktemplate->vTxSigOpsCost.push_back(-1); // updated at end
 
     LOCK2(cs_main, mempool.cs);
-    CBlockIndex *pindexPrev = chainActive.Tip();
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CBlockIndex *pindexPrev = ifChainObj->GetActiveChain().Tip();
     nHeight = pindexPrev->nHeight + 1;
 
     pblock->nVersion = ComputeBlockVersion(pindexPrev, chainparams.GetConsensus());
@@ -184,7 +185,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     pblock->nNonce = 0;
     pblocktemplate->vTxSigOpsCost[0] = WITNESS_SCALE_FACTOR * (*pblock->vtx[0]).GetLegacySigOpCount();
 
-    GET_CHAIN_INTERFACE(ifChainObj);
     CValidationState state;
     if (!ifChainObj->TestBlockValidity(state, chainparams, *pblock, pindexPrev, false, false))
     {

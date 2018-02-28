@@ -8,6 +8,8 @@
 #include "sbtccore/clientversion.h"
 #include "sbtccore/core_io.h"
 #include "framework/init.h"
+#include "framework/base.hpp"
+#include "interface/ichaincomponent.h"
 #include "block/validation.h"
 #include "utils/net/httpserver.h"
 #include "p2p/net.h"
@@ -95,6 +97,9 @@ UniValue getinfo(const JSONRPCRequest &request)
 #else
     LOCK(cs_main);
 #endif
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
@@ -736,6 +741,8 @@ UniValue gencheckpoint(const JSONRPCRequest &request)
         uint256 blockHash;
         {
             LOCK(cs_main);
+            GET_CHAIN_INTERFACE(ifChainObj);
+            CChain& chainActive = ifChainObj->GetActiveChain();
 
             if (nHeight < 0 || nHeight > chainActive.Height())
                 throw JSONRPCError(RPC_INVALID_PARAMETER, "Block height out of range");

@@ -364,6 +364,11 @@ bool CChainCommonent::GetActiveChainTipHash(uint256 &tipHash)
     return false;
 }
 
+CChain &CChainCommonent::GetActiveChain()
+{
+    return cIndexManager.GetChain();
+}
+
 std::set<const CBlockIndex *, CompareBlocksByHeight> CChainCommonent::GetTips()
 {
     return cIndexManager.GetTips();
@@ -493,7 +498,7 @@ bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
     LOCK(cs_main);
 
     // Find the last block the caller has in the main chain
-    const CBlockIndex *pindex = cIndexManager.FindForkInGlobalIndex(chainActive, locator);
+    const CBlockIndex *pindex = cIndexManager.FindForkInGlobalIndex(cIndexManager.GetChain(), locator);
 
     // Send the rest of the chain
     if (pindex)
@@ -1081,7 +1086,7 @@ bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
         return true;
     }
 
-    if (bi->nHeight < chainActive.Height() - MAX_BLOCKTXN_DEPTH)
+    if (bi->nHeight < cIndexManager.GetChain().Height() - MAX_BLOCKTXN_DEPTH)
     {
         // If an older block is requested (should never happen in practice,
         // but can happen in tests) send a block response instead of a
@@ -3075,7 +3080,7 @@ bool CChainCommonent::TestBlockValidity(CValidationState &state, const CChainPar
                                         CBlockIndex *pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
 {
     AssertLockHeld(cs_main);
-    assert(pindexPrev && pindexPrev == chainActive.Tip());
+    assert(pindexPrev && pindexPrev == cIndexManager.GetChain().Tip());
     CCoinsViewCache viewNew(pcoinsTip);
     CBlockIndex indexDummy(block);
     indexDummy.pprev = pindexPrev;
@@ -3120,7 +3125,7 @@ int CChainCommonent::GetSpendHeight(const CCoinsViewCache &inputs)
 {
     LOCK(cs);
     CBlockIndex *pindexPrev = cIndexManager.GetBlockIndex(inputs.GetBestBlock());
-    if(pindexPrev == nullptr)
+    if (pindexPrev == nullptr)
     {
         return 1;
     }

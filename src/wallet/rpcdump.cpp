@@ -351,8 +351,9 @@ UniValue importprunedfunds(const JSONRPCRequest &request)
     {
 
         LOCK(cs_main);
-
         GET_CHAIN_INTERFACE(ifChainObj);
+        CChain& chainActive = ifChainObj->GetActiveChain();
+
         if (!ifChainObj->DoesBlockExist(merkleBlock.header.GetHash()) ||
             !chainActive.Contains(ifChainObj->GetBlockIndex(merkleBlock.header.GetHash())))
             throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Block not found in chain");
@@ -522,6 +523,8 @@ UniValue importwallet(const JSONRPCRequest &request)
     if (!file.is_open())
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Cannot open wallet dump file");
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
     int64_t nTimeBegin = chainActive.Tip()->GetBlockTime();
 
     bool fGood = true;
@@ -698,6 +701,9 @@ UniValue dumpwallet(const JSONRPCRequest &request)
     }
     mapKeyBirth.clear();
     std::sort(vKeyBirth.begin(), vKeyBirth.end());
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     // produce output
     file << strprintf("# Wallet dump created by Bitcoin %s\n", CLIENT_BUILD);
@@ -1227,6 +1233,9 @@ UniValue importmulti(const JSONRPCRequest &mainRequest)
 
     LOCK2(cs_main, pwallet->cs_wallet);
     EnsureWalletIsUnlocked(pwallet);
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     // Verify all timestamps are present before importing any keys.
     const int64_t now = chainActive.Tip() ? chainActive.Tip()->GetMedianTimePast() : 0;

@@ -160,6 +160,8 @@ static bool rest_headers(HTTPRequest *req,
     {
         LOCK(cs_main);
         GET_CHAIN_INTERFACE(ifChainObj);
+        CChain& chainActive = ifChainObj->GetActiveChain();
+
         const CBlockIndex *pindex = ifChainObj->GetBlockIndex(hash);
         while (pindex != nullptr && chainActive.Contains(pindex))
         {
@@ -580,6 +582,9 @@ static bool rest_getutxos(HTTPRequest *req, const std::string &strURIPart)
             bitmap[i / 8] |= ((uint8_t)hit) << (i % 8);
         }
     }
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     switch (rf)
     {

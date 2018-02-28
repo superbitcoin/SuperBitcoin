@@ -1265,8 +1265,10 @@ void CWallet::MarkConflicted(const uint256 &hashBlock, const uint256 &hashTx)
 {
     LOCK2(cs_main, cs_wallet);
 
-    int conflictconfirms = 0;
     GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
+    int conflictconfirms = 0;
     CBlockIndex *pindex = ifChainObj->GetBlockIndex(hashBlock);
     if (pindex != nullptr)
     {
@@ -1700,6 +1702,9 @@ int64_t CWallet::RescanFromTime(int64_t startTime, bool update)
     AssertLockHeld(cs_main);
     AssertLockHeld(cs_wallet);
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     // Find starting block. May be null if nCreateTime is greater than the
     // highest blockchain timestamp, in which case there is nothing that needs
     // to be scanned.
@@ -1731,6 +1736,9 @@ CBlockIndex *CWallet::ScanForWalletTransactions(CBlockIndex *pindexStart, bool f
 {
     int64_t nNow = GetTime();
     const CChainParams &chainParams = Params();
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     CBlockIndex *pindex = pindexStart;
     CBlockIndex *ret = nullptr;
@@ -2858,6 +2866,8 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
     // Of course, the subsidy is high enough, and transaction volume low
     // enough, that fee sniping isn't a problem yet, but by implementing a fix
     // now we ensure code won't be written that makes assumptions about
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
     // nLockTime that preclude a fix later.
     txNew.nLockTime = chainActive.Height();
 
@@ -4014,6 +4024,8 @@ void CWallet::GetKeyBirthTimes(std::map<CTxDestination, int64_t> &mapKeyBirth) c
         }
     }
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
     // map in which we'll infer heights of other keys
     CBlockIndex *pindexMax = chainActive[std::max(0, chainActive.Height() -
                                                      144)]; // the tip can be reorganized; use a 144-block safety margin
@@ -4032,7 +4044,6 @@ void CWallet::GetKeyBirthTimes(std::map<CTxDestination, int64_t> &mapKeyBirth) c
         return;
 
     // find first block that affects those keys, if there are any left
-    GET_CHAIN_INTERFACE(ifChainObj);
     std::vector<CKeyID> vAffected;
     for (std::map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); it++)
     {
@@ -4266,6 +4277,8 @@ CWallet *CWallet::CreateWalletFromFile(const std::string walletFile)
 {
     // needed to restore wallet transaction meta data after -zapwallettxes
     const CArgsManager &mArgs = app().GetArgsManager();
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     std::vector<CWalletTx> vWtx;
 
@@ -4688,9 +4701,10 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex *&pindexRet) const
         return 0;
 
     AssertLockHeld(cs_main);
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     // Find the block it claims to be in
-    GET_CHAIN_INTERFACE(ifChainObj);
     CBlockIndex *pindex = ifChainObj->GetBlockIndex(hashBlock);
     if (!pindex || !chainActive.Contains(pindex))
         return 0;

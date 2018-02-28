@@ -406,9 +406,6 @@ void UpdateUncommittedBlockStructures(CBlock &block, const CBlockIndex *pindexPr
 std::vector<unsigned char>
 GenerateCoinbaseCommitment(CBlock &block, const CBlockIndex *pindexPrev, const Consensus::Params &consensusParams);
 
-/** The currently-connected chain of blocks (protected by cs_main). */
-extern CChain chainActive;
-
 /** Global variable that points to the coins database (protected by cs_main) */
 extern CCoinsViewDB *pcoinsdbview;
 

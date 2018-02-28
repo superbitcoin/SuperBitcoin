@@ -527,6 +527,8 @@ namespace
     // Requires cs_main
     bool CanDirectFetch(const Consensus::Params &consensusParams)
     {
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CChain& chainActive = ifChainObj->GetActiveChain();
         return chainActive.Tip()->GetBlockTime() > GetAdjustedTime() - consensusParams.nPowTargetSpacing * 20;
     }
 
@@ -554,6 +556,9 @@ namespace
 
         // Make sure pindexBestKnownBlock is up to date, we'll need it.
         ProcessBlockAvailability(nodeid);
+
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CChain& chainActive = ifChainObj->GetActiveChain();
 
         if (state->pindexBestKnownBlock == nullptr ||
             state->pindexBestKnownBlock->nChainWork < chainActive.Tip()->nChainWork ||
@@ -742,6 +747,9 @@ static uint32_t GetFetchFlags(CNode *pfrom)
 
 bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     switch (inv.type)
     {
         case MSG_TX:
@@ -1436,6 +1444,10 @@ bool PeerLogicValidation::ProcessMessages(CNode *pfrom, std::atomic<bool> &inter
 bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptMsgProc)
 {
     const Consensus::Params &consensusParams = Params().GetConsensus();
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     {
         // Don't send anything until the version handshake is complete
         if (!pto->fSuccessfullyConnected || pto->fDisconnect)
@@ -1489,7 +1501,6 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
 
         // Address refresh broadcast
         int64_t nNow = GetTimeMicros();
-        GET_CHAIN_INTERFACE(ifChainObj);
         if (!ifChainObj->IsInitialBlockDownload() && pto->nNextLocalAddrSend < nNow)
         {
             AdvertiseLocal(pto);
@@ -3112,6 +3123,7 @@ bool PeerLogicValidation::ProcessGetBlocksMsg(CNode *pfrom, CDataStream &vRecv)
 bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     std::vector<CInv> vInv;
     vRecv >> vInv;
@@ -3797,6 +3809,8 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
                                                const std::atomic<bool> &interruptMsgProc)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
+
     CBlockHeaderAndShortTxIDs cmpctblock;
     vRecv >> cmpctblock;
 
@@ -4195,6 +4209,9 @@ bool PeerLogicValidation::SendRejectsAndCheckIfBanned(CNode *pnode)
 void PeerLogicValidation::ConsiderEviction(CNode *pto, int64_t time_in_seconds)
 {
     AssertLockHeld(cs_main);
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain& chainActive = ifChainObj->GetActiveChain();
 
     CNodeState &state = *State(pto->GetId());
     const CNetMsgMaker msgMaker(pto->GetSendVersion());
