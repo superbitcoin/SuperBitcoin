@@ -273,6 +273,11 @@ private:
     std::map<int64_t, std::set<int>> m_nodeCheckPointKnown;
     CCriticalSection cs;
 
+    size_t nCoinCacheUsage = 5000 * 300;
+
+    /** Block hash whose ancestors we will assume to have valid scripts without checking them. */
+    uint256 hashAssumeValid;
+
     bool ReplayBlocks();
 
     CBlockIndex *Tip();

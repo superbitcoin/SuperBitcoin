@@ -26,6 +26,15 @@
 
 using namespace appbase;
 
+struct BlockHasher
+{
+    size_t operator()(const uint256 &hash) const
+    {
+        return hash.GetCheapHash();
+    }
+};
+typedef std::unordered_map<uint256, CBlockIndex *, BlockHasher> BlockMap;
+
 /** Comparison function for sorting the getchaintips heads.  */
 struct CompareBlocksByHeight
 {
@@ -164,7 +173,6 @@ private:
     bool bReIndex = false;
     bool bTxIndex = false;
     bool bHavePruned = false;
-    bool bPruneMode = false;
     int iLastBlockFile = 0;
     std::vector<CBlockFileInfo> vecBlockFileInfo;
     std::unordered_map<uint256, CBlockIndex *, BlockHasher> mBlockIndex;
@@ -182,6 +190,8 @@ private:
     CBlockIndex *pIndexBestForkBase = nullptr;
 
     CChain cChainActive;
+
+    bool fCheckBlockIndex = false;
 
     CCriticalSection cs;
 

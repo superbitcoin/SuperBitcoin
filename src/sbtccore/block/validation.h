@@ -161,19 +161,10 @@ static const bool DEFAULT_PEERBLOOMFILTERS = true;
 /** Default for -stopatheight */
 static const int DEFAULT_STOPATHEIGHT = 0;
 
-struct BlockHasher
-{
-    size_t operator()(const uint256 &hash) const
-    {
-        return hash.GetCheapHash();
-    }
-};
-
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
 extern CBlockPolicyEstimator feeEstimator;
 extern CTxMemPool mempool;
-typedef std::unordered_map<uint256, CBlockIndex *, BlockHasher> BlockMap;
 //extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockWeight;
@@ -185,9 +176,7 @@ extern int nScriptCheckThreads;
 extern bool fTxIndex;
 extern bool fIsBareMultisigStd;
 extern bool fRequireStandard;
-extern bool fCheckBlockIndex;
 extern bool fCheckpointsEnabled;
-extern size_t nCoinCacheUsage;
 /** A fee rate smaller than this is considered zero fee (for relaying, mining and transaction creation) */
 extern CFeeRate minRelayTxFee;
 /** Absolute maximum transaction fee (in satoshis) used by wallet and mempool (rejects high fee in sendrawtransaction) */
@@ -195,9 +184,6 @@ extern CAmount maxTxFee;
 /** If the tip is older than this (in seconds), the node is considered to be in initial block download. */
 extern int64_t nMaxTipAge;
 extern bool fEnableReplacement;
-
-/** Block hash whose ancestors we will assume to have valid scripts without checking them. */
-extern uint256 hashAssumeValid;
 
 /** Minimum work we will assume exists on some valid chain. */
 extern arith_uint256 nMinimumChainWork;
@@ -228,33 +214,8 @@ static const unsigned int DEFAULT_CHECKLEVEL = 3;
 // Setting the target to > than 550MB will make it likely we can respect the target.
 static const uint64_t MIN_DISK_SPACE_FOR_BLOCK_FILES = 550 * 1024 * 1024;
 
-/** Open a block file (blk?????.dat) */
-//FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly = false);
-
-/** Translation to a filesystem path */
-//fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
-
-/** Import blocks from an external file */
-bool LoadExternalBlockFile(const CChainParams &chainparams, FILE *fileIn, CDiskBlockPos *dbp = nullptr);
-
-/** Ensures we have a genesis block in the block tree, possibly writing one to disk. */
-bool LoadGenesisBlock(const CChainParams &chainparams);
-
-/** Load the block tree and coins database from disk,
- * initializing state if we're running with -reindex. */
-bool LoadBlockIndex(const CChainParams &chainparams);
-
-/** Update the chain tip based on database information. */
-bool LoadChainTip(const CChainParams &chainparams);
-
-/** Unload database information */
-void UnloadBlockIndex();
-
 /** Run an instance of the script checking thread */
 void ThreadScriptCheck();
-
-/** Check whether we are doing an initial block download (synchronizing from disk or network) */
-bool IsInitialBlockDownload();
 
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::Params &params, uint256 &hashBlock,
@@ -337,8 +298,6 @@ void InitScriptExecutionCache();
 /** Check whether witness commitments are required for block. */
 bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
 
-/** When there are blocks in the active chain with missing data, rewind the chainstate and remove them from the block index */
-bool RewindBlockIndex(const CChainParams &params);
 
 int GetWitnessCommitmentIndex(const CBlock &block);
 
