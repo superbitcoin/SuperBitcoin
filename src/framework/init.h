@@ -5,9 +5,4 @@
 
 #ifndef BITCOIN_INIT_H
 #define BITCOIN_INIT_H
-
-void StartShutdown();
-
-bool ShutdownRequested();
-
 #endif // BITCOIN_INIT_H

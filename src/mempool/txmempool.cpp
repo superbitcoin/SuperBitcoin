@@ -776,7 +776,7 @@ bool CTxMemPool::LoadMempool(void)
             {
                 ++skipped;
             }
-            if (ShutdownRequested())
+            if (app().ShutdownRequested())
                 return false;
         }
         std::map<uint256, CAmount> mapDeltas;

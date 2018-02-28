@@ -75,6 +75,7 @@ class CCoinsViewDB : public CCoinsView
 {
 protected:
     CDBWrapper db;
+    volatile bool shutdown;
 public:
     CCoinsViewDB(size_t nCacheSize, bool fMemory = false, bool fWipe = false);
 
@@ -94,6 +95,8 @@ public:
     bool Upgrade();
 
     size_t EstimateSize() const override;
+
+    void RequestShutdown() { shutdown = true; }
 };
 
 /** Specialization of CCoinsViewCursor to iterate over a CCoinsViewDB */

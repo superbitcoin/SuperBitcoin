@@ -42,6 +42,8 @@ namespace appbase
 
         void RequestShutdown() { bShutdown = true; }
 
+        bool ShutdownRequested() { return bShutdown; }
+
 
 
         bool Initialize(int argc, char **argv);

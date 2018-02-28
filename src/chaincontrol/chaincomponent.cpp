@@ -290,6 +290,7 @@ bool CChainCommonent::ComponentShutdown()
 {
     std::cout << "shutdown chain component \n";
     bRequestShutdown = true;
+    cViewManager.RequestShutdown();
     return true;
 }
 
@@ -2173,7 +2174,7 @@ bool CChainCommonent::ActivateBestChain(CValidationState &state, const CChainPar
     do
     {
         boost::this_thread::interruption_point();
-        if (ShutdownRequested())
+        if (app().ShutdownRequested())
             break;
 
         const CBlockIndex *pIndexFork;
@@ -2234,7 +2235,8 @@ bool CChainCommonent::ActivateBestChain(CValidationState &state, const CChainPar
         }
 
         if (iStopAtHeight && pIndexNewTip && pIndexNewTip->nHeight >= iStopAtHeight)
-            StartShutdown();
+            app().RequestShutdown();
+
     } while (pIndexNewTip != pIndexMostWork);
 
     cIndexManager.CheckBlockIndex(params.GetConsensus());
@@ -2952,7 +2954,7 @@ bool CChainCommonent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
                 nGoodTransactions += block.vtx.size();
             }
         }
-        if (ShutdownRequested())
+        if (app().ShutdownRequested())
             return true;
     }
     if (pindexFailure)

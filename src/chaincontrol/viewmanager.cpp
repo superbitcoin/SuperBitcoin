@@ -187,6 +187,14 @@ void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, 
     UpdateCoins(tx, inputs, txundo, nHeight);
 }
 
+void CViewManager::RequestShutdown()
+{
+    if (pCoinsViewDB)
+    {
+        pCoinsViewDB->RequestShutdown();
+    }
+}
+
 /**
  * Restore the UTXO in a Coin at a given COutPoint
  * @param undo The Coin to be restored.
@@ -224,3 +232,4 @@ int CViewManager::ApplyTxInUndo(Coin &&undo, CCoinsViewCache &view, const COutPo
 
     return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
 }
+
