@@ -65,6 +65,8 @@ public:
 
     virtual CBlockTreeDB *GetBlockTreeDB() = 0;
 
+    virtual CBlockIndex *GetIndexBestHeader() = 0;
+
     virtual CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator) = 0;
 
     virtual bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,

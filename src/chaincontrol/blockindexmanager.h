@@ -33,6 +33,7 @@ struct BlockHasher
         return hash.GetCheapHash();
     }
 };
+
 typedef std::unordered_map<uint256, CBlockIndex *, BlockHasher> BlockMap;
 
 /** Comparison function for sorting the getchaintips heads.  */
@@ -185,6 +186,8 @@ private:
     std::set<int> setDirtyFileInfo;
     std::set<CBlockIndex *> setFailedBlocks;
     CBlockIndex *pIndexBestInvalid;
+
+    /** Best header we've seen so far (used for getheaders queries' starting points). */
     CBlockIndex *pIndexBestHeader = nullptr;
     CBlockIndex *pIndexBestForkTip = nullptr;
     CBlockIndex *pIndexBestForkBase = nullptr;

@@ -61,7 +61,6 @@
 
 CCriticalSection cs_main;
 
-CBlockIndex *pindexBestHeader = nullptr;
 CWaitableCriticalSection csBestBlock;
 CConditionVariable cvBlockChange;
 int nScriptCheckThreads = 0;
