@@ -1,6 +1,5 @@
 #include <iostream>
-#include<thread>      //std::thread
-
+#include <thread>
 #include "chaincomponent.h"
 #include "checkpoints.h"
 #include "sbtccore/streams.h"
@@ -34,11 +33,6 @@ static int64_t nTimeFlush = 0;
 static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 static int64_t nTimeTotal = 0;
-
-static const bool DEFAULT_PROXYRANDOMIZE = true;
-static const bool DEFAULT_REST_ENABLE = false;
-static const bool DEFAULT_DISABLE_SAFEMODE = false;
-static const bool DEFAULT_STOPAFTERBLOCKIMPORT = false;
 
 void CChainCommonent::ThreadScriptCheck()
 {
@@ -74,7 +68,7 @@ bool CChainCommonent::ComponentInitialize()
     mlog.notice("Using %u threads for script verification.", nScriptCheckThreads);
     if (nScriptCheckThreads)
     {
-        for (int i = 0; i < nScriptCheckThreads - 1; i++)
+        for (int i = 0; i < nScriptCheckThreads; i++)
             threadGroup.create_thread(boost::bind(&CChainCommonent::ThreadScriptCheck, this));
     }
 
@@ -1456,8 +1450,6 @@ bool CChainCommonent::DisconnectTip(CValidationState &state, const CChainParams 
             disconnectpool->addTransaction(*it);
         }
 
-        ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
-
         while (disconnectpool->DynamicMemoryUsage() > MAX_DISCONNECTED_TX_POOL_SIZE * 1000)
         {
             // Drop the earliest entry, and remove its children from the mempool.
@@ -1841,7 +1833,6 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     std::vector<PrecomputedTransactionData> txdata;
     // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
     txdata.reserve(block.vtx.size());
-    ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = *(block.vtx[i]);
@@ -2027,7 +2018,7 @@ bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &ch
                nTimeChainState * 0.000001);
 
     // Remove conflicting transactions from the mempool.;
-    ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
+    // ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
     //    txmempool->removeForBlock(blockConnecting.vtx, pIndexNew->nHeight); todo
     disconnectpool.removeForBlock(blockConnecting.vtx);
     // Update chainActive & related variables.
@@ -2579,7 +2570,7 @@ void CChainCommonent::ThreadImport()
         return;
     }
 
-    if (cArgs.GetArg<bool>("-stopafterblockimport", DEFAULT_STOPAFTERBLOCKIMPORT))
+    if (cArgs.GetArg<bool>("-stopafterblockimport", false))
     {
         mlog.info("Stopping after block import");
         return;

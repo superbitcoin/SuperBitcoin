@@ -54,9 +54,6 @@ inline log4cpp::Category &mlog() {
     return appbase::CApp::mlog;
 }
 
-class CArgsManager;
-extern CArgsManager gArgs;
-
 #define _TXT__(x) #x
 #define EMTOSTR(EM) _TXT__(EM)
 

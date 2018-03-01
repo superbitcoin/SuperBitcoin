@@ -161,4 +161,6 @@ private:
 
 };
 
+extern CArgsManager gArgs;
+
 #endif // !defined(__SBTC_CARGSMANAGER_H__)

@@ -9,6 +9,7 @@
 #include "scheduler.h"
 #include "interface/componentid.h"
 #include "eventmanager/eventmanager.h"
+#include "config/argmanager.h"
 
 class CArgsManager;
 class CChainParams;
@@ -92,7 +93,7 @@ namespace appbase
 
         const CArgsManager &GetArgsManager() const
         {
-            return *cArgs.get();
+            return gArgs;
         }
 
         const CChainParams &GetChainParams() const
@@ -137,7 +138,6 @@ namespace appbase
     private:
         uint64_t nVersion;
         volatile bool bShutdown;
-        std::unique_ptr<CArgsManager> cArgs;
         std::unique_ptr<CChainParams> cChainParams;
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
 
