@@ -880,12 +880,6 @@ void CBlockIndexManager::CheckForkWarningConditionsOnNewFork(CBlockIndex *pindex
     CheckForkWarningConditions();
 }
 
-bool CBlockIndexManager::IsWitnessEnabled(const CBlockIndex *pIndexPrev, const Consensus::Params &params)
-{
-    LOCK(cs);
-    return (VersionBitsState(pIndexPrev, params, Consensus::DEPLOYMENT_SEGWIT, versionbitscache) == THRESHOLD_ACTIVE);
-}
-
 bool CBlockIndexManager::NeedRewind(const int height, const Consensus::Params &params)
 {
     assert(height >= 1);

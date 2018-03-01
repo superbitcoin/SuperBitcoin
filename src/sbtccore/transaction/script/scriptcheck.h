@@ -5,6 +5,9 @@
 #include "interpreter.h"
 #include "wallet/amount.h"
 #include "../transaction.h"
+#include "sigcache.h"
+#include "utils/random.h"
+#include "sbtccore/cuckoocache.h"
 
 /**
  * Closure representing one script verification
@@ -55,7 +58,9 @@ public:
     }
 };
 
+extern uint256 scriptExecutionCacheNonce;
+extern CuckooCache::cache<uint256, SignatureCacheHasher> scriptExecutionCache;
 /** Initializes the script-execution cache */
-void InitScriptExecutionCache();
+void InitScriptExecutionCache(int64_t maxsigcachesize);
 
 

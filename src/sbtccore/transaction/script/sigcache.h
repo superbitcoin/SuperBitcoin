@@ -56,6 +56,6 @@ public:
                          const uint256 &sighash) const override;
 };
 
-void InitSignatureCache();
+void InitSignatureCache(int64_t maxsigcachesize);
 
 #endif // BITCOIN_SCRIPT_SIGCACHE_H

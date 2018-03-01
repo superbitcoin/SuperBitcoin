@@ -239,9 +239,6 @@ int32_t ComputeBlockVersion(const CBlockIndex *pindexPrev, const Consensus::Para
     return nVersion;
 }
 
-// Protected by cs_main
-static ThresholdConditionCache warningcache[VERSIONBITS_NUM_BITS];
-
 bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params)
 {
     LOCK(cs_main);

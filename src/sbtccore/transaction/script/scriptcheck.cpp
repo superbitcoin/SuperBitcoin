@@ -1,5 +1,5 @@
 #include "scriptcheck.h"
-#include "sigcache.h"
+#include "utils/util.h"
 
 bool CScriptCheck::operator()()
 {
@@ -9,7 +9,15 @@ bool CScriptCheck::operator()()
                         CachingTransactionSignatureChecker(ptxTo, nIn, amount, cacheStore, *txdata), &error);
 }
 
+uint256 scriptExecutionCacheNonce(GetRandHash());
+CuckooCache::cache<uint256, SignatureCacheHasher> scriptExecutionCache;
 /** Initializes the script-execution cache */
-void InitScriptExecutionCache()
+void InitScriptExecutionCache(int64_t maxsigcachesize)
 {
+    // nMaxCacheSize is unsigned. If -maxsigcachesize is set to zero,
+    // setup_bytes creates the minimum possible cache (2 elements).
+    size_t nMaxCacheSize = std::min(std::max((int64_t)0, maxsigcachesize), MAX_MAX_SIG_CACHE_SIZE) * ((size_t) 1 << 20);
+    size_t nElems = scriptExecutionCache.setup_bytes(nMaxCacheSize);
+    LogPrintf("Using %zu MiB out of %zu/2 requested for script execution cache, able to store %zu elements\n",
+              (nElems*sizeof(uint256)) >>20, (nMaxCacheSize*2)>>20, nElems);
 }

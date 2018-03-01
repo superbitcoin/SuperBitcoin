@@ -21,10 +21,6 @@
 #include "interface/ichaincomponent.h"
 //#include "block.h"
 
-
-static uint256 scriptExecutionCacheNonce(GetRandHash());
-static CuckooCache::cache<uint256, SignatureCacheHasher> scriptExecutionCache;
-
 std::string COutPoint::ToString() const
 {
     return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0, 10), n);
@@ -165,19 +161,19 @@ std::vector<CKeyID> CTransaction::to() const
     return std::vector<CKeyID>();
 }
 
-bool CTransaction::PreCheck(CHECK_TYPE type,CValidationState &state) const
+bool CTransaction::PreCheck(CHECK_TYPE type, CValidationState &state) const
 {
     extern bool CheckFinalTx(const CTransaction &tx, int flags);
 
-    if(!CheckTransaction(state)) // state filled in by CheckTransaction
-    return false;
+    if (!CheckTransaction(state)) // state filled in by CheckTransaction
+        return false;
     // Coinbase is only valid in a block, not as a loose transaction
     if (IsCoinBase())
         return state.DoS(100, false, REJECT_INVALID, "coinbase");
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     std::string reason;
-    if ( !IsStandardTx(*this, reason, true))
+    if (!IsStandardTx(*this, reason, true))
         return state.DoS(0, false, REJECT_NONSTANDARD, reason);
 
     // Only accept nLockTime-using transactions that can be mined in the next
@@ -185,7 +181,6 @@ bool CTransaction::PreCheck(CHECK_TYPE type,CValidationState &state) const
     // be mined yet.
     if (!CheckFinalTx(*this, STANDARD_LOCKTIME_VERIFY_FLAGS))
         return state.DoS(0, false, REJECT_NONSTANDARD, "non-final");
-
 
 
     return true;
@@ -451,11 +446,11 @@ bool CTransaction::EvaluateSequenceLocks(const CBlockIndex &block, std::pair<int
 
 bool CTransaction::CheckInputs(CValidationState &state, const CCoinsViewCache &inputs,
                                bool fScriptChecks, unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore,
-                               PrecomputedTransactionData &txdata, std::vector<CScriptCheck> *pvChecks)const
+                               PrecomputedTransactionData &txdata, std::vector<CScriptCheck> *pvChecks) const
 {
     if (!IsCoinBase())
     {
-//        GET_VERIFY_INTERFACE(ifVerifyObj);
+        //        GET_VERIFY_INTERFACE(ifVerifyObj);
         GET_CHAIN_INTERFACE(ifChainObj);
         if (!CheckTxInputs(state, inputs, ifChainObj->GetSpendHeight(inputs)))
             return false;

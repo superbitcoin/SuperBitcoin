@@ -219,8 +219,6 @@ private:
 
     void UnLoadBlockIndex();
 
-    bool IsWitnessEnabled(const CBlockIndex *pindexPrev, const Consensus::Params &params);
-
     //! Returns last CBlockIndex* in mapBlockIndex that is a checkpoint
     CBlockIndex *GetLastCheckpoint(const CCheckpointData &data);
 

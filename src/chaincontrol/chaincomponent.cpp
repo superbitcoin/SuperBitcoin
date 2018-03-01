@@ -67,8 +67,9 @@ bool CChainCommonent::ComponentInitialize()
 
     LoadCheckPoint();
 
-    InitSignatureCache();
-    InitScriptExecutionCache();
+    InitSignatureCache((int64_t)(gArgs.GetArg<uint32_t>("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2));
+
+    InitScriptExecutionCache(int64_t(gArgs.GetArg<uint32_t>("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2));
 
     mlog.notice("Using %u threads for script verification.", nScriptCheckThreads);
     if (nScriptCheckThreads)
