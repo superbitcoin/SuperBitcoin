@@ -220,26 +220,6 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
     return false;
 }
 
-bool CScriptCheck::operator()()
-{
-    const CScript &scriptSig = ptxTo->vin[nIn].scriptSig;
-    const CScriptWitness *witness = &ptxTo->vin[nIn].scriptWitness;
-    return VerifyScript(scriptSig, scriptPubKey, witness, nFlags,
-                        CachingTransactionSignatureChecker(ptxTo, nIn, amount, cacheStore, *txdata), &error);
-}
-
-static CuckooCache::cache<uint256, SignatureCacheHasher> scriptExecutionCache;
-static uint256 scriptExecutionCacheNonce(GetRandHash());
-
-
-static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
-
-void ThreadScriptCheck()
-{
-    RenameThread("bitcoin-scriptch");
-    scriptcheckqueue.Thread();
-}
-
 // Protected by cs_main
 VersionBitsCache versionbitscache;
 

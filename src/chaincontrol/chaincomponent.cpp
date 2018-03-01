@@ -7,6 +7,7 @@
 #include "interface/inetcomponent.h"
 #include "utils/net/netmessagehelper.h"
 #include "sbtccore/block/validation.h"
+#include "sbtccore/transaction/script/sigcache.h"
 #include "utils/reverse_iterator.h"
 #include "interface/imempoolcomponent.h"
 #include "framework/warnings.h"
@@ -33,7 +34,6 @@ static int64_t nTimeFlush = 0;
 static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 static int64_t nTimeTotal = 0;
-static CCheckQueue<CScriptCheck> scriptcheckqueue(128);
 
 static const bool DEFAULT_PROXYRANDOMIZE = true;
 static const bool DEFAULT_REST_ENABLE = false;
@@ -43,10 +43,11 @@ static const bool DEFAULT_STOPAFTERBLOCKIMPORT = false;
 void CChainCommonent::ThreadScriptCheck()
 {
     RenameThread("bitcoin-scriptch");
-    scriptcheckqueue.Thread();
+    scriptCheckQueue.Thread();
 }
 
 CChainCommonent::CChainCommonent()
+ : scriptCheckQueue(128)
 {
 }
 
@@ -58,10 +59,6 @@ bool CChainCommonent::ComponentInitialize()
 {
     std::cout << "initialize chain component \n";
 
-
-    //    GET_BASE_INTERFACE(ifBaseObj);
-    //    assert(ifBaseObj != nullptr);
-
     app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainCommonent::OnNodeDisconnected);
 
 
@@ -69,6 +66,16 @@ bool CChainCommonent::ComponentInitialize()
     const CArgsManager &cArgs = app().GetArgsManager();
 
     LoadCheckPoint();
+
+    InitSignatureCache();
+    InitScriptExecutionCache();
+
+    mlog.notice("Using %u threads for script verification.", nScriptCheckThreads);
+    if (nScriptCheckThreads)
+    {
+        for (int i = 0; i < nScriptCheckThreads - 1; i++)
+            threadGroup.create_thread(boost::bind(&CChainCommonent::ThreadScriptCheck, this));
+    }
 
     // block pruning; get the amount of disk space (in MiB) to allot for block & undo files
     int64_t iPruneArg = cArgs.GetArg<int32_t>("-prune", 0);
@@ -291,6 +298,8 @@ bool CChainCommonent::ComponentShutdown()
     std::cout << "shutdown chain component \n";
     bRequestShutdown = true;
     cViewManager.RequestShutdown();
+    threadGroup.interrupt_all();
+    threadGroup.join_all();
     return true;
 }
 
@@ -1818,7 +1827,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     CBlockUndo blockundo;
 
-    CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptcheckqueue : nullptr);
+    CCheckQueueControl<CScriptCheck> control(fScriptChecks && nScriptCheckThreads ? &scriptCheckQueue : nullptr);
 
     std::vector<int> prevheights;
     CAmount nFees = 0;

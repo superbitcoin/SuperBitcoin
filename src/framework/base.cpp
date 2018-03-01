@@ -751,13 +751,28 @@ bool CApp::AppInitialize(int argc, char *argv[])
         PrintExceptionContinue(nullptr, "CApp::initParams");
     }
 
+#ifndef WIN32
+    CreatePidFile(GetPidFile(), getpid());
+#endif
+
+    if (cArgs->GetArg<bool>("-shrinkdebugfile", logCategories == BCLog::NONE))
+    {
+        // Do this first since it both loads a bunch of debug.log into memory,
+        // and because this needs to happen before any other debug.log printing
+        ShrinkDebugFile();
+    }
+
+    mlog.notice("Default data directory %s.", GetDefaultDataDir().string());
+    mlog.notice("Using data directory %s.", GetDataDir().string());
+    mlog.notice("Using config file %s.",
+              GetConfigFile(cArgs->GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
+
     return true;
 }
 
 bool CApp::ComponentInitialize()
 {
-    return ForEachComponent(true, [](IComponent *component)
-    { return component->Initialize(); });
+    return ForEachComponent(true, [](IComponent *component) { return component->Initialize(); });
 }
 
 bool CApp::Initialize(int argc, char **argv)
@@ -767,15 +782,28 @@ bool CApp::Initialize(int argc, char **argv)
 
 bool CApp::Startup()
 {
-    return ForEachComponent(true, [](IComponent *component)
-    { return component->Startup(); });
+    return ForEachComponent(true, [](IComponent *component) { return component->Startup(); });
 }
 
 bool CApp::Shutdown()
 {
-    return ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false,
-                                                                                         [](IComponent *component)
-                                                                                         { return component->Shutdown(); });
+    bool fRet = ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false, [](IComponent *component) { return component->Shutdown(); });
+
+#ifndef WIN32
+    try
+    {
+        fs::remove(GetPidFile());
+    } catch (const fs::filesystem_error &e)
+    {
+        mlog.warn("%s: Unable to remove pidfile: %s.", __func__, e.what());
+    }
+#endif
+
+    globalVerifyHandle.reset();
+    ECC_Stop();
+    mlog.notice("%s: done.", __func__);
+
+    return fRet;
 }
 
 bool CApp::Run()

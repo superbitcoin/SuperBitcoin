@@ -222,6 +222,7 @@ static inline void MarkUsed(const T &t, const Args &... args)
 template<typename... Args>
 bool error(const char *fmt, const Args &... args)
 {
+    mlog().error(fmt, args...);
     //LogPrintStr("ERROR: " + tfm::format(fmt, args...) + "\n");
     return false;
 }

@@ -44,8 +44,6 @@ class CInv;
 
 class CConnman;
 
-class CScriptCheck;
-
 class CBlockPolicyEstimator;
 
 class CTxMemPool;
@@ -214,9 +212,6 @@ static const unsigned int DEFAULT_CHECKLEVEL = 3;
 // Setting the target to > than 550MB will make it likely we can respect the target.
 static const uint64_t MIN_DISK_SPACE_FOR_BLOCK_FILES = 550 * 1024 * 1024;
 
-/** Run an instance of the script checking thread */
-void ThreadScriptCheck();
-
 /** Retrieve a transaction (from memory pool, or from disk, if possible) */
 bool GetTransaction(const uint256 &hash, CTransactionRef &tx, const Consensus::Params &params, uint256 &hashBlock,
                     bool fAllowSlow = false);
@@ -240,58 +235,6 @@ bool TestLockPointValidity(const LockPoints *lp);
 //bool CheckInputs(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &inputs, bool fScriptChecks,
 //                 unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore, PrecomputedTransactionData &txdata,
 //                 std::vector<CScriptCheck> *pvChecks = nullptr);
-
-/**
- * Closure representing one script verification
- * Note that this stores references to the spending transaction 
- */
-class CScriptCheck
-{
-private:
-    CScript scriptPubKey;
-    CAmount amount;
-    const CTransaction *ptxTo;
-    unsigned int nIn;
-    unsigned int nFlags;
-    bool cacheStore;
-    ScriptError error;
-    PrecomputedTransactionData *txdata;
-
-public:
-    CScriptCheck() : amount(0), ptxTo(0), nIn(0), nFlags(0), cacheStore(false), error(SCRIPT_ERR_UNKNOWN_ERROR)
-    {
-    }
-
-    CScriptCheck(const CScript &scriptPubKeyIn, const CAmount amountIn, const CTransaction &txToIn, unsigned int nInIn,
-                 unsigned int nFlagsIn, bool cacheIn, PrecomputedTransactionData *txdataIn) :
-            scriptPubKey(scriptPubKeyIn), amount(amountIn),
-            ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), cacheStore(cacheIn), error(SCRIPT_ERR_UNKNOWN_ERROR),
-            txdata(txdataIn)
-    {
-    }
-
-    bool operator()();
-
-    void swap(CScriptCheck &check)
-    {
-        scriptPubKey.swap(check.scriptPubKey);
-        std::swap(ptxTo, check.ptxTo);
-        std::swap(amount, check.amount);
-        std::swap(nIn, check.nIn);
-        std::swap(nFlags, check.nFlags);
-        std::swap(cacheStore, check.cacheStore);
-        std::swap(error, check.error);
-        std::swap(txdata, check.txdata);
-    }
-
-    ScriptError GetScriptError() const
-    {
-        return error;
-    }
-};
-
-/** Initializes the script-execution cache */
-void InitScriptExecutionCache();
 
 /** Functions for validating blocks and updating the block tree */
 

@@ -8,7 +8,10 @@
 #include "blockindexmanager.h"
 #include "viewmanager.h"
 #include "mempool/txmempool.h"
+#include "sbtccore/checkqueue.h"
 #include "sbtccore/block/blockencodings.h"
+#include "sbtccore/transaction/script/scriptcheck.h"
+
 
 struct database
 {
@@ -277,6 +280,9 @@ private:
 
     /** Block hash whose ancestors we will assume to have valid scripts without checking them. */
     uint256 hashAssumeValid;
+
+    boost::thread_group threadGroup;
+    CCheckQueue<CScriptCheck> scriptCheckQueue;
 
     bool ReplayBlocks();
 

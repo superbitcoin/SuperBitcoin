@@ -321,6 +321,8 @@ bool CNetComponent::ComponentShutdown()
         netConnMgr->Interrupt();
     }
 
+    MapPort(false);
+
     if (peerLogic)
     {
         UnregisterValidationInterface(peerLogic.get());

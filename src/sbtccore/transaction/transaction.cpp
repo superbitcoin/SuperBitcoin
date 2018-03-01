@@ -11,7 +11,7 @@
 #include <sbtccore/transaction/script/sigcache.h>
 #include <sbtccore/cuckoocache.h>
 #include "transaction.h"
-
+#include "script/scriptcheck.h"
 #include "hash.h"
 #include "tinyformat.h"
 #include "utils/utilstrencodings.h"
