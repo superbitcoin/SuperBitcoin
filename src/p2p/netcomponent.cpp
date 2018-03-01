@@ -184,7 +184,7 @@ bool CNetComponent::ComponentInitialize()
     }
 
     // -bind and -whitebind can't be set when not listening
-    size_t nUserBind = appArgs.GetArgs("-bind").size() + gArgs.GetArgs("-whitebind").size();
+    size_t nUserBind = appArgs.GetArgs("-bind").size() + appArgs.GetArgs("-whitebind").size();
     if (nUserBind != 0 && !appArgs.GetArg<bool>("-listen", DEFAULT_LISTEN))
     {
         mlog.error("Cannot set -bind or -whitebind together with -listen=0");
