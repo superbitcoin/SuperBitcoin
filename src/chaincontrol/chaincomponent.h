@@ -257,6 +257,8 @@ public:
 
     CBlockTreeDB *GetBlockTreeDB() override;
 
+    CBlockIndex *GetIndexBestHeader() override;
+
 private:
 
     bool NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers);

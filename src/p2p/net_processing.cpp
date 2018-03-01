@@ -528,7 +528,7 @@ namespace
     bool CanDirectFetch(const Consensus::Params &consensusParams)
     {
         GET_CHAIN_INTERFACE(ifChainObj);
-        CChain& chainActive = ifChainObj->GetActiveChain();
+        CChain &chainActive = ifChainObj->GetActiveChain();
         return chainActive.Tip()->GetBlockTime() > GetAdjustedTime() - consensusParams.nPowTargetSpacing * 20;
     }
 
@@ -558,7 +558,7 @@ namespace
         ProcessBlockAvailability(nodeid);
 
         GET_CHAIN_INTERFACE(ifChainObj);
-        CChain& chainActive = ifChainObj->GetActiveChain();
+        CChain &chainActive = ifChainObj->GetActiveChain();
 
         if (state->pindexBestKnownBlock == nullptr ||
             state->pindexBestKnownBlock->nChainWork < chainActive.Tip()->nChainWork ||
@@ -748,7 +748,7 @@ static uint32_t GetFetchFlags(CNode *pfrom)
 bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
     CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
 
     switch (inv.type)
@@ -1447,7 +1447,7 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
     const Consensus::Params &consensusParams = Params().GetConsensus();
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     {
         // Don't send anything until the version handshake is complete
@@ -1538,9 +1538,8 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
                 pto->vAddrToSend.shrink_to_fit();
         }
 
+        CBlockIndex *pindexBestHeader = ifChainObj->GetIndexBestHeader();
         // Start block sync
-        if (pindexBestHeader == nullptr)
-            pindexBestHeader = chainActive.Tip();
         bool fFetch = state.fPreferredDownload || (nPreferredDownload == 0 && !pto->fClient &&
                                                    !pto->fOneShot); // Download if this is a nice peer, or we have no nice peers and this one might do.
         if (!state.fSyncStarted && !pto->fClient && !fImporting && !ifChainObj->IsReindexing())
@@ -3125,7 +3124,7 @@ bool PeerLogicValidation::ProcessGetBlocksMsg(CNode *pfrom, CDataStream &vRecv)
 bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const std::atomic<bool> &interruptMsgProc)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     std::vector<CInv> vInv;
     vRecv >> vInv;
@@ -3171,9 +3170,10 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
                 // then ask for the blocks we need.
                 connman->PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::GETHEADERS,
                                                                                        chainActive.GetLocator(
-                                                                                               pindexBestHeader),
+                                                                                               ifChainObj->GetIndexBestHeader()),
                                                                                        inv.hash));
-                mlog.notice("getheaders (%d) %s to peer=%d\n", pindexBestHeader->nHeight, inv.hash.ToString(),
+                mlog.notice("getheaders (%d) %s to peer=%d\n", ifChainObj->GetIndexBestHeader()->nHeight,
+                            inv.hash.ToString(),
                             pfrom->GetId());
             }
         } else
@@ -3183,7 +3183,8 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
             {
                 mlog.notice("transaction (%s) inv sent in violation of protocol peer=%d\n", inv.hash.ToString(),
                             pfrom->GetId());
-            } else if (!fAlreadyHave && !fImporting && !ifChainObj->IsReindexing() && !ifChainObj->IsInitialBlockDownload())
+            } else if (!fAlreadyHave && !fImporting && !ifChainObj->IsReindexing() &&
+                       !ifChainObj->IsInitialBlockDownload())
             {
                 pfrom->AskFor(inv);
             }
@@ -3811,7 +3812,7 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
                                                const std::atomic<bool> &interruptMsgProc)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     CBlockHeaderAndShortTxIDs cmpctblock;
     vRecv >> cmpctblock;
@@ -3826,7 +3827,7 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
                 connman->PushMessage(pfrom,
                                      CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::GETHEADERS,
                                                                                 chainActive.GetLocator(
-                                                                                        pindexBestHeader),
+                                                                                        ifChainObj->GetIndexBestHeader()),
                                                                                 uint256()));
             return true;
         }
@@ -4213,7 +4214,7 @@ void PeerLogicValidation::ConsiderEviction(CNode *pto, int64_t time_in_seconds)
     AssertLockHeld(cs_main);
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     CNodeState &state = *State(pto->GetId());
     const CNetMsgMaker msgMaker(pto->GetSendVersion());

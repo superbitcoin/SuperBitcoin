@@ -645,13 +645,13 @@ bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     {
         xnode->nUnconnectingHeaders++;
         SendNetMessage(xnode->nodeID, NetMsgType::GETHEADERS, xnode->sendVersion, 0,
-                       cIndexManager.GetChain().GetLocator(pindexBestHeader), uint256());
+                       cIndexManager.GetChain().GetLocator(GetIndexBestHeader()), uint256());
 
         mlog.debug(
                 "received header %s: missing prev block %s, sending getheaders (%d) to end (peer=%d, nUnconnectingHeaders=%d)",
                 headers[0].GetHash().ToString(),
                 headers[0].hashPrevBlock.ToString(),
-                pindexBestHeader->nHeight,
+                GetIndexBestHeader()->nHeight,
                 xnode->nodeID, xnode->nUnconnectingHeaders);
 
         // Set hashLastUnknownBlock for this peer, so that if we
@@ -927,9 +927,9 @@ bool CChainCommonent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
             // To prevent fingerprinting attacks, only send blocks outside of the active
             // chain if they are valid, and no more than a month older (both in time, and in
             // best equivalent proof of work) than the best header chain we know about.
-            isOK = bi->IsValid(BLOCK_VALID_SCRIPTS) && (pindexBestHeader != nullptr) &&
-                   (pindexBestHeader->GetBlockTime() - bi->GetBlockTime() < nOneMonth) &&
-                   (GetBlockProofEquivalentTime(*pindexBestHeader, *bi, *pindexBestHeader,
+            isOK = bi->IsValid(BLOCK_VALID_SCRIPTS) && (GetIndexBestHeader() != nullptr) &&
+                   (GetIndexBestHeader()->GetBlockTime() - bi->GetBlockTime() < nOneMonth) &&
+                   (GetBlockProofEquivalentTime(*GetIndexBestHeader(), *bi, *GetIndexBestHeader(),
                                                 consensusParams) < nOneMonth);
             if (!isOK)
             {
@@ -941,8 +941,8 @@ bool CChainCommonent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
     // disconnect node in case we have reached the outbound limit for serving historical blocks
     // never disconnect whitelisted nodes
     static const int nOneWeek = 7 * 24 * 60 * 60; // assume > 1 week = historical
-    if (isOK && ifNetObj->OutboundTargetReached(true) && (((pindexBestHeader != nullptr) &&
-                                                           (pindexBestHeader->GetBlockTime() -
+    if (isOK && ifNetObj->OutboundTargetReached(true) && (((GetIndexBestHeader() != nullptr) &&
+                                                           (GetIndexBestHeader()->GetBlockTime() -
                                                             bi->GetBlockTime() > nOneWeek)) ||
                                                           blockType == MSG_FILTERED_BLOCK) &&
         !IsFlagsBitOn(xnode->flags, NF_WHITELIST))
@@ -3158,4 +3158,14 @@ CCoinsViewCache *CChainCommonent::GetCoinsTip()
 CBlockTreeDB *CChainCommonent::GetBlockTreeDB()
 {
     return cIndexManager.GetBlockTreeDB();
+}
+
+CBlockIndex *CChainCommonent::GetIndexBestHeader()
+{
+    CBlockIndex *bestHeader = cIndexManager.GetIndexBestHeader();
+    if (bestHeader == nullptr)
+    {
+        bestHeader = Tip();
+    }
+    return bestHeader;
 }

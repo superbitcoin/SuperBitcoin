@@ -1284,6 +1284,7 @@ UniValue getblockchaininfo(const JSONRPCRequest &request)
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
     CChain& chainActive = ifChainObj->GetActiveChain();
+    CBlockIndex *pindexBestHeader = ifChainObj->GetIndexBestHeader();
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("chain", Params().NetworkIDString()));
