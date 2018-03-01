@@ -21,6 +21,7 @@
 #include "sbtccore/block/validation.h"
 #include "sbtccore/transaction/policy.h"
 #include "config/consensus.h"
+#include "framework/validationinterface.h"
 
 using namespace appbase;
 
@@ -740,6 +741,8 @@ bool CApp::AppInitialize(int argc, char *argv[])
         uiInterface = std::make_unique<CClientUIInterface>();
 
         schedulerThread = std::thread(&CScheduler::serviceQueue, scheduler.get());
+
+        GetMainSignals().RegisterBackgroundSignalScheduler(GetScheduler());
     }
     catch (const std::exception &e)
     {
@@ -764,14 +767,15 @@ bool CApp::AppInitialize(int argc, char *argv[])
     mlog.notice("Default data directory %s.", GetDefaultDataDir().string());
     mlog.notice("Using data directory %s.", GetDataDir().string());
     mlog.notice("Using config file %s.",
-              GetConfigFile(gArgs.GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
+                GetConfigFile(gArgs.GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
 
     return true;
 }
 
 bool CApp::ComponentInitialize()
 {
-    return ForEachComponent(true, [](IComponent *component) { return component->Initialize(); });
+    return ForEachComponent(true, [](IComponent *component)
+    { return component->Initialize(); });
 }
 
 bool CApp::Initialize(int argc, char **argv)
@@ -781,12 +785,15 @@ bool CApp::Initialize(int argc, char **argv)
 
 bool CApp::Startup()
 {
-    return ForEachComponent(true, [](IComponent *component) { return component->Startup(); });
+    return ForEachComponent(true, [](IComponent *component)
+    { return component->Startup(); });
 }
 
 bool CApp::Shutdown()
 {
-    bool fRet = ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false, [](IComponent *component) { return component->Shutdown(); });
+    bool fRet = ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false,
+                                                                                              [](IComponent *component)
+                                                                                              { return component->Shutdown(); });
 
 #ifndef WIN32
     try
@@ -802,6 +809,7 @@ bool CApp::Shutdown()
     ECC_Stop();
     mlog.notice("%s: done.", __func__);
 
+    GetMainSignals().UnregisterBackgroundSignalScheduler();
     return fRet;
 }
 

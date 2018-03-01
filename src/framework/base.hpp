@@ -12,8 +12,11 @@
 #include "config/argmanager.h"
 
 class CArgsManager;
+
 class CChainParams;
+
 class CBaseChainParams;
+
 class ECCVerifyHandle;
 
 namespace appbase
@@ -27,24 +30,46 @@ namespace appbase
 
         // the following four override methods were meaningless,
         // only just make CApp become a non-abstract class.
-        int GetID() const override { return CID_APP; }
+        int GetID() const override
+        {
+            return CID_APP;
+        }
 
-        state GetState() const override { return initialized; }
+        state GetState() const override
+        {
+            return initialized;
+        }
 
-        bool Initialize() override { return false; }
+        bool Initialize() override
+        {
+            return false;
+        }
 
-        log4cpp::Category &getLog() override { return mlog; }
+        log4cpp::Category &getLog() override
+        {
+            return mlog;
+        }
 
 
+        uint64_t Version() const
+        {
+            return nVersion;
+        }
 
-        uint64_t Version() const { return nVersion; }
+        void SetVersion(uint64_t version)
+        {
+            nVersion = version;
+        }
 
-        void SetVersion(uint64_t version) { nVersion = version; }
+        void RequestShutdown()
+        {
+            bShutdown = true;
+        }
 
-        void RequestShutdown() { bShutdown = true; }
-
-        bool ShutdownRequested() { return bShutdown; }
-
+        bool ShutdownRequested()
+        {
+            return bShutdown;
+        }
 
 
         bool Initialize(int argc, char **argv);
@@ -55,28 +80,28 @@ namespace appbase
 
         bool Run();
 
-        bool RegisterComponent(IComponent* component);
+        bool RegisterComponent(IComponent *component);
 
 
         template<typename Component>
-        Component* FindComponent() const
+        Component *FindComponent() const
         {
             auto it = m_mapComponents.find(Component::ID);
             if (it != m_mapComponents.end())
             {
-                return static_cast<Component*>(it->second.get());
+                return static_cast<Component *>(it->second.get());
             }
             return nullptr;
         };
 
         template<typename F, template<typename C> class CI = ContainerIterator>
-        bool ForEachComponent(bool breakIfFailed, F&& func)
+        bool ForEachComponent(bool breakIfFailed, F &&func)
         {
             bool isOk = true;
             auto it = MakeContainerIterator<CI>(m_mapComponents);
             for (; !it.IsEnd(); it.Next())
             {
-                if (IComponent* component = it->second.get())
+                if (IComponent *component = it->second.get())
                 {
                     if (!func(component))
                     {
@@ -106,33 +131,40 @@ namespace appbase
             return *cBaseChainParams.get();
         }
 
-        CScheduler& GetScheduler()
+        CScheduler &GetScheduler()
         {
             return *scheduler.get();
         }
 
-        CEventManager& GetEventManager()
+        CEventManager &GetEventManager()
         {
             return *eventManager.get();
         }
 
-        CClientUIInterface& GetUIInterface()
+        CClientUIInterface &GetUIInterface()
         {
             return *uiInterface.get();
         }
 
     private:
         CApp();
-        CApp(const CApp& ) = delete;
-        CApp& operator=(const CApp& ) = delete;
+
+        CApp(const CApp &) = delete;
+
+        CApp &operator=(const CApp &) = delete;
 
         void InitParameterInteraction();
+
         bool AppInitBasicSetup();
+
         bool AppInitParameterInteraction();
+
         bool AppInitSanityChecks();
+
         bool AppInitLockDataDirectory();
 
         bool AppInitialize(int argc, char *argv[]);
+
         bool ComponentInitialize();
 
     private:
@@ -142,7 +174,7 @@ namespace appbase
         std::unique_ptr<CBaseChainParams> cBaseChainParams;
 
         std::thread schedulerThread;
-        std::unique_ptr<CScheduler>    scheduler;
+        std::unique_ptr<CScheduler> scheduler;
         std::unique_ptr<CEventManager> eventManager;
         std::unique_ptr<CClientUIInterface> uiInterface;
         std::unique_ptr<ECCVerifyHandle> globalVerifyHandle;
