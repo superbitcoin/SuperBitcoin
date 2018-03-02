@@ -186,6 +186,9 @@ extern bool fEnableReplacement;
 /** Minimum work we will assume exists on some valid chain. */
 extern arith_uint256 nMinimumChainWork;
 
+extern ServiceFlags nLocalServices;
+extern ServiceFlags nRelevantServices;
+
 /** Pruning-related variables and constants */
 /** True if any block files have ever been pruned. */
 extern bool fHavePruned;

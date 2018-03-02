@@ -223,8 +223,8 @@ bool CNetComponent::ComponentInitialize()
 
     mlog.info("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
 
-    ///netConnOptions.nLocalServices = nLocalServices;
-    ///netConnOptions.nRelevantServices = nRelevantServices;
+    netConnOptions.nLocalServices = nLocalServices;
+    netConnOptions.nRelevantServices = nRelevantServices;
     netConnOptions.nMaxConnections = nMaxConnections;
     netConnOptions.nMaxOutbound = std::min(MAX_OUTBOUND_CONNECTIONS, nMaxConnections);
     netConnOptions.nMaxAddnode = MAX_ADDNODE_CONNECTIONS;

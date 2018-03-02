@@ -11,6 +11,7 @@
 #include "sbtccore/clientversion.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
+#include "rpc/server.h"
 #include "p2p/net.h"
 #include "p2p/netbase.h"
 #include "utils/arith_uint256.h"
@@ -435,15 +436,20 @@ bool CApp::AppInitParameterInteraction()
     // Option to startup with mocktime set (used for regression testing):
     SetMockTime(gArgs.GetArg<int32_t>("-mocktime", 0)); // SetMockTime(0) is a no-op
 
-    //TODO: localServies.
-    //    if (gArgs.GetArg<bool>("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
-    //        nLocalServices = ServiceFlags(nLocalServices | NODE_BLOOM);
-    //
-    //    if (gArgs.GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) < 0)
-    //        return InitError("rpcserialversion must be non-negative.");
-    //
-    //    if (gArgs.GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) > 1)
-    //        return InitError("unknown rpcserialversion requested.");
+    if (gArgs.GetArg<bool>("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
+        nLocalServices = ServiceFlags(nLocalServices | NODE_BLOOM);
+
+    if (gArgs.GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) < 0)
+    {
+        mlog.error("rpcserialversion must be non-negative.");
+        return false;
+    }
+
+    if (gArgs.GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) > 1)
+    {
+        mlog.error("unknown rpcserialversion requested.");
+        return false;
+    }
 
     nMaxTipAge = gArgs.GetArg<int64_t>("maxtipage", DEFAULT_MAX_TIP_AGE);
 
