@@ -290,7 +290,7 @@ bool CChainCommonent::ComponentInitialize()
     {
         mlog.notice("Unsetting NODE_NETWORK on prune mode.");
         nLocalServices = ServiceFlags(nLocalServices & ~NODE_NETWORK);
-        if (!bArgReIndex)
+        if (!bReIndex)
         {
             mlog.notice("Pruning blockstore...");
             //PruneAndFlush();
