@@ -68,8 +68,9 @@ static std::unique_ptr<CBaseChainParams> globalChainBaseParams;
 
 const CBaseChainParams &BaseParams()
 {
-    assert(globalChainBaseParams);
-    return *globalChainBaseParams;
+//    assert(globalChainBaseParams);
+//    return *globalChainBaseParams;
+    return appbase::CApp::Instance().GetBaseChainParams();
 }
 
 std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string &chain)
