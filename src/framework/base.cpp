@@ -811,6 +811,15 @@ bool CApp::Shutdown()
     }
 #endif
 
+    if (scheduler)
+    {
+        scheduler->stop();
+        if (schedulerThread.joinable())
+        {
+            schedulerThread.join();
+        }
+    }
+
     globalVerifyHandle.reset();
     ECC_Stop();
     mlog.notice("%s: done.", __func__);
