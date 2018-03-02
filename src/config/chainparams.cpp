@@ -396,8 +396,9 @@ static std::unique_ptr<CChainParams> globalChainParams;
 
 const CChainParams &Params()
 {
-    assert(globalChainParams);
-    return *globalChainParams;
+//    assert(globalChainParams);
+//    return *globalChainParams;
+    return appbase::CApp::Instance().GetChainParams();
 }
 
 std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain)
