@@ -285,6 +285,7 @@ private:
 
     boost::thread_group threadGroup;
     CCheckQueue<CScriptCheck> scriptCheckQueue;
+    int nScriptCheckThreads = 0;
 
     bool ReplayBlocks();
 
@@ -351,7 +352,6 @@ private:
 
     /** check whether is check point height */
     bool IsSBTCForkHeight(const Consensus::Params &params, const int &height);
-
 
 public:
     static log4cpp::Category &mlog;

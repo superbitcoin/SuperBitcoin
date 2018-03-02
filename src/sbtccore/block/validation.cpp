@@ -63,7 +63,6 @@ CCriticalSection cs_main;
 
 CWaitableCriticalSection csBestBlock;
 CConditionVariable cvBlockChange;
-int nScriptCheckThreads = 0;
 std::atomic_bool fImporting(false);
 bool fTxIndex = false;
 bool fHavePruned = false;
