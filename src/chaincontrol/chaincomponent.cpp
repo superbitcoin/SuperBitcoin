@@ -41,7 +41,7 @@ void CChainCommonent::ThreadScriptCheck()
 }
 
 CChainCommonent::CChainCommonent()
- : scriptCheckQueue(128)
+        : scriptCheckQueue(128)
 {
 }
 
@@ -65,6 +65,14 @@ bool CChainCommonent::ComponentInitialize()
 
     InitScriptExecutionCache(int64_t(gArgs.GetArg<uint32_t>("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2));
 
+    // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
+    nScriptCheckThreads = gArgs.GetArg<int32_t>("-par", DEFAULT_SCRIPTCHECK_THREADS);
+    if (nScriptCheckThreads <= 0)
+        nScriptCheckThreads += GetNumCores();
+    if (nScriptCheckThreads <= 1)
+        nScriptCheckThreads = 0;
+    else if (nScriptCheckThreads > MAX_SCRIPTCHECK_THREADS)
+        nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
     mlog.notice("Using %u threads for script verification.", nScriptCheckThreads);
     if (nScriptCheckThreads)
     {
@@ -96,7 +104,7 @@ bool CChainCommonent::ComponentInitialize()
         fPruneMode = true;
     }
 
-    bool bArgReIndex = cArgs.GetArg<bool>("-reindex", false);
+    bool bReIndex = cArgs.GetArg<bool>("-reindex", false);
     bool bReindexChainState = cArgs.GetArg<bool>("-reindex-chainstate", false);
 
     // cache size calculations
@@ -120,7 +128,6 @@ bool CChainCommonent::ComponentInitialize()
     bool bLoaded = false;
     while (!bLoaded && !bRequestShutdown)
     {
-        bool bReIndex = bArgReIndex;
         std::string strLoadError;
 
         uiInterface.InitMessage(_("Loading block index..."));
@@ -250,7 +257,7 @@ bool CChainCommonent::ComponentInitialize()
                         "", CClientUIInterface::MSG_ERROR | CClientUIInterface::BTN_ABORT);
                 if (bRet)
                 {
-                    bArgReIndex = true;
+                    bReIndex = true;
                     bRequestShutdown = false;
                 } else
                 {
