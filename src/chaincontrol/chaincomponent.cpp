@@ -283,6 +283,33 @@ bool CChainCommonent::ComponentInitialize()
     {
         mlog.debug(" block index %15dms\n", GetTimeMillis() - iStart);
     }
+
+    // if pruning, unset the service bit and perform the initial blockstore prune
+    // after any wallet rescanning has taken place.
+    if (fPruneMode)
+    {
+        mlog.notice("Unsetting NODE_NETWORK on prune mode.");
+        nLocalServices = ServiceFlags(nLocalServices & ~NODE_NETWORK);
+        if (!bArgReIndex)
+        {
+            mlog.notice("Pruning blockstore...");
+            //PruneAndFlush();
+        }
+    }
+
+    if (chainParams.GetConsensus().vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout != 0)
+    {
+        // Only advertise witness capabilities if they have a reasonable start time.
+        // This allows us to have the code merged without a defined softfork, by setting its
+        // end time to 0.
+        // Note that setting NODE_WITNESS is never required: the only downside from not
+        // doing so is that after activation, no upgraded nodes will fetch from you.
+        nLocalServices = ServiceFlags(nLocalServices | NODE_WITNESS);
+        // Only care about others providing witness capabilities if there is a softfork
+        // defined.
+        nRelevantServices = ServiceFlags(nRelevantServices | NODE_WITNESS);
+    }
+
     return true;
 }
 
@@ -291,7 +318,8 @@ bool CChainCommonent::ComponentStartup()
     std::cout << "startup chain component \n";
     bRequestShutdown = false;
 
-    std::thread t(std::bind(&CChainCommonent::ThreadImport, this));
+    std::thread t(&CChainCommonent::ThreadImport, this);
+    t.detach();
     return true;
 }
 
