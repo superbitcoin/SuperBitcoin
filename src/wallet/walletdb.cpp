@@ -544,7 +544,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
         Dbc *pcursor = batch.GetCursor();
         if (!pcursor)
         {
-            mlog.error("Error getting wallet database cursor");
+            mlog_error("Error getting wallet database cursor");
             return DB_CORRUPT;
         }
 
@@ -558,7 +558,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                 break;
             else if (ret != 0)
             {
-                mlog.error("Error reading next record from wallet database");
+                mlog_error("Error reading next record from wallet database");
                 return DB_CORRUPT;
             }
 
@@ -581,7 +581,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                 }
             }
             if (!strErr.empty())
-                mlog.error("%s", strErr);
+                mlog_error("%s", strErr);
         }
         pcursor->close();
     }
@@ -652,7 +652,7 @@ DBErrors CWalletDB::FindWalletTx(std::vector<uint256> &vTxHash, std::vector<CWal
         Dbc *pcursor = batch.GetCursor();
         if (!pcursor)
         {
-            mlog.error("Error getting wallet database cursor");
+            mlog_error("Error getting wallet database cursor");
             return DB_CORRUPT;
         }
 
@@ -666,7 +666,7 @@ DBErrors CWalletDB::FindWalletTx(std::vector<uint256> &vTxHash, std::vector<CWal
                 break;
             else if (ret != 0)
             {
-                mlog.error("Error reading next record from wallet database");
+                mlog_error("Error reading next record from wallet database");
                 return DB_CORRUPT;
             }
 
@@ -731,7 +731,7 @@ DBErrors CWalletDB::ZapSelectTx(std::vector<uint256> &vTxHashIn, std::vector<uin
         {
             if (!EraseTx(hash))
             {
-                mlog.error("Transaction was found for deletion but returned database error: %s\n",
+                mlog_error("Transaction was found for deletion but returned database error: %s\n",
                          hash.GetHex());
                 delerror = true;
             }
@@ -833,7 +833,7 @@ bool CWalletDB::RecoverKeysOnlyFilter(void *callbackData, CDataStream ssKey, CDa
         return false;
     if (!fReadOK)
     {
-        mlog.error("WARNING: CWalletDB::Recover skipping %s: %s\n", strType, strErr);
+        mlog_error("WARNING: CWalletDB::Recover skipping %s: %s\n", strType, strErr);
         return false;
     }
 

@@ -73,7 +73,7 @@ bool CChainCommonent::ComponentInitialize()
         nScriptCheckThreads = 0;
     else if (nScriptCheckThreads > MAX_SCRIPTCHECK_THREADS)
         nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
-    mlog.notice("Using %u threads for script verification.", nScriptCheckThreads);
+    mlog_notice("Using %u threads for script verification.", nScriptCheckThreads);
     if (nScriptCheckThreads)
     {
         for (int i = 0; i < nScriptCheckThreads; i++)
@@ -290,11 +290,11 @@ bool CChainCommonent::ComponentInitialize()
     // after any wallet rescanning has taken place.
     if (fPruneMode)
     {
-        mlog.notice("Unsetting NODE_NETWORK on prune mode.");
+        mlog_notice("Unsetting NODE_NETWORK on prune mode.");
         nLocalServices = ServiceFlags(nLocalServices & ~NODE_NETWORK);
         if (!bReIndex)
         {
-            mlog.notice("Pruning blockstore...");
+            mlog_notice("Pruning blockstore...");
             //PruneAndFlush();
         }
     }
@@ -1605,7 +1605,7 @@ bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainPara
     if (!state.IsValid())
     {
 
-        mlog.error("reject reason %s", state.GetRejectReason());
+        mlog_error("reject reason %s", state.GetRejectReason());
         return false;
 
     }
@@ -1976,7 +1976,7 @@ bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 }
             } catch (const std::exception &e)
             {
-                mlog.error("%s: Deserialize or I/O error - %s", __func__, e.what());
+                mlog_error("%s: Deserialize or I/O error - %s", __func__, e.what());
             }
         }
     } catch (const std::runtime_error &e)

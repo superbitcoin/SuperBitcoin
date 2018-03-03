@@ -54,8 +54,7 @@ inline log4cpp::Category &mlog() {
     return appbase::CApp::mlog;
 }
 
-#define _TXT__(x) #x
-#define EMTOSTR(EM) _TXT__(EM)
+
 
 
 // Application startup time (used for uptime calculation)
@@ -215,6 +214,19 @@ static inline void MarkUsed(const T &t, const Args &... args)
 
 #endif
 
+#define _TXT__(x) #x
+#define EMTOSTR(EM) _TXT__(EM)
+#define ADD_LOG4CPP_IN_HEAD_LOG(te)  public: \
+       static log4cpp::Category &mlog;
+#define ADD_LOG4CPP_IN_CPP_LOG(CLASS,DEBUG_ID)   public: \
+     log4cpp::Category &#CLASS::mlog = log4cpp::Category::getInstance(#DEBUG_ID)
+
+#define  mlog_notice(fmt, a...) mlog.notice(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
+#define  mlog_error(fmt, a...) mlog.error(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
+#define  mlog_info(fmt, a...) mlog.info(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
+#define  mlog_warn(fmt, a...) mlog.warn(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
+#define  mlog_fatal(fmt, a...) mlog.fatal(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
+#define  mlog_debug(fmt, a...) mlog.debug(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
 
 template<typename... Args>
 bool error(const char *fmt, const Args &... args)

@@ -103,7 +103,7 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
         CValidationState state;
         if (!CheckActiveChain(state, chainparams))
         {
-            mlog.error("CheckActiveChain error when receive  checkpoint");
+            mlog_error("CheckActiveChain error when receive  checkpoint");
             return false;
         }
     }

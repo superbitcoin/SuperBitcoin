@@ -30,7 +30,7 @@ bool CNetComponent::ComponentInitialize()
 
     if (!SetupNetworking())
     {
-        mlog.error("Initializing networking failed");
+        mlog_error("Initializing networking failed");
         return false;
     }
 
@@ -53,7 +53,7 @@ bool CNetComponent::ComponentInitialize()
     {
         if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
         {
-            mlog.error("User Agent comment (%s) contains unsafe characters.", cmt);
+            mlog_error("User Agent comment (%s) contains unsafe characters.", cmt);
             return false;
         }
         uacomments.push_back(cmt);
@@ -61,7 +61,7 @@ bool CNetComponent::ComponentInitialize()
     strSubVersion = FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, uacomments);
     if (strSubVersion.size() > MAX_SUBVERSION_LENGTH)
     {
-        mlog.error("Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.",
+        mlog_error("Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.",
                 strSubVersion.size(), MAX_SUBVERSION_LENGTH);
         return false;
     }
@@ -74,7 +74,7 @@ bool CNetComponent::ComponentInitialize()
             enum Network net = ParseNetwork(snet);
             if (net == NET_UNROUTABLE)
             {
-                mlog.error("Unknown network specified in -onlynet: '%s'", snet);
+                mlog_error("Unknown network specified in -onlynet: '%s'", snet);
                 return false;
             }
 
@@ -101,14 +101,14 @@ bool CNetComponent::ComponentInitialize()
         CService proxyAddr;
         if (!Lookup(proxyArg.c_str(), proxyAddr, 9050, fNameLookup))
         {
-            mlog.error("Invalid -proxy address or hostname: '%s'", proxyArg);
+            mlog_error("Invalid -proxy address or hostname: '%s'", proxyArg);
             return false;
         }
 
         proxyType addrProxy = proxyType(proxyAddr, proxyRandomize);
         if (!addrProxy.IsValid())
         {
-            mlog.error("Invalid -proxy address or hostname: '%s'", proxyArg);
+            mlog_error("Invalid -proxy address or hostname: '%s'", proxyArg);
             return false;
         }
 
@@ -134,14 +134,14 @@ bool CNetComponent::ComponentInitialize()
             CService onionProxy;
             if (!Lookup(onionArg.c_str(), onionProxy, 9050, fNameLookup))
             {
-                mlog.error("Invalid -onion address or hostname: '%s'", onionArg);
+                mlog_error("Invalid -onion address or hostname: '%s'", onionArg);
                 return false;
             }
 
             proxyType addrOnion = proxyType(onionProxy, proxyRandomize);
             if (!addrOnion.IsValid())
             {
-                mlog.error("Invalid -onion address or hostname: '%s'", onionArg);
+                mlog_error("Invalid -onion address or hostname: '%s'", onionArg);
                 return false;
             }
 
@@ -162,7 +162,7 @@ bool CNetComponent::ComponentInitialize()
             AddLocal(addrLocal, LOCAL_MANUAL);
         else
         {
-            mlog.error("Cannot resolve externalip address: '%s'", strAddr);
+            mlog_error("Cannot resolve externalip address: '%s'", strAddr);
             return false;
         }
     }
@@ -187,7 +187,7 @@ bool CNetComponent::ComponentInitialize()
     size_t nUserBind = appArgs.GetArgs("-bind").size() + appArgs.GetArgs("-whitebind").size();
     if (nUserBind != 0 && !appArgs.GetArg<bool>("-listen", DEFAULT_LISTEN))
     {
-        mlog.error("Cannot set -bind or -whitebind together with -listen=0");
+        mlog_error("Cannot set -bind or -whitebind together with -listen=0");
         return false;
     }
 
@@ -210,7 +210,7 @@ bool CNetComponent::ComponentInitialize()
     int nFD = RaiseFileDescriptorLimit(nMaxConnections + MIN_CORE_FILEDESCRIPTORS + MAX_ADDNODE_CONNECTIONS);
     if (nFD < MIN_CORE_FILEDESCRIPTORS)
     {
-        mlog.error("Not enough file descriptors available.");
+        mlog_error("Not enough file descriptors available.");
         return false;
     }
 
@@ -242,7 +242,7 @@ bool CNetComponent::ComponentInitialize()
         CService addrBind;
         if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
         {
-            mlog.error("Cannot resolve bind address: '%s'", strBind);
+            mlog_error("Cannot resolve bind address: '%s'", strBind);
             return false;
         }
         netConnOptions.vBinds.push_back(addrBind);
@@ -253,12 +253,12 @@ bool CNetComponent::ComponentInitialize()
         CService addrBind;
         if (!Lookup(strBind.c_str(), addrBind, 0, false))
         {
-            mlog.error("Cannot resolve whitebind address: '%s'", strBind);
+            mlog_error("Cannot resolve whitebind address: '%s'", strBind);
             return false;
         }
         if (addrBind.GetPort() == 0)
         {
-            mlog.error("Need to specify a port with -whitebind: '%s'", strBind);
+            mlog_error("Need to specify a port with -whitebind: '%s'", strBind);
             return false;
         }
         netConnOptions.vWhiteBinds.push_back(addrBind);
@@ -270,7 +270,7 @@ bool CNetComponent::ComponentInitialize()
         LookupSubNet(net.c_str(), subnet);
         if (!subnet.IsValid())
         {
-            mlog.error("Invalid netmask specified in -whitelist: '%s'", net);
+            mlog_error("Invalid netmask specified in -whitelist: '%s'", net);
             return false;
         }
 

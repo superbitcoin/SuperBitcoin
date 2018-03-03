@@ -22,7 +22,7 @@ CHttpRpcComponent::~CHttpRpcComponent()
 
 bool CHttpRpcComponent::ComponentInitialize()
 {
-    mlog.notice("initialize http rpc component.");
+    mlog_notice("initialize http rpc component.");
 
     RegisterAllCoreRPCCommands(tableRPC);
 
@@ -31,7 +31,7 @@ bool CHttpRpcComponent::ComponentInitialize()
 
 bool CHttpRpcComponent::ComponentStartup()
 {
-    mlog.notice("startup http rpc component.");
+    mlog_notice("startup http rpc component.");
 
     const CArgsManager& appArgs = app().GetArgsManager();
 
@@ -64,7 +64,7 @@ bool CHttpRpcComponent::ComponentStartup()
 
 bool CHttpRpcComponent::ComponentShutdown()
 {
-    mlog.notice("shutdown http rpc component.");
+    mlog_notice("shutdown http rpc component.");
 
     InterruptHTTPServer();
     InterruptHTTPRPC();

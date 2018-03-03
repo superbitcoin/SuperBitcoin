@@ -47,10 +47,10 @@ bool AbortNode(const std::string &strMessage, const std::string &userMessage)
 {
     SetMiscWarning(strMessage);
     // TODU
-//    mlog.error(strMessage);
+//    mlog_error(strMessage);
 //    string message = userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
 //                                         : userMessage;
-//    mlog.error(message);
+//    mlog_error(message);
 //    uiInterface.ThreadSafeMessageBox(message, "", CClientUIInterface::MSG_ERROR);
     app().RequestShutdown();
     return false;

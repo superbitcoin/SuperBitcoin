@@ -51,67 +51,67 @@ void CApp::InitParameterInteraction()
     if (gArgs.IsArgSet("-bind"))
     {
         if (gArgs.SoftSetArg("-isten", true))
-            mlog.notice("%s: parameter interaction: -bind set -> setting -listen=1\n", __func__);
+            mlog_notice("%s: parameter interaction: -bind set -> setting -listen=1\n", __func__);
     }
     if (gArgs.IsArgSet("-whitebind"))
     {
         if (gArgs.SoftSetArg("-listen", true))
-            mlog.notice("%s: parameter interaction: -whitebind set -> setting -listen=1\n", __func__);
+            mlog_notice("%s: parameter interaction: -whitebind set -> setting -listen=1\n", __func__);
     }
 
     if (gArgs.IsArgSet("-connect"))
     {
         // when only connecting to trusted nodes, do not seed via DNS, or listen by default
         if (gArgs.SoftSetArg("-dnsseed", false))
-            mlog.notice("%s: parameter interaction: -connect set -> setting -dnsseed=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -connect set -> setting -dnsseed=0\n", __func__);
         if (gArgs.SoftSetArg("-listen", false))
-            mlog.notice("%s: parameter interaction: -connect set -> setting -listen=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -connect set -> setting -listen=0\n", __func__);
     }
 
     if (gArgs.IsArgSet("-proxy"))
     {
         // to protect privacy, do not listen by default if a default proxy server is specified
         if (gArgs.SoftSetArg("-listen", false))
-            mlog.notice("%s: parameter interaction: -proxy set -> setting -listen=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -proxy set -> setting -listen=0\n", __func__);
         // to protect privacy, do not use UPNP when a proxy is set. The user may still specify -listen=1
         // to listen locally, so don't rely on this happening through -listen below.
         if (gArgs.SoftSetArg("-upnp", false))
-            mlog.notice("%s: parameter interaction: -proxy set -> setting -upnp=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -proxy set -> setting -upnp=0\n", __func__);
         // to protect privacy, do not discover addresses by default
         if (gArgs.SoftSetArg("-discover", false))
-            mlog.notice("%s: parameter interaction: -proxy set -> setting -discover=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -proxy set -> setting -discover=0\n", __func__);
     }
 
     if (!gArgs.GetArg<bool>("-listen", DEFAULT_LISTEN))
     {
         // do not map ports or try to retrieve public IP when not listening (pointless)
         if (gArgs.SoftSetArg("-upnp", false))
-            mlog.notice("%s: parameter interaction: -listen=0 -> setting -upnp=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -listen=0 -> setting -upnp=0\n", __func__);
         if (gArgs.SoftSetArg("-discover", false))
-            mlog.notice("%s: parameter interaction: -listen=0 -> setting -discover=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -listen=0 -> setting -discover=0\n", __func__);
         if (gArgs.SoftSetArg("-listenonion", false))
-            mlog.notice("%s: parameter interaction: -listen=0 -> setting -listenonion=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -listen=0 -> setting -listenonion=0\n", __func__);
     }
 
     if (gArgs.IsArgSet("-externalip"))
     {
         // if an explicit public IP is specified, do not try to find others
         if (gArgs.SoftSetArg("-discover", false))
-            mlog.notice("%s: parameter interaction: -externalip set -> setting -discover=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -externalip set -> setting -discover=0\n", __func__);
     }
 
     // disable whitelistrelay in blocksonly mode
     if (gArgs.GetArg<bool>("-blocksonly", DEFAULT_BLOCKSONLY))
     {
         if (gArgs.SoftSetArg("-whitelistrelay", false))
-            mlog.notice("%s: parameter interaction: -blocksonly=1 -> setting -whitelistrelay=0\n", __func__);
+            mlog_notice("%s: parameter interaction: -blocksonly=1 -> setting -whitelistrelay=0\n", __func__);
     }
 
     // Forcing relay from whitelisted hosts implies we will accept relays from them in the first place.
     if (gArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
     {
         if (gArgs.SoftSetArg("-whitelistrelay", true))
-            mlog.notice("%s: parameter interaction: -whitelistforcerelay=1 -> setting -whitelistrelay=1\n", __func__);
+            mlog_notice("%s: parameter interaction: -whitelistforcerelay=1 -> setting -whitelistrelay=1\n", __func__);
     }
 
     if (gArgs.IsArgSet("-blockmaxsize"))
@@ -119,12 +119,12 @@ void CApp::InitParameterInteraction()
         unsigned int max_size = gArgs.GetArg<uint32_t>("-blockmaxsize", 0U);
         if (gArgs.SoftSetArg("-blockmaxweight", (uint32_t)(max_size * WITNESS_SCALE_FACTOR)))
         {
-            mlog.notice(
+            mlog_notice(
                     "%s: parameter interaction: -blockmaxsize=%d -> setting -blockmaxweight=%d (-blockmaxsize is deprecated!)\n",
                     __func__, max_size, max_size * WITNESS_SCALE_FACTOR);
         } else
         {
-            mlog.notice("%s: Ignoring blockmaxsize setting which is overridden by blockmaxweight", __func__);
+            mlog_notice("%s: Ignoring blockmaxsize setting which is overridden by blockmaxweight", __func__);
         }
     }
 }
@@ -159,7 +159,7 @@ bool CApp::AppInitBasicSetup()
 
     if (!SetupNetworking())
     {
-        mlog.error("Initializing networking failed");
+        mlog_error("Initializing networking failed");
         return false;
     }
 
@@ -196,7 +196,7 @@ bool CApp::AppInitParameterInteraction()
     {
         if (gArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX))
         {
-            mlog.error("Prune mode is incompatible with -txindex.");
+            mlog_error("Prune mode is incompatible with -txindex.");
             return false;
         }
     }
@@ -205,7 +205,7 @@ bool CApp::AppInitParameterInteraction()
     size_t nUserBind = gArgs.GetArgs("-bind").size() + gArgs.GetArgs("-whitebind").size();
     if (nUserBind != 0 && !gArgs.GetArg<bool>("listen", DEFAULT_LISTEN))
     {
-        mlog.error("Cannot set -bind or -whitebind together with -listen=0");
+        mlog_error("Cannot set -bind or -whitebind together with -listen=0");
         return false;
     }
 
@@ -249,7 +249,7 @@ bool CApp::AppInitParameterInteraction()
     // Check for -socks - as this is a privacy risk to continue, exit here
     if (gArgs.IsArgSet("-socks"))
     {
-        mlog.error(
+        mlog_error(
                 "Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported.");
         return false;
     }
@@ -257,7 +257,7 @@ bool CApp::AppInitParameterInteraction()
     // Check for -tor - as this is a privacy risk to continue, exit here
     if (gArgs.GetArg<bool>("-tor", false))
     {
-        mlog.error("Unsupported argument -tor found, use -onion.");
+        mlog_error("Unsupported argument -tor found, use -onion.");
         return false;
     }
 
@@ -288,16 +288,16 @@ bool CApp::AppInitParameterInteraction()
     uint256 hashAssumeValid = uint256S(
             gArgs.GetArg<std::string>("-assumevalid", chainparams.GetConsensus().defaultAssumeValid.GetHex()));
     if (!hashAssumeValid.IsNull())
-        mlog.notice("Assuming ancestors of block %s have valid signatures.", hashAssumeValid.GetHex());
+        mlog_notice("Assuming ancestors of block %s have valid signatures.", hashAssumeValid.GetHex());
     else
-        mlog.notice("Validating signatures for all blocks.");
+        mlog_notice("Validating signatures for all blocks.");
 
     if (gArgs.IsArgSet("-minimumchainwork"))
     {
         const std::string minChainWorkStr = gArgs.GetArg<std::string>("-minimumchainwork", "");
         if (!IsHexNumber(minChainWorkStr))
         {
-            mlog.error("Invalid non-hex (%s) minimum chain work value specified", minChainWorkStr);
+            mlog_error("Invalid non-hex (%s) minimum chain work value specified", minChainWorkStr);
             return false;
         }
         nMinimumChainWork = UintToArith256(uint256S(minChainWorkStr));
@@ -305,7 +305,7 @@ bool CApp::AppInitParameterInteraction()
     {
         nMinimumChainWork = UintToArith256(chainparams.GetConsensus().nMinimumChainWork);
     }
-    mlog.notice("Setting nMinimumChainWork=%s.", nMinimumChainWork.GetHex());
+    mlog_notice("Setting nMinimumChainWork=%s.", nMinimumChainWork.GetHex());
     if (nMinimumChainWork < UintToArith256(chainparams.GetConsensus().nMinimumChainWork))
     {
         mlog.warn("Warning: nMinimumChainWork set below default value of %s.",
@@ -318,7 +318,7 @@ bool CApp::AppInitParameterInteraction()
             gArgs.GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000 * 40;
     if (nMempoolSizeMax < 0 || nMempoolSizeMax < nMempoolSizeMin)
     {
-        mlog.error("-maxmempool must be at least %d MB", std::ceil(nMempoolSizeMin / 1000000.0));
+        mlog_error("-maxmempool must be at least %d MB", std::ceil(nMempoolSizeMin / 1000000.0));
         return false;
     }
 
@@ -329,7 +329,7 @@ bool CApp::AppInitParameterInteraction()
         CAmount n = 0;
         if (!ParseMoney(gArgs.GetArg<std::string>("-incrementalrelayfee", ""), n))
         {
-            mlog.error(
+            mlog_error(
                     AmountErrMsg("incrementalrelayfee", gArgs.GetArg<std::string>("-incrementalrelayfee", "")));
             return false;
         }
@@ -341,13 +341,13 @@ bool CApp::AppInitParameterInteraction()
     int64_t nPruneArg = gArgs.GetArg<int32_t>("-prune", 0);
     if (nPruneArg < 0)
     {
-        mlog.error("Prune cannot be configured with a negative value.");
+        mlog_error("Prune cannot be configured with a negative value.");
         return false;
     }
     nPruneTarget = (uint64_t)nPruneArg * 1024 * 1024;
     if (nPruneArg == 1)
     {  // manual pruning: -prune=1
-        mlog.notice(
+        mlog_notice(
                 "Block pruning enabled.  Use RPC call pruneblockchain(height) to manually prune block and undo files.");
         nPruneTarget = std::numeric_limits<uint64_t>::max();
         fPruneMode = true;
@@ -355,11 +355,11 @@ bool CApp::AppInitParameterInteraction()
     {
         if (nPruneTarget < MIN_DISK_SPACE_FOR_BLOCK_FILES)
         {
-            mlog.error("Prune configured below the minimum of %d MiB.  Please use a higher number.",
+            mlog_error("Prune configured below the minimum of %d MiB.  Please use a higher number.",
                        MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024);
             return false;
         }
-        mlog.notice("Prune configured to target %uMiB on disk for block and undo files.", nPruneTarget / 1024 / 1024);
+        mlog_notice("Prune configured to target %uMiB on disk for block and undo files.", nPruneTarget / 1024 / 1024);
         fPruneMode = true;
     }
 
@@ -372,7 +372,7 @@ bool CApp::AppInitParameterInteraction()
         CAmount n = 0;
         if (!ParseMoney(gArgs.GetArg<std::string>("-minrelaytxfee", ""), n))
         {
-            mlog.error(AmountErrMsg("minrelaytxfee", gArgs.GetArg<std::string>("-minrelaytxfee", "")));
+            mlog_error(AmountErrMsg("minrelaytxfee", gArgs.GetArg<std::string>("-minrelaytxfee", "")));
             return false;
         }
         // High fee check is done afterward in CWallet::ParameterInteraction()
@@ -381,7 +381,7 @@ bool CApp::AppInitParameterInteraction()
     {
         // Allow only setting incrementalRelayFee to control both
         ::minRelayTxFee = incrementalRelayFee;
-        mlog.notice("Increasing minrelaytxfee to %s to match incrementalrelayfee.", ::minRelayTxFee.ToString());
+        mlog_notice("Increasing minrelaytxfee to %s to match incrementalrelayfee.", ::minRelayTxFee.ToString());
     }
 
     // Sanity check argument for min fee for including tx in block
@@ -391,7 +391,7 @@ bool CApp::AppInitParameterInteraction()
         CAmount n = 0;
         if (!ParseMoney(gArgs.GetArg<std::string>("-blockmintxfee", ""), n))
         {
-            mlog.error(AmountErrMsg("blockmintxfee", gArgs.GetArg<std::string>("-blockmintxfee", "")));
+            mlog_error(AmountErrMsg("blockmintxfee", gArgs.GetArg<std::string>("-blockmintxfee", "")));
             return false;
         }
     }
@@ -403,7 +403,7 @@ bool CApp::AppInitParameterInteraction()
         CAmount n = 0;
         if (!ParseMoney(gArgs.GetArg<std::string>("-dustrelayfee", ""), n) || 0 == n)
         {
-            mlog.error(AmountErrMsg("dustrelayfee", gArgs.GetArg<std::string>("-dustrelayfee", "")));
+            mlog_error(AmountErrMsg("dustrelayfee", gArgs.GetArg<std::string>("-dustrelayfee", "")));
             return false;
         }
         dustRelayFee = CFeeRate(n);
@@ -412,7 +412,7 @@ bool CApp::AppInitParameterInteraction()
     fRequireStandard = !gArgs.GetArg<bool>("-acceptnonstdtxn", !chainparams.RequireStandard());
     if (chainparams.RequireStandard() && !fRequireStandard)
     {
-        mlog.error(
+        mlog_error(
                 "acceptnonstdtxn is not currently supported for %s chain", chainparams.NetworkIDString());
         return false;
     }
@@ -436,13 +436,13 @@ bool CApp::AppInitParameterInteraction()
 
     if (gArgs.GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) < 0)
     {
-        mlog.error("rpcserialversion must be non-negative.");
+        mlog_error("rpcserialversion must be non-negative.");
         return false;
     }
 
     if (gArgs.GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) > 1)
     {
-        mlog.error("unknown rpcserialversion requested.");
+        mlog_error("unknown rpcserialversion requested.");
         return false;
     }
 
@@ -455,7 +455,7 @@ bool CApp::AppInitParameterInteraction()
         // Allow overriding version bits parameters for testing
         if (!chainparams.MineBlocksOnDemand())
         {
-            mlog.error("Version bits parameters may only be overridden on regtest.");
+            mlog_error("Version bits parameters may only be overridden on regtest.");
             return false;
         }
         for (const std::string &strDeployment : gArgs.GetArgs("-vbparams"))
@@ -464,18 +464,18 @@ bool CApp::AppInitParameterInteraction()
             boost::split(vDeploymentParams, strDeployment, boost::is_any_of(":"));
             if (vDeploymentParams.size() != 3)
             {
-                mlog.error("Version bits parameters malformed, expecting deployment:start:end");
+                mlog_error("Version bits parameters malformed, expecting deployment:start:end");
                 return false;
             }
             int64_t nStartTime, nTimeout;
             if (!ParseInt64(vDeploymentParams[1], &nStartTime))
             {
-                mlog.error("Invalid nStartTime (%s)", vDeploymentParams[1]);
+                mlog_error("Invalid nStartTime (%s)", vDeploymentParams[1]);
                 return false;
             }
             if (!ParseInt64(vDeploymentParams[2], &nTimeout))
             {
-                mlog.error("Invalid nTimeout (%s)", vDeploymentParams[2]);
+                mlog_error("Invalid nTimeout (%s)", vDeploymentParams[2]);
                 return false;
             }
             bool found = false;
@@ -485,14 +485,14 @@ bool CApp::AppInitParameterInteraction()
                 {
                     UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
                     found = true;
-                    mlog.notice("Setting version bits activation parameters for %s to start=%ld, timeout=%ld\n",
+                    mlog_notice("Setting version bits activation parameters for %s to start=%ld, timeout=%ld\n",
                                 vDeploymentParams[0], nStartTime, nTimeout);
                     break;
                 }
             }
             if (!found)
             {
-                mlog.error("Invalid deployment (%s)", vDeploymentParams[0]);
+                mlog_error("Invalid deployment (%s)", vDeploymentParams[0]);
                 return false;
             }
         }
@@ -557,7 +557,7 @@ bool CApp::AppInitSanityChecks()
 {
     // Initialize elliptic curve code
     std::string sha256_algo = SHA256AutoDetect();
-    mlog.notice("Using the '%s' SHA256 implementation.", sha256_algo);
+    mlog_notice("Using the '%s' SHA256 implementation.", sha256_algo);
     RandomInit();
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
@@ -565,7 +565,7 @@ bool CApp::AppInitSanityChecks()
     // Sanity check
     if (!InitSanityCheck())
     {
-        mlog.error("Initialization sanity check failed. %s is shutting down.", PACKAGE_NAME);
+        mlog_error("Initialization sanity check failed. %s is shutting down.", PACKAGE_NAME);
         return false;
     }
 
@@ -639,12 +639,11 @@ bool CApp::AppInitialize(int argc, char *argv[])
         PrintVersion();
         return false;
     }
-
     try
     {
         if (!fs::is_directory(gArgs.GetDataDir(false)))
         {
-            mlog.error("Error: Specified data directory \"%s\" does not exist.",
+            mlog_error("Error: Specified data directory \"%s\" does not exist.",
                        gArgs.GetArg<std::string>("-datadir", "").c_str());
             return false;
         }
@@ -655,7 +654,7 @@ bool CApp::AppInitialize(int argc, char *argv[])
         }
         catch (const std::exception &e)
         {
-            mlog.error("Error reading configuration file: %s.", e.what());
+            mlog_error("Error reading configuration file: %s.", e.what());
             return false;
         }
 
@@ -666,7 +665,7 @@ bool CApp::AppInitialize(int argc, char *argv[])
             bool fTestNet = gArgs.IsArgSet("-testnet");
             if (fRegTest && fTestNet)
             {
-                mlog.error("Invalid combination of -regtest and -testnet.");
+                mlog_error("Invalid combination of -regtest and -testnet.");
                 return false;
             }
 
@@ -686,7 +685,7 @@ bool CApp::AppInitialize(int argc, char *argv[])
         }
         catch (const std::exception &e)
         {
-            mlog.error("Error: %s.", e.what());
+            mlog_error("Error: %s.", e.what());
             return false;
         }
 
@@ -714,16 +713,16 @@ bool CApp::AppInitialize(int argc, char *argv[])
         if (gArgs.GetArg<bool>("-daemon", false))
         {
 #if HAVE_DECL_DAEMON
-            mlog.notice("Bitcoin server starting.");
+            mlog_notice("sbtcd server starting.");
 
             // Daemonize
             if (daemon(1, 0))
             { // don't chdir (1), do close FDs (0)
-                mlog.error("Error: daemon() failed: %s.", strerror(errno));
+                mlog_error("Error: daemon() failed: %s.", strerror(errno));
                 return false;
             }
 #else
-            mlog.error("Error: -daemon is not supported on this operating system.");
+            mlog_error("Error: -daemon is not supported on this operating system.");
             return false;
 #endif // HAVE_DECL_DAEMON
         }
@@ -759,16 +758,9 @@ bool CApp::AppInitialize(int argc, char *argv[])
     CreatePidFile(GetPidFile(), getpid());
 #endif
 
-    if (gArgs.GetArg<bool>("-shrinkdebugfile", logCategories == BCLog::NONE))
-    {
-        // Do this first since it both loads a bunch of debug.log into memory,
-        // and because this needs to happen before any other debug.log printing
-        ShrinkDebugFile();
-    }
-
-    mlog.notice("Default data directory %s.", GetDefaultDataDir().string());
-    mlog.notice("Using data directory %s.", GetDataDir().string());
-    mlog.notice("Using config file %s.",
+    mlog_notice("Default data directory %s.", GetDefaultDataDir().string());
+    mlog_notice("Using data directory %s.", GetDataDir().string());
+    mlog_notice("Using config file %s.",
                 GetConfigFile(gArgs.GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
 
     return true;
@@ -818,7 +810,7 @@ bool CApp::Shutdown()
 
     globalVerifyHandle.reset();
     ECC_Stop();
-    mlog.notice("%s: done.", __func__);
+    mlog_notice("%s: done.", __func__);
 
     GetMainSignals().UnregisterBackgroundSignalScheduler();
     return fRet;
@@ -886,7 +878,7 @@ bool CApp::InitializeLogging(fs::path path)
             mlog.addAppender(rollfileAppender);
             mlog.setPriority(log4cpp::Priority::NOTICE);//设置Category的优先级;
             mlog.addAppender(osAppender);
-            mlog.notice("CID_APP log conf is using defalt !");
+            mlog_notice("CID_APP log conf is using defalt !");
 
         } catch (...)
         {

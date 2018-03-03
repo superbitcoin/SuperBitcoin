@@ -490,7 +490,7 @@ CBlockIndex *CBlockIndexManager::GetBlockIndex(const uint256 hash)
 {
     if (mBlockIndex.count(hash) == 0)
     {
-        mlog.error("LastCommonAncestor(): reorganization to unknown block requested");
+        mlog_error("LastCommonAncestor(): reorganization to unknown block requested");
         return nullptr;
     }
 
@@ -512,13 +512,13 @@ void CBlockIndexManager::InvalidChainFound(CBlockIndex *pIndexNew)
     if (!pIndexBestInvalid || pIndexNew->nChainWork > pIndexBestInvalid->nChainWork)
         pIndexBestInvalid = pIndexNew;
 
-    mlog.notice("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s", __func__,
+    mlog_notice("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s", __func__,
                 pIndexNew->GetBlockHash().ToString(), pIndexNew->nHeight,
                 log(pIndexNew->nChainWork.getdouble()) / log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
                                                                                      pIndexNew->GetBlockTime()));
     CBlockIndex *tip = cChainActive.Tip();
     assert (tip);
-    mlog.notice("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s", __func__,
+    mlog_notice("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s", __func__,
                 tip->GetBlockHash().ToString(), cChainActive.Height(), log(tip->nChainWork.getdouble()) / log(2.0),
                 DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
     //    CheckForkWarningConditions();
