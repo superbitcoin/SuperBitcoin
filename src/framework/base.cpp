@@ -617,7 +617,7 @@ static void PrintVersion()
 
 bool CApp::AppInitialize(int argc, char *argv[])
 {
-
+    mlog.notice("AppInitialize");
     if (!gArgs.Init(argc, argv))
     {
         return false;

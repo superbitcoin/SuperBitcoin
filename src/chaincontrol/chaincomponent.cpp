@@ -147,7 +147,7 @@ bool CChainCommonent::ComponentInitialize()
             }
 
             int ret = cIndexManager.LoadBlockIndex(iBlockTreeDBCache, bReIndex, chainParams);
-            if (ret == OK_BLOCK_INDEX)
+            if (ret == ERR_LOAD_INDEX_DB)
             {
                 strLoadError = _("Error loading block database");
                 break;
@@ -2473,7 +2473,7 @@ bool CChainCommonent::RewindBlock(const CChainParams &params)
 
 bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
 {
-    CChain chainActive = cIndexManager.GetChain();
+    CChain& chainActive = cIndexManager.GetChain();
     uint256 bestHash = cViewManager.GetCoinsTip()->GetBestBlock();
     if (chainActive.Tip() && chainActive.Tip()->GetBlockHash() == bestHash)
     {
@@ -2505,8 +2505,8 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
 
     mlog.info("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f\n",
               chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
-              DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()),
-              GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
+              DateTimeStrFormat("%Y-%m-%d %H:%M:%S", pTip->GetBlockTime()),
+              GuessVerificationProgress(chainparams.TxData(), pTip));
     return true;
 }
 
@@ -2525,7 +2525,7 @@ int CChainCommonent::VerifyBlocks()
     const CArgsManager &cArgs = app().GetArgsManager();
     uint32_t checkLevel = cArgs.GetArg<uint32_t>("-checklevel", DEFAULT_CHECKLEVEL);
     int checkBlocks = cArgs.GetArg<int>("-checkblocks", DEFAULT_CHECKBLOCKS);
-    if (VerifyDB(chainParams, cViewManager.GetCoinViewDB(), checkLevel, checkBlocks))
+    if (!VerifyDB(chainParams, cViewManager.GetCoinViewDB(), checkLevel, checkBlocks))
     {
         return ERR_VERIFY_DB;
     }

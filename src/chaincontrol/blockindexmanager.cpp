@@ -222,7 +222,7 @@ void CBlockIndexManager::SortBlockIndex()
 
 bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex, const CChainParams &chainparams)
 {
-    std::cout << "initialize index manager \n";
+    mlog.info("initialize index manager \n");
 
     UnLoadBlockIndex();
 
