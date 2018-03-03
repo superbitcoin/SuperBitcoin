@@ -43,7 +43,7 @@ public:
 
     virtual bool IsReindexing() const = 0;
 
-    virtual bool IsInitialBlockDownload() const = 0;
+    virtual bool IsInitialBlockDownload() = 0;
 
     virtual bool DoesBlockExist(uint256 hash) = 0;
 

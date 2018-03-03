@@ -182,7 +182,7 @@ public:
 
     bool IsReindexing() const override;
 
-    bool IsInitialBlockDownload() const override;
+    bool IsInitialBlockDownload() override;
 
     bool DoesBlockExist(uint256 hash) override;
 
@@ -296,8 +296,6 @@ private:
     void SetTip(CBlockIndex *pIndexTip);
 
     bool NeedFullFlush(FlushStateMode mode);
-
-    bool IsInitialBlockDownload();
 
     void CheckForkWarningConditions();
 
