@@ -12,6 +12,12 @@
 #include "chain.h"
 #include "utils/timedata.h"
 
+CBlockIndexManager &CBlockIndexManager::Instance()
+{
+    static CBlockIndexManager indexManager;
+    return indexManager;
+}
+
 CBlockIndexManager::CBlockIndexManager()
 {
 
@@ -34,6 +40,11 @@ int CBlockIndexManager::GetLastBlockFile()
 std::vector<CBlockFileInfo> CBlockIndexManager::GetBlockFileInfo()
 {
     return vecBlockFileInfo;
+}
+
+bool CBlockIndexManager::isReIndexing()
+{
+    return bReIndexing;
 }
 
 CBlockIndex *CBlockIndexManager::FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator)
@@ -260,7 +271,7 @@ int CBlockIndexManager::LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, c
 {
     Init(iBlockTreeDBCache, bReset, chainparams);
 
-    if (!bReIndex)
+    if (!bReset)
     {
         bool ret = LoadBlockIndexDB(chainparams);
         if (!ret)
@@ -269,7 +280,7 @@ int CBlockIndexManager::LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, c
         }
     }
 
-    if (bReIndex || mBlockIndex.empty())
+    if (bReset || mBlockIndex.empty())
     {
         const CArgsManager &cArgs = app().GetArgsManager();
         bTxIndex = cArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX);
@@ -338,7 +349,7 @@ bool CBlockIndexManager::NeedInitGenesisBlock(const CChainParams &chainparams)
     // mapBlockIndex. Note that we can't use chainActive here, since it is
     // set based on the coins db, not the block index db, which is the only
     // thing loaded at this point.
-    if (bReIndex || mBlockIndex.count(chainparams.GenesisBlock().GetHash()) == 0)
+    if (mBlockIndex.count(chainparams.GenesisBlock().GetHash()) == 0)
         return true;
 
     return false;
@@ -413,9 +424,7 @@ bool CBlockIndexManager::LoadBlockIndexDB(const CChainParams &chainparams)
         mlog.info("LoadBlockIndexDB(): Block files have previously been pruned\n");
     }
 
-    bool bReIndexing = false;
     pBlcokTreee->ReadReindexing(bReIndexing);
-    bReIndex |= bReIndexing;
 
     pBlcokTreee->ReadFlag("txindex", bTxIndex);
     mlog.info("transaction index %s\n", bTxIndex ? "enabled" : "disabled");

@@ -97,6 +97,8 @@ public:
 
     virtual ~CBlockIndexManager();
 
+    static CBlockIndexManager &Instance();
+
     CBlockIndex *AddToBlockIndex(const CBlockHeader &block);
 
     CBlockIndex *FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator);
@@ -139,6 +141,8 @@ public:
 
     bool IsOnlyGenesisBlockIndex();
 
+    bool isReIndexing();
+
     bool NeedInitGenesisBlock(const CChainParams &chainparams);
 
     bool AcceptBlockHeader(const CBlockHeader &block, CValidationState &state, const CChainParams &chainparams,
@@ -171,7 +175,7 @@ public:
     CBlockTreeDB *GetBlockTreeDB();
 
 private:
-    bool bReIndex = false;
+    bool bReIndexing = false;
     bool bTxIndex = false;
     bool bHavePruned = false;
     int iLastBlockFile = 0;

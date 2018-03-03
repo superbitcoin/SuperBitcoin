@@ -27,6 +27,7 @@
 #include "sbtccore/transaction/policy.h"
 #include "config/consensus.h"
 #include "framework/validationinterface.h"
+#include "framework/noui.h"
 
 using namespace appbase;
 
@@ -305,7 +306,7 @@ bool CApp::AppInitParameterInteraction()
     {
         nMinimumChainWork = UintToArith256(chainparams.GetConsensus().nMinimumChainWork);
     }
-    mlog.notice("Setting nMinimumChainWork=%s.", nMinimumChainWork.GetHex());
+    mlog.notice("Setting nMinimumChainWork=%s.", nMinimumChainWork.GetHex().c_str());
     if (nMinimumChainWork < UintToArith256(chainparams.GetConsensus().nMinimumChainWork))
     {
         mlog.warn("Warning: nMinimumChainWork set below default value of %s.",
@@ -557,7 +558,7 @@ bool CApp::AppInitSanityChecks()
 {
     // Initialize elliptic curve code
     std::string sha256_algo = SHA256AutoDetect();
-    mlog.notice("Using the '%s' SHA256 implementation.", sha256_algo);
+    mlog.notice("Using the '%s' SHA256 implementation.", sha256_algo.c_str());
     RandomInit();
     ECC_Start();
     globalVerifyHandle.reset(new ECCVerifyHandle());
@@ -621,6 +622,9 @@ static void PrintVersion()
 
 bool CApp::AppInitialize(int argc, char *argv[])
 {
+
+    noui_connect();
+
     if (!gArgs.Init(argc, argv))
     {
         return false;
@@ -766,10 +770,10 @@ bool CApp::AppInitialize(int argc, char *argv[])
         ShrinkDebugFile();
     }
 
-    mlog.notice("Default data directory %s.", GetDefaultDataDir().string());
-    mlog.notice("Using data directory %s.", GetDataDir().string());
+    mlog.notice("Default data directory %s.", GetDefaultDataDir().string().c_str());
+    mlog.notice("Using data directory %s.", GetDataDir().string().c_str());
     mlog.notice("Using config file %s.",
-                GetConfigFile(gArgs.GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
+                GetConfigFile(gArgs.GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string().c_str());
 
     return true;
 }

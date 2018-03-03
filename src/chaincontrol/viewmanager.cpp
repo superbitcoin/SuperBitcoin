@@ -10,11 +10,16 @@
 #include "config/argmanager.h"
 #include "sbtccore/block/undo.h"
 
+CViewManager &CViewManager::Instance()
+{
+    static CViewManager viewManager;
+    return viewManager;
+}
+
 CViewManager::CViewManager()
 {
 
 }
-
 
 CViewManager::~CViewManager()
 {
@@ -23,8 +28,12 @@ CViewManager::~CViewManager()
 
 int CViewManager::InitCoinsDB(int64_t iCoinDBCacheSize, bool bReset)
 {
-
     mlog.notice("initialize view manager");
+
+    delete pCoinsTip;
+    delete pCoinsViewDB;
+    delete pCoinsCatcher;
+
     pCoinsViewDB = new CCoinsViewDB(iCoinDBCacheSize, false, bReset);
     if (!pCoinsViewDB->Upgrade())
     {

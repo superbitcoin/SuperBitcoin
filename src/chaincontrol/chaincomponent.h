@@ -273,8 +273,8 @@ private:
     database _db;
     bool bReIndex;
     bool bRequestShutdown;
-    CBlockIndexManager cIndexManager;
-    CViewManager cViewManager;
+    CBlockIndexManager& cIndexManager = CBlockIndexManager::Instance();
+    CViewManager& cViewManager = CViewManager::Instance();
 
     CCriticalSection cs_xnodeGuard;
     std::map<int64_t, std::set<int>> m_nodeCheckPointKnown;
