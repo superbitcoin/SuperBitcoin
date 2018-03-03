@@ -89,7 +89,7 @@ bool CChainCommonent::ComponentInitialize()
     nPruneTarget = (uint64_t)iPruneArg * 1024 * 1024;
     if (iPruneArg == 1)
     {  // manual pruning: -prune=1
-        mlog.debug(
+        mlog_error(
                 "Block pruning enabled.  Use RPC call pruneblockchain(height) to manually prune block and undo files.\n");
         nPruneTarget = std::numeric_limits<uint64_t>::max();
         fPruneMode = true;
@@ -100,7 +100,7 @@ bool CChainCommonent::ComponentInitialize()
             return InitError(strprintf(_("Prune configured below the minimum of %d MiB.  Please use a higher number."),
                                        MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024));
         }
-        mlog.debug("Prune configured to target %uMiB on disk for block and undo files.\n", nPruneTarget / 1024 / 1024);
+        mlog_error("Prune configured to target %uMiB on disk for block and undo files.\n", nPruneTarget / 1024 / 1024);
         fPruneMode = true;
     }
 
@@ -120,9 +120,9 @@ bool CChainCommonent::ComponentInitialize()
                                     (iTotalCache / 4) + (1 << 23)); // use 25%-50% of the remainder for disk cache
     iCoinDBCache = std::min(iCoinDBCache, nMaxCoinsDBCache << 20); // cap total coins db cache
     iTotalCache -= iCoinDBCache;
-    mlog.debug("Cache configuration:\n");
-    mlog.debug("* Using %.1fMiB for block index database\n", iBlockTreeDBCache * (1.0 / 1024 / 1024));
-    mlog.debug("* Using %.1fMiB for chain state database\n", iCoinDBCache * (1.0 / 1024 / 1024));
+    mlog_error("Cache configuration:\n");
+    mlog_error("* Using %.1fMiB for block index database\n", iBlockTreeDBCache * (1.0 / 1024 / 1024));
+    mlog_error("* Using %.1fMiB for chain state database\n", iCoinDBCache * (1.0 / 1024 / 1024));
 
     int64_t iStart;
     bool bLoaded = false;
@@ -280,12 +280,12 @@ bool CChainCommonent::ComponentInitialize()
     // As the program has not fully started yet, Shutdown() is possibly overkill.
     if (bRequestShutdown)
     {
-        mlog.debug("Shutdown requested. Exiting.\n");
+        mlog_error("Shutdown requested. Exiting.\n");
         return false;
     }
     if (bLoaded)
     {
-        mlog.debug(" block index %15dms\n", GetTimeMillis() - iStart);
+        mlog_error(" block index %15dms\n", GetTimeMillis() - iStart);
     }
 
     // if pruning, unset the service bit and perform the initial blockstore prune
@@ -641,7 +641,7 @@ void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
             DoWarning(strWarning);
         }
     }
-    mlog.debug(
+    mlog_error(
             "new best=%s height=%d version=0x%08x log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo)", \
             chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nVersion, \
             log(chainActive.Tip()->nChainWork.getdouble()) / log(2.0), (unsigned long)chainActive.Tip()->nChainTx, \
@@ -650,7 +650,7 @@ void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
             cViewManager.GetCoinsTip()->DynamicMemoryUsage() * (1.0 / (1 << 20)), \
             cViewManager.GetCoinsTip()->GetCacheSize());
     if (!warningMessages.empty())
-        mlog.debug(" warning='%s'", boost::algorithm::join(warningMessages, ", "));
+        mlog_error(" warning='%s'", boost::algorithm::join(warningMessages, ", "));
 
 }
 
@@ -1146,7 +1146,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     }
     int64_t nTime3 = GetTimeMicros();
     nTimeConnect += nTime3 - nTime2;
-    mlog.debug("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n",
+    mlog_error("- Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]\n",
                (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(),
                nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
 
@@ -1162,7 +1162,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         return state.DoS(100, error("%s: CheckQueue failed", __func__), REJECT_INVALID, "block-validation-failed");
     int64_t nTime4 = GetTimeMicros();
     nTimeVerify += nTime4 - nTime2;
-    mlog.debug("- Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1,
+    mlog_error("- Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1,
                0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs - 1),
                nTimeVerify * 0.000001);
 
@@ -1199,11 +1199,11 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     int64_t nTime5 = GetTimeMicros();
     nTimeIndex += nTime5 - nTime4;
-    mlog.debug("    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimeIndex * 0.000001);
+    mlog_error("    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimeIndex * 0.000001);
 
     int64_t nTime6 = GetTimeMicros();
     nTimeCallbacks += nTime6 - nTime5;
-    mlog.debug("    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
+    mlog_error("    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
     return true;
 }
 
@@ -1236,7 +1236,7 @@ bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &ch
     int64_t nTime2 = GetTimeMicros();
     nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
-    mlog.debug("- Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001,
+    mlog_error("- Load block from disk: %.2fms [%.2fs]\n", (nTime2 - nTime1) * 0.001,
                nTimeReadFromDisk * 0.000001);
     {
         CCoinsViewCache view(cViewManager.GetCoinsTip());
@@ -1250,20 +1250,20 @@ bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &ch
         }
         nTime3 = GetTimeMicros();
         nTimeConnectTotal += nTime3 - nTime2;
-        mlog.debug("  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001,
+        mlog_error("  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001,
                    nTimeConnectTotal * 0.000001);
         bool flushed = view.Flush();
         assert(flushed);
     }
     int64_t nTime4 = GetTimeMicros();
     nTimeFlush += nTime4 - nTime3;
-    mlog.debug("  - Flush: %.2fms [%.2fs]\n", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
+    mlog_error("  - Flush: %.2fms [%.2fs]\n", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED, chainparams))
         return false;
     int64_t nTime5 = GetTimeMicros();
     nTimeChainState += nTime5 - nTime4;
-    mlog.debug("  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001,
+    mlog_error("  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001,
                nTimeChainState * 0.000001);
 
     // Remove conflicting transactions from the mempool.;
@@ -1276,9 +1276,9 @@ bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &ch
     int64_t nTime6 = GetTimeMicros();
     nTimePostConnect += nTime6 - nTime5;
     nTimeTotal += nTime6 - nTime1;
-    mlog.debug("  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001,
+    mlog_error("  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001,
                nTimePostConnect * 0.000001);
-    mlog.debug("- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    mlog_error("- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
 
     connectTrace.BlockConnected(pIndexNew, std::move(pthisBlock));
     return true;

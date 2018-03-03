@@ -28,7 +28,7 @@ CViewManager::~CViewManager()
 
 int CViewManager::InitCoinsDB(int64_t iCoinDBCacheSize, bool bReset)
 {
-    mlog.notice("initialize view manager");
+    mlog_notice("initialize view manager");
 
     delete pCoinsTip;
     delete pCoinsViewDB;
@@ -66,18 +66,18 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
     CDiskBlockPos pos = pindex->GetUndoPos();
     if (pos.IsNull())
     {
-        mlog.error("DisconnectBlock(): no undo data available");
+        mlog_error("DisconnectBlock(): no undo data available");
         return DISCONNECT_FAILED;
     }
     if (!UndoReadFromDisk(blockUndo, pos, pindex->pprev->GetBlockHash()))
     {
-        mlog.error("DisconnectBlock(): failure reading undo data");
+        mlog_error("DisconnectBlock(): failure reading undo data");
         return DISCONNECT_FAILED;
     }
 
     if (blockUndo.vtxundo.size() + 1 != block.vtx.size())
     {
-        mlog.error("DisconnectBlock(): block and undo data inconsistent");
+        mlog_error("DisconnectBlock(): block and undo data inconsistent");
         return DISCONNECT_FAILED;
     }
 
@@ -111,7 +111,7 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
             CTxUndo &txundo = blockUndo.vtxundo[i - 1];
             if (txundo.vprevout.size() != tx.vin.size())
             {
-                mlog.error("DisconnectBlock(): transaction and undo data inconsistent");
+                mlog_error("DisconnectBlock(): transaction and undo data inconsistent");
                 return DISCONNECT_FAILED;
             }
             for (unsigned int j = tx.vin.size(); j-- > 0;)
