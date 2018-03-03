@@ -128,6 +128,7 @@ bool CChainCommonent::ComponentInitialize()
     bool bLoaded = false;
     while (!bLoaded && !bRequestShutdown)
     {
+        bool bReset = bReIndex;
         std::string strLoadError;
 
         uiInterface.InitMessage(_("Loading block index..."));
@@ -138,7 +139,7 @@ bool CChainCommonent::ComponentInitialize()
         {
             Init();
 
-            if (bReIndex && fPruneMode)
+            if (bReset && fPruneMode)
             {
                 CleanupBlockRevFiles();
             }
@@ -148,7 +149,7 @@ bool CChainCommonent::ComponentInitialize()
                 break;
             }
 
-            int ret = cIndexManager.LoadBlockIndex(iBlockTreeDBCache, bReIndex, chainParams);
+            int ret = cIndexManager.LoadBlockIndex(iBlockTreeDBCache, bReset, chainParams);
             if (ret == ERR_LOAD_INDEX_DB)
             {
                 strLoadError = _("Error loading block database");
@@ -167,7 +168,8 @@ bool CChainCommonent::ComponentInitialize()
                 break;
             }
 
-            if (cIndexManager.NeedInitGenesisBlock(chainParams))
+            bReIndex |= cIndexManager.isReIndexing();
+            if (!bReIndex && cIndexManager.NeedInitGenesisBlock(chainParams))
             {
                 if (!LoadGenesisBlock(chainParams))
                 {
@@ -177,7 +179,7 @@ bool CChainCommonent::ComponentInitialize()
             }
 
             uiInterface.InitMessage(_("Init View..."));
-            ret = cViewManager.InitCoinsDB(iCoinDBCache, bReIndex | bReindexChainState);
+            ret = cViewManager.InitCoinsDB(iCoinDBCache, bReset | bReindexChainState);
             if (ret == ERR_VIEW_UPGRADE)
             {
                 strLoadError = _("Error upgrading chainstate database");
@@ -196,7 +198,7 @@ bool CChainCommonent::ComponentInitialize()
             cViewManager.InitCoinsCache();
 
             bool bCoinsViewEmpty =
-                    bReIndex || bReindexChainState || cViewManager.GetCoinsTip()->GetBestBlock().IsNull();
+                    bReset || bReindexChainState || cViewManager.GetCoinsTip()->GetBestBlock().IsNull();
             if (!bCoinsViewEmpty)
             {
                 // LoadChainTip sets chainActive based on pcoinsTip's best block
@@ -212,7 +214,7 @@ bool CChainCommonent::ComponentInitialize()
                 assert(Tip() != nullptr);
             }
 
-            if (!bReIndex)
+            if (!bReset)
             {
                 // Note that RewindBlockIndex MUST run even if we're about to -reindex-chainstate.
                 // It both disconnects blocks based on chainActive, and drops block data in
@@ -251,7 +253,7 @@ bool CChainCommonent::ComponentInitialize()
         if (!bLoaded && !bRequestShutdown)
         {
             // first suggest a reindex
-            if (!bReIndex)
+            if (!bReset)
             {
                 bool bRet = uiInterface.ThreadSafeQuestion(
                         strLoadError + ".\n\n" + _("Do you want to rebuild the block database now?"),
@@ -352,7 +354,6 @@ bool CChainCommonent::IsImporting() const
 
 bool CChainCommonent::IsReindexing() const
 {
-    //TODO:
     return bReIndex;
 }
 
@@ -1717,9 +1718,9 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
     cIndexManager.PruneBlockIndexCandidates();
 
     mlog.info("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f\n",
-              chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(),
-              DateTimeStrFormat("%Y-%m-%d %H:%M:%S", pTip->GetBlockTime()),
-              GuessVerificationProgress(chainparams.TxData(), pTip));
+              chainActive.Tip()->GetBlockHash().ToString().c_str(), chainActive.Height(),
+              DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()).c_str(),
+              GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
     return true;
 }
 
