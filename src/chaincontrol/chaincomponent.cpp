@@ -345,12 +345,6 @@ bool CChainCommonent::IsReindexing() const
     return bReIndex;
 }
 
-bool CChainCommonent::IsInitialBlockDownload() const
-{
-    //TODO:
-    return IsInitialBlockDownload();
-}
-
 bool CChainCommonent::DoesBlockExist(uint256 hash)
 {
     //TODO:
