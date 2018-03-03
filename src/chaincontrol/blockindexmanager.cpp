@@ -282,13 +282,19 @@ int CBlockIndexManager::LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, c
 
 void CBlockIndexManager::UnLoadBlockIndex()
 {
+    LOCK(cs_main);
     setBlockIndexCandidates.clear();
+    cChainActive.SetTip(nullptr);
     pIndexBestInvalid = nullptr;
     pIndexBestHeader = nullptr;
     mBlocksUnlinked.clear();
     vecBlockFileInfo.clear();
     iLastBlockFile = 0;
+    nBlockSequenceId = 1;
     setDirtyBlockIndex.clear();
+    setFailedBlocks.clear();
+    setDirtyFileInfo.clear();
+    versionbitscache.Clear();
 
     for (BlockMap::value_type &entry : mBlockIndex)
     {
@@ -1192,8 +1198,8 @@ bool CBlockIndexManager::ReceivedBlockTransactions(const CBlock &block, CValidat
             queue.pop_front();
             pindex->nChainTx = (pindex->pprev ? pindex->pprev->nChainTx : 0) + pindex->nTx;
             {
-                //                LOCK(cs_nBlockSequenceId); todo
-                //                pindex->nSequenceId = nBlockSequenceId++;
+                LOCK(cs_nBlockSequenceId);
+                pindex->nSequenceId = nBlockSequenceId++;
             }
             if (cChainActive.Tip() == nullptr || !setBlockIndexCandidates.value_comp()(pindex, cChainActive.Tip()))
             {

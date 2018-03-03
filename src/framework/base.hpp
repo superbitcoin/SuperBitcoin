@@ -28,6 +28,8 @@ namespace appbase
 
         static log4cpp::Category &mlog;
 
+        bool InitializeLogging(fs::path path);
+
         // the following four override methods were meaningless,
         // only just make CApp become a non-abstract class.
         int GetID() const override

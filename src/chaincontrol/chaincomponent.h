@@ -176,6 +176,8 @@ public:
         return "I am CChainCommonent\n";
     }
 
+    void Init();
+
     bool IsImporting() const override;
 
     bool IsReindexing() const override;
