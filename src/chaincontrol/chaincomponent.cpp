@@ -591,7 +591,7 @@ void CChainCommonent::DoWarning(const std::string &strWarning)
 /** Update chainActive and related internal data structures. */
 void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chainParams)
 {
-    CChain chainActive = cIndexManager.GetChain();
+    CChain &chainActive = cIndexManager.GetChain();
 
     chainActive.SetTip(pindexNew);
 
