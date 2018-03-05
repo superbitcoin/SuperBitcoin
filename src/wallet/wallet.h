@@ -1306,6 +1306,14 @@ public:
 
     static bool InitLoadWallet();
 
+    static std::vector<std::string> GetWalletFiles();
+
+    static bool IsWalletbroadcast();
+
+    static bool IsPersistmempool();
+
+    static bool IsReScan();
+
     /**
      * Wallet post-init setup
      * Gives the wallet a chance to register repetitive tasks and complete post-init tasks
