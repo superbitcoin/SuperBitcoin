@@ -136,7 +136,42 @@ public:
     template<class T>
     bool SoftSetArg(const std::string &strArg, const T &value)
     {
-        return false;
+        LOCK(cs_args);
+
+        std::string tmp_strArg = SubPrefix(strArg);
+        if (vm.count(tmp_strArg))
+        {
+            return false;
+        }
+
+        if (typeid(T) == typeid(bool))
+        {
+            bool const *const pbool = (bool const *const)&value;
+            string value_tmp = *pbool ? "yes" : "no";
+            vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(string(value_tmp)), false)));
+            return true;
+        }
+
+        if (typeid(T) == typeid(std::string))
+        {
+            vector<string>::iterator ite = find(options_arr.begin(), options_arr.end(), tmp_strArg);
+
+            // not an array
+            if (ite == options_arr.end())
+            {
+                auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(T(value)),
+                                                                                    false)));    // std::pair< map<string, bpo::variable_value>::iterator, bool >
+                return res.second;
+            }
+
+            // the option is an array
+            auto res = vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(vector<T>({value})),
+                                                                                false)));   // std::pair< map<string, bpo::variable_value>::iterator, bool >
+            return res.second;
+        }
+
+        vm.insert(std::make_pair(tmp_strArg, bpo::variable_value(boost::any(T(value)), false)));
+        return true;
     }
 
 protected:
