@@ -221,13 +221,20 @@ static inline void MarkUsed(const T &t, const Args &... args)
 #define ADD_LOG4CPP_IN_CPP_LOG(CLASS,DEBUG_ID)   public: \
      log4cpp::Category &#CLASS::mlog = log4cpp::Category::getInstance(#DEBUG_ID)
 
-#define  mlog_notice(fmt, a...) mlog.notice(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
-#define  mlog_error(fmt, a...) mlog.error(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
-#define  mlog_info(fmt, a...) mlog.info(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
-#define  mlog_warn(fmt, a...) mlog.warn(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
-#define  mlog_fatal(fmt, a...) mlog.fatal(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
-#define  mlog_debug(fmt, a...) mlog.debug(tinyformat::format("%s %s(%d)", fmt, __FILE__, __LINE__).c_str(), ##a)
+inline std::string int2string(int line) {
+    std::ostringstream oss;
+    oss << "("<< line <<")";
+    return oss.str();
+}
+#define STR(s)     #s
+#define __FILENAME__ (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1):__FILE__)
 
+#define  mlog_notice(fmt, a...) mlog.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_error(fmt, a...) mlog.error(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_info(fmt, a...) mlog.info(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_warn(fmt, a...) mlog.warn(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_fatal(fmt, a...) mlog.fatal(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_debug(fmt, a...) mlog.debug(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 template<typename... Args>
 bool error(const char *fmt, const Args &... args)
 {

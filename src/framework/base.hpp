@@ -19,6 +19,7 @@ class CBaseChainParams;
 
 class ECCVerifyHandle;
 
+
 namespace appbase
 {
     class CApp : public IComponent
@@ -27,6 +28,7 @@ namespace appbase
         static CApp &Instance();
 
         static log4cpp::Category &mlog;
+
 
         bool InitializeLogging(fs::path path);
 

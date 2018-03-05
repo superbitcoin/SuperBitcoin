@@ -30,7 +30,6 @@
 
 using namespace appbase;
 
-log4cpp::Category &CApp::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP));
 
 CApp &CApp::Instance()
 {
@@ -222,7 +221,7 @@ bool CApp::AppInitParameterInteraction()
                 uint32_t flag = 0;
                 if (!GetLogCategory(&flag, &cat))
                 {
-                    mlog.warn("Unsupported logging category %s=%s.", "-debug", cat);
+                    mlog_warn("Unsupported logging category %s=%s.", "-debug", cat);
                     continue;
                 }
                 logCategories |= flag;
@@ -236,7 +235,7 @@ bool CApp::AppInitParameterInteraction()
         uint32_t flag = 0;
         if (!GetLogCategory(&flag, &cat))
         {
-            mlog.warn("Unsupported logging category %s=%s.", "-debugexclude", cat);
+            mlog_warn("Unsupported logging category %s=%s.", "-debugexclude", cat);
             continue;
         }
         logCategories &= ~flag;
@@ -244,7 +243,7 @@ bool CApp::AppInitParameterInteraction()
 
     // Check for -debugnet
     if (gArgs.GetArg<bool>("-debugnet", false))
-        mlog.warn("Unsupported argument -debugnet ignored, use -debug=net.");
+        mlog_warn("Unsupported argument -debugnet ignored, use -debug=net.");
 
     // Check for -socks - as this is a privacy risk to continue, exit here
     if (gArgs.IsArgSet("-socks"))
@@ -262,14 +261,14 @@ bool CApp::AppInitParameterInteraction()
     }
 
     if (gArgs.GetArg<bool>("-benchmark", false))
-        mlog.warn("Unsupported argument -benchmark ignored, use -debug=bench.");
+        mlog_warn("Unsupported argument -benchmark ignored, use -debug=bench.");
 
     if (gArgs.GetArg<bool>("-whitelistalwaysrelay", false))
-        mlog.warn(
+        mlog_warn(
                 "Unsupported argument -whitelistalwaysrelay ignored, use -whitelistrelay and/or -whitelistforcerelay.");
 
     if (gArgs.IsArgSet("-blockminsize"))
-        mlog.warn("Unsupported argument -blockminsize ignored.");
+        mlog_warn("Unsupported argument -blockminsize ignored.");
 
     //TODO: mempool component init.
     //    // Checkmempool and checkblockindex default to true in regtest mode
@@ -308,7 +307,7 @@ bool CApp::AppInitParameterInteraction()
     mlog_notice("Setting nMinimumChainWork=%s.", nMinimumChainWork.GetHex());
     if (nMinimumChainWork < UintToArith256(chainparams.GetConsensus().nMinimumChainWork))
     {
-        mlog.warn("Warning: nMinimumChainWork set below default value of %s.",
+        mlog_warn("Warning: nMinimumChainWork set below default value of %s.",
                   chainparams.GetConsensus().nMinimumChainWork.GetHex());
     }
 
@@ -639,6 +638,7 @@ bool CApp::AppInitialize(int argc, char *argv[])
         PrintVersion();
         return false;
     }
+
     try
     {
         if (!fs::is_directory(gArgs.GetDataDir(false)))
@@ -795,7 +795,7 @@ bool CApp::Shutdown()
         fs::remove(GetPidFile());
     } catch (const fs::filesystem_error &e)
     {
-        mlog.warn("%s: Unable to remove pidfile: %s.", __func__, e.what());
+        mlog_warn("%s: Unable to remove pidfile: %s.", __func__, e.what());
     }
 #endif
 
@@ -824,6 +824,8 @@ bool CApp::Run()
     }
     return true;
 }
+
+log4cpp::Category &CApp::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP));
 
 bool CApp::RegisterComponent(IComponent *component)
 {

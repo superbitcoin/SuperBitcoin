@@ -4190,14 +4190,14 @@ bool PeerLogicValidation::SendRejectsAndCheckIfBanned(CNode *pnode)
     {
         state.fShouldBan = false;
         if (pnode->fWhitelisted)
-            mlog.warn("Warning: not punishing whitelisted peer %s!\n", pnode->addr.ToString());
+            mlog_warn("Warning: not punishing whitelisted peer %s!\n", pnode->addr.ToString());
         else if (pnode->m_manual_connection)
-            mlog.warn("Warning: not punishing addnoded peer %s!\n", pnode->addr.ToString());
+            mlog_warn("Warning: not punishing addnoded peer %s!\n", pnode->addr.ToString());
         else
         {
             pnode->fDisconnect = true;
             if (pnode->addr.IsLocal())
-                mlog.warn("Warning: not banning local peer %s!\n", pnode->addr.ToString());
+                mlog_warn("Warning: not banning local peer %s!\n", pnode->addr.ToString());
             else
             {
                 connman->Ban(pnode->addr, BanReasonNodeMisbehaving);

@@ -842,7 +842,7 @@ void CBlockIndexManager::CheckForkWarningConditions()
         }
         if (pIndexBestForkTip && pIndexBestForkBase)
         {
-            mlog.warn(
+            mlog_warn(
                     "%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n",
                     __func__,
                     pIndexBestForkBase->nHeight, pIndexBestForkBase->phashBlock->ToString(),
@@ -850,7 +850,7 @@ void CBlockIndexManager::CheckForkWarningConditions()
             SetfLargeWorkForkFound(true);
         } else
         {
-            mlog.warn(
+            mlog_warn(
                     "%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n",
                     __func__);
             SetfLargeWorkInvalidChainFound(true);

@@ -218,7 +218,7 @@ bool CNetComponent::ComponentInitialize()
 
     if (nMaxConnections < nUserMaxConnections)
     {
-        mlog.warn("Reducing -maxconnections from %d to %d, because of system limitations.", nUserMaxConnections, nMaxConnections);
+        mlog_warn("Reducing -maxconnections from %d to %d, because of system limitations.", nUserMaxConnections, nMaxConnections);
     }
 
     mlog.info("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
