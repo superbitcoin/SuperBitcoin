@@ -90,6 +90,15 @@ int CWalletComponent::GetWalletCount() const
     return vpWallets.size();
 }
 
+CWallet* CWalletComponent::GetWallet(int index)
+{
+    if (index >= 0 && index < (int)vpWallets.size())
+    {
+        return vpWallets[index];
+    }
+    return nullptr;
+}
+
 log4cpp::Category &CWalletComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
 log4cpp::Category &CWalletComponent::getLog()
 {

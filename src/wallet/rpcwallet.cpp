@@ -47,26 +47,18 @@ CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest &request)
         return nullptr;
     }
 
-    CWalletRef _1stWallet = nullptr;
-    CWalletRef requestedWallet = nullptr;
     if (request.URI.substr(0, WALLET_ENDPOINT_BASE.size()) == WALLET_ENDPOINT_BASE)
     {
         // wallet endpoint was used
+        CWalletRef requestedWallet = nullptr;
         std::string requestedWalletName = urlDecode(request.URI.substr(WALLET_ENDPOINT_BASE.size()));
         auto pwalletComponent = static_cast<CWalletComponent*>(iwallet);
         pwalletComponent->ForEachWallet([&](CWalletRef pwallet)
         {
-            if (pwallet)
+            if (pwallet && pwallet->GetName() == requestedWalletName)
             {
-                if (!_1stWallet)
-                {
-                    _1stWallet = pwallet;
-                }
-                if (pwallet->GetName() == requestedWalletName)
-                {
-                    requestedWallet = pwallet;
-                    return true;
-                }
+                requestedWallet = pwallet;
+                return true;
             }
             return false;
         });
@@ -78,7 +70,7 @@ CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest &request)
     }
 
     int nWallets = iwallet->GetWalletCount();
-    return nWallets == 1 || (request.fHelp && nWallets > 0) ? _1stWallet : nullptr;
+    return nWallets == 1 || (request.fHelp && nWallets > 0) ? iwallet->GetWallet(0) : nullptr;
 }
 
 std::string HelpRequiringPassphrase(CWallet *const pwallet)

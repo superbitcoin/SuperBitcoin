@@ -32,6 +32,8 @@ public:
 
     int GetWalletCount() const override;
 
+    CWallet* GetWallet(int index) override;
+
     log4cpp::Category &getLog() override;
 
     template<typename F>
