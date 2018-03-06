@@ -40,7 +40,7 @@ CTxMemPool::~CTxMemPool()
 bool CTxMemPool::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
-    //LoadMempool();
+    LoadMempool();
     return true;
 }
 
@@ -75,15 +75,14 @@ bool CTxMemPool::AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CVa
     std::vector<COutPoint> coins_to_uncache;
     bool res = AcceptToMemoryPoolWorker(chainparams, state, tx, fLimitFree, pfMissingInputs, nAcceptTime,
                                         plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, coins_to_uncache);
+    GET_CHAIN_INTERFACE(ifChainObj);
     if (!res)
     {
-        GET_CHAIN_INTERFACE(ifChainObj);
         for (const COutPoint &hashTx : coins_to_uncache)
             ifChainObj->GetCoinsTip()->Uncache(hashTx);
     }
     // After we've (potentially) uncached entries, ensure our coins cache is still within its size limits
-    CValidationState stateDummy;
-    //modified by sky    FlushStateToDisk(chainparams, stateDummy, FLUSH_STATE_PERIODIC);
+    ifChainObj->FlushStateToDisk();
     return res;
 }
 
