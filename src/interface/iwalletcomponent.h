@@ -15,11 +15,12 @@ public:
     virtual bool ComponentStartup() = 0;
     virtual bool ComponentShutdown() = 0;
     virtual const char* whoru() const = 0;
+    virtual int  GetWalletCount() const = 0;
 
     //add other interface methods here ...
 
 };
 
 #define GET_WALLET_INTERFACE(ifObj) \
-    auto ifObj = appbase::CBase::Instance().FindComponent<IWalletComponent>()
+    auto ifObj = appbase::CApp::Instance().FindComponent<IWalletComponent>()
 

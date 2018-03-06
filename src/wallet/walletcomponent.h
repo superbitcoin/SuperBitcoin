@@ -6,28 +6,21 @@
  *
  * History:         Record the edit history
  ************************************/
-
 #ifndef SUPERBITCOIN_WALLETCOMPONENT_H
 #define SUPERBITCOIN_WALLETCOMPONENT_H
 
-#include "component.hpp"
-#include "rpcwallet.h"
-#include "server.h"
-#include "scheduler.h"
-#include "../interface/iwalletcomponent.h"
+#include <vector>
+#include "interface/iwalletcomponent.h"
 #include "wallet.h"
-
-using namespace appbase;
 
 class CWalletComponent : public IWalletComponent
 {
-private:
-    std::vector<CWalletRef> vpWallets;
-
 public:
-    CWalletComponent() {};
+    CWalletComponent();
 
-    ~CWalletComponent() {};
+    ~CWalletComponent();
+
+    static log4cpp::Category &mlog;
 
     bool ComponentInitialize() override;
 
@@ -35,12 +28,26 @@ public:
 
     bool ComponentShutdown() override;
 
-    virtual const char* whoru() const override { return "I am CWalletComponent\n"; }
+    const char* whoru() const override;
+
+    int GetWalletCount() const override;
 
     log4cpp::Category &getLog() override;
 
-    std::vector<CWalletRef>& GetWalletRef() { return vpWallets; }
-    static log4cpp::Category & mlog;
+    template<typename F>
+    void ForEachWallet(F&& func)
+    {
+        for (CWalletRef wallet : vpWallets)
+        {
+            if (func(wallet))
+            {
+                break;
+            }
+        }
+    }
+
+private:
+    std::vector<CWalletRef> vpWallets;
 };
 
 #endif //SUPERBITCOIN_WALLETCOMPONENT_H

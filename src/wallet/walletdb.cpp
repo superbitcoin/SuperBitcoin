@@ -14,7 +14,6 @@
 #include "utils/util.h"
 #include "utils/utiltime.h"
 #include "wallet/wallet.h"
-#include "base.hpp"
 #include "argmanager.h"
 #include "walletcomponent.h"
 #include <atomic>
@@ -764,19 +763,19 @@ DBErrors CWalletDB::ZapWalletTx(std::vector<CWalletTx> &vWtx)
     return DB_LOAD_OK;
 }
 
-void MaybeCompactWalletDB()
+void MaybeCompactWalletDB(std::vector<CWallet*> &vpWallets)
 {
     static std::atomic<bool> fOneThread(false);
     if (fOneThread.exchange(true))
     {
         return;
     }
-    if (!(app().GetArgsManager().GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
+    if (!(gArgs.GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
     {
         return;
     }
 
-    for (CWalletRef pwallet : app().FindComponent<CWalletComponent>()->GetWalletRef())
+    for (auto pwallet : vpWallets)
     {
         CWalletDBWrapper &dbh = pwallet->GetDBHandle();
 

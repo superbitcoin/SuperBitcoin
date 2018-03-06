@@ -4542,45 +4542,6 @@ vector<string> CWallet::GetWalletFiles()
     return walletFiles;
 }
 
-bool CWallet::InitLoadWallet()
-{
-
-    if (app().GetArgsManager().GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
-    {
-        mlog_notice("Wallet disabled!\n");
-        return true;
-    }
-
-    vector<string> walletFiles = GetWalletFiles();
-    for (const std::string &walletFile : walletFiles)
-    {
-        CWallet *const pwallet = CreateWalletFromFile(walletFile);
-        if (!pwallet)
-        {
-            return false;
-        }
-        app().FindComponent<CWalletComponent>()->GetWalletRef().push_back(pwallet);
-    }
-
-    return true;
-}
-
-std::atomic<bool> CWallet::fFlushScheduled(false);
-
-void CWallet::postInitProcess(CScheduler &scheduler)
-{
-    // Add wallet transactions that aren't already in a block to mempool
-    // Do this here as mempool requires genesis block to be loaded
-    ReacceptWalletTransactions();
-
-    // Run a thread to flush wallet periodically
-    if (!CWallet::fFlushScheduled.exchange(true))
-    {
-        scheduler.scheduleEvery(MaybeCompactWalletDB, 500);
-    }
-}
-
-
 bool CWallet::ParameterInteraction()
 {
     const CArgsManager &mArgs = app().GetArgsManager();

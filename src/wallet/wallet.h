@@ -727,7 +727,6 @@ class CWallet : public CCryptoKeyStore, public CValidationInterface
 public:
     static log4cpp::Category &mlog;
 private:
-    static std::atomic<bool> fFlushScheduled;
     std::atomic<bool> fAbortRescan;
     std::atomic<bool> fScanningWallet;
 
@@ -1313,12 +1312,6 @@ public:
     static bool IsPersistmempool();
 
     static bool IsReScan();
-
-    /**
-     * Wallet post-init setup
-     * Gives the wallet a chance to register repetitive tasks and complete post-init tasks
-     */
-    void postInitProcess(CScheduler &scheduler);
 
     /* Wallets parameter interaction */
     static bool ParameterInteraction();
