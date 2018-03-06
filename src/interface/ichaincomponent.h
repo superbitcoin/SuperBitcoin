@@ -14,6 +14,14 @@ class CBlock;
 
 class CDataStream;
 
+enum FlushStateMode
+{
+    FLUSH_STATE_NONE,
+    FLUSH_STATE_IF_NEEDED,
+    FLUSH_STATE_PERIODIC,
+    FLUSH_STATE_ALWAYS
+};
+
 class IChainComponent : public appbase::TComponent<IChainComponent>
 {
 public:
@@ -111,6 +119,8 @@ public:
     virtual bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex) = 0;
 
     virtual void FlushStateToDisk() = 0;
+
+    virtual bool FlushStateToDisk(CValidationState &state, FlushStateMode mode, const CChainParams &chainparams) = 0;
 
     virtual bool ResetBlockFailureFlags(CBlockIndex *pindex) = 0;
 

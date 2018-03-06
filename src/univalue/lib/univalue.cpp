@@ -310,7 +310,7 @@ const std::vector<UniValue> &UniValue::getValues() const
     return values;
 }
 
-bool UniValue::get_bool() const
+bool UniValue:: get_bool() const
 {
     if (typ != VBOOL)
         throw std::runtime_error("JSON value is not a boolean as expected");

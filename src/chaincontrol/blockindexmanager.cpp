@@ -445,56 +445,6 @@ void CBlockIndexManager::PruneBlockIndexCandidates()
     assert(!setBlockIndexCandidates.empty());
 }
 
-/** Find the last common ancestor two blocks have.
- *  Both pa and pb must be non-nullptr. */
-const CBlockIndex *CBlockIndexManager::LastCommonAncestor(const CBlockIndex *pa, const CBlockIndex *pb)
-{
-    if (pa->nHeight > pb->nHeight)
-    {
-        pa = pa->GetAncestor(pb->nHeight);
-    } else if (pb->nHeight > pa->nHeight)
-    {
-        pb = pb->GetAncestor(pa->nHeight);
-    }
-
-    while (pa != pb && pa && pb)
-    {
-        pa = pa->pprev;
-        pb = pb->pprev;
-    }
-
-    // Eventually all chain branches meet at the genesis block.
-    assert(pa == pb);
-    return pa;
-}
-
-/** Find the last common ancestor two blocks have.
- *
- * @param hasha
- * @param hashb
- * @return
- */
-const CBlockIndex *CBlockIndexManager::LastCommonAncestor(const uint256 hashA, const uint256 hashB)
-{
-    const CBlockIndex *pIndexA;
-    const CBlockIndex *pIndexB;
-    const CBlockIndex *pIndexFork;
-
-    if (mBlockIndex.count(hashA) == 0 || mBlockIndex.count(hashB) == 0)
-    {
-        error("LastCommonAncestor(): reorganization to unknown block requested");
-        return nullptr;
-    }
-
-    pIndexA = mBlockIndex[hashA];
-    pIndexB = mBlockIndex[hashB];
-    pIndexFork = LastCommonAncestor(pIndexA, pIndexB);
-
-    assert(pIndexFork != nullptr);
-
-    return pIndexFork;
-}
-
 CBlockIndex *CBlockIndexManager::GetBlockIndex(const uint256 hash)
 {
     if (mBlockIndex.count(hash) == 0)
@@ -513,6 +463,26 @@ CChain &CBlockIndexManager::GetChain()
 
 bool CBlockIndexManager::Flush()
 {
+    std::vector<std::pair<int, const CBlockFileInfo *> > vFiles;
+    vFiles.reserve(setDirtyFileInfo.size());
+    for (std::set<int>::iterator it = setDirtyFileInfo.begin(); it != setDirtyFileInfo.end();)
+    {
+        vFiles.push_back(std::make_pair(*it, &vecBlockFileInfo[*it]));
+        setDirtyFileInfo.erase(it++);
+    }
+    std::vector<const CBlockIndex *> vBlocks;
+    vBlocks.reserve(setDirtyBlockIndex.size());
+    for (std::set<CBlockIndex *>::iterator it = setDirtyBlockIndex.begin(); it != setDirtyBlockIndex.end();)
+    {
+        vBlocks.push_back(*it);
+        setDirtyBlockIndex.erase(it++);
+    }
+
+    if (!pBlcokTreee->WriteBatchSync(vFiles, iLastBlockFile, vBlocks))
+    {
+        return false;
+    }
+
     return true;
 }
 
