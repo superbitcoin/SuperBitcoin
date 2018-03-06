@@ -6,35 +6,59 @@
  *
  * History:         Record the edit history
  ************************************/
-
-#include <walletcomponent.h>
-#include <utils/util.h>
+#include "walletcomponent.h"
+#include "utils/util.h"
+#include "rpcwallet.h"
+#include "server.h"
+#include "scheduler.h"
 #include "base.hpp"
+
+CWalletComponent::CWalletComponent()
+{
+
+}
+
+CWalletComponent::~CWalletComponent()
+{
+
+}
 
 bool CWalletComponent::ComponentInitialize()
 {
     RegisterWalletRPCCommands(tableRPC);
 
-    if (!CWallet::ParameterInteraction())
-    {
-        return false;
-    }
-    if (!CWallet::Verify())
-    {
-        return false;
-    }
-
-    return true;
+    return CWallet::ParameterInteraction() && CWallet::Verify();
 }
 
 bool CWalletComponent::ComponentStartup()
 {
-    if (!CWallet::InitLoadWallet())
+    if (gArgs.GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
     {
-        return false;
+        mlog_notice("Wallet disabled!");
+        return true;
     }
-    for (CWalletRef pwallet : vpWallets) {
-        pwallet->postInitProcess(app().GetScheduler());
+
+    vector<string> walletFiles = CWallet::GetWalletFiles();
+    for (const auto &walletFile : walletFiles)
+    {
+        auto pwallet = CWallet::CreateWalletFromFile(walletFile);
+        if (!pwallet)
+        {
+            return false;
+        }
+        vpWallets.push_back(pwallet);
+    }
+
+    for (CWalletRef pwallet : vpWallets)
+    {
+        // Add wallet transactions that aren't already in a block to mempool
+        // Do this here as mempool requires genesis block to be loaded
+        pwallet->ReacceptWalletTransactions();
+    }
+
+    if (!vpWallets.empty())
+    {
+        app().GetScheduler().scheduleEvery(std::bind(MaybeCompactWalletDB, vpWallets), 500);
     }
 
     return true;
@@ -53,8 +77,17 @@ bool CWalletComponent::ComponentShutdown()
     }
 
     vpWallets.clear();
-
     return true;
+}
+
+const char *CWalletComponent::whoru() const
+{
+    return "I am CWalletComponent\n";
+}
+
+int CWalletComponent::GetWalletCount() const
+{
+    return vpWallets.size();
 }
 
 log4cpp::Category &CWalletComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));

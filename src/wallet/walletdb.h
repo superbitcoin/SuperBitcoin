@@ -305,6 +305,6 @@ private:
 };
 
 //! Compacts BDB state so that wallet.dat is self-contained (if there are changes)
-void MaybeCompactWalletDB();
+void MaybeCompactWalletDB(std::vector<CWallet*> &vpWallets);
 
 #endif // BITCOIN_WALLET_WALLETDB_H

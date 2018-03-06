@@ -31,6 +31,7 @@
 #include "argmanager.h"
 #include "walletcomponent.h"
 #include "interface/ichaincomponent.h"
+#include "interface/iwalletcomponent.h"
 
 #include <stdint.h>
 
@@ -40,21 +41,44 @@ static const std::string WALLET_ENDPOINT_BASE = "/wallet/";
 
 CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest &request)
 {
-    std::vector<CWalletRef> &vecWallet = app().FindComponent<CWalletComponent>()->GetWalletRef();
+    GET_WALLET_INTERFACE(iwallet);
+    if (!iwallet)
+    {
+        return nullptr;
+    }
+
+    CWalletRef _1stWallet = nullptr;
+    CWalletRef requestedWallet = nullptr;
     if (request.URI.substr(0, WALLET_ENDPOINT_BASE.size()) == WALLET_ENDPOINT_BASE)
     {
         // wallet endpoint was used
-        std::string requestedWallet = urlDecode(request.URI.substr(WALLET_ENDPOINT_BASE.size()));
-        for (CWalletRef pwallet : vecWallet)
+        std::string requestedWalletName = urlDecode(request.URI.substr(WALLET_ENDPOINT_BASE.size()));
+        auto pwalletComponent = static_cast<CWalletComponent*>(iwallet);
+        pwalletComponent->ForEachWallet([&](CWalletRef pwallet)
         {
-            if (pwallet->GetName() == requestedWallet)
+            if (pwallet)
             {
-                return pwallet;
+                if (!_1stWallet)
+                {
+                    _1stWallet = pwallet;
+                }
+                if (pwallet->GetName() == requestedWalletName)
+                {
+                    requestedWallet = pwallet;
+                    return true;
+                }
             }
-        }
-        throw JSONRPCError(RPC_WALLET_NOT_FOUND, "Requested wallet does not exist or is not loaded");
+            return false;
+        });
+
+        if (requestedWallet)
+            return requestedWallet;
+        else
+            throw JSONRPCError(RPC_WALLET_NOT_FOUND, "Requested wallet does not exist or is not loaded");
     }
-    return vecWallet.size() == 1 || (request.fHelp && vecWallet.size() > 0) ? vecWallet[0] : nullptr;
+
+    int nWallets = iwallet->GetWalletCount();
+    return nWallets == 1 || (request.fHelp && nWallets > 0) ? _1stWallet : nullptr;
 }
 
 std::string HelpRequiringPassphrase(CWallet *const pwallet)
@@ -70,7 +94,8 @@ bool EnsureWalletIsAvailable(CWallet *const pwallet, bool avoidException)
         return true;
     if (avoidException)
         return false;
-    if (app().FindComponent<CWalletComponent>()->GetWalletRef().empty())
+    GET_WALLET_INTERFACE(iwallet);
+    if (!iwallet || iwallet->GetWalletCount() == 0)
     {
         // Note: It isn't currently possible to trigger this error because
         // wallet RPC methods aren't registered unless a wallet is loaded. But
@@ -2766,19 +2791,27 @@ UniValue listwallets(const JSONRPCRequest &request)
                 + HelpExampleRpc("listwallets", "")
         );
 
+    bool flag = true;
     UniValue obj(UniValue::VARR);
 
-    for (CWalletRef pwallet : app().FindComponent<CWalletComponent>()->GetWalletRef())
+    GET_WALLET_INTERFACE(iwallet);
+    auto pwalletComponent = static_cast<CWalletComponent*>(iwallet);
+    pwalletComponent->ForEachWallet([&](CWalletRef pwallet)
     {
-
         if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
         {
-            return NullUniValue;
+            flag = false;
+            return true;
         }
 
         LOCK(pwallet->cs_wallet);
-
         obj.push_back(pwallet->GetName());
+        return false;
+    });
+
+    if (!flag)
+    {
+        return NullUniValue;
     }
 
     return obj;
