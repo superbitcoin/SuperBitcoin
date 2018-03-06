@@ -10,10 +10,19 @@
 class ITxMempoolComponent : public appbase::TComponent<ITxMempoolComponent>
 {
 public:
-    virtual ~ITxMempoolComponent() {}
+    virtual ~ITxMempoolComponent()
+    {
+    }
 
-    enum { ID = CID_TX_MEMPOOL };
-    virtual int GetID() const override { return ID; }
+    enum
+    {
+        ID = CID_TX_MEMPOOL
+    };
+
+    virtual int GetID() const override
+    {
+        return ID;
+    }
 
     virtual bool ComponentInitialize() = 0;
 
@@ -21,19 +30,23 @@ public:
 
     virtual bool ComponentShutdown() = 0;
 
-    virtual bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                            bool *pfMissingInputs, bool fOverrideMempoolLimit = false, const CAmount nAbsurdFee = 0) = 0;
+    virtual size_t DynamicMemoryUsage() const = 0;
 
-    virtual void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool fAddToMempool) = 0 ;
+    virtual bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
+                                    bool *pfMissingInputs, bool fOverrideMempoolLimit = false,
+                                    const CAmount nAbsurdFee = 0) = 0;
+
+    virtual void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool fAddToMempool) = 0;
 
     virtual bool DoesTransactionExist(uint256 hash) = 0;
 
-    virtual bool NetRequestTxData(ExNode* xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) = 0;
+    virtual bool NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) = 0;
 
-    virtual bool NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash) = 0;
+    virtual bool NetReceiveTxData(ExNode *xnode, CDataStream &stream, uint256 &txHash) = 0;
 
-    virtual bool NetRequestTxInventory(ExNode* xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter* txFilter,
-                                       std::vector<uint256>& toSendTxHashes, std::vector<uint256>& haveSentTxHashes) = 0;
+    virtual bool NetRequestTxInventory(ExNode *xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter *txFilter,
+                                       std::vector<uint256> &toSendTxHashes,
+                                       std::vector<uint256> &haveSentTxHashes) = 0;
 
     //add other interface methods here ...
 

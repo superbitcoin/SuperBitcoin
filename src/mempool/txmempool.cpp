@@ -82,7 +82,8 @@ bool CTxMemPool::AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CVa
             ifChainObj->GetCoinsTip()->Uncache(hashTx);
     }
     // After we've (potentially) uncached entries, ensure our coins cache is still within its size limits
-    ifChainObj->FlushStateToDisk();
+    CValidationState stateDummy;
+    ifChainObj->FlushStateToDisk(stateDummy, FLUSH_STATE_PERIODIC, chainparams);
     return res;
 }
 

@@ -88,13 +88,6 @@ using namespace appbase;
 
 class CTxMemPool  : public ITxMempoolComponent
 {
-    enum FlushStateMode
-    {
-        FLUSH_STATE_NONE,
-        FLUSH_STATE_IF_NEEDED,
-        FLUSH_STATE_PERIODIC,
-        FLUSH_STATE_ALWAYS
-    };
 public:
 //    CTxMemPool();
     ~CTxMemPool();
@@ -394,7 +387,7 @@ public:
 
     std::vector<TxMempoolInfo> infoAll() const;
 
-    size_t DynamicMemoryUsage() const;
+    size_t DynamicMemoryUsage() const override;
 
     boost::signals2::signal<void(CTransactionRef)> NotifyEntryAdded;
     boost::signals2::signal<void(CTransactionRef, MemPoolRemovalReason)> NotifyEntryRemoved;

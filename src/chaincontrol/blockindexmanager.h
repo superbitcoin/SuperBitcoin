@@ -109,10 +109,6 @@ public:
 
     void PruneBlockIndexCandidates();
 
-    const CBlockIndex *LastCommonAncestor(const uint256 hasha, const uint256 hashb);
-
-    const CBlockIndex *LastCommonAncestor(const CBlockIndex *pa, const CBlockIndex *pb);
-
     CBlockIndex *GetBlockIndex(const uint256 hash);
 
     CChain &GetChain();

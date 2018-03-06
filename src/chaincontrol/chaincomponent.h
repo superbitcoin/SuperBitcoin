@@ -12,6 +12,10 @@
 #include "sbtccore/block/blockencodings.h"
 #include "sbtccore/transaction/script/scriptcheck.h"
 
+/** Time to wait (in seconds) between writing blocks/block index to disk. */
+static const unsigned int DATABASE_WRITE_INTERVAL = 60 * 60;
+/** Time to wait (in seconds) between flushing chainstate to disk. */
+static const unsigned int DATABASE_FLUSH_INTERVAL = 24 * 60 * 60;
 
 struct database
 {
@@ -138,14 +142,6 @@ public:
 // Protected by cs
 static ThresholdConditionCache warningcache[VERSIONBITS_NUM_BITS];
 
-enum FlushStateMode
-{
-    FLUSH_STATE_NONE,
-    FLUSH_STATE_IF_NEEDED,
-    FLUSH_STATE_PERIODIC,
-    FLUSH_STATE_ALWAYS
-};
-
 enum ResultChainControl
 {
     OK_CHAIN = 0,
@@ -241,6 +237,8 @@ public:
 
     void FlushStateToDisk() override;
 
+    bool FlushStateToDisk(CValidationState &state, FlushStateMode mode, const CChainParams &chainparams) override;
+
     bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex) override;
 
     bool ResetBlockFailureFlags(CBlockIndex *pindex) override;
@@ -273,14 +271,14 @@ private:
     database _db;
     bool bReIndex;
     bool bRequestShutdown;
-    CBlockIndexManager& cIndexManager = CBlockIndexManager::Instance();
-    CViewManager& cViewManager = CViewManager::Instance();
+    CBlockIndexManager &cIndexManager = CBlockIndexManager::Instance();
+    CViewManager &cViewManager = CViewManager::Instance();
 
     CCriticalSection cs_xnodeGuard;
     std::map<int64_t, std::set<int>> m_nodeCheckPointKnown;
     CCriticalSection cs;
 
-    size_t nCoinCacheUsage = 5000 * 300;
+    size_t iCoinCacheUsage = 5000 * 300;
 
     /** Block hash whose ancestors we will assume to have valid scripts without checking them. */
     uint256 hashAssumeValid;
@@ -320,8 +318,6 @@ private:
     bool ActivateBestChainStep(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindexMostWork,
                                const std::shared_ptr<const CBlock> &pblock, bool &fInvalidFound,
                                ConnectTrace &connectTrace);
-
-    bool FlushStateToDisk(CValidationState &state, FlushStateMode mode, const CChainParams &chainparams);
 
     bool CheckActiveChain(CValidationState &state, const CChainParams &chainparams);
 

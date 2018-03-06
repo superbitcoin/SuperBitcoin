@@ -7,6 +7,7 @@
 #include "utils/net/netmessagehelper.h"
 #include "sbtccore/block/validation.h"
 #include "sbtccore/transaction/script/sigcache.h"
+#include "sbtccore/transaction/policy.h"
 #include "utils/reverse_iterator.h"
 #include "interface/imempoolcomponent.h"
 #include "framework/warnings.h"
@@ -54,7 +55,6 @@ bool CChainCommonent::ComponentInitialize()
     std::cout << "initialize chain component \n";
 
     app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainCommonent::OnNodeDisconnected);
-
 
     const CChainParams &chainParams = app().GetChainParams();
     const CArgsManager &cArgs = app().GetArgsManager();
@@ -120,9 +120,11 @@ bool CChainCommonent::ComponentInitialize()
                                     (iTotalCache / 4) + (1 << 23)); // use 25%-50% of the remainder for disk cache
     iCoinDBCache = std::min(iCoinDBCache, nMaxCoinsDBCache << 20); // cap total coins db cache
     iTotalCache -= iCoinDBCache;
+    iCoinCacheUsage = iTotalCache; // the rest goes to in-memory cache
     mlog_error("Cache configuration:\n");
     mlog_error("* Using %.1fMiB for block index database\n", iBlockTreeDBCache * (1.0 / 1024 / 1024));
     mlog_error("* Using %.1fMiB for chain state database\n", iCoinDBCache * (1.0 / 1024 / 1024));
+    mlog_error("* Using %.1fMiB for in-memory UTXO set \n", iCoinCacheUsage * (1.0 / 1024 / 1024));
 
     int64_t iStart;
     bool bLoaded = false;
@@ -323,8 +325,8 @@ bool CChainCommonent::ComponentStartup()
     bRequestShutdown = false;
 
     ThreadImport();
-//    std::thread t(&CChainCommonent::ThreadImport, this);
-//    t.detach();
+    //    std::thread t(&CChainCommonent::ThreadImport, this);
+    //    t.detach();
     return true;
 }
 
@@ -463,7 +465,7 @@ bool CChainCommonent::ReplayBlocks()
         {
             return false;
         }
-        pIndexFork = cIndexManager.LastCommonAncestor(pIndexNew, pIndexOld);
+        pIndexFork = LastCommonAncestor(pIndexNew, pIndexOld);
         assert(pIndexFork != nullptr);
     }
 
@@ -524,26 +526,102 @@ bool CChainCommonent::NeedFullFlush(FlushStateMode mode)
 
 bool CChainCommonent::FlushStateToDisk(CValidationState &state, FlushStateMode mode, const CChainParams &chainparams)
 {
-    int iLastBlockFile = cIndexManager.GetLastBlockFile();
-    int iSize = cIndexManager.GetBlockFileInfo()[iLastBlockFile].nSize;
-    int iUndoSize = cIndexManager.GetBlockFileInfo()[iLastBlockFile].nUndoSize;
+    LOCK(cs_main);
 
-    // block file flush
-    FlushBlockFile(iLastBlockFile, iSize, iUndoSize);
+    const CArgsManager &cArgs = app().GetArgsManager();
 
-    // block index flush
-    if (!cIndexManager.Flush())
+    static int64_t iLastWrite = 0;
+    static int64_t iLastFlush = 0;
+    static int64_t iLastSetChain = 0;
+
+    int64_t iNow = GetTimeMicros();
+
+    // Avoid writing/flushing immediately after startup.
+    if (iLastWrite == 0)
     {
-        assert(0);
-        return false;
+        iLastWrite = iNow;
+    }
+    if (iLastFlush == 0)
+    {
+        iLastFlush = iNow;
+    }
+    if (iLastSetChain == 0)
+    {
+        iLastSetChain = iNow;
     }
 
-    // view flush
-    if (!cViewManager.Flush())
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    int64_t iMempoolUsage = ifTxMempoolObj->DynamicMemoryUsage();
+    int64_t iMempoolSizeMax = cArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
+    int64_t iCacheSize = cViewManager.GetCoinsTip()->DynamicMemoryUsage();
+    int64_t iTotalSpace = iCoinCacheUsage + std::max<int64_t>(iMempoolSizeMax - iMempoolUsage, 0);
+
+    // The cache is large and we're within 10% and 10 MiB of the limit, but we have time now (not in the middle of a block processing).
+    bool bCacheLarge = mode == FLUSH_STATE_PERIODIC && iCacheSize > std::max((9 * iTotalSpace) / 10, iTotalSpace -
+                                                                                                     MAX_BLOCK_COINSDB_USAGE *
+                                                                                                     1024 * 1024);
+    // The cache is over the limit, we have to write now.
+    bool bCacheCritical = mode == FLUSH_STATE_IF_NEEDED && iCacheSize > iTotalSpace;
+    // It's been a while since we wrote the block index to disk. Do this frequently, so we don't need to redownload after a crash.
+    bool bPeriodicWrite =
+            mode == FLUSH_STATE_PERIODIC && iNow > iLastWrite + (int64_t)DATABASE_WRITE_INTERVAL * 1000000;
+    // It's been very long since we flushed the cache. Do this infrequently, to optimize cache usage.
+    bool bPeriodicFlush =
+            mode == FLUSH_STATE_PERIODIC && iNow > iLastFlush + (int64_t)DATABASE_FLUSH_INTERVAL * 1000000;
+    // Combine all conditions that result in a full cache flush.
+    bool bDoFullFlush = (mode == FLUSH_STATE_ALWAYS) || bCacheLarge || bCacheCritical || bPeriodicFlush;
+
+    // Write blocks and block index to disk.
+    if (bDoFullFlush || bPeriodicWrite)
     {
-        return false;
+        // Depend on nMinDiskSpace to ensure we can write block index
+        if (!CheckDiskSpace(0))
+            return state.Error("out of disk space");
+
+        // block file flush
+        int iLastBlockFile = cIndexManager.GetLastBlockFile();
+        int iSize = cIndexManager.GetBlockFileInfo()[iLastBlockFile].nSize;
+        int iUndoSize = cIndexManager.GetBlockFileInfo()[iLastBlockFile].nUndoSize;
+        FlushBlockFile(iLastBlockFile, iSize, iUndoSize);
+
+        // block index flush
+        if (!cIndexManager.Flush())
+        {
+            return AbortNode(state, "Failed to write to block index database");
+        }
+
+        iLastWrite = iNow;
     }
 
+    // Flush best chain related state. This can only be done if the blocks / block index write was also done.
+    if (bDoFullFlush)
+    {
+        // Typical Coin structures on disk are around 48 bytes in size.
+        // Pushing a new one to the database can cause it to be written
+        // twice (once in the log, and once in the tables). This is already
+        // an overestimation, as most will delete an existing entry or
+        // overwrite one. Still, use a conservative safety factor of 2.
+        if (!CheckDiskSpace(48 * 2 * 2 * cViewManager.GetCoinsTip()->GetCacheSize()))
+        {
+            return state.Error("out of disk space");
+        }
+
+        // view flush
+        if (!cViewManager.Flush())
+        {
+            return AbortNode(state, "Failed to write to coin database");
+        }
+
+        iLastFlush = iNow;
+    }
+
+    if (bDoFullFlush || ((mode == FLUSH_STATE_ALWAYS || mode == FLUSH_STATE_PERIODIC) &&
+                         iNow > iLastSetChain + (int64_t)DATABASE_WRITE_INTERVAL * 1000000))
+    {
+        // Update best block in wallet (so we can detect restored wallets).
+        GetMainSignals().SetBestChain(cIndexManager.GetChain().GetLocator());
+        iLastSetChain = iNow;
+    }
     return true;
 }
 
@@ -1491,6 +1569,13 @@ bool CChainCommonent::ActivateBestChain(CValidationState &state, const CChainPar
     } while (pIndexNewTip != pIndexMostWork);
 
     cIndexManager.CheckBlockIndex(params.GetConsensus());
+
+    // Write changes periodically to disk, after relay.
+    if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC, params))
+    {
+        return false;
+    }
+
     return true;
 }
 
@@ -2186,7 +2271,7 @@ bool CChainCommonent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
         }
         // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
         if (nCheckLevel >= 3 && pindex == pindexState &&
-            (coins.DynamicMemoryUsage() + GetCoinsTip()->DynamicMemoryUsage()) <= nCoinCacheUsage)
+            (coins.DynamicMemoryUsage() + GetCoinsTip()->DynamicMemoryUsage()) <= iCoinCacheUsage)
         {
             assert(coins.GetBestBlock() == pindex->GetBlockHash());
             DisconnectResult res = cViewManager.DisconnectBlock(block, pindex, coins);
