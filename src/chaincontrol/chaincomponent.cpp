@@ -322,8 +322,9 @@ bool CChainCommonent::ComponentStartup()
     std::cout << "startup chain component \n";
     bRequestShutdown = false;
 
-    std::thread t(&CChainCommonent::ThreadImport, this);
-    t.detach();
+    ThreadImport();
+//    std::thread t(&CChainCommonent::ThreadImport, this);
+//    t.detach();
     return true;
 }
 
