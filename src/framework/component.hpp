@@ -51,7 +51,7 @@ namespace appbase
             {
                 return true;
             }
-            if (_state == started)
+            if (_state != registered)
             {
                 _state = stopped;
                 return static_cast<Impl *>(this)->ComponentShutdown();
