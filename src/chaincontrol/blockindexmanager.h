@@ -137,7 +137,9 @@ public:
 
     bool IsOnlyGenesisBlockIndex();
 
-    bool isReIndexing();
+    bool IsReIndexing();
+
+    bool IsTxIndex();
 
     bool NeedInitGenesisBlock(const CChainParams &chainparams);
 
@@ -146,6 +148,8 @@ public:
 
     bool FindBlockPos(CValidationState &state, CDiskBlockPos &pos, unsigned int nAddSize, unsigned int nHeight,
                       uint64_t nTime, bool fKnown = false);
+
+    bool FindUndoPos(CValidationState &state, int nFile, CDiskBlockPos &pos, unsigned int nAddSize);
 
     CBlockIndex *GetIndexBestHeader();
 

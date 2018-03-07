@@ -170,7 +170,7 @@ bool CChainCommonent::ComponentInitialize()
                 break;
             }
 
-            bReIndex |= cIndexManager.isReIndexing();
+            bReIndex |= cIndexManager.IsReIndexing();
             if (!bReIndex && cIndexManager.NeedInitGenesisBlock(chainParams))
             {
                 if (!LoadGenesisBlock(chainParams))
@@ -365,6 +365,11 @@ bool CChainCommonent::IsImporting() const
 bool CChainCommonent::IsReindexing() const
 {
     return bReIndex;
+}
+
+bool CChainCommonent::IsTxIndex() const
+{
+    return cIndexManager.IsTxIndex();
 }
 
 bool CChainCommonent::DoesBlockExist(uint256 hash)
@@ -1258,25 +1263,25 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     // Write undo information to disk
     if (pindex->GetUndoPos().IsNull() || !pindex->IsValid(BLOCK_VALID_SCRIPTS))
     {
-        // todo
-        //        if (pindex->GetUndoPos().IsNull())
-        //        {
-        //            CDiskBlockPos _pos;
-        //            if (!FindUndoPos(state, pindex->nFile, _pos, ::GetSerializeSize(blockundo, SER_DISK, CLIENT_VERSION) + 40))
-        //                return error("ConnectBlock(): FindUndoPos failed");
-        //            if (!UndoWriteToDisk(blockundo, _pos, pindex->pprev->GetBlockHash(), chainparams.MessageStart()))
-        //                return AbortNode(state, "Failed to write undo data");
-        //
-        //            // update nUndoPos in block index
-        //            pindex->nUndoPos = _pos.nPos;
-        //            pindex->nStatus |= BLOCK_HAVE_UNDO;
-        //        }
-        //
-        //        pindex->RaiseValidity(BLOCK_VALID_SCRIPTS);
-        //        setDirtyBlockIndex.insert(pindex);
+        if (pindex->GetUndoPos().IsNull())
+        {
+            CDiskBlockPos _pos;
+            if (!cIndexManager.FindUndoPos(state, pindex->nFile, _pos,
+                                           ::GetSerializeSize(blockundo, SER_DISK, CLIENT_VERSION) + 40))
+                return error("ConnectBlock(): FindUndoPos failed");
+            if (!UndoWriteToDisk(blockundo, _pos, pindex->pprev->GetBlockHash(), chainparams.MessageStart()))
+                return AbortNode(state, "Failed to write undo data");
+
+            // update nUndoPos in block index
+            pindex->nUndoPos = _pos.nPos;
+            pindex->nStatus |= BLOCK_HAVE_UNDO;
+        }
+
+        pindex->RaiseValidity(BLOCK_VALID_SCRIPTS);
+        cIndexManager.SetDirtyIndex(pindex);
     }
 
-    if (fTxIndex)
+    if (IsTxIndex())
         if (!GetBlockTreeDB()->WriteTxIndex(vPos))
             return AbortNode(state, "Failed to write transaction index");
 

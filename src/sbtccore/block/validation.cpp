@@ -167,7 +167,7 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
         return true;
     }
 
-    if (fTxIndex)
+    if (ifChainObj->IsTxIndex())
     {
         CDiskTxPos postx;
         if (ifChainObj->GetBlockTreeDB()->ReadTxIndex(hash, postx))

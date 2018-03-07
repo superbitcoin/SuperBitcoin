@@ -51,6 +51,8 @@ public:
 
     virtual bool IsReindexing() const = 0;
 
+    virtual bool IsTxIndex() const = 0;
+
     virtual bool IsInitialBlockDownload() = 0;
 
     virtual bool DoesBlockExist(uint256 hash) = 0;

@@ -52,7 +52,7 @@ void TxToJSON(const CTransaction &tx, const uint256 hashBlock, UniValue &entry)
     if (!hashBlock.IsNull())
     {
         GET_CHAIN_INTERFACE(ifChainObj);
-        CChain& chainActive = ifChainObj->GetActiveChain();
+        CChain &chainActive = ifChainObj->GetActiveChain();
 
         entry.push_back(Pair("blockhash", hashBlock.GetHex()));
         CBlockIndex *pindex = ifChainObj->GetBlockIndex(hashBlock);
@@ -167,12 +167,14 @@ UniValue getrawtransaction(const JSONRPCRequest &request)
         }
     }
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+
     CTransactionRef tx;
     uint256 hashBlock;
     if (!GetTransaction(hash, tx, Params().GetConsensus(), hashBlock, true))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY,
-                           std::string(fTxIndex ? "No such mempool or blockchain transaction"
-                                                : "No such mempool transaction. Use -txindex to enable blockchain transaction queries") +
+                           std::string(ifChainObj->IsTxIndex() ? "No such mempool or blockchain transaction"
+                                                               : "No such mempool transaction. Use -txindex to enable blockchain transaction queries") +
                            ". Use gettransaction for wallet transactions.");
 
     if (!fVerbose)
@@ -222,7 +224,7 @@ UniValue gettxoutproof(const JSONRPCRequest &request)
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
     CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
 
     CBlockIndex *pblockindex = nullptr;
@@ -303,7 +305,7 @@ UniValue verifytxoutproof(const JSONRPCRequest &request)
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     CBlockIndex *pIndex = ifChainObj->GetBlockIndex(merkleBlock.header.GetHash());
     if (!pIndex || !chainActive.Contains(pIndex))

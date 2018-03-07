@@ -178,6 +178,8 @@ public:
 
     bool IsReindexing() const override;
 
+    bool IsTxIndex() const override;
+
     bool IsInitialBlockDownload() override;
 
     bool DoesBlockExist(uint256 hash) override;
