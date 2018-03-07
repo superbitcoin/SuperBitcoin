@@ -20,7 +20,15 @@ CWalletComponent::CWalletComponent()
 
 CWalletComponent::~CWalletComponent()
 {
+    for (CWalletRef pWallet : vpWallets)
+    {
+        pWallet->Flush(true);
+    }
 
+    for (CWalletRef pWallet : vpWallets)
+    {
+        delete pWallet;
+    }
 }
 
 bool CWalletComponent::ComponentInitialize()
@@ -71,12 +79,12 @@ bool CWalletComponent::ComponentShutdown()
         pWallet->Flush(true);
     }
 
-    for (CWalletRef pWallet : vpWallets)
-    {
-        delete pWallet;
-    }
-
-    vpWallets.clear();
+//    for (CWalletRef pWallet : vpWallets)
+//    {
+//        delete pWallet;
+//    }
+//
+//    vpWallets.clear();
     return true;
 }
 

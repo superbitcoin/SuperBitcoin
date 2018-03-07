@@ -785,6 +785,20 @@ bool CApp::Startup()
 
 bool CApp::Shutdown()
 {
+    if (scheduler)
+    {
+        scheduler->stop();
+        if (schedulerThread.joinable())
+        {
+            schedulerThread.join();
+        }
+    }
+
+    if (eventManager)
+    {
+        eventManager->Uninit(true);
+    }
+
     bool fRet = ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false,
                                                                                               [](IComponent *component)
                                                                                               { return component->Shutdown(); });
@@ -798,21 +812,12 @@ bool CApp::Shutdown()
         mlog_warn("%s: Unable to remove pidfile: %s.", __func__, e.what());
     }
 #endif
-
-    if (scheduler)
-    {
-        scheduler->stop();
-        if (schedulerThread.joinable())
-        {
-            schedulerThread.join();
-        }
-    }
-
+    UnregisterAllValidationInterfaces();
+    GetMainSignals().UnregisterBackgroundSignalScheduler();
+    m_mapComponents.clear();
     globalVerifyHandle.reset();
     ECC_Stop();
     mlog_notice("%s: done.", __func__);
-
-    GetMainSignals().UnregisterBackgroundSignalScheduler();
     return fRet;
 }
 
