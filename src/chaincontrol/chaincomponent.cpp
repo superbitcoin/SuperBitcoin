@@ -732,7 +732,7 @@ void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
             DoWarning(strWarning);
         }
     }
-    mlog_error(
+    mlog_info(
             "new best=%s height=%d version=0x%08x log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo)", \
             chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nVersion, \
             log(chainActive.Tip()->nChainWork.getdouble()) / log(2.0), (unsigned long)chainActive.Tip()->nChainTx, \
@@ -741,7 +741,7 @@ void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
             cViewManager.GetCoinsTip()->DynamicMemoryUsage() * (1.0 / (1 << 20)), \
             cViewManager.GetCoinsTip()->GetCacheSize());
     if (!warningMessages.empty())
-        mlog_error(" warning='%s'", boost::algorithm::join(warningMessages, ", "));
+        mlog_info(" warning='%s'", boost::algorithm::join(warningMessages, ", "));
 
 }
 
@@ -1602,7 +1602,7 @@ bool CChainCommonent::InvalidateBlock(CValidationState &state, const CChainParam
     // nStatus" criteria for inclusion in setBlockIndexCandidates).
 
     bool pindex_was_in_chain = false;
-    CChain chainActive = cIndexManager.GetChain();
+    CChain &chainActive = cIndexManager.GetChain();
 
     CBlockIndex *invalid_walk_tip = chainActive.Tip();
 
@@ -1647,7 +1647,7 @@ bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainPara
     if (checkpoints.rbegin()->first < 1)
         return true;
 
-    CChain chainActive = cIndexManager.GetChain();
+    CChain &chainActive = cIndexManager.GetChain();
     if (chainActive.Height() >= checkpoints.rbegin()->first &&
         chainActive[checkpoints.rbegin()->first]->GetBlockHash() == checkpoints.rbegin()->second)
     {
@@ -1732,7 +1732,7 @@ bool CChainCommonent::RewindBlock(const CChainParams &params)
     // Note that during -reindex-chainstate we are called with an empty chainActive!
 
     int iHeight = 1;
-    CChain chainActive = cIndexManager.GetChain();
+    CChain &chainActive = cIndexManager.GetChain();
     while (iHeight <= chainActive.Height())
     {
         if (cIndexManager.NeedRewind(iHeight, params.GetConsensus()))
