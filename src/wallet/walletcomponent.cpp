@@ -76,7 +76,7 @@ bool CWalletComponent::ComponentShutdown()
 {
     for (CWalletRef pWallet : vpWallets)
     {
-        pWallet->Flush(true);
+        pWallet->Flush(false);
     }
 
 //    for (CWalletRef pWallet : vpWallets)

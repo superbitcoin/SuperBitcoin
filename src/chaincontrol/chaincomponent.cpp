@@ -334,6 +334,9 @@ bool CChainCommonent::ComponentShutdown()
 {
     std::cout << "shutdown chain component \n";
 
+    threadGroup.interrupt_all();
+    threadGroup.join_all();
+
     if (cViewManager.GetCoinsTip() != nullptr)
     {
         FlushStateToDisk();
@@ -341,8 +344,6 @@ bool CChainCommonent::ComponentShutdown()
 
     bRequestShutdown = true;
     cViewManager.RequestShutdown();
-    threadGroup.interrupt_all();
-    threadGroup.join_all();
     return true;
 }
 
