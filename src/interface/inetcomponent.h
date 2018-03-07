@@ -6,6 +6,7 @@
 #include "utils/uint256.h"
 #include "framework/component.hpp"
 
+class CBlockIndex;
 class INetComponent : public appbase::TComponent<INetComponent>
 {
 public:
@@ -27,6 +28,8 @@ public:
     virtual bool SendNetMessage(int64_t nodeID, const std::string& command, const std::vector<unsigned char>& data) = 0;
 
     virtual bool BroadcastTransaction(uint256 txHash) = 0;
+
+    virtual bool RelayCmpctBlock(const CBlockIndex *pindex, void* pcmpctblock, bool fWitnessEnabled) = 0;
 
     virtual bool AskForTransaction(int64_t nodeID, uint256 txHash, int flags = 0) = 0;
 

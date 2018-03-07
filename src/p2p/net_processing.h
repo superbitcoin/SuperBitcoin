@@ -46,6 +46,8 @@ public:
 
     void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock> &pblock) override;
 
+    bool RelayCmpctBlock(const CBlockIndex *pindex, void* pcmpctblock, bool fWitnessEnabled);
+
 
     // Interface for message handling inherit from NetEventsInterface
     bool ProcessMessages(CNode *pfrom, std::atomic<bool> &interrupt) override;

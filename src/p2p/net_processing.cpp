@@ -712,15 +712,6 @@ void Misbehaving(NodeId pnode, int howmuch)
                   state->nMisbehavior);
 }
 
-
-// All of the following cache a recent block, and are protected by cs_most_recent_block
-static CCriticalSection cs_most_recent_block;
-static std::shared_ptr<const CBlock> most_recent_block;
-static std::shared_ptr<const CBlockHeaderAndShortTxIDs> most_recent_compact_block;
-static uint256 most_recent_block_hash;
-static bool fWitnessesPresentInMostRecentCompactBlock;
-
-
 //class CNetProcessingCleanup
 //{
 //public:
@@ -775,7 +766,6 @@ bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
         }
         case MSG_BLOCK:
         case MSG_WITNESS_BLOCK:
-            GET_CHAIN_INTERFACE(ifChainObj);
             return ifChainObj->DoesBlockExist(inv.hash);
     }
     // Don't know what it is, just say we already got one
@@ -1115,7 +1105,18 @@ static void RelayAddress(const CAddress &addr, bool fReachable, CConnman *connma
 //    return true;
 //}
 
-
+static inline NodeExchangeInfo FromCNode(CNode *pfrom)
+{
+    NodeExchangeInfo xnode;
+    xnode.nodeID = pfrom->GetId();
+    xnode.sendVersion = pfrom->GetSendVersion();
+    xnode.nLocalServices = pfrom->GetLocalServices();
+    xnode.flags = 0;
+    xnode.retFlags = 0;
+    xnode.nMisbehavior = 0;
+    xnode.nUnconnectingHeaders = 0;
+    return xnode;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 
@@ -1265,31 +1266,21 @@ void PeerLogicValidation::BlockChecked(const CBlock &block, const CValidationSta
         mapBlockSource.erase(it);
 }
 
-void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock> &pblock)
+void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex * /*pindex*/, const std::shared_ptr<const CBlock> &/*pblock*/)
 {
-    std::shared_ptr<const CBlockHeaderAndShortTxIDs> pcmpctblock = std::make_shared<const CBlockHeaderAndShortTxIDs>(
-            *pblock, true);
-    const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
+
+}
+
+bool PeerLogicValidation::RelayCmpctBlock(const CBlockIndex *pindex, void* pcmpctblock, bool fWitnessEnabled)
+{
+    if (!pindex || !pcmpctblock || !connman)
+        return false;
 
     LOCK(cs_main);
 
-    static int nHighestFastAnnounce = 0;
-    if (pindex->nHeight <= nHighestFastAnnounce)
-        return;
-    nHighestFastAnnounce = pindex->nHeight;
-
-    bool fWitnessEnabled = IsWitnessEnabled(pindex->pprev, Params().GetConsensus());
-    uint256 hashBlock(pblock->GetHash());
-
-    {
-        LOCK(cs_most_recent_block);
-        most_recent_block_hash = hashBlock;
-        most_recent_block = pblock;
-        most_recent_compact_block = pcmpctblock;
-        fWitnessesPresentInMostRecentCompactBlock = fWitnessEnabled;
-    }
-
-    connman->ForEachNode([this, &pcmpctblock, pindex, &msgMaker, fWitnessEnabled, &hashBlock](CNode *pnode)
+    uint256 hashBlock(pindex->GetBlockHash());
+    const CNetMsgMaker msgMaker(PROTOCOL_VERSION);
+    connman->ForEachNode([this, pcmpctblock, pindex, &msgMaker, fWitnessEnabled, &hashBlock](CNode *pnode)
                          {
                              // TODO: Avoid the repeated-serialization here
                              if (pnode->nVersion < INVALID_CB_NO_BAN_VERSION || pnode->fDisconnect)
@@ -1305,12 +1296,12 @@ void PeerLogicValidation::NewPoWValidBlock(const CBlockIndex *pindex, const std:
                                  mlog.info("%s sending header-and-ids %s to peer=%d\n",
                                            "PeerLogicValidation::NewPoWValidBlock",
                                            hashBlock.ToString(), pnode->GetId());
-                                 connman->PushMessage(pnode, msgMaker.Make(NetMsgType::CMPCTBLOCK, *pcmpctblock));
+                                 connman->PushMessage(pnode, msgMaker.Make(NetMsgType::CMPCTBLOCK, *(CBlockHeaderAndShortTxIDs*)pcmpctblock));
                                  state.pindexBestHeaderSent = pindex;
                              }
                          });
+    return true;
 }
-
 
 bool PeerLogicValidation::ProcessMessages(CNode *pfrom, std::atomic<bool> &interruptMsgProc)
 {
@@ -1663,23 +1654,10 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
 
                     int nSendFlags = state.fWantsCmpctWitness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
 
-                    bool fGotBlockFromCache = false;
-                    {
-                        LOCK(cs_most_recent_block);
-                        if (most_recent_block_hash == pBestIndex->GetBlockHash())
-                        {
-                            if (state.fWantsCmpctWitness || !fWitnessesPresentInMostRecentCompactBlock)
-                                connman->PushMessage(pto, msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK,
-                                                                        *most_recent_compact_block));
-                            else
-                            {
-                                CBlockHeaderAndShortTxIDs cmpctblock(*most_recent_block, state.fWantsCmpctWitness);
-                                connman->PushMessage(pto,
-                                                     msgMaker.Make(nSendFlags, NetMsgType::CMPCTBLOCK, cmpctblock));
-                            }
-                            fGotBlockFromCache = true;
-                        }
-                    }
+
+                    NodeExchangeInfo xnode = FromCNode(pto);
+                    InitFlagsBit(xnode.flags, NF_WANTCMPCTWITNESS, state.fWantsCmpctWitness);
+                    bool fGotBlockFromCache = ifChainObj->NetRequestMosetRecentCmpctBlock(&xnode, pBestIndex->GetBlockHash());
                     if (!fGotBlockFromCache)
                     {
                         CBlock block;
@@ -2909,77 +2887,12 @@ bool PeerLogicValidation::ProcessFeeFilterMsg(CNode *pfrom, CDataStream &vRecv)
     return true;
 }
 
-static inline NodeExchangeInfo FromCNode(CNode *pfrom)
-{
-    NodeExchangeInfo xnode;
-    xnode.nodeID = pfrom->GetId();
-    xnode.sendVersion = pfrom->GetSendVersion();
-    xnode.nLocalServices = pfrom->GetLocalServices();
-    xnode.flags = 0;
-    xnode.retFlags = 0;
-    xnode.nMisbehavior = 0;
-    xnode.nUnconnectingHeaders = 0;
-    return xnode;
-}
-
 bool PeerLogicValidation::ProcessCheckPointMsg(CNode *pfrom, CDataStream &vRecv)
 {
     NodeExchangeInfo xnode = FromCNode(pfrom);
 
     GET_CHAIN_INTERFACE(ifChainObj);
     return ifChainObj->NetReceiveCheckPoint(&xnode, vRecv);
-
-    //    LogPrint(BCLog::NET, "enter checkpoint\n");
-    //    LogPrint(BCLog::BENCH, "receive check block list====\n");
-    //
-    //    std::vector<Checkpoints::CCheckData> vdata;
-    //    vRecv >> vdata;
-    //
-    //    Checkpoints::CCheckPointDB cCheckPointDB;
-    //    std::vector<Checkpoints::CCheckData> vIndex;
-    //
-    //    const CChainParams &chainparams = Params();
-    //    for (const auto &point : vdata)
-    //    {
-    //        if (point.CheckSignature(chainparams.GetCheckPointPKey()))
-    //        {
-    //            if (!cCheckPointDB.ExistCheckpoint(point.getHeight()))
-    //            {
-    //                cCheckPointDB.WriteCheckpoint(point.getHeight(), point);
-    //                /*
-    //                 * add the check point to chainparams
-    //                 */
-    //                chainparams.AddCheckPoint(point.getHeight(), point.getHash());
-    //                pfrom->m_checkPointKnown.insert(point.getHeight());
-    //                vIndex.push_back(point);
-    //            }
-    //        }
-    //        else
-    //        {
-    //            LogPrint(BCLog::NET, "check point signature check failed \n");
-    //            break;
-    //        }
-    //        LogPrint(BCLog::BENCH, "block height=%d, block hash=%s\n", point.getHeight(), point.getHash().ToString());
-    //    }
-    //
-    //    if (vIndex.size() > 0)
-    //    {
-    //        CValidationState state;
-    //        if (!CheckActiveChain(state, chainparams))
-    //        {
-    //            LogPrint(BCLog::NET, "CheckActiveChain error when receive  checkpoint\n");
-    //        }
-    //    }
-    //
-    //    //broadcast the check point if it is necessary
-    //    if (vIndex.size() == 1 && vIndex.size() == vdata.size())
-    //    {
-    //        connman->ForEachNode([&](CNode *pnode) {
-    //            connman->PushMessage(pnode, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::CHECKPOINT, vdata));
-    //        });
-    //    }
-    //
-    //    return true;
 }
 
 bool PeerLogicValidation::ProcessGetCheckPointMsg(CNode *pfrom, CDataStream &vRecv)
@@ -2991,25 +2904,6 @@ bool PeerLogicValidation::ProcessGetCheckPointMsg(CNode *pfrom, CDataStream &vRe
 
     GET_CHAIN_INTERFACE(ifChainObj);
     return ifChainObj->NetRequestCheckPoint(&xnode, nHeight);
-
-    //    std::vector<Checkpoints::CCheckData> vSendData;
-    //    std::vector<Checkpoints::CCheckData> vnHeight;
-    //    Checkpoints::GetCheckpointByHeight(nHeight, vnHeight);
-    //    for (const auto &point : vnHeight)
-    //    {
-    //        if (pfrom->m_checkPointKnown.count(point.getHeight()) == 0)
-    //        {
-    //            pfrom->m_checkPointKnown.insert(point.getHeight());
-    //            vSendData.push_back(point);
-    //        }
-    //    }
-    //
-    //    if (!vSendData.empty())
-    //    {
-    //        connman->PushMessage(pfrom, CNetMsgMaker(pfrom->GetSendVersion()).Make(NetMsgType::CHECKPOINT, vSendData));
-    //    }
-    //
-    //    return true;
 }
 
 bool PeerLogicValidation::ProcessMemPoolMsg(CNode *pfrom, CDataStream &vRecv)

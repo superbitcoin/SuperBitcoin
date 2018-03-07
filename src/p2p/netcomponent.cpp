@@ -380,6 +380,11 @@ bool CNetComponent::BroadcastTransaction(uint256 txHash)
     return false;
 }
 
+bool CNetComponent::RelayCmpctBlock(const CBlockIndex *pindex, void* pcmpctblock, bool fWitnessEnabled)
+{
+    return peerLogic && peerLogic->RelayCmpctBlock(pindex, pcmpctblock, fWitnessEnabled);
+}
+
 bool CNetComponent::AskForTransaction(int64_t nodeID, uint256 txHash, int flags)
 {
     if (netConnMgr)

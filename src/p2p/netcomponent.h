@@ -22,6 +22,8 @@ public:
 
     bool BroadcastTransaction(uint256 txHash) override;
 
+    bool RelayCmpctBlock(const CBlockIndex *pindex, void* pcmpctblock, bool fWitnessEnabled) override;
+
     bool AskForTransaction(int64_t nodeID, uint256 txHash, int flags) override;
 
     bool MisbehaveNode(int64_t nodeID, int num) override;

@@ -21,6 +21,39 @@
 #include "eventmanager/eventmanager.h"
 #include "utils.h"
 
+// All of the following cache a recent block, and are protected by cs_most_recent_block
+static CCriticalSection cs_most_recent_block;
+static std::shared_ptr<const CBlock> most_recent_block;
+static std::shared_ptr<const CBlockHeaderAndShortTxIDs> most_recent_compact_block;
+static uint256 most_recent_block_hash;
+static bool fWitnessesPresentInMostRecentCompactBlock;
+
+void CChainComponent::NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock> &pblock)
+{
+    GetMainSignals().NewPoWValidBlock(pindex, pblock);
+
+    std::shared_ptr<const CBlockHeaderAndShortTxIDs> pcmpctblock = std::make_shared<const CBlockHeaderAndShortTxIDs>(
+            *pblock, true);
+
+    static int nHighestFastAnnounce = 0;
+    if (pindex->nHeight <= nHighestFastAnnounce)
+        return;
+
+    nHighestFastAnnounce = pindex->nHeight;
+    bool fWitnessEnabled = IsWitnessEnabled(pindex->pprev, Params().GetConsensus());
+    uint256 hashBlock(pblock->GetHash());
+    {
+        LOCK(cs_most_recent_block);
+        most_recent_block_hash = hashBlock;
+        most_recent_block = pblock;
+        most_recent_compact_block = pcmpctblock;
+        fWitnessesPresentInMostRecentCompactBlock = fWitnessEnabled;
+    }
+
+    GET_NET_INTERFACE(ifNetObj);
+    ifNetObj->RelayCmpctBlock(pindex, (void*)pcmpctblock.get(), fWitnessEnabled);
+}
+
 void CChainComponent::OnNodeDisconnected(int64_t nodeID, bool /*bInBound*/, int /*disconnectReason*/)
 {
     LOCK(cs_xnodeGuard);
@@ -132,15 +165,15 @@ bool CChainComponent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
     // known chain now. This is super overkill, but we handle it better
     // for getheaders requests, and there are no known nodes which support
     // compact blocks but still use getblocks to request blocks.
-    //{
-    //    std::shared_ptr<const CBlock> a_recent_block;
-    //    {
-    //        LOCK(cs_most_recent_block);
-    //        a_recent_block = most_recent_block;
-    //    }
-    //    CValidationState dummy;
-    //    ActivateBestChain(dummy, Params(), a_recent_block);
-    //}
+    {
+        std::shared_ptr<const CBlock> a_recent_block;
+        {
+            LOCK(cs_most_recent_block);
+            a_recent_block = most_recent_block;
+        }
+        CValidationState dummy;
+        ActivateBestChain(dummy, Params(), a_recent_block);
+    }
 
     LOCK(cs_main);
 
@@ -530,15 +563,15 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
     bool isOK = false;
     const Consensus::Params &consensusParams = app().GetChainParams().GetConsensus();
 
-    //    std::shared_ptr<const CBlock> a_recent_block;
-    //    std::shared_ptr<const CBlockHeaderAndShortTxIDs> a_recent_compact_block;
-    //    bool fWitnessesPresentInARecentCompactBlock;
-    //    {
-    //        LOCK(cs_most_recent_block);
-    //        a_recent_block = most_recent_block;
-    //        a_recent_compact_block = most_recent_compact_block;
-    //        fWitnessesPresentInARecentCompactBlock = fWitnessesPresentInMostRecentCompactBlock;
-    //    }
+    std::shared_ptr<const CBlock> a_recent_block;
+    std::shared_ptr<const CBlockHeaderAndShortTxIDs> a_recent_compact_block;
+    bool fWitnessesPresentInARecentCompactBlock;
+    {
+        LOCK(cs_most_recent_block);
+        a_recent_block = most_recent_block;
+        a_recent_compact_block = most_recent_compact_block;
+        fWitnessesPresentInARecentCompactBlock = fWitnessesPresentInMostRecentCompactBlock;
+    }
 
     CBlockIndex *bi = cIndexManager.GetBlockIndex(blockHash);
     if (bi != nullptr)
@@ -712,19 +745,19 @@ bool CChainComponent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
     BlockTransactionsRequest req;
     stream >> req;
 
-    //    std::shared_ptr<const CBlock> recent_block;
-    //    {
-    //        LOCK(cs_most_recent_block);
-    //        if (most_recent_block_hash == req.blockhash)
-    //            recent_block = most_recent_block;
-    //        // Unlock cs_most_recent_block to avoid cs_main lock inversion
-    //    }
-    //
-    //    if (recent_block)
-    //    {
-    //        NetSendBlockTransactions(xnode, req, *recent_block);
-    //        return true;
-    //    }
+    std::shared_ptr<const CBlock> recent_block;
+    {
+        LOCK(cs_most_recent_block);
+        if (most_recent_block_hash == req.blockhash)
+            recent_block = most_recent_block;
+        // Unlock cs_most_recent_block to avoid cs_main lock inversion
+    }
+
+    if (recent_block)
+    {
+        NetSendBlockTransactions(xnode, req, *recent_block);
+        return true;
+    }
 
     CBlockIndex *bi = cIndexManager.GetBlockIndex(req.blockhash);
     if (!bi || !(bi->nStatus & BLOCK_HAVE_DATA))
@@ -753,6 +786,28 @@ bool CChainComponent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
     assert(ret);
 
     return NetSendBlockTransactions(xnode, req, block);
+}
+
+bool CChainComponent::NetRequestMosetRecentCmpctBlock(ExNode *xnode, uint256 bestBlockHint)
+{
+    assert(xnode != nullptr);
+
+    int nSendFlags = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
+
+    LOCK(cs_most_recent_block);
+    if (most_recent_block_hash == bestBlockHint)
+    {
+        if (IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ||
+            !fWitnessesPresentInMostRecentCompactBlock)
+            SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags, *most_recent_compact_block);
+        else
+        {
+            CBlockHeaderAndShortTxIDs cmpctblock(*most_recent_block, IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS));
+            SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags, cmpctblock);
+        }
+        return true;
+    }
+    return false;
 }
 
 bool
