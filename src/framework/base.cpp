@@ -8,6 +8,7 @@
 #include <log4cpp/RollingFileAppender.hh>
 #include <log4cpp/OstreamAppender.hh>
 #include "base.hpp"
+#include "noui.h"
 #include "config/chainparamsbase.h"
 #include "config/chainparams.h"
 #include "compat/sanity.h"
@@ -624,6 +625,8 @@ bool CApp::AppInitialize(int argc, char *argv[])
     {
         return false;
     }
+
+    noui_connect();
 
     InitializeLogging(gArgs.GetDataDir(false));
 
