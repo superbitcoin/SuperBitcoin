@@ -788,7 +788,7 @@ bool CChainComponent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
     return NetSendBlockTransactions(xnode, req, block);
 }
 
-bool CChainComponent::NetRequestMosetRecentCmpctBlock(ExNode *xnode, uint256 bestBlockHint)
+bool CChainComponent::NetRequestMostRecentCmpctBlock(ExNode *xnode, uint256 bestBlockHint)
 {
     assert(xnode != nullptr);
 

@@ -1657,7 +1657,7 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
 
                     NodeExchangeInfo xnode = FromCNode(pto);
                     InitFlagsBit(xnode.flags, NF_WANTCMPCTWITNESS, state.fWantsCmpctWitness);
-                    bool fGotBlockFromCache = ifChainObj->NetRequestMosetRecentCmpctBlock(&xnode, pBestIndex->GetBlockHash());
+                    bool fGotBlockFromCache = ifChainObj->NetRequestMostRecentCmpctBlock(&xnode, pBestIndex->GetBlockHash());
                     if (!fGotBlockFromCache)
                     {
                         CBlock block;

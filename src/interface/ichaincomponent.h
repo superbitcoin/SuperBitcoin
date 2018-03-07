@@ -104,7 +104,7 @@ public:
 
     virtual bool NetRequestBlockTxn(ExNode *xnode, CDataStream &stream) = 0;
 
-    virtual bool NetRequestMosetRecentCmpctBlock(ExNode *xnode, uint256 bestBlockHint) = 0;
+    virtual bool NetRequestMostRecentCmpctBlock(ExNode *xnode, uint256 bestBlockHint) = 0;
 
     virtual bool
     ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock) = 0;
