@@ -333,6 +333,12 @@ bool CChainCommonent::ComponentStartup()
 bool CChainCommonent::ComponentShutdown()
 {
     std::cout << "shutdown chain component \n";
+
+    if (cViewManager.GetCoinsTip() != nullptr)
+    {
+        FlushStateToDisk();
+    }
+
     bRequestShutdown = true;
     cViewManager.RequestShutdown();
     threadGroup.interrupt_all();
