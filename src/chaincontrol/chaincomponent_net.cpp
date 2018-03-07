@@ -21,13 +21,13 @@
 #include "eventmanager/eventmanager.h"
 #include "utils.h"
 
-void CChainCommonent::OnNodeDisconnected(int64_t nodeID, bool /*bInBound*/, int /*disconnectReason*/)
+void CChainComponent::OnNodeDisconnected(int64_t nodeID, bool /*bInBound*/, int /*disconnectReason*/)
 {
     LOCK(cs_xnodeGuard);
     m_nodeCheckPointKnown.erase(nodeID);
 }
 
-bool CChainCommonent::NetRequestCheckPoint(ExNode *xnode, int height)
+bool CChainComponent::NetRequestCheckPoint(ExNode *xnode, int height)
 {
     assert(xnode != nullptr);
 
@@ -55,7 +55,7 @@ bool CChainCommonent::NetRequestCheckPoint(ExNode *xnode, int height)
     return true;
 }
 
-bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
+bool CChainComponent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
 {
     assert(xnode != nullptr);
 
@@ -117,7 +117,7 @@ bool CChainCommonent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
     return true;
 }
 
-bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes)
+bool CChainComponent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::vector<uint256> &blockHashes)
 {
     assert(xnode != nullptr);
 
@@ -187,7 +187,7 @@ bool CChainCommonent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
     return true;
 }
 
-bool CChainCommonent::NetRequestHeaders(ExNode *xnode, CDataStream &stream)
+bool CChainComponent::NetRequestHeaders(ExNode *xnode, CDataStream &stream)
 {
     assert(xnode != nullptr);
 
@@ -236,7 +236,7 @@ bool CChainCommonent::NetRequestHeaders(ExNode *xnode, CDataStream &stream)
     return SendNetMessage(xnode->nodeID, NetMsgType::HEADERS, xnode->sendVersion, 0, vHeaders);
 }
 
-bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, CDataStream &stream)
+bool CChainComponent::NetReceiveHeaders(ExNode *xnode, CDataStream &stream)
 {
     assert(xnode != nullptr);
 
@@ -261,7 +261,7 @@ bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, CDataStream &stream)
     return NetReceiveHeaders(xnode, headers);
 }
 
-bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers)
+bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockHeader> &headers)
 {
     assert(xnode != nullptr);
 
@@ -520,7 +520,7 @@ bool CChainCommonent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     return true;
 }
 
-bool CChainCommonent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType)
+bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType)
 {
     assert(xnode != nullptr);
 
@@ -673,7 +673,7 @@ bool CChainCommonent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
     return isOK;
 }
 
-bool CChainCommonent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, uint256 &blockHash)
+bool CChainComponent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, uint256 &blockHash)
 {
     assert(xnode != nullptr);
 
@@ -705,7 +705,7 @@ bool CChainCommonent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, ui
     return true;
 }
 
-bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
+bool CChainComponent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
 {
     assert(xnode != nullptr);
 
@@ -756,12 +756,12 @@ bool CChainCommonent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
 }
 
 bool
-CChainCommonent::ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
+CChainComponent::ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
 {
     return ProcessNewBlock(app().GetChainParams(), pblock, fForceProcessing, fNewBlock);
 }
 
-bool CChainCommonent::NetSendBlockTransactions(ExNode *xnode, const BlockTransactionsRequest &req, const CBlock &block)
+bool CChainComponent::NetSendBlockTransactions(ExNode *xnode, const BlockTransactionsRequest &req, const CBlock &block)
 {
     BlockTransactions resp(req);
     for (size_t i = 0; i < req.indexes.size(); i++)

@@ -44,7 +44,7 @@
 int main(int argc, char **argv)
 {
     CApp &app = appbase::CApp::Instance();
-    app.RegisterComponent(new CChainCommonent);
+    app.RegisterComponent(new CChainComponent);
     app.RegisterComponent(new CTxMemPool);
     app.RegisterComponent(new CHttpRpcComponent);
     app.RegisterComponent(new CNetComponent);

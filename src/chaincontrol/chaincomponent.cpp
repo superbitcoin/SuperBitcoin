@@ -35,26 +35,26 @@ static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 static int64_t nTimeTotal = 0;
 
-void CChainCommonent::ThreadScriptCheck()
+void CChainComponent::ThreadScriptCheck()
 {
     RenameThread("bitcoin-scriptch");
     scriptCheckQueue.Thread();
 }
 
-CChainCommonent::CChainCommonent()
+CChainComponent::CChainComponent()
         : scriptCheckQueue(128)
 {
 }
 
-CChainCommonent::~CChainCommonent()
+CChainComponent::~CChainComponent()
 {
 }
 
-bool CChainCommonent::ComponentInitialize()
+bool CChainComponent::ComponentInitialize()
 {
     std::cout << "initialize chain component \n";
 
-    app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainCommonent::OnNodeDisconnected);
+    app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainComponent::OnNodeDisconnected);
 
     const CChainParams &chainParams = app().GetChainParams();
     const CArgsManager &cArgs = app().GetArgsManager();
@@ -77,7 +77,7 @@ bool CChainCommonent::ComponentInitialize()
     if (nScriptCheckThreads)
     {
         for (int i = 0; i < nScriptCheckThreads; i++)
-            threadGroup.create_thread(boost::bind(&CChainCommonent::ThreadScriptCheck, this));
+            threadGroup.create_thread(boost::bind(&CChainComponent::ThreadScriptCheck, this));
     }
 
     // block pruning; get the amount of disk space (in MiB) to allot for block & undo files
@@ -319,18 +319,18 @@ bool CChainCommonent::ComponentInitialize()
     return true;
 }
 
-bool CChainCommonent::ComponentStartup()
+bool CChainComponent::ComponentStartup()
 {
     std::cout << "startup chain component \n";
     bRequestShutdown = false;
 
     ThreadImport();
-    //    std::thread t(&CChainCommonent::ThreadImport, this);
+    //    std::thread t(&CChainComponent::ThreadImport, this);
     //    t.detach();
     return true;
 }
 
-bool CChainCommonent::ComponentShutdown()
+bool CChainComponent::ComponentShutdown()
 {
     std::cout << "shutdown chain component \n";
 
@@ -347,7 +347,7 @@ bool CChainCommonent::ComponentShutdown()
     return true;
 }
 
-void CChainCommonent::Init()
+void CChainComponent::Init()
 {
     versionbitscache.Clear();
     for (int b = 0; b < VERSIONBITS_NUM_BITS; b++)
@@ -356,34 +356,34 @@ void CChainCommonent::Init()
     }
 }
 
-bool CChainCommonent::IsImporting() const
+bool CChainComponent::IsImporting() const
 {
     //TODO:
     return fImporting;
 }
 
-bool CChainCommonent::IsReindexing() const
+bool CChainComponent::IsReindexing() const
 {
     return bReIndex;
 }
 
-bool CChainCommonent::IsTxIndex() const
+bool CChainComponent::IsTxIndex() const
 {
     return cIndexManager.IsTxIndex();
 }
 
-bool CChainCommonent::DoesBlockExist(uint256 hash)
+bool CChainComponent::DoesBlockExist(uint256 hash)
 {
     //TODO:
     return (cIndexManager.GetBlockIndex(hash) != nullptr);
 }
 
-CBlockIndex *CChainCommonent::GetBlockIndex(uint256 hash)
+CBlockIndex *CChainComponent::GetBlockIndex(uint256 hash)
 {
     return cIndexManager.GetBlockIndex(hash);
 }
 
-bool CChainCommonent::LoadGenesisBlock(const CChainParams &chainparams)
+bool CChainComponent::LoadGenesisBlock(const CChainParams &chainparams)
 {
     LOCK(cs);
 
@@ -409,12 +409,12 @@ bool CChainCommonent::LoadGenesisBlock(const CChainParams &chainparams)
     return true;
 }
 
-int CChainCommonent::GetActiveChainHeight()
+int CChainComponent::GetActiveChainHeight()
 {
     return cIndexManager.GetChain().Height();
 }
 
-bool CChainCommonent::GetActiveChainTipHash(uint256 &tipHash)
+bool CChainComponent::GetActiveChainTipHash(uint256 &tipHash)
 {
     if (CBlockIndex *tip = cIndexManager.GetChain().Tip())
     {
@@ -425,27 +425,27 @@ bool CChainCommonent::GetActiveChainTipHash(uint256 &tipHash)
     return false;
 }
 
-CChain &CChainCommonent::GetActiveChain()
+CChain &CChainComponent::GetActiveChain()
 {
     return cIndexManager.GetChain();
 }
 
-std::set<const CBlockIndex *, CompareBlocksByHeight> CChainCommonent::GetTips()
+std::set<const CBlockIndex *, CompareBlocksByHeight> CChainComponent::GetTips()
 {
     return cIndexManager.GetTips();
 }
 
-CBlockIndex *CChainCommonent::Tip()
+CBlockIndex *CChainComponent::Tip()
 {
     return cIndexManager.GetChain().Tip();
 }
 
-void CChainCommonent::SetTip(CBlockIndex *pIndexTip)
+void CChainComponent::SetTip(CBlockIndex *pIndexTip)
 {
     cIndexManager.GetChain().SetTip(pIndexTip);
 }
 
-bool CChainCommonent::ReplayBlocks()
+bool CChainComponent::ReplayBlocks()
 {
     const CChainParams &params = app().GetChainParams();
 
@@ -531,12 +531,12 @@ bool CChainCommonent::ReplayBlocks()
     return true;
 }
 
-bool CChainCommonent::NeedFullFlush(FlushStateMode mode)
+bool CChainComponent::NeedFullFlush(FlushStateMode mode)
 {
     return true;
 }
 
-bool CChainCommonent::FlushStateToDisk(CValidationState &state, FlushStateMode mode, const CChainParams &chainparams)
+bool CChainComponent::FlushStateToDisk(CValidationState &state, FlushStateMode mode, const CChainParams &chainparams)
 {
     LOCK(cs_main);
 
@@ -637,14 +637,14 @@ bool CChainCommonent::FlushStateToDisk(CValidationState &state, FlushStateMode m
     return true;
 }
 
-void CChainCommonent::FlushStateToDisk()
+void CChainComponent::FlushStateToDisk()
 {
     CValidationState state;
     const CChainParams &params = app().GetChainParams();
     FlushStateToDisk(state, FLUSH_STATE_ALWAYS, params);
 }
 
-bool CChainCommonent::IsInitialBlockDownload()
+bool CChainComponent::IsInitialBlockDownload()
 {
     // Once this function has returned false, it must remain false.
     static std::atomic<bool> latchToFalse{false};
@@ -668,7 +668,7 @@ bool CChainCommonent::IsInitialBlockDownload()
     return false;
 }
 
-void CChainCommonent::DoWarning(const std::string &strWarning)
+void CChainComponent::DoWarning(const std::string &strWarning)
 {
     static bool fWarned = false;
     SetMiscWarning(strWarning);
@@ -680,7 +680,7 @@ void CChainCommonent::DoWarning(const std::string &strWarning)
 }
 
 /** Update chainActive and related internal data structures. */
-void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chainParams)
+void CChainComponent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chainParams)
 {
     CChain &chainActive = cIndexManager.GetChain();
 
@@ -745,7 +745,7 @@ void CChainCommonent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
 
 }
 
-bool CChainCommonent::DisconnectTip(CValidationState &state, const CChainParams &chainparams,
+bool CChainComponent::DisconnectTip(CValidationState &state, const CChainParams &chainparams,
                                     DisconnectedBlockTransactions *disconnectpool)
 {
     CBlockIndex *pIndexDelete = Tip();
@@ -819,7 +819,7 @@ CheckBlockHeader(const CBlockHeader &block, CValidationState &state, const Conse
     return true;
 }
 
-bool CChainCommonent::CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams,
+bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, const Consensus::Params &consensusParams,
                                  bool fCheckPOW,
                                  bool fCheckMerkleRoot)
 {
@@ -898,13 +898,13 @@ static bool IsSBTCForkEnabled(const Consensus::Params &params, const CBlockIndex
     return pindex->nHeight >= params.SBTCForkHeight;
 }
 
-bool CChainCommonent::IsSBTCForkEnabled(const int height)
+bool CChainComponent::IsSBTCForkEnabled(const int height)
 {
     const CChainParams &chainParams = app().GetChainParams();
     return height >= chainParams.GetConsensus().SBTCForkHeight;
 }
 
-bool CChainCommonent::IsSBTCForkHeight(const Consensus::Params &params, const int &height)
+bool CChainComponent::IsSBTCForkHeight(const Consensus::Params &params, const int &height)
 {
     return params.SBTCForkHeight == height;
 }
@@ -954,7 +954,7 @@ static unsigned int GetBlockScriptFlags(const CBlockIndex *pindex, const Consens
     return flags;
 }
 
-bool CChainCommonent::ContextualCheckBlock(const CBlock &block, CValidationState &state,
+bool CChainComponent::ContextualCheckBlock(const CBlock &block, CValidationState &state,
                                            const Consensus::Params &consensusParams,
                                            const CBlockIndex *pindexPrev)
 {
@@ -1062,7 +1062,7 @@ bool CChainCommonent::ContextualCheckBlock(const CBlock &block, CValidationState
  *  can fail if those validity checks fail (among other reasons).
 */
 bool
-CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlockIndex *pindex, CCoinsViewCache &view,
+CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlockIndex *pindex, CCoinsViewCache &view,
                               const CChainParams &chainparams, bool fJustCheck)
 {
     AssertLockHeld(cs);
@@ -1304,7 +1304,7 @@ CChainCommonent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
  *
  * The block is added to connectTrace if connection succeeds.
  */
-bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pIndexNew,
+bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pIndexNew,
                                  const std::shared_ptr<const CBlock> &pblock, ConnectTrace &connectTrace,
                                  DisconnectedBlockTransactions &disconnectpool)
 {
@@ -1375,7 +1375,7 @@ bool CChainCommonent::ConnectTip(CValidationState &state, const CChainParams &ch
     return true;
 }
 
-void CChainCommonent::CheckForkWarningConditions()
+void CChainComponent::CheckForkWarningConditions()
 {
     AssertLockHeld(cs);
     // Before we get past initial download, we cannot reliably alert about forks
@@ -1386,7 +1386,7 @@ void CChainCommonent::CheckForkWarningConditions()
     cIndexManager.CheckForkWarningConditions();
 }
 
-bool CChainCommonent::ActivateBestChainStep(CValidationState &state, const CChainParams &chainparams,
+bool CChainComponent::ActivateBestChainStep(CValidationState &state, const CChainParams &chainparams,
                                             CBlockIndex *pIndexMostWork,
                                             const std::shared_ptr<const CBlock> &pblock, bool &bInvalidFound,
                                             ConnectTrace &connectTrace)
@@ -1497,7 +1497,7 @@ bool CChainCommonent::ActivateBestChainStep(CValidationState &state, const CChai
  * or an activated best chain. pblock is either nullptr or a pointer to a block
  * that is already loaded (to avoid loading it again from disk).
  */
-bool CChainCommonent::ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
+bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
                                         std::shared_ptr<const CBlock> pblock)
 {
     // Note that while we're often called here from ProcessNewBlock, this is
@@ -1591,7 +1591,7 @@ bool CChainCommonent::ActivateBestChain(CValidationState &state, const CChainPar
     return true;
 }
 
-bool CChainCommonent::InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex)
+bool CChainComponent::InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex)
 {
     AssertLockHeld(cs);
 
@@ -1636,7 +1636,7 @@ bool CChainCommonent::InvalidateBlock(CValidationState &state, const CChainParam
     return true;
 }
 
-bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainParams &chainparams)
+bool CChainComponent::CheckActiveChain(CValidationState &state, const CChainParams &chainparams)
 {
     LOCK(cs);
 
@@ -1725,7 +1725,7 @@ bool CChainCommonent::CheckActiveChain(CValidationState &state, const CChainPara
     return true;
 }
 
-bool CChainCommonent::RewindBlock(const CChainParams &params)
+bool CChainComponent::RewindBlock(const CChainParams &params)
 {
     LOCK(cs);
 
@@ -1783,7 +1783,7 @@ bool CChainCommonent::RewindBlock(const CChainParams &params)
     return true;
 }
 
-bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
+bool CChainComponent::LoadChainTip(const CChainParams &chainparams)
 {
     CChain &chainActive = cIndexManager.GetChain();
     uint256 bestHash = cViewManager.GetCoinsTip()->GetBestBlock();
@@ -1822,7 +1822,7 @@ bool CChainCommonent::LoadChainTip(const CChainParams &chainparams)
     return true;
 }
 
-int CChainCommonent::VerifyBlocks()
+int CChainComponent::VerifyBlocks()
 {
     uiInterface.InitMessage(_("Verifying blocks..."));
 
@@ -1845,7 +1845,7 @@ int CChainCommonent::VerifyBlocks()
     return OK_CHAIN;
 }
 
-void CChainCommonent::ThreadImport()
+void CChainComponent::ThreadImport()
 {
     RenameThread("bitcoin-loadblk");
 
@@ -1924,7 +1924,7 @@ void CChainCommonent::ThreadImport()
     }
 }
 
-void CChainCommonent::NotifyHeaderTip()
+void CChainComponent::NotifyHeaderTip()
 {
     bool fNotify = false;
     bool fInitialBlockDownload = false;
@@ -1948,7 +1948,7 @@ void CChainCommonent::NotifyHeaderTip()
     }
 }
 
-bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FILE *fileIn, CDiskBlockPos *dbp)
+bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FILE *fileIn, CDiskBlockPos *dbp)
 {
     // Map of disk positions for blocks with unknown parent (only used for reindex)
     static std::multimap<uint256, CDiskBlockPos> mapBlocksUnknownParent;
@@ -2088,7 +2088,7 @@ bool CChainCommonent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
 }
 
 /** Store block on disk. If dbp is non-nullptr, the file is known to already reside on disk */
-bool CChainCommonent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, CValidationState &state,
+bool CChainComponent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, CValidationState &state,
                                   const CChainParams &chainparams, CBlockIndex **ppindex, bool fRequested,
                                   const CDiskBlockPos *dbp, bool *fNewBlock)
 {
@@ -2188,9 +2188,9 @@ bool CChainCommonent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, C
     return true;
 }
 
-log4cpp::Category &CChainCommonent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
+log4cpp::Category &CChainComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
 
-bool CChainCommonent::LoadCheckPoint()
+bool CChainComponent::LoadCheckPoint()
 {
     Checkpoints::CCheckPointDB cCheckPointDB;
     std::map<int, Checkpoints::CCheckData> values;
@@ -2210,17 +2210,17 @@ bool CChainCommonent::LoadCheckPoint()
     return true;
 }
 
-CBlockIndex *CChainCommonent::FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator)
+CBlockIndex *CChainComponent::FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator)
 {
     return cIndexManager.FindForkInGlobalIndex(chain, locator);
 }
 
-log4cpp::Category &CChainCommonent::getLog()
+log4cpp::Category &CChainComponent::getLog()
 {
     return mlog;
 }
 
-bool CChainCommonent::VerifyDB(const CChainParams &chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth)
+bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth)
 {
     uiInterface.ShowProgress(_("Verifying blocks..."), 0);
 
@@ -2340,7 +2340,7 @@ bool CChainCommonent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
 }
 
 // Exposed wrapper for AcceptBlockHeader
-bool CChainCommonent::ProcessNewBlockHeaders(const std::vector<CBlockHeader> &headers, CValidationState &state,
+bool CChainComponent::ProcessNewBlockHeaders(const std::vector<CBlockHeader> &headers, CValidationState &state,
                                              const CChainParams &chainparams, const CBlockIndex **ppindex,
                                              CBlockHeader *first_invalid)
 {
@@ -2367,7 +2367,7 @@ bool CChainCommonent::ProcessNewBlockHeaders(const std::vector<CBlockHeader> &he
     return true;
 }
 
-bool CChainCommonent::ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock,
+bool CChainComponent::ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock,
                                       bool fForceProcessing,
                                       bool *fNewBlock)
 {
@@ -2404,7 +2404,7 @@ bool CChainCommonent::ProcessNewBlock(const CChainParams &chainparams, const std
     return true;
 }
 
-bool CChainCommonent::TestBlockValidity(CValidationState &state, const CChainParams &chainparams, const CBlock &block,
+bool CChainComponent::TestBlockValidity(CValidationState &state, const CChainParams &chainparams, const CBlock &block,
                                         CBlockIndex *pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot)
 {
     AssertLockHeld(cs_main);
@@ -2429,14 +2429,14 @@ bool CChainCommonent::TestBlockValidity(CValidationState &state, const CChainPar
 }
 
 /* This function is called from the RPC code for pruneblockchain */
-void CChainCommonent::PruneBlockFilesManual(int nManualPruneHeight)
+void CChainComponent::PruneBlockFilesManual(int nManualPruneHeight)
 {
     //    CValidationState state;
     //    const CChainParams &chainparams = Params();
     //    FlushStateToDisk(chainparams, state, FLUSH_STATE_NONE, nManualPruneHeight);
 }
 
-bool CChainCommonent::PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex)
+bool CChainComponent::PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex)
 {
     cIndexManager.PreciousBlock(state, params, pindex);
 
@@ -2444,12 +2444,12 @@ bool CChainCommonent::PreciousBlock(CValidationState &state, const CChainParams 
     return ifChainObj->ActivateBestChain(state, params, nullptr);
 }
 
-bool CChainCommonent::ResetBlockFailureFlags(CBlockIndex *pindex)
+bool CChainComponent::ResetBlockFailureFlags(CBlockIndex *pindex)
 {
     return cIndexManager.ResetBlockFailureFlags(pindex);
 }
 
-int CChainCommonent::GetSpendHeight(const CCoinsViewCache &inputs)
+int CChainComponent::GetSpendHeight(const CCoinsViewCache &inputs)
 {
     LOCK(cs);
     CBlockIndex *pindexPrev = cIndexManager.GetBlockIndex(inputs.GetBestBlock());
@@ -2460,12 +2460,12 @@ int CChainCommonent::GetSpendHeight(const CCoinsViewCache &inputs)
     return pindexPrev->nHeight + 1;
 }
 
-void CChainCommonent::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight)
+void CChainComponent::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, int nHeight)
 {
     cViewManager.UpdateCoins(tx, inputs, nHeight);
 }
 
-CAmount CChainCommonent::GetBlockSubsidy(int nHeight)
+CAmount CChainComponent::GetBlockSubsidy(int nHeight)
 {
     const CChainParams &chainParams = app().GetChainParams();
 
@@ -2484,22 +2484,22 @@ CAmount CChainCommonent::GetBlockSubsidy(int nHeight)
     return nSubsidy;
 }
 
-CCoinsView *CChainCommonent::GetCoinViewDB()
+CCoinsView *CChainComponent::GetCoinViewDB()
 {
     return cViewManager.GetCoinViewDB();
 }
 
-CCoinsViewCache *CChainCommonent::GetCoinsTip()
+CCoinsViewCache *CChainComponent::GetCoinsTip()
 {
     return cViewManager.GetCoinsTip();
 }
 
-CBlockTreeDB *CChainCommonent::GetBlockTreeDB()
+CBlockTreeDB *CChainComponent::GetBlockTreeDB()
 {
     return cIndexManager.GetBlockTreeDB();
 }
 
-CBlockIndex *CChainCommonent::GetIndexBestHeader()
+CBlockIndex *CChainComponent::GetIndexBestHeader()
 {
     CBlockIndex *bestHeader = cIndexManager.GetIndexBestHeader();
     if (bestHeader == nullptr)

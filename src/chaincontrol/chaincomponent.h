@@ -149,12 +149,12 @@ enum ResultChainControl
     ERR_VERIFY_DB,
 };
 
-class CChainCommonent : public IChainComponent
+class CChainComponent : public IChainComponent
 {
 public:
-    CChainCommonent();
+    CChainComponent();
 
-    ~CChainCommonent();
+    ~CChainComponent();
 
     bool ComponentInitialize() override;
 
@@ -169,7 +169,7 @@ public:
 
     const char *whoru() const override
     {
-        return "I am CChainCommonent\n";
+        return "I am CChainComponent\n";
     }
 
     void Init();

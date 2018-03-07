@@ -31,6 +31,7 @@ using namespace appbase;
 
 //CTxMemPool::CTxMemPool()
 //{
+//
 //}
 
 CTxMemPool::~CTxMemPool()
@@ -768,7 +769,7 @@ bool CTxMemPool::LoadMempool(void)
             CAmount amountdelta = nFeeDelta;
             if (amountdelta)
             {
-                mempool.PrioritiseTransaction(tx->GetHash(), amountdelta);
+                PrioritiseTransaction(tx->GetHash(), amountdelta);
             }
             CValidationState state;
             if (nTime + nExpiryTimeout > nNow)
