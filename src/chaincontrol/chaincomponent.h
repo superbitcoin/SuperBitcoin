@@ -228,6 +228,9 @@ public:
                                 const CChainParams &chainparams, const CBlockIndex **ppindex,
                                 CBlockHeader *first_invalid) override;
 
+    bool ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock,
+                         bool fForceProcessing, bool *fNewBlock) override;
+
     bool TestBlockValidity(CValidationState &state, const CChainParams &chainparams, const CBlock &block,
                            CBlockIndex *pindexPrev, bool fCheckPOW, bool fCheckMerkleRoot) override;
 
@@ -347,10 +350,6 @@ private:
     void NotifyHeaderTip();
 
     bool LoadCheckPoint();
-
-    bool
-    ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock, bool fForceProcessing,
-                    bool *fNewBlock);
 
     /** check whether is check point height */
     bool IsSBTCForkHeight(const Consensus::Params &params, const int &height);

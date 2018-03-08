@@ -88,6 +88,9 @@ public:
                                         const CChainParams &chainparams, const CBlockIndex **ppindex,
                                         CBlockHeader *first_invalid) = 0;
 
+    virtual bool ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock,
+                         bool fForceProcessing, bool *fNewBlock) = 0;
+
     virtual bool NetRequestCheckPoint(ExNode *xnode, int height) = 0;
 
     virtual bool NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream) = 0;

@@ -833,27 +833,6 @@ static void RelayAddress(const CAddress &addr, bool fReachable, CConnman *connma
     connman->ForEachNodeThen(std::move(sortfunc), std::move(pushfunc));
 }
 
-////TODO: to refactor
-//static void SendBlockTransactions(const CBlock &block, const BlockTransactionsRequest &req, CNode *pfrom, CConnman *connman)
-//{
-//    BlockTransactions resp(req);
-//    for (size_t i = 0; i < req.indexes.size(); i++)
-//    {
-//        if (req.indexes[i] >= block.vtx.size())
-//        {
-//            LOCK(cs_main);
-//            Misbehaving(pfrom->GetId(), 100);
-//            LogPrintf("Peer %d sent us a getblocktxn with out-of-bounds tx indices", pfrom->GetId());
-//            return;
-//        }
-//        resp.txn[i] = block.vtx[req.indexes[i]];
-//    }
-//    LOCK(cs_main);
-//    const CNetMsgMaker msgMaker(pfrom->GetSendVersion());
-//    int nSendFlags = State(pfrom->GetId())->fWantsCmpctWitness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
-//    connman->PushMessage(pfrom, msgMaker.Make(nSendFlags, NetMsgType::BLOCKTXN, resp));
-//}
-
 static bool ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::vector<CBlockHeader> &headers,
                            const CChainParams &chainparams, bool punish_duplicate_invalid)
 {
@@ -3150,52 +3129,54 @@ bool PeerLogicValidation::ProcessGetDataMsg(CNode *pfrom, CDataStream &vRecv, co
 
 bool PeerLogicValidation::ProcessBlockMsg(CNode *pfrom, CDataStream &vRecv)
 {
-    uint256 blockHash;
+//    uint256 blockHash;
+//
+//    NodeExchangeInfo xnode = FromCNode(pfrom);
+//
+//    GET_CHAIN_INTERFACE(ifChainObj);
+//    ifChainObj->NetReceiveBlockData(&xnode, vRecv, blockHash);
+//
+//    if (IsFlagsBitOn(xnode.retFlags, NF_NEWBLOCK))
+//    {
+//        pfrom->nLastBlockTime = GetTime();
+//    } else
+//    {
+//        LOCK(cs_main);
+//        mapBlockSource.erase(blockHash);
+//    }
+//
+//    return true;
 
-    NodeExchangeInfo xnode = FromCNode(pfrom);
+    std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
+    vRecv >> *pblock;
 
-    GET_CHAIN_INTERFACE(ifChainObj);
-    ifChainObj->NetReceiveBlockData(&xnode, vRecv, blockHash);
+    LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock->GetHash().ToString(), pfrom->GetId());
 
-    if (IsFlagsBitOn(xnode.retFlags, NF_NEWBLOCK))
-    {
-        pfrom->nLastBlockTime = GetTime();
-    } else
+    bool forceProcessing = false;
+    const uint256 hash(pblock->GetHash());
     {
         LOCK(cs_main);
-        mapBlockSource.erase(blockHash);
+        // Also always process if we requested the block explicitly, as we may
+        // need it even though it is not a candidate for a new best tip.
+        forceProcessing |= MarkBlockAsReceived(hash);
+        // mapBlockSource is only used for sending reject messages and DoS scores,
+        // so the race between here and cs_main in ProcessNewBlock is fine.
+        mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
     }
 
+    bool fNewBlock = false;
+    GET_CHAIN_INTERFACE(ifChainObj);
+    ifChainObj->ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock);
+    if (fNewBlock)
+    {
+        pfrom->nLastBlockTime = GetTime();
+    }
+    else
+    {
+        LOCK(cs_main);
+        mapBlockSource.erase(pblock->GetHash());
+    }
     return true;
-
-    //    std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
-    //    vRecv >> *pblock;
-    //
-    //    LogPrint(BCLog::NET, "received block %s peer=%d\n", pblock->GetHash().ToString(), pfrom->GetId());
-    //
-    //    bool forceProcessing = false;
-    //    const uint256 hash(pblock->GetHash());
-    //    {
-    //        LOCK(cs_main);
-    //        // Also always process if we requested the block explicitly, as we may
-    //        // need it even though it is not a candidate for a new best tip.
-    //        forceProcessing |= MarkBlockAsReceived(hash);
-    //        // mapBlockSource is only used for sending reject messages and DoS scores,
-    //        // so the race between here and cs_main in ProcessNewBlock is fine.
-    //        mapBlockSource.emplace(hash, std::make_pair(pfrom->GetId(), true));
-    //    }
-    //    bool fNewBlock = false;
-    //    ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock);
-    //    if (fNewBlock)
-    //    {
-    //        pfrom->nLastBlockTime = GetTime();
-    //    }
-    //    else
-    //    {
-    //        LOCK(cs_main);
-    //        mapBlockSource.erase(pblock->GetHash());
-    //    }
-    //    return true;
 }
 
 bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
@@ -3464,63 +3445,15 @@ PeerLogicValidation::ProcessGetBlockTxnMsg(CNode *pfrom, CDataStream &vRecv, con
     bool ret = ifChainObj->NetRequestBlockTxn(&xnode, vRecv);
 
     if (xnode.nMisbehavior > 0)
+    {
+        LOCK(cs_main);
         Misbehaving(xnode.nodeID, xnode.nMisbehavior);
+    }
 
     if (IsFlagsBitOn(xnode.retFlags, NF_DISCONNECT))
         pfrom->fDisconnect = true;
 
     return ret;
-
-    //    BlockTransactionsRequest req;
-    //    vRecv >> req;
-    //
-    //    std::shared_ptr<const CBlock> recent_block;
-    //    {
-    //        LOCK(cs_most_recent_block);
-    //        if (most_recent_block_hash == req.blockhash)
-    //            recent_block = most_recent_block;
-    //        // Unlock cs_most_recent_block to avoid cs_main lock inversion
-    //    }
-    //
-    //    if (recent_block)
-    //    {
-    //        SendBlockTransactions(*recent_block, req, pfrom, connman);
-    //        return true;
-    //    }
-    //
-    //    LOCK(cs_main);
-    //
-    //    BlockMap::iterator it = mapBlockIndex.find(req.blockhash);
-    //    if (it == mapBlockIndex.end() || !(it->second->nStatus & BLOCK_HAVE_DATA))
-    //    {
-    //        LogPrintf("Peer %d sent us a getblocktxn for a block we don't have", pfrom->GetId());
-    //        return true;
-    //    }
-    //
-    //    if (it->second->nHeight < chainActive.Height() - MAX_BLOCKTXN_DEPTH)
-    //    {
-    //        // If an older block is requested (should never happen in practice,
-    //        // but can happen in tests) send a block response instead of a
-    //        // blocktxn response. Sending a full block response instead of a
-    //        // small blocktxn response is preferable in the case where a peer
-    //        // might maliciously send lots of getblocktxn requests to trigger
-    //        // expensive disk reads, because it will require the peer to
-    //        // actually receive all the data read from disk over the network.
-    //        LogPrint(BCLog::NET, "Peer %d sent us a getblocktxn for a block > %i deep", pfrom->GetId(), MAX_BLOCKTXN_DEPTH);
-    //        CInv inv;
-    //        inv.type = State(pfrom->GetId())->fWantsCmpctWitness ? MSG_WITNESS_BLOCK : MSG_BLOCK;
-    //        inv.hash = req.blockhash;
-    //        pfrom->vRecvGetData.push_back(inv);
-    //        ProcessGetData(pfrom, interruptMsgProc);
-    //        return true;
-    //    }
-    //
-    //    CBlock block;
-    //    bool ret = ReadBlockFromDisk(block, it->second, Params().GetConsensus());
-    //    assert(ret);
-    //
-    //    SendBlockTransactions(block, req, pfrom, connman);
-    //    return true;
 }
 
 bool PeerLogicValidation::ProcessBlockTxnMsg(CNode *pfrom, CDataStream &vRecv)
@@ -3830,9 +3763,8 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
         // the peer if the header turns out to be for an invalid block.
         // Note that if a peer tries to build on an invalid chain, that
         // will be detected and the peer will be banned.
-        // return ProcessHeadersMessage(pfrom, connman, {cmpctblock.header}, chainparams, /*punish_duplicate_invalid=*/
-        //                             false);
-        // TODO: ProcessHeadersMessage.
+        return ProcessHeadersMessage(pfrom, connman, {cmpctblock.header}, chainparams, /*punish_duplicate_invalid=*/
+                                     false);
         return true;
     }
 
