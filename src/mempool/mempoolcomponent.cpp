@@ -15,8 +15,7 @@ log4cpp::Category &CMempoolComponent::mlog = log4cpp::Category::getInstance(EMTO
 
 CMempoolComponent::CMempoolComponent()
 {
-    InitFeeEstimate();
-    GetMemPool().SetEstimator(&feeEstimator);
+
 }
 
 CMempoolComponent::~CMempoolComponent()
@@ -26,6 +25,10 @@ CMempoolComponent::~CMempoolComponent()
 bool CMempoolComponent::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
+
+    InitFeeEstimate();
+    GetMemPool().SetEstimator(&feeEstimator);
+
     if (Args().GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
     {
         LoadMempool();
@@ -61,7 +64,7 @@ bool CMempoolComponent::LoadMempool(void)
 {
     const CChainParams &chainparams = Params();
     int64_t nExpiryTimeout = Args().GetArg<uint32_t>("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60;
-    FILE *filestr = fsbridge::fopen(GetDataDir() / "mempool.dat", "rb");
+    FILE *filestr = fsbridge::fopen(Args().GetDataDir() / "mempool.dat", "rb");
     CAutoFile file(filestr, SER_DISK, CLIENT_VERSION);
     if (file.IsNull())
     {
@@ -155,7 +158,7 @@ void CMempoolComponent::DumpMempool(void)
 
     try
     {
-        FILE *filestr = fsbridge::fopen(GetDataDir() / "mempool.dat.new", "wb");
+        FILE *filestr = fsbridge::fopen(Args().GetDataDir() / "mempool.dat.new", "wb");
         if (!filestr)
         {
             return;
@@ -178,7 +181,7 @@ void CMempoolComponent::DumpMempool(void)
         file << mapDeltas;
         FileCommit(file.Get());
         file.fclose();
-        RenameOver(GetDataDir() / "mempool.dat.new", GetDataDir() / "mempool.dat");
+        RenameOver(Args().GetDataDir() / "mempool.dat.new", Args().GetDataDir() / "mempool.dat");
         int64_t last = GetTimeMicros();
         mlog_notice("Dumped mempool: %gs to copy, %gs to dump\n", (mid - start) * 0.000001, (last - mid) * 0.000001);
     } catch (const std::exception &e)
@@ -201,7 +204,7 @@ void CMempoolComponent::AddToCompactExtraTransactions(const CTransactionRef &tx)
 
 void CMempoolComponent::InitFeeEstimate()
 {
-    fs::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
+    fs::path est_path = Args().GetDataDir() / FEE_ESTIMATES_FILENAME;
     CAutoFile est_filein(fsbridge::fopen(est_path, "rb"), SER_DISK, CLIENT_VERSION);
     // Allowed to fail as this file IS missing on first startup.
     if (!est_filein.IsNull())
@@ -214,7 +217,7 @@ void CMempoolComponent::FlushFeeEstimate()
     if (bFeeEstimatesInitialized)
     {
         ::feeEstimator.FlushUnconfirmed(mempool);
-        fs::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
+        fs::path est_path = Args().GetDataDir() / FEE_ESTIMATES_FILENAME;
         CAutoFile est_fileout(fsbridge::fopen(est_path, "wb"), SER_DISK, CLIENT_VERSION);
         if (!est_fileout.IsNull())
             ::feeEstimator.Write(est_fileout);

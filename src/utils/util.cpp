@@ -463,58 +463,19 @@ fs::path GetDefaultDataDir()
 #endif
 }
 
-static fs::path pathCached;
-static fs::path pathCachedNetSpecific;
-static CCriticalSection csPathCached;
-
 const fs::path &GetDataDir(bool fNetSpecific)
 {
-
-    LOCK(csPathCached);
-
-    fs::path &path = fNetSpecific ? pathCachedNetSpecific : pathCached;
-
-    // This can be called during exceptions by LogPrintf(), so we cache the
-    // value so we don't have to do memory allocations after that.
-    if (!path.empty())
-        return path;
-
-    if (gArgs.IsArgSet("-datadir"))
-    {
-        std::string tmp = gArgs.GetArg<std::string>("-datadir", "");
-        path = fs::system_complete(gArgs.GetArg<std::string>("-datadir", ""));
-        if (!fs::is_directory(path))
-        {
-            path = "";
-            return path;
-        }
-    } else
-    {
-        path = GetDefaultDataDir();
-    }
-    if (fNetSpecific)
-        path /= BaseParams().DataDir();
-
-    fs::create_directories(path);
-
-    return path;
+    return Args().GetDataDir(fNetSpecific);
 }
 
 void ClearDatadirCache()
 {
-    LOCK(csPathCached);
-
-    pathCached = fs::path();
-    pathCachedNetSpecific = fs::path();
+    Args().ClearDatadirCache();
 }
 
 fs::path GetConfigFile(const std::string &confPath)
 {
-    fs::path pathConfigFile(confPath);
-    if (!pathConfigFile.is_complete())
-        pathConfigFile = GetDataDir(false) / pathConfigFile;
-
-    return pathConfigFile;
+    return Args().GetConfigFile(confPath);
 }
 
 #ifndef WIN32

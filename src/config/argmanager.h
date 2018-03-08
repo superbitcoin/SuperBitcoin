@@ -127,7 +127,9 @@ public:
 
     bool PrintHelpMessage(std::function<void(void)> callback);
 
-    fs::path GetConfigFile(const std::string &confPath);
+    void ClearDatadirCache() const;
+
+    fs::path GetConfigFile(const std::string &confPath) const;
 
     void ReadConfigFile(const std::string &confPath);
 
@@ -197,6 +199,7 @@ private:
 };
 
 extern CArgsManager gArgs;
+
 const CArgsManager &Args();
 
 #endif // !defined(__SBTC_CARGSMANAGER_H__)

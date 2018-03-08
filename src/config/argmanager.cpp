@@ -159,12 +159,12 @@ void CArgsManager::InitPromOptions(bpo::options_description *app, bpo::variables
                     testnetChainParams->GetConsensus().defaultAssumeValid.GetHex()).c_str())
             ("conf", bpo::value<string>(), "Specify configuration file")
 
-//if mode == HMM_BITCOIND
-//#if HAVE_DECL_DAEMON
-//            ("daemon", bpo::value<string>(),
-//             "Run in the background as a daemon and accept commands(parameters: n, no, y, yes)") // dependence : mode, HAVE_DECL_DAEMON
-//#endif
-//#endif
+            //if mode == HMM_BITCOIND
+            //#if HAVE_DECL_DAEMON
+            //            ("daemon", bpo::value<string>(),
+            //             "Run in the background as a daemon and accept commands(parameters: n, no, y, yes)") // dependence : mode, HAVE_DECL_DAEMON
+            //#endif
+            //#endif
 
             ("datadir", bpo::value<string>(), "Specify data directory")
             ("dbbatchsize", bpo::value<int64_t>(), "Maximum database write batch size in bytes")  // -help-debug
@@ -597,7 +597,19 @@ bool CArgsManager::PrintHelpMessage(std::function<void(void)> callback)
     return false;
 }
 
-fs::path CArgsManager::GetConfigFile(const std::string &confPath)
+static fs::path pathCached;
+static fs::path pathCachedNetSpecific;
+static CCriticalSection csPathCached;
+
+void CArgsManager::ClearDatadirCache() const
+{
+    LOCK(csPathCached);
+
+    pathCached = fs::path();
+    pathCachedNetSpecific = fs::path();
+}
+
+fs::path CArgsManager::GetConfigFile(const std::string &confPath) const
 {
     fs::path pathConfigFile(confPath);
     if (!pathConfigFile.is_complete())
@@ -613,6 +625,9 @@ void CArgsManager::ReadConfigFile(const std::string &confPath)
     bpo::store(bpo::parse_config_file<char>(config_file_name.make_preferred().string().c_str(), *app_bpo, true),
                vm_tmp);
     merge_variable_map(vm, vm_tmp);
+
+    // If datadir is changed in .conf file:
+    ClearDatadirCache();
 }
 
 
@@ -628,10 +643,6 @@ const std::string CArgsManager::SubPrefix(std::string str) const
     }
     return tmp_strArg;
 }
-
-static fs::path pathCached;
-static fs::path pathCachedNetSpecific;
-static CCriticalSection csPathCached;
 
 const fs::path &CArgsManager::GetDataDir(bool fNetSpecific) const
 {
