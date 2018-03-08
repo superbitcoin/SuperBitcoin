@@ -233,6 +233,8 @@ UniValue getmininginfo(const JSONRPCRequest &request)
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
     CChain& chainActive = ifChainObj->GetActiveChain();
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
 
     UniValue obj(UniValue::VOBJ);
     obj.push_back(Pair("blocks", (int)chainActive.Height()));
@@ -279,6 +281,8 @@ UniValue prioritisetransaction(const JSONRPCRequest &request)
                            "Priority is no longer supported, dummy argument to prioritisetransaction must be 0.");
     }
 
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
     mempool.PrioritiseTransaction(hash, nAmount);
     return true;
 }
@@ -396,6 +400,8 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
     CChain& chainActive = ifChainObj->GetActiveChain();
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
 
     std::string strMode = "template";
     UniValue lpval = NullUniValue;

@@ -52,16 +52,16 @@ CWallet *GetWalletForJSONRPCRequest(const JSONRPCRequest &request)
         // wallet endpoint was used
         CWalletRef requestedWallet = nullptr;
         std::string requestedWalletName = urlDecode(request.URI.substr(WALLET_ENDPOINT_BASE.size()));
-        auto pwalletComponent = static_cast<CWalletComponent*>(iwallet);
+        auto pwalletComponent = static_cast<CWalletComponent *>(iwallet);
         pwalletComponent->ForEachWallet([&](CWalletRef pwallet)
-        {
-            if (pwallet && pwallet->GetName() == requestedWalletName)
-            {
-                requestedWallet = pwallet;
-                return true;
-            }
-            return false;
-        });
+                                        {
+                                            if (pwallet && pwallet->GetName() == requestedWalletName)
+                                            {
+                                                requestedWallet = pwallet;
+                                                return true;
+                                            }
+                                            return false;
+                                        });
 
         if (requestedWallet)
             return requestedWallet;
@@ -139,6 +139,8 @@ void WalletTxToJSON(const CWalletTx &wtx, UniValue &entry)
     std::string rbfStatus = "no";
     if (confirms <= 0)
     {
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         LOCK(mempool.cs);
         RBFTransactionState rbfState = IsRBFOptIn(wtx, mempool);
         if (rbfState == RBF_TRANSACTIONSTATE_UNKNOWN)
@@ -1317,7 +1319,7 @@ UniValue addwitnessaddress(const JSONRPCRequest &request)
     {
         LOCK(cs_main);
         GET_CHAIN_INTERFACE(ifChainObj);
-        CChain& chainActive = ifChainObj->GetActiveChain();
+        CChain &chainActive = ifChainObj->GetActiveChain();
         if (!IsWitnessEnabled(chainActive.Tip(), Params().GetConsensus()) &&
             !gArgs.GetArg<bool>("-walletprematurewitness", false))
         {
@@ -1971,7 +1973,7 @@ UniValue listsinceblock(const JSONRPCRequest &request)
     LOCK2(cs_main, pwallet->cs_wallet);
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     const CBlockIndex *pindex = nullptr;    // Block index of the specified block or the common ancestor, if the block provided was in a deactivated chain.
     const CBlockIndex *paltindex = nullptr; // Block index of the specified block, even if it's in a deactivated chain.
@@ -2787,19 +2789,19 @@ UniValue listwallets(const JSONRPCRequest &request)
     UniValue obj(UniValue::VARR);
 
     GET_WALLET_INTERFACE(iwallet);
-    auto pwalletComponent = static_cast<CWalletComponent*>(iwallet);
+    auto pwalletComponent = static_cast<CWalletComponent *>(iwallet);
     pwalletComponent->ForEachWallet([&](CWalletRef pwallet)
-    {
-        if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
-        {
-            flag = false;
-            return true;
-        }
+                                    {
+                                        if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
+                                        {
+                                            flag = false;
+                                            return true;
+                                        }
 
-        LOCK(pwallet->cs_wallet);
-        obj.push_back(pwallet->GetName());
-        return false;
-    });
+                                        LOCK(pwallet->cs_wallet);
+                                        obj.push_back(pwallet->GetName());
+                                        return false;
+                                    });
 
     if (!flag)
     {

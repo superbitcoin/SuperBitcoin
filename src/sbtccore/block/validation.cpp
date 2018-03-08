@@ -83,7 +83,6 @@ CFeeRate minRelayTxFee = CFeeRate(DEFAULT_MIN_RELAY_TX_FEE);
 CAmount maxTxFee = DEFAULT_TRANSACTION_MAXFEE;
 
 CBlockPolicyEstimator feeEstimator;
-CTxMemPool mempool(&feeEstimator);
 
 /** Constant stuff for coinbase transactions we create: */
 CScript COINBASE_FLAGS;
@@ -159,6 +158,8 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
     CChain &chainActive = ifChainObj->GetActiveChain();
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
 
     CTransactionRef ptx = mempool.get(hash);
     if (ptx)

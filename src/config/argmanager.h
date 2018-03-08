@@ -197,5 +197,6 @@ private:
 };
 
 extern CArgsManager gArgs;
+const CArgsManager &Args();
 
 #endif // !defined(__SBTC_CARGSMANAGER_H__)

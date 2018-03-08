@@ -35,6 +35,8 @@ static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 static int64_t nTimeTotal = 0;
 
+log4cpp::Category &CChainComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
+
 void CChainComponent::ThreadScriptCheck()
 {
     RenameThread("bitcoin-scriptch");
@@ -563,7 +565,7 @@ bool CChainComponent::FlushStateToDisk(CValidationState &state, FlushStateMode m
     }
 
     GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
-    int64_t iMempoolUsage = ifTxMempoolObj->DynamicMemoryUsage();
+    int64_t iMempoolUsage = ifTxMempoolObj->GetMemPool().DynamicMemoryUsage();
     int64_t iMempoolSizeMax = cArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
     int64_t iCacheSize = cViewManager.GetCoinsTip()->DynamicMemoryUsage();
     int64_t iTotalSpace = iCoinCacheUsage + std::max<int64_t>(iMempoolSizeMax - iMempoolUsage, 0);
@@ -686,9 +688,9 @@ void CChainComponent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
 
     chainActive.SetTip(pindexNew);
 
-    //    ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
+    GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
     // New best block
-    //    txmempool->AddTransactionsUpdated(1); todo
+    ifMemPoolObj->GetMemPool().AddTransactionsUpdated(1);
 
     cvBlockChange.notify_all();
 
@@ -790,11 +792,12 @@ bool CChainComponent::DisconnectTip(CValidationState &state, const CChainParams 
             disconnectpool->addTransaction(*it);
         }
 
+        GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
         while (disconnectpool->DynamicMemoryUsage() > MAX_DISCONNECTED_TX_POOL_SIZE * 1000)
         {
             // Drop the earliest entry, and remove its children from the mempool.
             auto it = disconnectpool->queuedTx.get<insertion_order>().begin();
-            //            txmempool->removeRecursive(**it, MemPoolRemovalReason::REORG);  todu
+            ifMemPoolObj->GetMemPool().removeRecursive(**it, MemPoolRemovalReason::REORG);
             disconnectpool->removeEntry(it);
         }
     }
@@ -1358,8 +1361,8 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
                nTimeChainState * 0.000001);
 
     // Remove conflicting transactions from the mempool.;
-    // ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
-    //    txmempool->removeForBlock(blockConnecting.vtx, pIndexNew->nHeight); todo
+    GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
+    ifMemPoolObj->GetMemPool().removeForBlock(blockConnecting.vtx, pIndexNew->nHeight);
     disconnectpool.removeForBlock(blockConnecting.vtx);
     // Update chainActive & related variables.
     UpdateTip(pIndexNew, chainparams);
@@ -1395,7 +1398,7 @@ bool CChainComponent::ActivateBestChainStep(CValidationState &state, const CChai
     const CBlockIndex *pIndexOldTip = Tip();
     const CBlockIndex *pIndexFork = cIndexManager.GetChain().FindFork(pIndexMostWork);
 
-    ITxMempoolComponent *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<ITxMempoolComponent>();
+    GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
 
     // Disconnect active blocks which are no longer in the best chain.
     bool bBlocksDisconnected = false;
@@ -1406,7 +1409,7 @@ bool CChainComponent::ActivateBestChainStep(CValidationState &state, const CChai
         {
             // This is likely a fatal error, but keep the mempool consistent,
             // just in case. Only remove from the mempool in this case.
-            txmempool->UpdateMempoolForReorg(disconnectPool, false);
+            ifMemPoolObj->GetMemPool().UpdateMempoolForReorg(disconnectPool, false);
             return false;
         }
         bBlocksDisconnected = true;
@@ -1455,7 +1458,7 @@ bool CChainComponent::ActivateBestChainStep(CValidationState &state, const CChai
                     // Make the mempool consistent with the current tip, just in case
                     // any observers try to use it before shutdown.
                     //                    UpdateMempoolForReorg(disconnectpool, false);
-                    txmempool->UpdateMempoolForReorg(disconnectPool, false);
+                    ifMemPoolObj->GetMemPool().UpdateMempoolForReorg(disconnectPool, false);
                     return false;
                 }
             } else
@@ -1475,10 +1478,10 @@ bool CChainComponent::ActivateBestChainStep(CValidationState &state, const CChai
     {
         // If any blocks were disconnected, disconnectpool may be non empty.  Add
         // any disconnected transactions back to the mempool.
-        txmempool->UpdateMempoolForReorg(disconnectPool, true);
+        ifMemPoolObj->GetMemPool().UpdateMempoolForReorg(disconnectPool, true);
     }
 
-    mempool.check(cViewManager.GetCoinsTip());
+    ifMemPoolObj->GetMemPool().Check(cViewManager.GetCoinsTip());
 
     // Callbacks/notifications for a new best chain.
     if (bInvalidFound)
@@ -1510,6 +1513,7 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
 
     const CChainParams &params = app().GetChainParams();
     const CArgsManager &appArgs = app().GetArgsManager();
+    GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
 
     int iStopAtHeight = appArgs.GetArg<int>("-stopatheight", DEFAULT_STOPATHEIGHT);
     do
@@ -1522,7 +1526,7 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
         bool bInitialDownload;
         {
             LOCK(cs);
-            ConnectTrace connectTrace(mempool);
+            ConnectTrace connectTrace(ifMemPoolObj->GetMemPool());
 
             CBlockIndex *pIndexOldTip = Tip();
             if (pIndexMostWork == nullptr)
@@ -1606,7 +1610,7 @@ bool CChainComponent::InvalidateBlock(CValidationState &state, const CChainParam
 
     CBlockIndex *invalid_walk_tip = chainActive.Tip();
 
-    CTxMemPool *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<CTxMemPool>();
+    GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
 
     DisconnectedBlockTransactions disconnectpool;
     while (chainActive.Contains(pindex))
@@ -1618,7 +1622,7 @@ bool CChainComponent::InvalidateBlock(CValidationState &state, const CChainParam
         {
             // It's probably hopeless to try to make the mempool consistent
             // here if DisconnectTip failed, but we can try.
-            txmempool->UpdateMempoolForReorg(disconnectpool, false);
+            ifMemPoolObj->GetMemPool().UpdateMempoolForReorg(disconnectpool, false);
             return false;
         }
     }
@@ -1629,7 +1633,7 @@ bool CChainComponent::InvalidateBlock(CValidationState &state, const CChainParam
 
     // DisconnectTip will add transactions to disconnectpool; try to add these
     // back to the mempool.
-    txmempool->UpdateMempoolForReorg(disconnectpool, true);
+    ifMemPoolObj->GetMemPool().UpdateMempoolForReorg(disconnectpool, true);
 
     cIndexManager.InvalidChainFound(pindex);
     uiInterface.NotifyBlockTip(IsInitialBlockDownload(), pindex->pprev);
@@ -2187,8 +2191,6 @@ bool CChainComponent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, C
 
     return true;
 }
-
-log4cpp::Category &CChainComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
 
 bool CChainComponent::LoadCheckPoint()
 {

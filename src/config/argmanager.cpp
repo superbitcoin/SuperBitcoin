@@ -46,6 +46,11 @@ CArgsManager::~CArgsManager()
 
 }
 
+const CArgsManager &Args()
+{
+    return appbase::CApp::Instance().GetArgsManager();
+}
+
 void CArgsManager::ForceSetArg(const std::string &strArg, const std::string &strValue)
 {
     LOCK(cs_args);

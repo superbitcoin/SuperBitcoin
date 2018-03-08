@@ -26,6 +26,7 @@
 #include "utils/utilmoneystr.h"
 #include "framework/validationinterface.h"
 #include "interface/ichaincomponent.h"
+#include "interface/imempoolcomponent.h"
 #include "chaincontrol/utils.h"
 
 #include <algorithm>
@@ -161,7 +162,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     pblocktemplate->vTxFees.push_back(-1); // updated at end
     pblocktemplate->vTxSigOpsCost.push_back(-1); // updated at end
 
-    LOCK2(cs_main, mempool.cs);
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    LOCK2(cs_main, ifTxMempoolObj->GetMemPool().cs);
     GET_CHAIN_INTERFACE(ifChainObj);
     CBlockIndex *pindexPrev = ifChainObj->GetActiveChain().Tip();
     nHeight = pindexPrev->nHeight + 1;
@@ -298,6 +300,9 @@ void BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
 int BlockAssembler::UpdatePackagesForAdded(const CTxMemPool::setEntries &alreadyAdded,
                                            indexed_modified_transaction_set &mapModifiedTx)
 {
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
+
     int nDescendantsUpdated = 0;
     for (const CTxMemPool::txiter it : alreadyAdded)
     {
@@ -338,7 +343,8 @@ int BlockAssembler::UpdatePackagesForAdded(const CTxMemPool::setEntries &already
 bool BlockAssembler::SkipMapTxEntry(CTxMemPool::txiter it, indexed_modified_transaction_set &mapModifiedTx,
                                     CTxMemPool::setEntries &failedTx)
 {
-    assert (it != mempool.mapTx.end());
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    assert (it != ifTxMempoolObj->GetMemPool().mapTx.end());
     return mapModifiedTx.count(it) || inBlock.count(it) || failedTx.count(it);
 }
 
@@ -376,6 +382,8 @@ void BlockAssembler::addPackageTxs(int &nPackagesSelected, int &nDescendantsUpda
     // and modifying them for their already included ancestors
     UpdatePackagesForAdded(inBlock, mapModifiedTx);
 
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
     CTxMemPool::indexed_transaction_set::index<ancestor_score>::type::iterator mi = mempool.mapTx.get<ancestor_score>().begin();
     CTxMemPool::txiter iter;
 

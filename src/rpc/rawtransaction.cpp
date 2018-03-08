@@ -644,6 +644,9 @@ UniValue combinerawtransaction(const JSONRPCRequest &request)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Missing transactions");
     }
 
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
+
     // mergedTx will end up with all the signatures; it
     // starts as a clone of the rawtx:
     CMutableTransaction mergedTx(txVariants[0]);
@@ -781,6 +784,8 @@ UniValue signrawtransaction(const JSONRPCRequest &request)
     CCoinsView viewDummy;
     CCoinsViewCache view(&viewDummy);
     {
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         LOCK(mempool.cs);
         GET_CHAIN_INTERFACE(ifChainObj);
         CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
@@ -1025,11 +1030,9 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         const Coin &existingCoin = view.AccessCoin(COutPoint(hashTx, o));
         fHaveChain = !existingCoin.IsSpent();
     }
-    CTxMemPool *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<CTxMemPool>();
-    if (!txmempool)
-    {
-        throw std::runtime_error("find txmempool component fail!\n");
-    }
+
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
     bool fHaveMempool = mempool.exists(hashTx);
     if (!fHaveMempool && !fHaveChain)
     {
@@ -1037,7 +1040,7 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         CValidationState state;
         bool fMissingInputs;
         bool fLimitFree = true;
-        if (!txmempool->AcceptToMemoryPool(state, std::move(tx), fLimitFree, &fMissingInputs, false,
+        if (!mempool.AcceptToMemoryPool(state, std::move(tx), fLimitFree, &fMissingInputs, false,
                                            nMaxRawTxFee))
         {
             if (state.IsInvalid())

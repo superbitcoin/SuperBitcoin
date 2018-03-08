@@ -86,24 +86,10 @@ const uint64_t MEMPOOL_DUMP_VERSION = 1;
 
 using namespace appbase;
 
-class CTxMemPool  : public ITxMempoolComponent
+class CTxMemPool
 {
-public:
-//    CTxMemPool();
-    ~CTxMemPool();
-
-    bool ComponentInitialize() override;
-    bool ComponentStartup() override;
-    bool ComponentShutdown() override;
-
-    bool DoesTransactionExist(uint256 hash) override;
-    bool NetRequestTxData(ExNode* xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) override;
-    bool NetReceiveTxData(ExNode* xnode, CDataStream& stream, uint256& txHash) override;
-
-    bool NetRequestTxInventory(ExNode* xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter* txFilter,
-                               std::vector<uint256>& toSendTxHashes, std::vector<uint256>& haveSentTxHashes) override;
-
 private:
+    static log4cpp::Category &mlog;
     uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.
     unsigned int nTransactionsUpdated; //!< Used by getblocktemplate to trigger CreateNewBlock() invocation
     CBlockPolicyEstimator *minerPolicyEstimator;
@@ -176,35 +162,31 @@ public:
     /** (try to) add transaction to memory pool
         * plTxnReplaced will be appended to with all transactions replaced from mempool **/
     virtual bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                                    bool *pfMissingInputs, bool fOverrideMempoolLimit = false, const CAmount nAbsurdFee = 0);
+                                    bool *pfMissingInputs, bool fOverrideMempoolLimit = false,
+                                    const CAmount nAbsurdFee = 0);
 
     /** (try to) add transaction to memory pool with a specified acceptance time **/
     bool AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CValidationState &state,
-                                                const CTransactionRef &tx, bool fLimitFree,
-                                                bool *pfMissingInputs, int64_t nAcceptTime,
-                                                std::list<CTransactionRef> *plTxnReplaced,
-                                                bool fOverrideMempoolLimit, const CAmount nAbsurdFee);
+                                    const CTransactionRef &tx, bool fLimitFree,
+                                    bool *pfMissingInputs, int64_t nAcceptTime,
+                                    std::list<CTransactionRef> *plTxnReplaced,
+                                    bool fOverrideMempoolLimit, const CAmount nAbsurdFee);
 
     bool AcceptToMemoryPoolWorker(const CChainParams &chainparams, CValidationState &state,
-                                              const CTransactionRef &ptx, bool fLimitFree,
-                                              bool *pfMissingInputs, int64_t nAcceptTime,
-                                              std::list<CTransactionRef> *plTxnReplaced,
-                                              bool fOverrideMempoolLimit, const CAmount &nAbsurdFee,
-                                              std::vector<COutPoint> &coins_to_uncache);
+                                  const CTransactionRef &ptx, bool fLimitFree,
+                                  bool *pfMissingInputs, int64_t nAcceptTime,
+                                  std::list<CTransactionRef> *plTxnReplaced,
+                                  bool fOverrideMempoolLimit, const CAmount &nAbsurdFee,
+                                  std::vector<COutPoint> &coins_to_uncache);
 
     void LimitMempoolSize(size_t limit, unsigned long age);
+
     // Used to avoid mempool polluting consensus critical paths if CCoinsViewMempool
     // were somehow broken and returning the wrong scriptPubKeys
     bool CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationState &state, const CCoinsViewCache &view,
                                         unsigned int flags, bool cacheSigStore, PrecomputedTransactionData &txdata);
 
     void UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnectpool, bool fAddToMempool);
-
-    /** Dump the mempool to disk. */
-    void DumpMempool();
-
-    /** Load the mempool from disk. */
-    bool LoadMempool();
 
     /**
      * Check if transaction will be BIP 68 final in the next block to be created.
@@ -217,7 +199,8 @@ public:
      *
      * See consensus/consensus.h for flag definitions.
      */
-    bool CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
+    bool
+    CheckSequenceLocks(const CTransaction &tx, int flags, LockPoints *lp = nullptr, bool useExistingLockPoints = false);
 
 private:
     typedef std::map<txiter, setEntries, CompareIteratorByHash> cacheMap;
@@ -251,7 +234,7 @@ public:
      * all inputs are in the mapNextTx array). If sanity-checking is turned off,
      * check does nothing.
      */
-    void check(const CCoinsViewCache *pcoins) const;
+    void Check(const CCoinsViewCache *pcoins) const;
 
     void setSanityCheck(double dFrequency = 1.0)
     {
@@ -387,7 +370,7 @@ public:
 
     std::vector<TxMempoolInfo> infoAll() const;
 
-    size_t DynamicMemoryUsage() const override;
+    size_t DynamicMemoryUsage() const;
 
     boost::signals2::signal<void(CTransactionRef)> NotifyEntryAdded;
     boost::signals2::signal<void(CTransactionRef, MemPoolRemovalReason)> NotifyEntryRemoved;
@@ -433,11 +416,6 @@ private:
      *  removal.
      */
     void removeUnchecked(txiter entry, MemPoolRemovalReason reason = MemPoolRemovalReason::UNKNOWN);
-
-public:
-    static log4cpp::Category & mlog;
-
-    log4cpp::Category &getLog() override;
 };
 
 /** 
@@ -461,7 +439,6 @@ public:
 
     bool GetCoin(const COutPoint &outpoint, Coin &coin) const override;
 };
-
 
 
 #endif // BITCOIN_TXMEMPOOL_H

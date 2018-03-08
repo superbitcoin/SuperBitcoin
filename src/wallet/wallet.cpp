@@ -1817,6 +1817,8 @@ void CWallet::ReacceptWalletTransactions()
     {
         CWalletTx &wtx = *(item.second);
 
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         LOCK(mempool.cs);
         CValidationState state;
         wtx.AcceptToMemoryPool(maxTxFee, state);
@@ -2021,6 +2023,8 @@ CAmount CWalletTx::GetChange() const
 
 bool CWalletTx::InMempool() const
 {
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
     LOCK(mempool.cs);
     return mempool.exists(GetHash());
 }
@@ -2553,6 +2557,8 @@ bool CWallet::SelectCoinsMinConf(const CAmount &nTargetValue, const int nConfMin
         if (output.nDepth < (pcoin->IsFromMe(ISMINE_ALL) ? nConfMine : nConfTheirs))
             continue;
 
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         if (!mempool.TransactionWithinChainLimit(pcoin->GetHash(), nMaxAncestors))
             continue;
 
@@ -3050,7 +3056,9 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                     vin.scriptWitness.SetNull();
                 }
 
-                nFeeNeeded = GetMinimumFee(nBytes, coin_control, ::mempool, ::feeEstimator, &feeCalc);
+                GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+                CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
+                nFeeNeeded = GetMinimumFee(nBytes, coin_control, mempool, ::feeEstimator, &feeCalc);
 
                 // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
                 // because we must be at the maximum allowed fee.
@@ -3076,7 +3084,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                     {
                         unsigned int tx_size_with_change = nBytes + change_prototype_size +
                                                            2; // Add 2 as a buffer in case increasing # of outputs changes compact size
-                        CAmount fee_needed_with_change = GetMinimumFee(tx_size_with_change, coin_control, ::mempool,
+                        CAmount fee_needed_with_change = GetMinimumFee(tx_size_with_change, coin_control, mempool,
                                                                        ::feeEstimator, nullptr);
                         CAmount minimum_value_for_change = GetDustThreshold(change_prototype_txout, discard_rate);
                         if (nFeeRet >= fee_needed_with_change + minimum_value_for_change)
@@ -3183,6 +3191,8 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
         size_t nLimitDescendantSize =
                 gArgs.GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000;
         std::string errString;
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         if (!mempool.CalculateMemPoolAncestors(entry, setAncestors, nLimitAncestors, nLimitAncestorSize,
                                                nLimitDescendants, nLimitDescendantSize, errString))
         {
@@ -4719,6 +4729,7 @@ int CMerkleTx::GetBlocksToMaturity() const
 
 bool CMerkleTx::AcceptToMemoryPool(const CAmount &nAbsurdFee, CValidationState &state)
 {
-    CTxMemPool *txmempool = (CTxMemPool *)appbase::CApp::Instance().FindComponent<CTxMemPool>();
-    return txmempool->AcceptToMemoryPool(state, tx, true, nullptr, false, nAbsurdFee);//modified by sky
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    return ifTxMempoolObj->GetMemPool().AcceptToMemoryPool(state, tx, true, nullptr, false,
+                                                           nAbsurdFee);//modified by sky
 }

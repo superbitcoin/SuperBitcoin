@@ -76,7 +76,7 @@ int VersionBitsTipStateSinceHeight(const Consensus::Params &params, Consensus::D
 double GetDifficulty(const CBlockIndex *blockindex)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     if (blockindex == nullptr)
     {
@@ -108,7 +108,7 @@ double GetDifficulty(const CBlockIndex *blockindex)
 UniValue blockheaderToJSON(const CBlockIndex *blockindex)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
@@ -139,7 +139,7 @@ UniValue blockheaderToJSON(const CBlockIndex *blockindex)
 UniValue blockToJSON(const CBlock &block, const CBlockIndex *blockindex, bool txDetails)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("hash", blockindex->GetBlockHash().GetHex()));
@@ -198,7 +198,7 @@ UniValue getblockcount(const JSONRPCRequest &request)
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     return chainActive.Height();
 }
@@ -218,7 +218,7 @@ UniValue getbestblockhash(const JSONRPCRequest &request)
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     return chainActive.Tip()->GetBlockHash().GetHex();
 }
@@ -401,6 +401,9 @@ std::string EntryDescriptionString()
 
 void entryToJSON(UniValue &info, const CTxMemPoolEntry &e)
 {
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
+
     AssertLockHeld(mempool.cs);
 
     info.push_back(Pair("size", (int)e.GetTxSize()));
@@ -433,6 +436,8 @@ void entryToJSON(UniValue &info, const CTxMemPoolEntry &e)
 
 UniValue mempoolToJSON(bool fVerbose)
 {
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
     if (fVerbose)
     {
         LOCK(mempool.cs);
@@ -523,6 +528,9 @@ UniValue getmempoolancestors(const JSONRPCRequest &request)
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
+
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -593,6 +601,9 @@ UniValue getmempooldescendants(const JSONRPCRequest &request)
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
+
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -651,6 +662,9 @@ UniValue getmempoolentry(const JSONRPCRequest &request)
 
     uint256 hash = ParseHashV(request.params[0], "parameter 1");
 
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
+
     LOCK(mempool.cs);
 
     CTxMemPool::txiter it = mempool.mapTx.find(hash);
@@ -682,7 +696,7 @@ UniValue getblockhash(const JSONRPCRequest &request)
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     int nHeight = request.params[0].get_int();
     if (nHeight < 0 || nHeight > chainActive.Height())
@@ -946,7 +960,7 @@ UniValue pruneblockchain(const JSONRPCRequest &request)
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     int heightParam = request.params[0].get_int();
     if (heightParam < 0)
@@ -1078,6 +1092,8 @@ UniValue gettxout(const JSONRPCRequest &request)
 
     GET_CHAIN_INTERFACE(ifChainObj);
     CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
 
     Coin coin;
     if (fMempool)
@@ -1283,7 +1299,7 @@ UniValue getblockchaininfo(const JSONRPCRequest &request)
 
     LOCK(cs_main);
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
     CBlockIndex *pindexBestHeader = ifChainObj->GetIndexBestHeader();
 
     UniValue obj(UniValue::VOBJ);
@@ -1363,7 +1379,7 @@ UniValue getchaintips(const JSONRPCRequest &request)
      *  - add chainActive.Tip()
      */
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     std::set<const CBlockIndex *, CompareBlocksByHeight> setTips(ifChainObj->GetTips());
 
@@ -1414,6 +1430,9 @@ UniValue getchaintips(const JSONRPCRequest &request)
 
 UniValue mempoolInfoToJSON()
 {
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
+
     UniValue ret(UniValue::VOBJ);
     ret.push_back(Pair("size", (int64_t)mempool.size()));
     ret.push_back(Pair("bytes", (int64_t)mempool.GetTotalTxSize()));
@@ -1613,7 +1632,7 @@ UniValue getchaintxstats(const JSONRPCRequest &request)
     {
         LOCK(cs_main);
         GET_CHAIN_INTERFACE(ifChainObj);
-        CChain& chainActive = ifChainObj->GetActiveChain();
+        CChain &chainActive = ifChainObj->GetActiveChain();
 
         if (havehash)
         {

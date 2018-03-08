@@ -5,6 +5,7 @@
 #include "orphantx.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/transaction/policy.h"
+#include "mempoolcomponent.h"
 
 void AddToCompactExtraTransactions(const CTransactionRef &tx);
 
@@ -51,7 +52,8 @@ bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
         m_mapOrphanTransactionsByPrev[txin.prevout].insert(ret.first);
     }
 
-    AddToCompactExtraTransactions(tx);
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    ifTxMempoolObj->AddToCompactExtraTransactions(tx);
 
     mlog_notice("stored orphan tx %s (mapsz %u outsz %u)", hash.ToString(),
              m_mapOrphanTransactions.size(), m_mapOrphanTransactionsByPrev.size());

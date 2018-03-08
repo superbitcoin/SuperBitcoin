@@ -160,7 +160,7 @@ static bool rest_headers(HTTPRequest *req,
     {
         LOCK(cs_main);
         GET_CHAIN_INTERFACE(ifChainObj);
-        CChain& chainActive = ifChainObj->GetActiveChain();
+        CChain &chainActive = ifChainObj->GetActiveChain();
 
         const CBlockIndex *pindex = ifChainObj->GetBlockIndex(hash);
         while (pindex != nullptr && chainActive.Contains(pindex))
@@ -555,6 +555,8 @@ static bool rest_getutxos(HTTPRequest *req, const std::string &strURIPart)
     std::vector<bool> hits;
     bitmap.resize((vOutPoints.size() + 7) / 8);
     {
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         LOCK2(cs_main, mempool.cs);
 
         CCoinsView viewDummy;
@@ -586,7 +588,7 @@ static bool rest_getutxos(HTTPRequest *req, const std::string &strURIPart)
     }
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain& chainActive = ifChainObj->GetActiveChain();
+    CChain &chainActive = ifChainObj->GetActiveChain();
 
     switch (rf)
     {

@@ -401,6 +401,8 @@ namespace
         // Make sure it's not listed somewhere already.
         MarkBlockAsReceived(hash);
 
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         std::list<QueuedBlock>::iterator it = state->vBlocksInFlight.insert(state->vBlocksInFlight.end(),
                                                                             {hash, pindex, pindex != nullptr,
                                                                              std::unique_ptr<PartiallyDownloadedBlock>(
@@ -750,6 +752,7 @@ bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
     GET_CHAIN_INTERFACE(ifChainObj);
     CChain &chainActive = ifChainObj->GetActiveChain();
     CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
 
     switch (inv.type)
     {
@@ -768,7 +771,7 @@ bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
             }
 
             return recentRejects->contains(inv.hash) ||
-                   mempool.exists(inv.hash) ||
+                   ifTxMempoolObj->GetMemPool().exists(inv.hash) ||
                    COrphanTx::Instance().Exists(inv.hash) ||
                    pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 0)) || // Best effort: only try output 0 and 1
                    pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 1));
@@ -2070,6 +2073,8 @@ bool PeerLogicValidation::SendMessages(CNode *pto, std::atomic<bool> &interruptM
         if (pto->nVersion >= FEEFILTER_VERSION && appArgs.GetArg<bool>("-feefilter", DEFAULT_FEEFILTER) &&
             !(pto->fWhitelisted && appArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY)))
         {
+            GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+            CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
             CAmount currentFilter = mempool.GetMinFee(
                     appArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFeePerK();
             int64_t timeNow = GetTimeMicros();
@@ -3919,6 +3924,9 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
             // after segwit activates.
             return true;
         }
+
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
 
         // We want to be a bit conservative just to be extra careful about DoS
         // possibilities in compact block processing...

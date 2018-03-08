@@ -158,7 +158,6 @@ static const int DEFAULT_STOPATHEIGHT = 0;
 extern CScript COINBASE_FLAGS;
 extern CCriticalSection cs_main;
 extern CBlockPolicyEstimator feeEstimator;
-extern CTxMemPool mempool;
 //extern BlockMap mapBlockIndex;
 extern uint64_t nLastBlockTx;
 extern uint64_t nLastBlockWeight;

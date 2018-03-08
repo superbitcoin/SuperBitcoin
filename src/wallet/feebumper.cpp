@@ -55,6 +55,8 @@ bool CFeeBumper::preconditionChecks(const CWallet *pWallet, const CWalletTx &wtx
     }
 
     {
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         LOCK(mempool.cs);
         auto it_mp = mempool.mapTx.find(wtx.GetHash());
         if (it_mp != mempool.mapTx.end() && it_mp->GetCountWithDescendants() > 1)
@@ -191,6 +193,8 @@ CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, const CCoin
         nNewFeeRate = CFeeRate(totalFee, maxNewTxSize);
     } else
     {
+        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+        CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
         nNewFee = CWallet::GetMinimumFee(maxNewTxSize, coin_control, mempool, ::feeEstimator,
                                          nullptr /* FeeCalculation */);
         nNewFeeRate = CFeeRate(nNewFee, maxNewTxSize);
@@ -221,6 +225,8 @@ CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, const CCoin
     // This may occur if the user set TotalFee or paytxfee too low, if fallbackfee is too low, or, perhaps,
     // in a rare situation where the mempool minimum fee increased significantly since the fee estimation just a
     // moment earlier. In this case, we report an error to the user, who may use totalFee to make an adjustment.
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
     CFeeRate minMempoolFeeRate = mempool.GetMinFee(
             gArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000);
     if (nNewFeeRate.GetFeePerK() < minMempoolFeeRate.GetFeePerK())

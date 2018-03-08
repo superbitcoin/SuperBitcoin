@@ -15,8 +15,8 @@
 #include "p2p/netcomponent.h"
 #include "rpc/rpccomponent.h"
 #include "chaincontrol/chaincomponent.h"
-#include "mempool/txmempool.h"
-#include "walletcomponent.h"
+#include "mempool/mempoolcomponent.h"
+#include "wallet/walletcomponent.h"
 
 /* Introduction text for doxygen: */
 
@@ -45,7 +45,7 @@ int main(int argc, char **argv)
 {
     CApp &app = appbase::CApp::Instance();
     app.RegisterComponent(new CChainComponent);
-    app.RegisterComponent(new CTxMemPool);
+    app.RegisterComponent(new CMempoolComponent);
     app.RegisterComponent(new CHttpRpcComponent);
     app.RegisterComponent(new CNetComponent);
     app.RegisterComponent(new CWalletComponent);
