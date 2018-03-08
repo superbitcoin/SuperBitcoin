@@ -22,6 +22,8 @@ public:
 
     bool BroadcastTransaction(uint256 txHash) override;
 
+    bool RelayCmpctBlock(const CBlockIndex *pindex, void* pcmpctblock, bool fWitnessEnabled) override;
+
     bool AskForTransaction(int64_t nodeID, uint256 txHash, int flags) override;
 
     bool MisbehaveNode(int64_t nodeID, int num) override;
@@ -29,6 +31,14 @@ public:
     bool OutboundTargetReached(bool historicalBlockServingLimit) override;
 
     int  GetNodeCount(int flags) override;
+
+    void UpdateBlockAvailability(int64_t nodeid, uint256 hash) override;
+
+    int  GetInFlightBlockCount() override;
+
+    bool DoseBlockInFlight(uint256 hash) override;
+
+    bool MarkBlockInFlight(int64_t nodeid, uint256 hash, const CBlockIndex *pindex) override;
 
 
 private:

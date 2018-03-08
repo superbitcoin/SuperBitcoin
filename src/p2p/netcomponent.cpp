@@ -380,6 +380,11 @@ bool CNetComponent::BroadcastTransaction(uint256 txHash)
     return false;
 }
 
+bool CNetComponent::RelayCmpctBlock(const CBlockIndex *pindex, void* pcmpctblock, bool fWitnessEnabled)
+{
+    return peerLogic && peerLogic->RelayCmpctBlock(pindex, pcmpctblock, fWitnessEnabled);
+}
+
 bool CNetComponent::AskForTransaction(int64_t nodeID, uint256 txHash, int flags)
 {
     if (netConnMgr)
@@ -413,7 +418,7 @@ bool CNetComponent::OutboundTargetReached(bool historicalBlockServingLimit)
     return true;
 }
 
-int CNetComponent:: GetNodeCount(int flags)
+int CNetComponent::GetNodeCount(int flags)
 {
     if (netConnMgr)
     {
@@ -422,5 +427,38 @@ int CNetComponent:: GetNodeCount(int flags)
     return 0;
 }
 
+void CNetComponent::UpdateBlockAvailability(int64_t nodeid, uint256 hash)
+{
+    if (netConnMgr && peerLogic)
+    {
+        UpdateNodeBlockAvailability(nodeid, hash);
+    }
+}
 
+int  CNetComponent::GetInFlightBlockCount()
+{
+    if (netConnMgr && peerLogic)
+    {
+        return ::GetInFlightBlockCount();
+    }
+    return 0;
+}
+
+bool CNetComponent::DoseBlockInFlight(uint256 hash)
+{
+    if (netConnMgr && peerLogic)
+    {
+        return ::DoseBlockInFlight(hash);
+    }
+    return false;
+}
+
+bool CNetComponent::MarkBlockInFlight(int64_t nodeid, uint256 hash, const CBlockIndex *pindex)
+{
+    if (netConnMgr && peerLogic)
+    {
+        return ::MarkNodeBlockInFlight(nodeid, hash, pindex);
+    }
+    return false;
+}
 

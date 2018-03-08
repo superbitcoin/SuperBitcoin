@@ -46,6 +46,8 @@ public:
 
     void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock> &pblock) override;
 
+    bool RelayCmpctBlock(const CBlockIndex *pindex, void* pcmpctblock, bool fWitnessEnabled);
+
 
     // Interface for message handling inherit from NetEventsInterface
     bool ProcessMessages(CNode *pfrom, std::atomic<bool> &interrupt) override;
@@ -157,6 +159,14 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
 
 /** Increase a node's misbehavior score. */
 void Misbehaving(NodeId nodeid, int howmuch);
+
+void UpdateNodeBlockAvailability(int64_t nodeid, uint256 hash);
+
+int  GetInFlightBlockCount();
+
+bool DoseBlockInFlight(uint256 hash);
+
+bool MarkNodeBlockInFlight(int64_t nodeid, uint256 hash, const CBlockIndex *pindex);
 
 //void AddToCompactExtraTransactions(const CTransactionRef &tx);
 

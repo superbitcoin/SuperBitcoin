@@ -210,11 +210,13 @@ public:
 
     bool NetReceiveHeaders(ExNode *xnode, CDataStream &stream) override;
 
-    bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType) override;
+    bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void* filter) override;
 
     bool NetReceiveBlockData(ExNode *xnode, CDataStream &stream, uint256 &blockHash) override;
 
     bool NetRequestBlockTxn(ExNode *xnode, CDataStream &stream) override;
+
+    bool NetRequestMostRecentCmpctBlock(ExNode *xnode, uint256 bestBlockHint) override;
 
     bool ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock) override;
 
@@ -339,6 +341,8 @@ private:
     bool
     AcceptBlock(const std::shared_ptr<const CBlock> &pblock, CValidationState &state, const CChainParams &chainparams,
                 CBlockIndex **ppindex, bool fRequested, const CDiskBlockPos *dbp, bool *fNewBlock);
+
+    void NewPoWValidBlock(const CBlockIndex *pindex, const std::shared_ptr<const CBlock> &pblock);
 
     void NotifyHeaderTip();
 
