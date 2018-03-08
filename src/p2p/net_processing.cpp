@@ -3907,8 +3907,21 @@ void PeerLogicValidation::ProcessGetData(CNode *pfrom, const std::atomic<bool> &
                     InitFlagsBit(xnode.flags, NF_WANTCMPCTWITNESS, state->fWantsCmpctWitness);
                 }
 
+                bool filteredBlock = inv.type == MSG_FILTERED_BLOCK;
+                CBloomFilter filter;
+                if (filteredBlock)
+                {
+                    filteredBlock = false;
+                    LOCK(pfrom->cs_filter);
+                    if (pfrom->pfilter)
+                    {
+                        filteredBlock = true;
+                        filter = *pfrom->pfilter;
+                    }
+                }
+
                 GET_CHAIN_INTERFACE(ifChainObj);
-                bool ret = ifChainObj->NetRequestBlockData(&xnode, inv.hash, inv.type);
+                bool ret = ifChainObj->NetRequestBlockData(&xnode, inv.hash, inv.type, filteredBlock ? &filter : nullptr);
                 if (ret)
                 {
                     // Trigger the peer node to send a getblocks request for the next batch of inventory

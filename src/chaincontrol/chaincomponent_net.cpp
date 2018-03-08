@@ -533,7 +533,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     return true;
 }
 
-bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType)
+bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void* filter)
 {
     assert(xnode != nullptr);
 
@@ -563,8 +563,8 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
             // before ActivateBestChain but after AcceptBlock).
             // In this case, we need to run ActivateBestChain prior to checking the relay
             // conditions below.
-            // CValidationState dummy;
-            // ActivateBestChain(dummy, Params(), a_recent_block);
+             CValidationState dummy;
+             ActivateBestChain(dummy, Params(), a_recent_block);
         }
 
         if (cIndexManager.GetChain().Contains(bi))
@@ -608,10 +608,10 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
     if (isOK && (bi->nStatus & BLOCK_HAVE_DATA))
     {
         std::shared_ptr<const CBlock> pblock;
-        //        if (a_recent_block && a_recent_block->GetHash() == (*mi).second->GetBlockHash())
-        //        {
-        //            pblock = a_recent_block;
-        //        } else
+        if (a_recent_block && a_recent_block->GetHash() == bi->GetBlockHash())
+        {
+            pblock = a_recent_block;
+        } else
         {
             // Send block from disk
             std::shared_ptr<CBlock> pblockRead = std::make_shared<CBlock>();
@@ -628,18 +628,9 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
             SendNetMessage(xnode->nodeID, NetMsgType::BLOCK, xnode->sendVersion, 0, *pblock);
         } else if (blockType == MSG_FILTERED_BLOCK)
         {
-            bool sendMerkleBlock = false;
-            CMerkleBlock merkleBlock;
-            //            {
-            //                LOCK(pfrom->cs_filter);
-            //                if (pfrom->pfilter)
-            //                {
-            //                    sendMerkleBlock = true;
-            //                    merkleBlock = CMerkleBlock(*pblock, *pfrom->pfilter);
-            //                }
-            //            }
-            if (sendMerkleBlock)
+            if (filter)
             {
+                CMerkleBlock merkleBlock = CMerkleBlock(*pblock, *(CBloomFilter*)filter);
                 SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, 0, merkleBlock);
                 // CMerkleBlock just contains hashes, so also push any transactions in the block the client did not see
                 // This avoids hurting performance by pointlessly requiring a round-trip
@@ -656,31 +647,32 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
             // no response
         } else if (blockType == MSG_CMPCT_BLOCK)
         {
-            //            // If a peer is asking for old blocks, we're almost guaranteed
-            //            // they won't have a useful mempool to match against a compact block,
-            //            // and we don't feel like constructing the object for them, so
-            //            // instead we respond with the full, non-compact block.
-            //            bool fPeerWantsWitness = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS);
-            //            int nSendFlags = fPeerWantsWitness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
-            //            if (CanDirectFetch(consensusParams) &&
-            //                bi->nHeight >= cIndexManager.GetChain().Height() - MAX_CMPCTBLOCK_DEPTH)
-            //            {
-            //                if ((fPeerWantsWitness || !fWitnessesPresentInARecentCompactBlock) &&
-            //                    a_recent_compact_block &&
-            //                    a_recent_compact_block->header.GetHash() == bi->GetBlockHash())
-            //                {
-            //                    SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, nSendFlags, *a_recent_compact_block);
-            //                }
-            //                else
-            //                {
-            //                    CBlockHeaderAndShortTxIDs cmpctblock(*pblock, fPeerWantsWitness);
-            //                    SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags, cmpctblock);
-            //                }
-            //            }
-            //            else
-            //            {
-            //                SendNetMessage(xnode->nodeID, NetMsgType::BLOCK, xnode->sendVersion, nSendFlags, *pblock);
-            //            }
+            // If a peer is asking for old blocks, we're almost guaranteed
+            // they won't have a useful mempool to match against a compact block,
+            // and we don't feel like constructing the object for them, so
+            // instead we respond with the full, non-compact block.
+            bool fPeerWantsWitness = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS);
+            int nSendFlags = fPeerWantsWitness ? 0 : SERIALIZE_TRANSACTION_NO_WITNESS;
+            bool fCanDirectFetch = Tip()->GetBlockTime() > (GetAdjustedTime() - consensusParams.nPowTargetSpacing * 20);
+            if (fCanDirectFetch &&
+                bi->nHeight >= cIndexManager.GetChain().Height() - MAX_CMPCTBLOCK_DEPTH)
+            {
+                if ((fPeerWantsWitness || !fWitnessesPresentInARecentCompactBlock) &&
+                    a_recent_compact_block &&
+                    a_recent_compact_block->header.GetHash() == bi->GetBlockHash())
+                {
+                    SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, nSendFlags, *a_recent_compact_block);
+                }
+                else
+                {
+                    CBlockHeaderAndShortTxIDs cmpctblock(*pblock, fPeerWantsWitness);
+                    SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags, cmpctblock);
+                }
+            }
+            else
+            {
+                SendNetMessage(xnode->nodeID, NetMsgType::BLOCK, xnode->sendVersion, nSendFlags, *pblock);
+            }
         }
     }
     return isOK;
@@ -757,7 +749,7 @@ bool CChainComponent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
         // actually receive all the data read from disk over the network.
         mlog_error("Peer %d sent us a getblocktxn for a block > %i deep", xnode->nodeID, MAX_BLOCKTXN_DEPTH);
         int blockType = IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ? MSG_WITNESS_BLOCK : MSG_BLOCK;
-        NetRequestBlockData(xnode, req.blockhash, blockType);
+        NetRequestBlockData(xnode, req.blockhash, blockType, nullptr);
         return true;
     }
 

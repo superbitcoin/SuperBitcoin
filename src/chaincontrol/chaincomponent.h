@@ -210,7 +210,7 @@ public:
 
     bool NetReceiveHeaders(ExNode *xnode, CDataStream &stream) override;
 
-    bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType) override;
+    bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void* filter) override;
 
     bool NetReceiveBlockData(ExNode *xnode, CDataStream &stream, uint256 &blockHash) override;
 
