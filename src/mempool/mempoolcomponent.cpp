@@ -9,12 +9,14 @@
 #include "config/argmanager.h"
 #include "sbtccore/clientversion.h"
 #include "p2p/net_processing.h"
+#include "wallet/fees.h"
 
 log4cpp::Category &CMempoolComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
 
 CMempoolComponent::CMempoolComponent()
 {
-
+    InitFeeEstimate();
+    GetMemPool().SetEstimator(&feeEstimator);
 }
 
 CMempoolComponent::~CMempoolComponent()
@@ -37,6 +39,8 @@ bool CMempoolComponent::ComponentStartup()
 bool CMempoolComponent::ComponentShutdown()
 {
     std::cout << "shutdown CTxMemPool component \n";
+
+    FlushFeeEstimate();
     return true;
 }
 
@@ -185,4 +189,29 @@ void CMempoolComponent::AddToCompactExtraTransactions(const CTransactionRef &tx)
         vExtraTxnForCompact.resize(max_extra_txn);
     vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
     vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
+}
+
+void CMempoolComponent::InitFeeEstimate()
+{
+    fs::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
+    CAutoFile est_filein(fsbridge::fopen(est_path, "rb"), SER_DISK, CLIENT_VERSION);
+    // Allowed to fail as this file IS missing on first startup.
+    if (!est_filein.IsNull())
+        ::feeEstimator.Read(est_filein);
+    bFeeEstimatesInitialized = true;
+}
+
+void CMempoolComponent::FlushFeeEstimate()
+{
+    if (bFeeEstimatesInitialized)
+    {
+        ::feeEstimator.FlushUnconfirmed(mempool);
+        fs::path est_path = GetDataDir() / FEE_ESTIMATES_FILENAME;
+        CAutoFile est_fileout(fsbridge::fopen(est_path, "wb"), SER_DISK, CLIENT_VERSION);
+        if (!est_fileout.IsNull())
+            ::feeEstimator.Write(est_fileout);
+        else
+            LogPrintf("%s: Failed to write fee estimates to %s\n", __func__, est_path.string());
+        bFeeEstimatesInitialized = false;
+    }
 }

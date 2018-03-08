@@ -228,6 +228,8 @@ public:
      */
     CTxMemPool(CBlockPolicyEstimator *estimator = nullptr);
 
+    void SetEstimator(CBlockPolicyEstimator *estimator);
+
     /**
      * If sanity-checking is turned on, check makes sure the pool is
      * consistent (does not contain two transactions that spend the same inputs,

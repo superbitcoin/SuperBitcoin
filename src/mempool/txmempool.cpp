@@ -1060,8 +1060,7 @@ void CTxMemPoolEntry::UpdateAncestorState(int64_t modifySize, CAmount modifyFee,
     assert(int(nSigOpCostWithAncestors) >= 0);
 }
 
-CTxMemPool::CTxMemPool(CBlockPolicyEstimator *estimator) :
-        nTransactionsUpdated(0), minerPolicyEstimator(estimator)
+CTxMemPool::CTxMemPool(CBlockPolicyEstimator *estimator) : minerPolicyEstimator(estimator)
 {
     _clear(); //lock free clear
 
@@ -1069,6 +1068,12 @@ CTxMemPool::CTxMemPool(CBlockPolicyEstimator *estimator) :
     // accepting transactions becomes O(N^2) where N is the number
     // of transactions in the pool
     nCheckFrequency = 0;
+    nTransactionsUpdated = 0;
+}
+
+void CTxMemPool::SetEstimator(CBlockPolicyEstimator *estimator)
+{
+    minerPolicyEstimator = estimator;
 }
 
 bool CTxMemPool::isSpent(const COutPoint &outpoint)

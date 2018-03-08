@@ -12,6 +12,8 @@
 #include "interface/imempoolcomponent.h"
 #include "txmempool.h"
 
+static const char *FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
+
 namespace
 {
     /**
@@ -82,9 +84,16 @@ private:
 
     CCriticalSection cs;
 
+    bool bFeeEstimatesInitialized = false;
+
     /** Dump the mempool to disk. */
     void DumpMempool();
 
     /** Load the mempool from disk. */
     bool LoadMempool();
+
+    void InitFeeEstimate();
+
+    void FlushFeeEstimate();
+
 };
