@@ -40,6 +40,14 @@ public:
 
     virtual int  GetNodeCount(int flags) = 0; //flags value:  1: Inbound; 2 : OutBound; 3 : Inbound + OutBound.
 
+    virtual void UpdateBlockAvailability(int64_t nodeid, uint256 hash) = 0;
+
+    virtual int  GetInFlightBlockCount() = 0;
+
+    virtual bool DoseBlockInFlight(uint256 hash) = 0;
+
+    virtual bool MarkBlockInFlight(int64_t nodeid, uint256 hash, const CBlockIndex *pindex) = 0;
+
     //add other interface methods here ...
 
 

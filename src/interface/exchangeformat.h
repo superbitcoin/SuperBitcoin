@@ -20,6 +20,7 @@ enum NetNodeFlags
 
     NF_NEWBLOCK             = (1 << 13),
     NF_NEWTRANSACTION       = (1 << 14),
+    NF_LASTBLOCKANNOUNCE    = (1 << 15),
 
 };
 
@@ -65,7 +66,8 @@ struct NodeExchangeInfo
     //[out]
     int         retFlags;
     int         nMisbehavior;
-    int         nUnconnectingHeaders;
+    int         retInteger;
+    void*       retPointer;
 };
 
 typedef NodeExchangeInfo ExNode;

@@ -160,6 +160,14 @@ bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
 /** Increase a node's misbehavior score. */
 void Misbehaving(NodeId nodeid, int howmuch);
 
+void UpdateNodeBlockAvailability(int64_t nodeid, uint256 hash);
+
+int  GetInFlightBlockCount();
+
+bool DoseBlockInFlight(uint256 hash);
+
+bool MarkNodeBlockInFlight(int64_t nodeid, uint256 hash, const CBlockIndex *pindex);
+
 //void AddToCompactExtraTransactions(const CTransactionRef &tx);
 
 #endif // BITCOIN_NET_PROCESSING_H

@@ -266,6 +266,19 @@ bool CChainComponent::NetRequestHeaders(ExNode *xnode, CDataStream &stream)
             break;
     }
 
+    // pindex can be nullptr either if we sent chainActive.Tip() OR
+    // if our peer has chainActive.Tip() (and thus we are sending an empty
+    // headers message). In both cases it's safe to update
+    // pindexBestHeaderSent to be our tip.
+    //
+    // It is important that we simply reset the BestHeaderSent value here,
+    // and not max(BestHeaderSent, newHeaderSent). We might have announced
+    // the currently-being-connected tip using a compact block, which
+    // resulted in the peer sending a headers request, which we respond to
+    // without the new block. By resetting the BestHeaderSent, we ensure we
+    // will re-announce the new block via headers (or compact blocks again)
+    // in the SendMessages logic.
+    xnode->retPointer = (void*)(pindex ? pindex : Tip());
     return SendNetMessage(xnode->nodeID, NetMsgType::HEADERS, xnode->sendVersion, 0, vHeaders);
 }
 
@@ -279,7 +292,6 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, CDataStream &stream)
     unsigned int nCount = ReadCompactSize(stream);
     if (nCount > MAX_HEADERS_RESULTS)
     {
-        LOCK(cs_main);
         xnode->nMisbehavior = 20;
         return error("headers message size = %u", nCount);
     }
@@ -302,6 +314,8 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     if (nCount == 0)
         return true;
 
+    GET_NET_INTERFACE(ifNetObj);
+
     // If this looks like it could be a block announcement (nCount <
     // MAX_BLOCKS_TO_ANNOUNCE), use special logic for handling headers that
     // don't connect:
@@ -312,7 +326,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     //   nUnconnectingHeaders gets reset back to 0.
     if (!DoesBlockExist(headers[0].hashPrevBlock) && nCount < MAX_BLOCKS_TO_ANNOUNCE)
     {
-        xnode->nUnconnectingHeaders++;
+        xnode->retInteger++;
         SendNetMessage(xnode->nodeID, NetMsgType::GETHEADERS, xnode->sendVersion, 0,
                        cIndexManager.GetChain().GetLocator(GetIndexBestHeader()), uint256());
 
@@ -321,14 +335,16 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                 headers[0].GetHash().ToString(),
                 headers[0].hashPrevBlock.ToString(),
                 GetIndexBestHeader()->nHeight,
-                xnode->nodeID, xnode->nUnconnectingHeaders);
+                xnode->nodeID, xnode->retInteger);
+
+        LOCK(cs_main);
 
         // Set hashLastUnknownBlock for this peer, so that if we
         // eventually get the headers - even from a different peer -
         // we can use this peer to download.
-        ///UpdateBlockAvailability(pfrom->GetId(), headers.back().GetHash());
+        ifNetObj->UpdateBlockAvailability(xnode->nodeID, headers.back().GetHash());
 
-        if (xnode->nUnconnectingHeaders % MAX_UNCONNECTING_HEADERS == 0)
+        if (xnode->retInteger % MAX_UNCONNECTING_HEADERS == 0)
         {
             xnode->nMisbehavior += 20;
         }
@@ -391,7 +407,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                 // block header, to prevent an attacker from splitting the
                 // network by mining a block right at the 2 hour boundary.
                 //
-                // TODO: update the DoS logic (or, rather, rewrite the
+                // update the DoS logic (or, rather, rewrite the
                 // DoS-interface between validation and net_processing) so that
                 // the interface is cleaner, and so that we disconnect on all the
                 // reasons that a peer's headers chain is incompatible
@@ -404,29 +420,31 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     }
 
     {
-        if (xnode->nUnconnectingHeaders > 0)
+        if (xnode->retInteger > 0)
         {
-            mlog_error("peer=%d: resetting nUnconnectingHeaders (%d -> 0)\n", xnode->nodeID,
-                       xnode->nUnconnectingHeaders);
+            mlog_notice("peer=%d: resetting nUnconnectingHeaders (%d -> 0)\n", xnode->nodeID,
+                       xnode->retInteger);
         }
-        xnode->nUnconnectingHeaders = 0;
+        xnode->retInteger = 0;
 
-        //assert(pindexLast);
-        //UpdateBlockAvailability(pfrom->GetId(), pindexLast->GetBlockHash());
+        LOCK(cs_main);
+
+        assert(pindexLast);
+        ifNetObj->UpdateBlockAvailability(xnode->nodeID, pindexLast->GetBlockHash());
 
         // From here, pindexBestKnownBlock should be guaranteed to be non-null,
         // because it is set in UpdateBlockAvailability. Some nullptr checks
         // are still present, however, as belt-and-suspenders.
 
-        //if (received_new_header && pindexLast->nChainWork > chainActive.Tip()->nChainWork)
-        //{
-        //    nodestate->m_last_block_announcement = GetTime();
-        //}
+        if (received_new_header && pindexLast->nChainWork > Tip()->nChainWork)
+        {
+            SetFlagsBit(xnode->retFlags, NF_LASTBLOCKANNOUNCE);
+        }
 
         if (nCount == MAX_HEADERS_RESULTS)
         {
             // Headers message had its maximum size; the peer may have more headers.
-            // TODO: optimize: if pindexLast is an ancestor of chainActive.Tip or pindexBestHeader, continue
+            // optimize: if pindexLast is an ancestor of chainActive.Tip or pindexBestHeader, continue
             // from there instead.
             mlog_error("more getheaders (%d) to end to peer=%d (startheight:%d)\n", pindexLast->nHeight,
                        xnode->nodeID, xnode->startHeight);
@@ -451,7 +469,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                    vToFetch.size() <= MAX_BLOCKS_IN_TRANSIT_PER_PEER)
             {
                 if (!(pindexWalk->nStatus & BLOCK_HAVE_DATA) &&
-                    //!mapBlocksInFlight.count(pindexWalk->GetBlockHash()) &&
+                    !ifNetObj->DoseBlockInFlight(pindexWalk->GetBlockHash()) &&
                     (!IsWitnessEnabled(pindexWalk->pprev, app().GetChainParams().GetConsensus()) ||
                      IsFlagsBitOn(xnode->flags, NF_WITNESS)))
                 {
@@ -487,19 +505,20 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                     }
 
                     vGetData.push_back(CInv(MSG_BLOCK | nFetchFlags, pindex->GetBlockHash()));
-                    // MarkBlockAsInFlight(pfrom->GetId(), pindex->GetBlockHash(), pindex);
-                    mlog_error("Requesting block %s from  peer=%d",
+                    if (ifNetObj->MarkBlockInFlight(xnode->nodeID, pindex->GetBlockHash(), pindex))
+                        xnode->nBlocksInFlight++;
+                    mlog_notice("Requesting block %s from  peer=%d",
                                pindex->GetBlockHash().ToString(), xnode->nodeID);
                 }
                 if (vGetData.size() > 1)
                 {
-                    mlog_error("Downloading blocks toward %s (%d) via headers direct fetch",
+                    mlog_notice("Downloading blocks toward %s (%d) via headers direct fetch",
                                pindexLast->GetBlockHash().ToString(), pindexLast->nHeight);
                 }
                 if (vGetData.size() > 0)
                 {
                     if (IsFlagsBitOn(xnode->flags, NF_DESIREDCMPCTVERSION) && vGetData.size() == 1 &&
-                        //mapBlocksInFlight.size() == 1 &&
+                        ifNetObj->GetInFlightBlockCount() == 1 &&
                         pindexLast->pprev->IsValid(BLOCK_VALID_CHAIN))
                     {
                         // In any case, we want to download using a compact block, not a regular one
@@ -509,45 +528,6 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                 }
             }
         }
-        // If we're in IBD, we want outbound peers that will serve us a useful
-        // chain. Disconnect peers that are on chains with insufficient work.
-        //        if (IsInitialBlockDownload() && nCount != MAX_HEADERS_RESULTS)
-        //        {
-        //            // When nCount < MAX_HEADERS_RESULTS, we know we have no more
-        //            // headers to fetch from this peer.
-        //            if (nodestate->pindexBestKnownBlock && nodestate->pindexBestKnownBlock->nChainWork < nMinimumChainWork)
-        //            {
-        //                // This peer has too little work on their headers chain to help
-        //                // us sync -- disconnect if using an outbound slot (unless
-        //                // whitelisted or addnode).
-        //                // Note: We compare their tip to nMinimumChainWork (rather than
-        //                // chainActive.Tip()) because we won't start block download
-        //                // until we have a headers chain that has at least
-        //                // nMinimumChainWork, even if a peer has a chain past our tip,
-        //                // as an anti-DoS measure.
-        //                if (IsOutboundDisconnectionCandidate(pfrom))
-        //                {
-        //                    LogPrintf("Disconnecting outbound peer %d -- headers chain has insufficient work\n",
-        //                              xnode->nodeID);
-        //                    SetFlagsBit(xnode->retFlags, NF_DISCONNECT);
-        //                }
-        //            }
-        //        }
-        //
-        //        if (!pfrom->fDisconnect && IsOutboundDisconnectionCandidate(pfrom) &&
-        //            nodestate->pindexBestKnownBlock != nullptr)
-        //        {
-        //            // If this is an outbound peer, check to see if we should protect
-        //            // it from the bad/lagging chain logic.
-        //            if (g_outbound_peers_with_protect_from_disconnect < MAX_OUTBOUND_PEERS_TO_PROTECT_FROM_DISCONNECT &&
-        //                nodestate->pindexBestKnownBlock->nChainWork >= chainActive.Tip()->nChainWork &&
-        //                !nodestate->m_chain_sync.m_protect)
-        //            {
-        //                LogPrint(BCLog::NET, "Protecting outbound peer=%d from eviction\n", pfrom->GetId());
-        //                nodestate->m_chain_sync.m_protect = true;
-        //                ++g_outbound_peers_with_protect_from_disconnect;
-        //            }
-        //        }
     }
 
     return true;

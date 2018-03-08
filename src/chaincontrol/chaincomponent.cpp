@@ -358,7 +358,6 @@ void CChainComponent::Init()
 
 bool CChainComponent::IsImporting() const
 {
-    //TODO:
     return fImporting;
 }
 
@@ -374,7 +373,6 @@ bool CChainComponent::IsTxIndex() const
 
 bool CChainComponent::DoesBlockExist(uint256 hash)
 {
-    //TODO:
     return (cIndexManager.GetBlockIndex(hash) != nullptr);
 }
 

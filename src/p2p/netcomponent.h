@@ -32,6 +32,14 @@ public:
 
     int  GetNodeCount(int flags) override;
 
+    void UpdateBlockAvailability(int64_t nodeid, uint256 hash) override;
+
+    int  GetInFlightBlockCount() override;
+
+    bool DoseBlockInFlight(uint256 hash) override;
+
+    bool MarkBlockInFlight(int64_t nodeid, uint256 hash, const CBlockIndex *pindex) override;
+
 
 private:
     log4cpp::Category &mlog;
