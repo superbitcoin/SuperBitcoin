@@ -26,7 +26,11 @@ CMempoolComponent::~CMempoolComponent()
 bool CMempoolComponent::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
-    LoadMempool();
+    if (Args().GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
+    {
+        LoadMempool();
+        bDumpMempoolLater = true;
+    }
     return true;
 }
 
@@ -40,6 +44,10 @@ bool CMempoolComponent::ComponentShutdown()
 {
     std::cout << "shutdown CTxMemPool component \n";
 
+    if (bDumpMempoolLater && Args().GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
+    {
+        DumpMempool();
+    }
     FlushFeeEstimate();
     return true;
 }

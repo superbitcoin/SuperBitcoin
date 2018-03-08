@@ -86,6 +86,8 @@ private:
 
     bool bFeeEstimatesInitialized = false;
 
+    bool bDumpMempoolLater = false;
+
     /** Dump the mempool to disk. */
     void DumpMempool();
 
