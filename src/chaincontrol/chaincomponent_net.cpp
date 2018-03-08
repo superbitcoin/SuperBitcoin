@@ -683,10 +683,9 @@ bool CChainComponent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, ui
     assert(xnode != nullptr);
 
     std::shared_ptr<CBlock> pblock = std::make_shared<CBlock>();
-    stream >> *
-            pblock;
+    stream >> *pblock;
 
-    mlog_error("received block %s peer=%d", pblock->GetHash().ToString(), xnode->nodeID);
+    mlog_notice("received block %s peer=%d", pblock->GetHash().ToString(), xnode->nodeID);
 
     bool forceProcessing = false;
     const uint256 hash(pblock->GetHash());
@@ -730,6 +729,8 @@ bool CChainComponent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
         NetSendBlockTransactions(xnode, req, *recent_block);
         return true;
     }
+
+    LOCK(cs_main);
 
     CBlockIndex *bi = cIndexManager.GetBlockIndex(req.blockhash);
     if (!bi || !(bi->nStatus & BLOCK_HAVE_DATA))
