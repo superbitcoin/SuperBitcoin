@@ -51,7 +51,7 @@ void CChainComponent::NewPoWValidBlock(const CBlockIndex *pindex, const std::sha
     }
 
     GET_NET_INTERFACE(ifNetObj);
-    ifNetObj->RelayCmpctBlock(pindex, (void*)pcmpctblock.get(), fWitnessEnabled);
+    ifNetObj->RelayCmpctBlock(pindex, (void *)pcmpctblock.get(), fWitnessEnabled);
 }
 
 void CChainComponent::OnNodeDisconnected(int64_t nodeID, bool /*bInBound*/, int /*disconnectReason*/)
@@ -101,10 +101,9 @@ bool CChainComponent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
     Checkpoints::CCheckPointDB cCheckPointDB;
     std::vector<int> toInsertCheckpoints;
     std::vector<Checkpoints::CCheckData> vIndex;
-    const CChainParams &chainparams = app().GetChainParams();
     for (const auto &point : vdata)
     {
-        if (point.CheckSignature(chainparams.GetCheckPointPKey()))
+        if (point.CheckSignature(Params().GetCheckPointPKey()))
         {
             if (!cCheckPointDB.ExistCheckpoint(point.getHeight()))
             {
@@ -112,7 +111,7 @@ bool CChainComponent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
                 /*
                  * add the check point to chainparams
                  */
-                chainparams.AddCheckPoint(point.getHeight(), point.getHash());
+                Params().AddCheckPoint(point.getHeight(), point.getHash());
                 toInsertCheckpoints.push_back(point.getHeight());
                 vIndex.push_back(point);
             }
@@ -134,7 +133,7 @@ bool CChainComponent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
     if (vIndex.size() > 0)
     {
         CValidationState state;
-        if (!CheckActiveChain(state, chainparams))
+        if (!CheckActiveChain(state, Params()))
         {
             mlog_error("CheckActiveChain error when receive  checkpoint");
             return false;
@@ -188,7 +187,6 @@ bool CChainComponent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
     mlog_error("getblocks %d to %s limit %d from peer=%d", (pindex ? pindex->nHeight : -1),
                hashStop.IsNull() ? "end" : hashStop.ToString(), nLimit, xnode->nodeID);
 
-    const CChainParams &chainparams = app().GetChainParams();
     for (; pindex; pindex = cIndexManager.GetChain().Next(pindex))
     {
         if (pindex->GetBlockHash() == hashStop)
@@ -198,8 +196,7 @@ bool CChainComponent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
         }
         // If pruning, don't inv blocks unless we have on disk and are likely to still have
         // for some reasonable time window (1 hour) that block relay might require.
-        const int nPrunedBlocksLikelyToHave =
-                MIN_BLOCKS_TO_KEEP - 3600 / chainparams.GetConsensus().nPowTargetSpacing;
+        const int nPrunedBlocksLikelyToHave = MIN_BLOCKS_TO_KEEP - 3600 / Params().GetConsensus().nPowTargetSpacing;
         if (fPruneMode && (!(pindex->nStatus & BLOCK_HAVE_DATA) ||
                            pindex->nHeight <= Tip()->nHeight - nPrunedBlocksLikelyToHave))
         {
@@ -278,7 +275,7 @@ bool CChainComponent::NetRequestHeaders(ExNode *xnode, CDataStream &stream)
     // without the new block. By resetting the BestHeaderSent, we ensure we
     // will re-announce the new block via headers (or compact blocks again)
     // in the SendMessages logic.
-    xnode->retPointer = (void*)(pindex ? pindex : Tip());
+    xnode->retPointer = (void *)(pindex ? pindex : Tip());
     return SendNetMessage(xnode->nodeID, NetMsgType::HEADERS, xnode->sendVersion, 0, vHeaders);
 }
 
@@ -369,7 +366,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     CValidationState state;
     CBlockHeader first_invalid_header;
     const CBlockIndex *pindexLast = nullptr;
-    if (!ProcessNewBlockHeaders(headers, state, app().GetChainParams(), &pindexLast, &first_invalid_header))
+    if (!ProcessNewBlockHeaders(headers, state, Params(), &pindexLast, &first_invalid_header))
     {
         int nDoS;
         if (state.IsInvalid(nDoS))
@@ -423,7 +420,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
         if (xnode->retInteger > 0)
         {
             mlog_notice("peer=%d: resetting nUnconnectingHeaders (%d -> 0)\n", xnode->nodeID,
-                       xnode->retInteger);
+                        xnode->retInteger);
         }
         xnode->retInteger = 0;
 
@@ -453,9 +450,8 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                            cIndexManager.GetChain().GetLocator(pindexLast), uint256());
         }
 
-        bool fCanDirectFetch = Tip()->GetBlockTime() > (GetAdjustedTime() -
-                                                        app().GetChainParams().GetConsensus().nPowTargetSpacing *
-                                                        20);
+        bool fCanDirectFetch =
+                Tip()->GetBlockTime() > (GetAdjustedTime() - Params().GetConsensus().nPowTargetSpacing * 20);
 
         // If this set of headers is valid and ends in a block with at least as
         // much work as our tip, download as much as possible.
@@ -470,7 +466,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
             {
                 if (!(pindexWalk->nStatus & BLOCK_HAVE_DATA) &&
                     !ifNetObj->DoseBlockInFlight(pindexWalk->GetBlockHash()) &&
-                    (!IsWitnessEnabled(pindexWalk->pprev, app().GetChainParams().GetConsensus()) ||
+                    (!IsWitnessEnabled(pindexWalk->pprev, Params().GetConsensus()) ||
                      IsFlagsBitOn(xnode->flags, NF_WITNESS)))
                 {
                     // We don't have this block, and it's not yet in flight.
@@ -508,12 +504,12 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                     if (ifNetObj->MarkBlockInFlight(xnode->nodeID, pindex->GetBlockHash(), pindex))
                         xnode->nBlocksInFlight++;
                     mlog_notice("Requesting block %s from  peer=%d",
-                               pindex->GetBlockHash().ToString(), xnode->nodeID);
+                                pindex->GetBlockHash().ToString(), xnode->nodeID);
                 }
                 if (vGetData.size() > 1)
                 {
                     mlog_notice("Downloading blocks toward %s (%d) via headers direct fetch",
-                               pindexLast->GetBlockHash().ToString(), pindexLast->nHeight);
+                                pindexLast->GetBlockHash().ToString(), pindexLast->nHeight);
                 }
                 if (vGetData.size() > 0)
                 {
@@ -533,7 +529,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
     return true;
 }
 
-bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void* filter)
+bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void *filter)
 {
     assert(xnode != nullptr);
 
@@ -541,7 +537,7 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
     assert(ifNetObj != nullptr);
 
     bool isOK = false;
-    const Consensus::Params &consensusParams = app().GetChainParams().GetConsensus();
+    const Consensus::Params &consensusParams = Params().GetConsensus();
 
     std::shared_ptr<const CBlock> a_recent_block;
     std::shared_ptr<const CBlockHeaderAndShortTxIDs> a_recent_compact_block;
@@ -563,8 +559,8 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
             // before ActivateBestChain but after AcceptBlock).
             // In this case, we need to run ActivateBestChain prior to checking the relay
             // conditions below.
-             CValidationState dummy;
-             ActivateBestChain(dummy, Params(), a_recent_block);
+            CValidationState dummy;
+            ActivateBestChain(dummy, Params(), a_recent_block);
         }
 
         if (cIndexManager.GetChain().Contains(bi))
@@ -630,7 +626,7 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
         {
             if (filter)
             {
-                CMerkleBlock merkleBlock = CMerkleBlock(*pblock, *(CBloomFilter*)filter);
+                CMerkleBlock merkleBlock = CMerkleBlock(*pblock, *(CBloomFilter *)filter);
                 SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, 0, merkleBlock);
                 // CMerkleBlock just contains hashes, so also push any transactions in the block the client did not see
                 // This avoids hurting performance by pointlessly requiring a round-trip
@@ -661,15 +657,14 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
                     a_recent_compact_block &&
                     a_recent_compact_block->header.GetHash() == bi->GetBlockHash())
                 {
-                    SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, nSendFlags, *a_recent_compact_block);
-                }
-                else
+                    SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, nSendFlags,
+                                   *a_recent_compact_block);
+                } else
                 {
                     CBlockHeaderAndShortTxIDs cmpctblock(*pblock, fPeerWantsWitness);
                     SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags, cmpctblock);
                 }
-            }
-            else
+            } else
             {
                 SendNetMessage(xnode->nodeID, NetMsgType::BLOCK, xnode->sendVersion, nSendFlags, *pblock);
             }
@@ -700,7 +695,7 @@ bool CChainComponent::NetReceiveBlockData(ExNode *xnode, CDataStream &stream, ui
     //    }
 
     bool fNewBlock = false;
-    ProcessNewBlock(app().GetChainParams(), pblock, forceProcessing, &fNewBlock);
+    ProcessNewBlock(Params(), pblock, forceProcessing, &fNewBlock);
     if (fNewBlock)
     {
         SetFlagsBit(xnode->retFlags, NF_NEWBLOCK);
@@ -755,7 +750,7 @@ bool CChainComponent::NetRequestBlockTxn(ExNode *xnode, CDataStream &stream)
     }
 
     CBlock block;
-    bool ret = ReadBlockFromDisk(block, bi, app().GetChainParams().GetConsensus());
+    bool ret = ReadBlockFromDisk(block, bi, Params().GetConsensus());
     assert(ret);
 
     return NetSendBlockTransactions(xnode, req, block);
@@ -772,7 +767,8 @@ bool CChainComponent::NetRequestMostRecentCmpctBlock(ExNode *xnode, uint256 best
     {
         if (IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS) ||
             !fWitnessesPresentInMostRecentCompactBlock)
-            SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags, *most_recent_compact_block);
+            SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags,
+                           *most_recent_compact_block);
         else
         {
             CBlockHeaderAndShortTxIDs cmpctblock(*most_recent_block, IsFlagsBitOn(xnode->flags, NF_WANTCMPCTWITNESS));
@@ -786,7 +782,7 @@ bool CChainComponent::NetRequestMostRecentCmpctBlock(ExNode *xnode, uint256 best
 bool
 CChainComponent::ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock)
 {
-    return ProcessNewBlock(app().GetChainParams(), pblock, fForceProcessing, fNewBlock);
+    return ProcessNewBlock(Params(), pblock, fForceProcessing, fNewBlock);
 }
 
 bool CChainComponent::NetSendBlockTransactions(ExNode *xnode, const BlockTransactionsRequest &req, const CBlock &block)

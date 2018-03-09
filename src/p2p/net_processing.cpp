@@ -1112,11 +1112,6 @@ static inline NodeExchangeInfo FromCNode(CNode *pfrom)
 
 //////////////////////////////////////////////////////////////////////////////
 
-const CChainParams &PeerLogicValidation::Params()
-{
-    return app().GetChainParams();
-}
-
 PeerLogicValidation::PeerLogicValidation(CConnman *connmanIn, CScheduler &scheduler)
         : connman(connmanIn), m_stale_tip_check_time(0), appArgs(Args()),
           mlog(log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET)))

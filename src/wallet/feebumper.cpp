@@ -228,7 +228,7 @@ CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, const CCoin
     GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
     CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
     CFeeRate minMempoolFeeRate = mempool.GetMinFee(
-            gArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000);
+            Args().GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000);
     if (nNewFeeRate.GetFeePerK() < minMempoolFeeRate.GetFeePerK())
     {
         vErrors.push_back(strprintf(

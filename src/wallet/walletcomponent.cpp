@@ -40,7 +40,7 @@ bool CWalletComponent::ComponentInitialize()
 
 bool CWalletComponent::ComponentStartup()
 {
-    if (gArgs.GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
+    if (Args().GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
     {
         mlog_notice("Wallet disabled!");
         return true;

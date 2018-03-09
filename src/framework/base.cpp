@@ -483,7 +483,7 @@ bool CApp::AppInitParameterInteraction()
             {
                 if (vDeploymentParams[0].compare(VersionBitsDeploymentInfo[j].name) == 0)
                 {
-                    UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
+                    cChainParams->UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
                     found = true;
                     mlog_notice("Setting version bits activation parameters for %s to start=%ld, timeout=%ld\n",
                                 vDeploymentParams[0], nStartTime, nTimeout);

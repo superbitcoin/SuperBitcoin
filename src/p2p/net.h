@@ -439,8 +439,6 @@ private:
 
     void RecordBytesSent(uint64_t bytes);
 
-    const CChainParams &Params();
-
     // Whether the node should be passed out in ForEach* callbacks
     static bool NodeFullyConnected(const CNode *pnode);
 

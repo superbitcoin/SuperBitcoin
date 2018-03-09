@@ -670,7 +670,7 @@ const fs::path &CArgsManager::GetDataDir(bool fNetSpecific) const
         path = GetDefaultDataDir();
     }
     if (fNetSpecific)
-        path /= app().GetBaseChainParams().DataDir();
+        path /= BaseParams().DataDir();
 
     fs::create_directories(path);
 

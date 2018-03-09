@@ -96,7 +96,7 @@ static bool multiUserAuthorized(std::string strUserPass)
     std::string strUser = strUserPass.substr(0, strUserPass.find(":"));
     std::string strPass = strUserPass.substr(strUserPass.find(":") + 1);
 
-    for (const std::string &strRPCAuth : gArgs.GetArgs("-rpcauth"))
+    for (const std::string &strRPCAuth : Args().GetArgs("-rpcauth"))
     {
         //Search for multi-user login/pass "rpcauth" from config
         std::vector<std::string> vFields;
@@ -228,7 +228,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest *req, const std::string &)
 
 static bool InitRPCAuthentication()
 {
-    if (gArgs.GetArg<std::string>("-rpcpassword", "") == "")
+    if (Args().GetArg<std::string>("-rpcpassword", "") == "")
     {
         LogPrintf("No rpcpassword set - using random cookie authentication\n");
         if (!GenerateAuthCookie(&strRPCUserColonPass))
@@ -243,7 +243,7 @@ static bool InitRPCAuthentication()
         LogPrintf(
                 "Config options rpcuser and rpcpassword will soon be deprecated. Locally-run instances may remove rpcuser to use cookie-based auth, or may be replaced with rpcauth. Please see share/rpcuser for rpcauth auth generation.\n");
         strRPCUserColonPass =
-                gArgs.GetArg<std::string>("-rpcuser", "") + ":" + gArgs.GetArg<std::string>("-rpcpassword", "");
+                Args().GetArg<std::string>("-rpcuser", "") + ":" + Args().GetArg<std::string>("-rpcpassword", "");
     }
     return true;
 }

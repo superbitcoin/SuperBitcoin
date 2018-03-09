@@ -58,7 +58,6 @@ bool CChainComponent::ComponentInitialize()
 
     app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainComponent::OnNodeDisconnected);
 
-    const CChainParams &chainParams = app().GetChainParams();
     LoadCheckPoint();
 
     InitSignatureCache((int64_t)(Args().GetArg<uint32_t>("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2));
@@ -152,7 +151,7 @@ bool CChainComponent::ComponentInitialize()
                 break;
             }
 
-            int ret = cIndexManager.LoadBlockIndex(chainParams.GetConsensus(), iBlockTreeDBCache, bReset, bTxIndex);
+            int ret = cIndexManager.LoadBlockIndex(Params().GetConsensus(), iBlockTreeDBCache, bReset, bTxIndex);
             if (ret == ERR_LOAD_INDEX_DB)
             {
                 strLoadError = _("Error loading block database");
@@ -172,9 +171,9 @@ bool CChainComponent::ComponentInitialize()
             }
 
             bReIndex |= cIndexManager.IsReIndexing();
-            if (!bReIndex && cIndexManager.NeedInitGenesisBlock(chainParams))
+            if (!bReIndex && cIndexManager.NeedInitGenesisBlock(Params()))
             {
-                if (!LoadGenesisBlock(chainParams))
+                if (!LoadGenesisBlock(Params()))
                 {
                     strLoadError = _("Error initializing block database");
                     break;
@@ -205,14 +204,14 @@ bool CChainComponent::ComponentInitialize()
             if (!bCoinsViewEmpty)
             {
                 // LoadChainTip sets chainActive based on pcoinsTip's best block
-                if (!LoadChainTip(chainParams))
+                if (!LoadChainTip(Params()))
                 {
                     strLoadError = _("Error initializing block database");
                     break;
                 }
                 // check current chain according to checkpoint
                 CValidationState state;
-                CheckActiveChain(state, chainParams);
+                CheckActiveChain(state, Params());
                 assert(state.IsValid());
                 assert(Tip() != nullptr);
             }
@@ -223,7 +222,7 @@ bool CChainComponent::ComponentInitialize()
                 // It both disconnects blocks based on chainActive, and drops block data in
                 // mapBlockIndex based on lack of available witness data.
                 uiInterface.InitMessage(_("Rewinding blocks..."));
-                if (!RewindBlock(chainParams))
+                if (!RewindBlock(Params()))
                 {
                     strLoadError = _(
                             "Unable to rewind the database to a pre-fork state. You will need to redownload the blockchain");
@@ -304,7 +303,7 @@ bool CChainComponent::ComponentInitialize()
         }
     }
 
-    if (chainParams.GetConsensus().vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout != 0)
+    if (Params().GetConsensus().vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout != 0)
     {
         // Only advertise witness capabilities if they have a reasonable start time.
         // This allows us to have the code merged without a defined softfork, by setting its
@@ -446,8 +445,6 @@ void CChainComponent::SetTip(CBlockIndex *pIndexTip)
 
 bool CChainComponent::ReplayBlocks()
 {
-    const CChainParams &params = app().GetChainParams();
-
     CCoinsView *view(cViewManager.GetCoinViewDB());
     CCoinsViewCache cache(view);
 
@@ -486,7 +483,7 @@ bool CChainComponent::ReplayBlocks()
         if (pIndexOld->nHeight > 0) // Never disconnect the genesis block.
         {
             CBlock block;
-            if (!ReadBlockFromDisk(block, pIndexOld, params.GetConsensus()))
+            if (!ReadBlockFromDisk(block, pIndexOld, Params().GetConsensus()))
             {
                 return error("RollbackBlock(): ReadBlockFromDisk() failed at %d, hash=%s", pIndexOld->nHeight,
                              pIndexOld->GetBlockHash().ToString());
@@ -515,7 +512,7 @@ bool CChainComponent::ReplayBlocks()
         const CBlockIndex *pIndex = pIndexNew->GetAncestor(nHeight);
         mlog.info("Rolling forward %s (%i)\n", pIndex->GetBlockHash().ToString(), nHeight);
         CBlock block;
-        if (!ReadBlockFromDisk(block, pIndex, params.GetConsensus()))
+        if (!ReadBlockFromDisk(block, pIndex, Params().GetConsensus()))
         {
             return error("ReplayBlock(): ReadBlockFromDisk failed at %d, hash=%s", pIndex->nHeight,
                          pIndex->GetBlockHash().ToString());
@@ -637,8 +634,7 @@ bool CChainComponent::FlushStateToDisk(CValidationState &state, FlushStateMode m
 void CChainComponent::FlushStateToDisk()
 {
     CValidationState state;
-    const CChainParams &params = app().GetChainParams();
-    FlushStateToDisk(state, FLUSH_STATE_ALWAYS, params);
+    FlushStateToDisk(state, FLUSH_STATE_ALWAYS, Params());
 }
 
 bool CChainComponent::IsInitialBlockDownload()
@@ -751,9 +747,8 @@ bool CChainComponent::DisconnectTip(CValidationState &state, const CChainParams 
     // Read block from disk.
     std::shared_ptr<CBlock> pBlock = std::make_shared<CBlock>();
     CBlock &block = *pBlock;
-    const CChainParams &params = app().GetChainParams();
 
-    if (!ReadBlockFromDisk(block, pIndexDelete, params.GetConsensus()))
+    if (!ReadBlockFromDisk(block, pIndexDelete, Params().GetConsensus()))
     {
         return AbortNode(state, "Failed to read block");
     }
@@ -898,8 +893,7 @@ static bool IsSBTCForkEnabled(const Consensus::Params &params, const CBlockIndex
 
 bool CChainComponent::IsSBTCForkEnabled(const int height)
 {
-    const CChainParams &chainParams = app().GetChainParams();
-    return height >= chainParams.GetConsensus().SBTCForkHeight;
+    return height >= Params().GetConsensus().SBTCForkHeight;
 }
 
 bool CChainComponent::IsSBTCForkHeight(const Consensus::Params &params, const int &height)
@@ -1504,7 +1498,6 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
     CBlockIndex *pIndexMostWork = nullptr;
     CBlockIndex *pIndexNewTip = nullptr;
 
-    const CChainParams &params = app().GetChainParams();
     GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
 
     int iStopAtHeight = Args().GetArg<int>("-stopatheight", DEFAULT_STOPATHEIGHT);
@@ -1576,10 +1569,10 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
 
     } while (pIndexNewTip != pIndexMostWork);
 
-    cIndexManager.CheckBlockIndex(params.GetConsensus());
+    cIndexManager.CheckBlockIndex(Params().GetConsensus());
 
     // Write changes periodically to disk, after relay.
-    if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC, params))
+    if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC, Params()))
     {
         return false;
     }
@@ -1829,10 +1822,9 @@ int CChainComponent::VerifyBlocks()
         return ERR_FUTURE_BLOCK;
     }
 
-    const CChainParams &chainParams = app().GetChainParams();
     uint32_t checkLevel = Args().GetArg<uint32_t>("-checklevel", DEFAULT_CHECKLEVEL);
     int checkBlocks = Args().GetArg<int>("-checkblocks", DEFAULT_CHECKBLOCKS);
-    if (!VerifyDB(chainParams, cViewManager.GetCoinViewDB(), checkLevel, checkBlocks))
+    if (!VerifyDB(Params(), cViewManager.GetCoinViewDB(), checkLevel, checkBlocks))
     {
         return ERR_VERIFY_DB;
     }
@@ -1843,8 +1835,6 @@ int CChainComponent::VerifyBlocks()
 void CChainComponent::ThreadImport()
 {
     RenameThread("bitcoin-loadblk");
-
-    const CChainParams &chainParams = app().GetChainParams();
 
     if (bReIndex)
     {
@@ -1858,16 +1848,16 @@ void CChainComponent::ThreadImport()
             if (!file)
                 break; // This error is logged in OpenBlockFile
             mlog.info("Reindexing block file blk%05u.dat...", (unsigned int)iFile);
-            LoadExternalBlockFile(chainParams, file, &pos);
+            LoadExternalBlockFile(Params(), file, &pos);
             iFile++;
         }
 
         mlog.info("Reindexing finished");
     }
 
-    if (cIndexManager.NeedInitGenesisBlock(chainParams))
+    if (cIndexManager.NeedInitGenesisBlock(Params()))
     {
-        if (!LoadGenesisBlock(chainParams))
+        if (!LoadGenesisBlock(Params()))
         {
             return;
         }
@@ -1882,7 +1872,7 @@ void CChainComponent::ThreadImport()
         {
             fs::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
             mlog.info("Importing bootstrap.dat...");
-            LoadExternalBlockFile(chainParams, file, nullptr);
+            LoadExternalBlockFile(Params(), file, nullptr);
             RenameOver(pathBootstrap, pathBootstrapOld);
         } else
         {
@@ -1896,7 +1886,7 @@ void CChainComponent::ThreadImport()
         if (file)
         {
             mlog.info("Importing blocks file %s...", strFile);
-            LoadExternalBlockFile(chainParams, file, nullptr);
+            LoadExternalBlockFile(Params(), file, nullptr);
         } else
         {
             mlog.info("Warning: Could not open blocks file %s", strFile);
@@ -1905,7 +1895,7 @@ void CChainComponent::ThreadImport()
 
     // scan for better chains in the block chain database, that are not yet connected in the active best chain
     CValidationState state;
-    if (!ActivateBestChain(state, chainParams, nullptr))
+    if (!ActivateBestChain(state, Params(), nullptr))
     {
         mlog.info("Failed to connect best block");
         return;
@@ -2187,15 +2177,13 @@ bool CChainComponent::LoadCheckPoint()
     Checkpoints::CCheckPointDB cCheckPointDB;
     std::map<int, Checkpoints::CCheckData> values;
 
-    const CChainParams &chainParams = app().GetChainParams();
-
     if (cCheckPointDB.LoadCheckPoint(values))
     {
         std::map<int, Checkpoints::CCheckData>::iterator it = values.begin();
         while (it != values.end())
         {
             Checkpoints::CCheckData data1 = it->second;
-            chainParams.AddCheckPoint(data1.getHeight(), data1.getHash());
+            Params().AddCheckPoint(data1.getHeight(), data1.getHash());
             it++;
         }
     }
@@ -2459,13 +2447,11 @@ void CChainComponent::UpdateCoins(const CTransaction &tx, CCoinsViewCache &input
 
 CAmount CChainComponent::GetBlockSubsidy(int nHeight)
 {
-    const CChainParams &chainParams = app().GetChainParams();
-
-    if (IsSBTCForkHeight(chainParams.GetConsensus(), nHeight))
+    if (IsSBTCForkHeight(Params().GetConsensus(), nHeight))
     {
         return 210000 * COIN;
     }
-    int halvings = nHeight / chainParams.GetConsensus().nSubsidyHalvingInterval;
+    int halvings = nHeight / Params().GetConsensus().nSubsidyHalvingInterval;
     // Force block reward to zero when right shift is undefined.
     if (halvings >= 64)
         return 0;

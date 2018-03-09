@@ -62,7 +62,7 @@ UniValue JSONRPCError(int code, const std::string &message)
 /** Get name of RPC authentication cookie file */
 static fs::path GetAuthCookieFile(bool temp = false)
 {
-    std::string arg = gArgs.GetArg<std::string>("-rpccookiefile", COOKIEAUTH_FILE);
+    std::string arg = Args().GetArg<std::string>("-rpccookiefile", COOKIEAUTH_FILE);
     if (temp)
     {
         arg += ".tmp";

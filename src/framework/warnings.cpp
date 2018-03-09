@@ -53,7 +53,7 @@ std::string GetWarnings(const std::string &strFor)
                 "This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
     }
 
-    if (gArgs.GetArg<bool>("-testsafemode", DEFAULT_TESTSAFEMODE))
+    if (Args().GetArg<bool>("-testsafemode", DEFAULT_TESTSAFEMODE))
         strStatusBar = strRPC = strGUI = "testsafemode enabled";
 
     // Misc warnings like out of disk space and clock is wrong

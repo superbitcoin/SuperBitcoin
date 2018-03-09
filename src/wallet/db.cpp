@@ -503,7 +503,7 @@ void CDB::Flush()
     if (fReadOnly)
         nMinutes = 1;
 
-    env->dbenv->txn_checkpoint(nMinutes ? gArgs.GetArg<uint32_t>("-dblogsize", DEFAULT_WALLET_DBLOGSIZE) * 1024 : 0,
+    env->dbenv->txn_checkpoint(nMinutes ? Args().GetArg<uint32_t>("-dblogsize", DEFAULT_WALLET_DBLOGSIZE) * 1024 : 0,
                                nMinutes, 0);
 }
 

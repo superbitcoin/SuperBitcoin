@@ -105,7 +105,7 @@ void CConnman::AddOneShot(const std::string &strDest)
 
 unsigned short GetListenPort()
 {
-    return (unsigned short)(Args().GetArg<int32_t>("-port", app().GetChainParams().GetDefaultPort()));
+    return (unsigned short)(Args().GetArg<int32_t>("-port", Params().GetDefaultPort()));
 }
 
 // find 'best' local address for a particular peer
@@ -273,11 +273,6 @@ bool IsReachable(const CNetAddr &addr)
 {
     enum Network net = addr.GetNetwork();
     return IsReachable(net);
-}
-
-const CChainParams &CConnman::Params()
-{
-    return app().GetChainParams();
 }
 
 CNode *CConnman::FindNode(const CNetAddr &ip)

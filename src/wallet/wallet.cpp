@@ -1069,7 +1069,7 @@ bool CWallet::AddToWallet(const CWalletTx &wtxIn, bool fFlushOnClose)
     NotifyTransactionChanged(this, hash, fInsertedNew ? CT_NEW : CT_UPDATED);
 
     // notify an external script when a wallet transaction comes in or is updated
-    std::string strCmd = gArgs.GetArg<std::string>("-walletnotify", "");
+    std::string strCmd = Args().GetArg<std::string>("-walletnotify", "");
 
     if (!strCmd.empty())
     {
@@ -2692,9 +2692,9 @@ bool CWallet::SelectCoins(const std::vector<COutput> &vAvailableCoins, const CAm
             ++it;
     }
 
-    size_t nMaxChainLength = std::min(gArgs.GetArg<uint32_t>("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT),
-                                      gArgs.GetArg<uint32_t>("-limitdescendantcount", DEFAULT_DESCENDANT_LIMIT));
-    bool fRejectLongChains = gArgs.GetArg<bool>("-walletrejectlongchains", DEFAULT_WALLET_REJECT_LONG_CHAINS);
+    size_t nMaxChainLength = std::min(Args().GetArg<uint32_t>("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT),
+                                      Args().GetArg<uint32_t>("-limitdescendantcount", DEFAULT_DESCENDANT_LIMIT));
+    bool fRejectLongChains = Args().GetArg<bool>("-walletrejectlongchains", DEFAULT_WALLET_REJECT_LONG_CHAINS);
 
     bool res = nTargetValue <= nValueFromPresetInputs ||
                SelectCoinsMinConf(nTargetValue - nValueFromPresetInputs, 1, 6, 0, vCoins, setCoinsRet, nValueRet) ||
@@ -3178,17 +3178,17 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
         }
     }
 
-    if (gArgs.GetArg<bool>("-walletrejectlongchains", DEFAULT_WALLET_REJECT_LONG_CHAINS))
+    if (Args().GetArg<bool>("-walletrejectlongchains", DEFAULT_WALLET_REJECT_LONG_CHAINS))
     {
         // Lastly, ensure this tx will pass the mempool's chain limits
         LockPoints lp;
         CTxMemPoolEntry entry(wtxNew.tx, 0, 0, 0, false, 0, lp);
         CTxMemPool::setEntries setAncestors;
-        size_t nLimitAncestors = gArgs.GetArg<uint32_t>("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT);
-        size_t nLimitAncestorSize = gArgs.GetArg<uint32_t>("-limitancestorsize", DEFAULT_ANCESTOR_SIZE_LIMIT) * 1000;
-        size_t nLimitDescendants = gArgs.GetArg<uint32_t>("-limitdescendantcount", DEFAULT_DESCENDANT_LIMIT);
+        size_t nLimitAncestors = Args().GetArg<uint32_t>("-limitancestorcount", DEFAULT_ANCESTOR_LIMIT);
+        size_t nLimitAncestorSize = Args().GetArg<uint32_t>("-limitancestorsize", DEFAULT_ANCESTOR_SIZE_LIMIT) * 1000;
+        size_t nLimitDescendants = Args().GetArg<uint32_t>("-limitdescendantcount", DEFAULT_DESCENDANT_LIMIT);
         size_t nLimitDescendantSize =
-                gArgs.GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000;
+                Args().GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000;
         std::string errString;
         GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
         CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
@@ -3340,7 +3340,7 @@ CAmount CWallet::GetMinimumFee(unsigned int nTxBytes, const CCoinControl &coin_c
         }
         // Obey mempool min fee when using smart fee estimation
         CAmount min_mempool_fee = pool.GetMinFee(
-                gArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nTxBytes);
+                Args().GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000).GetFee(nTxBytes);
         if (fee_needed < min_mempool_fee)
         {
             fee_needed = min_mempool_fee;
@@ -3587,7 +3587,7 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
         if (kpSize > 0)
             nTargetSize = kpSize;
         else
-            nTargetSize = std::max(gArgs.GetArg<uint32_t>("-keypool", DEFAULT_KEYPOOL_SIZE), (unsigned int)(0));
+            nTargetSize = std::max(Args().GetArg<uint32_t>("-keypool", DEFAULT_KEYPOOL_SIZE), (unsigned int)(0));
 
         // count amount of available keys (internal, external)
         // make sure the keypool of external and internal keys fits the user selected target (-keypool)

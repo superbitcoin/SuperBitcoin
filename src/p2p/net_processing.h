@@ -139,8 +139,6 @@ private:
 
     const CArgsManager &appArgs;
 
-    const CChainParams &Params();
-
     log4cpp::Category &mlog;
 };
 

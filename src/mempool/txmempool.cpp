@@ -35,9 +35,8 @@ bool CTxMemPool::AcceptToMemoryPool(CValidationState &state, const CTransactionR
                                     bool *pfMissingInputs, bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
 {
     std::list<CTransactionRef> TxnReplaced;
-    const CChainParams &chainparams = app().GetChainParams();
-    return AcceptToMemoryPoolWithTime(chainparams, state, tx, fLimitFree, pfMissingInputs, GetTime(),
-                                      &TxnReplaced, fOverrideMempoolLimit, nAbsurdFee);
+    return AcceptToMemoryPoolWithTime(Params(), state, tx, fLimitFree, pfMissingInputs, GetTime(), &TxnReplaced,
+                                      fOverrideMempoolLimit, nAbsurdFee);
 }
 
 /** (try to) add transaction to memory pool with a specified acceptance time **/
@@ -600,8 +599,8 @@ void CTxMemPool::UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnect
     // We also need to remove any now-immature transactions
     this->removeForReorg(pcoinsTip, ifChainObj->GetActiveChain().Tip()->nHeight + 1, STANDARD_LOCKTIME_VERIFY_FLAGS);
     // Re-limit mempool size, in case we added any transactions
-    LimitMempoolSize(gArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
-                     gArgs.GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
+    LimitMempoolSize(Args().GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000,
+                     Args().GetArg("-mempoolexpiry", DEFAULT_MEMPOOL_EXPIRY) * 60 * 60);
 }
 
 

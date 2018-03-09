@@ -770,7 +770,7 @@ void MaybeCompactWalletDB(std::vector<CWallet*> &vpWallets)
     {
         return;
     }
-    if (!(gArgs.GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
+    if (!(Args().GetArg<bool>("-flushwallet", DEFAULT_FLUSHWALLET)))
     {
         return;
     }

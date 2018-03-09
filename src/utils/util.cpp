@@ -482,7 +482,7 @@ fs::path GetConfigFile(const std::string &confPath)
 
 fs::path GetPidFile()
 {
-    fs::path pathPidFile(gArgs.GetArg<std::string>("-pid", BITCOIN_PID_FILENAME));
+    fs::path pathPidFile(Args().GetArg<std::string>("-pid", BITCOIN_PID_FILENAME));
     if (!pathPidFile.is_complete())
         pathPidFile = GetDataDir() / pathPidFile;
     return pathPidFile;

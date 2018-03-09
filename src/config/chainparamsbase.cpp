@@ -64,12 +64,8 @@ public:
     }
 };
 
-static std::unique_ptr<CBaseChainParams> globalChainBaseParams;
-
 const CBaseChainParams &BaseParams()
 {
-//    assert(globalChainBaseParams);
-//    return *globalChainBaseParams;
     return appbase::CApp::Instance().GetBaseChainParams();
 }
 
@@ -87,13 +83,13 @@ std::unique_ptr<CBaseChainParams> CreateBaseChainParams(const std::string &chain
 
 void SelectBaseParams(const std::string &chain)
 {
-    globalChainBaseParams = CreateBaseChainParams(chain);
+
 }
 
 std::string ChainNameFromCommandLine()
 {
-    bool fRegTest = gArgs.IsArgSet("-regtest");
-    bool fTestNet = gArgs.IsArgSet("-testnet");
+    bool fRegTest = Args().IsArgSet("-regtest");
+    bool fTestNet = Args().IsArgSet("-testnet");
 
     if (fTestNet && fRegTest)
         throw std::runtime_error("Invalid combination of -regtest and -testnet.");

@@ -392,12 +392,8 @@ public:
 
 };
 
-static std::unique_ptr<CChainParams> globalChainParams;
-
 const CChainParams &Params()
 {
-//    assert(globalChainParams);
-//    return *globalChainParams;
     return appbase::CApp::Instance().GetChainParams();
 }
 
@@ -414,11 +410,5 @@ std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain)
 
 void SelectParams(const std::string &network)
 {
-    SelectBaseParams(network);
-    globalChainParams = CreateChainParams(network);
-}
 
-void UpdateVersionBitsParameters(Consensus::DeploymentPos d, int64_t nStartTime, int64_t nTimeout)
-{
-    globalChainParams->UpdateVersionBitsParameters(d, nStartTime, nTimeout);
 }
