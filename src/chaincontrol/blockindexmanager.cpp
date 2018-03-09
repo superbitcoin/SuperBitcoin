@@ -454,7 +454,6 @@ CBlockIndex *CBlockIndexManager::GetBlockIndex(const uint256 hash)
 {
     if (mBlockIndex.count(hash) == 0)
     {
-        mlog_error("LastCommonAncestor(): reorganization to unknown block requested");
         return nullptr;
     }
 
