@@ -50,7 +50,7 @@ void CApp::InitParameterInteraction()
     // even when -connect or -proxy is specified
     if (gArgs.IsArgSet("-bind"))
     {
-        if (gArgs.SoftSetArg("-isten", true))
+        if (gArgs.SoftSetArg("-listen", true))
             mlog_notice("%s: parameter interaction: -bind set -> setting -listen=1\n", __func__);
     }
     if (gArgs.IsArgSet("-whitebind"))

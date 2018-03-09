@@ -123,7 +123,7 @@ bool CDBEnv::Open(const fs::path &pathIn)
     LogPrintf("CDBEnv::Open: LogDir=%s ErrorFile=%s\n", pathLogDir.string(), pathErrorFile.string());
 
     unsigned int nEnvFlags = 0;
-    if (app().GetArgsManager().GetArg<bool>("-privdb", DEFAULT_WALLET_PRIVDB))
+    if (Args().GetArg<bool>("-privdb", DEFAULT_WALLET_PRIVDB))
         nEnvFlags |= DB_PRIVATE;
 
     dbenv->set_lg_dir(pathLogDir.string().c_str());
@@ -206,6 +206,7 @@ CDBEnv::Verify(const std::string &strFile, recoverFunc_type recoverFunc, std::st
     bool fRecovered = (*recoverFunc)(strFile, out_backup_filename);
     return (fRecovered ? RECOVER_OK : RECOVER_FAIL);
 }
+
 log4cpp::Category &CDB::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
 
 bool CDB::Recover(const std::string &filename, void *callbackDataIn,
@@ -307,7 +308,7 @@ bool CDB::VerifyEnvironment(const std::string &walletFile, const fs::path &dataD
         if (!bitdb.Open(dataDir))
         {
             // if it still fails, it probably means we can't even create the database env
-            errorStr = strprintf(_("Error initializing wallet database environment %s!"), app().GetArgsManager().GetDataDir());
+            errorStr = strprintf(_("Error initializing wallet database environment %s!"), Args().GetDataDir());
             return false;
         }
     }
@@ -345,6 +346,7 @@ static const char *HEADER_END = "HEADER=END";
 static const char *DATA_END = "DATA=END";
 
 log4cpp::Category &CDBEnv::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
+
 bool CDBEnv::Salvage(const std::string &strFile, bool fAggressive, std::vector<CDBEnv::KeyValPair> &vResult)
 {
     LOCK(cs_db);
@@ -650,7 +652,7 @@ void CDBEnv::Flush(bool fShutdown)
     int64_t nStart = GetTimeMillis();
     // Flush log data to the actual data file on all files that are not in use
     mlog_notice("CDBEnv::Flush: Flush(%s)%s\n", fShutdown ? "true" : "false",
-             fDbEnvInit ? "" : " database not started");
+                fDbEnvInit ? "" : " database not started");
     if (!fDbEnvInit)
         return;
     {
@@ -665,9 +667,9 @@ void CDBEnv::Flush(bool fShutdown)
             {
                 // Move log data to the dat file
                 CloseDb(strFile);
-                mlog_notice( "CDBEnv::Flush: %s checkpoint", strFile);
+                mlog_notice("CDBEnv::Flush: %s checkpoint", strFile);
                 dbenv->txn_checkpoint(0, 0, 0);
-                mlog_notice( "CDBEnv::Flush: %s detach", strFile);
+                mlog_notice("CDBEnv::Flush: %s detach", strFile);
                 if (!fMockDb)
                     dbenv->lsn_reset(strFile.c_str(), 0);
                 mlog_notice("CDBEnv::Flush: %s closed", strFile);
@@ -676,7 +678,7 @@ void CDBEnv::Flush(bool fShutdown)
                 mi++;
         }
         mlog_notice("CDBEnv::Flush: Flush(%s)%s took %15dms", fShutdown ? "true" : "false",
-                 fDbEnvInit ? "" : " database not started", GetTimeMillis() - nStart);
+                    fDbEnvInit ? "" : " database not started", GetTimeMillis() - nStart);
         if (fShutdown)
         {
             char **listp;
@@ -739,7 +741,9 @@ bool CWalletDBWrapper::Rewrite(const char *pszSkip)
 {
     return CDB::Rewrite(*this, pszSkip);
 }
+
 log4cpp::Category &CWalletDBWrapper::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
+
 bool CWalletDBWrapper::Backup(const std::string &strDest)
 {
     if (IsDummy())

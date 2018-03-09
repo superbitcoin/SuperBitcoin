@@ -26,8 +26,7 @@ void AlertNotify(const std::string &strMessage)
 {
     uiInterface.NotifyAlertChanged();
 
-    const CArgsManager &cArgs = app().GetArgsManager();
-    std::string strCmd = cArgs.GetArg<std::string>("-alertnotify", "");
+    std::string strCmd = Args().GetArg<std::string>("-alertnotify", "");
     if (strCmd.empty())
         return;
 

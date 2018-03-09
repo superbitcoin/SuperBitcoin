@@ -105,7 +105,7 @@ public:
 
     CBlockIndex *FindMostWorkIndex();
 
-    int LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, const CChainParams &chainparams);
+    int LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset, bool txIndex);
 
     void PruneBlockIndexCandidates();
 
@@ -213,9 +213,9 @@ private:
     /** chainwork for the last block that preciousblock has been applied to. */
     arith_uint256 nLastPreciousChainwork = 0;
 
-    bool Init(int64_t iBlockTreeDBCache, bool bReIndex, const CChainParams &chainparams);
+    bool Init(int64_t iBlockTreeDBCache, bool bReIndex);
 
-    int Check(const CChainParams &chainparams);
+    int Check(const uint256 hashGenesisBlock);
 
     CBlockIndex *InsertBlockIndex(uint256 hash);
 
@@ -225,7 +225,7 @@ private:
 
     void ReadBlockFileInfo();
 
-    bool LoadBlockIndexDB(const CChainParams &chainparams);
+    bool LoadBlockIndexDB(const Consensus::Params &consensus);
 
     void UnLoadBlockIndex();
 

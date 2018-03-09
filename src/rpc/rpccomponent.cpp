@@ -33,9 +33,7 @@ bool CHttpRpcComponent::ComponentStartup()
 {
     mlog_notice("startup http rpc component.");
 
-    const CArgsManager& appArgs = app().GetArgsManager();
-
-    if (!appArgs.GetArg<bool>("-server", false))
+    if (!Args().GetArg<bool>("-server", false))
         return true;
 
 //    RPCServer::OnStarted(&OnRPCStarted);
@@ -51,7 +49,7 @@ bool CHttpRpcComponent::ComponentStartup()
     if (!StartHTTPRPC())
         return error("Unable to start HTTP RPC server. See debug log for details.");
 
-    if (appArgs.GetArg<bool>("-rest", false) && !StartREST())
+    if (Args().GetArg<bool>("-rest", false) && !StartREST())
         return error("Unable to start REST server. See debug log for details.");
 
     if (!StartHTTPServer())

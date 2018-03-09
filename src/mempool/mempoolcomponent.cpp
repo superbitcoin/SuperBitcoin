@@ -192,8 +192,8 @@ void CMempoolComponent::DumpMempool(void)
 
 void CMempoolComponent::AddToCompactExtraTransactions(const CTransactionRef &tx)
 {
-    size_t max_extra_txn = app().GetArgsManager().GetArg<uint32_t>("-blockreconstructionextratxn",
-                                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
+    size_t max_extra_txn = Args().GetArg<uint32_t>("-blockreconstructionextratxn",
+                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
     if (max_extra_txn <= 0)
         return;
     if (!vExtraTxnForCompact.size())

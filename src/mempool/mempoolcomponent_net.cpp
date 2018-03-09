@@ -49,13 +49,11 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
 {
     assert(xnode != nullptr);
 
-    const CArgsManager &appArgs = app().GetArgsManager();
-
     // Stop processing the transaction early if
     // We are in blocks only mode and peer is either not whitelisted or whitelistrelay is off
     if (!IsFlagsBitOn(xnode->flags, NF_RELAYTX) &&
         (!IsFlagsBitOn(xnode->flags, NF_WHITELIST) ||
-         !appArgs.GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
+         !Args().GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
     {
         mlog_notice("transaction sent in violation of protocol peer=%d", xnode->nodeID);
         return true;
@@ -198,7 +196,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
 
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0,
-                                                               int64_t(appArgs.GetArg<uint32_t>("-maxorphantx",
+                                                               int64_t(Args().GetArg<uint32_t>("-maxorphantx",
                                                                                                 DEFAULT_MAX_ORPHAN_TRANSACTIONS)));
             unsigned int nEvicted = COrphanTx::Instance().LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
@@ -231,7 +229,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
         }
 
         if (IsFlagsBitOn(xnode->flags, NF_WHITELIST) &&
-            appArgs.GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
+            Args().GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
         {
             // Always relay transactions received from whitelisted peers, even
             // if they were already in the mempool or rejected from it due

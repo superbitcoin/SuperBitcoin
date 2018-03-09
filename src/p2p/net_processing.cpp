@@ -703,7 +703,7 @@ void Misbehaving(NodeId pnode, int howmuch)
         return;
 
     state->nMisbehavior += howmuch;
-    int banscore = app().GetArgsManager().GetArg<int>("-banscore", DEFAULT_BANSCORE_THRESHOLD);
+    int banscore = Args().GetArg<int>("-banscore", DEFAULT_BANSCORE_THRESHOLD);
     if (state->nMisbehavior >= banscore && state->nMisbehavior - howmuch < banscore)
     {
         LogPrintf("%s: %s peer=%d (%d -> %d) BAN THRESHOLD EXCEEDED\n", __func__, state->name, pnode,
@@ -1118,7 +1118,7 @@ const CChainParams &PeerLogicValidation::Params()
 }
 
 PeerLogicValidation::PeerLogicValidation(CConnman *connmanIn, CScheduler &scheduler)
-        : connman(connmanIn), m_stale_tip_check_time(0), appArgs(app().GetArgsManager()),
+        : connman(connmanIn), m_stale_tip_check_time(0), appArgs(Args()),
           mlog(log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET)))
 {
     // Initialize global variables that cannot be constructed at startup.

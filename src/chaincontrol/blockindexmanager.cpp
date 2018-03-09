@@ -236,7 +236,7 @@ void CBlockIndexManager::SortBlockIndex()
     }
 }
 
-bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex, const CChainParams &chainparams)
+bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex)
 {
     mlog.info("initialize index manager \n");
 
@@ -272,13 +272,14 @@ CBlockIndex *CBlockIndexManager::InsertBlockIndex(uint256 hash)
     return pIndexNew;
 }
 
-int CBlockIndexManager::LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, const CChainParams &chainparams)
+int CBlockIndexManager::LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset,
+                                       bool txIndex)
 {
-    Init(iBlockTreeDBCache, bReset, chainparams);
+    Init(iBlockTreeDBCache, bReset);
 
     if (!bReset)
     {
-        bool ret = LoadBlockIndexDB(chainparams);
+        bool ret = LoadBlockIndexDB(consensus);
         if (!ret)
         {
             return false;
@@ -287,13 +288,12 @@ int CBlockIndexManager::LoadBlockIndex(int64_t iBlockTreeDBCache, bool bReset, c
 
     if (bReset || mBlockIndex.empty())
     {
-        const CArgsManager &cArgs = app().GetArgsManager();
-        bTxIndex = cArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX);
+        bTxIndex = txIndex;
         pBlcokTreee->WriteFlag("txindex", bTxIndex);
     }
 
 
-    return Check(chainparams);
+    return Check(consensus.hashGenesisBlock);
 }
 
 void CBlockIndexManager::UnLoadBlockIndex()
@@ -320,18 +320,17 @@ void CBlockIndexManager::UnLoadBlockIndex()
     bHavePruned = false;
 }
 
-int CBlockIndexManager::Check(const CChainParams &chainparams)
+int CBlockIndexManager::Check(const uint256 hashGenesisBlock)
 {
     // If the loaded chain has a wrong genesis, bail out immediately
     // (we're likely using a testnet datadir, or the other way around).
-    if (!mBlockIndex.empty() && (mBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0))
+    if (!mBlockIndex.empty() && (mBlockIndex.count(hashGenesisBlock) == 0))
     {
         return ERR_LOAD_GENESIS;
     }
 
-    const CArgsManager &cArgs = app().GetArgsManager();
     // Check for changed -txindex state
-    if (bTxIndex != cArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX))
+    if (bTxIndex != Args().GetArg<bool>("-txindex", DEFAULT_TXINDEX))
     {
         return ERR_TXINDEX_STATE;
     }
@@ -405,9 +404,8 @@ bool CBlockIndexManager::CheckBlockFileExist()
     return true;
 }
 
-bool CBlockIndexManager::LoadBlockIndexDB(const CChainParams &chainparams)
+bool CBlockIndexManager::LoadBlockIndexDB(const Consensus::Params &consensus)
 {
-    const Consensus::Params &consensus = chainparams.GetConsensus();
     if (!pBlcokTreee->LoadBlockIndexGuts(consensus,
                                          std::bind(&CBlockIndexManager::InsertBlockIndex, this, std::placeholders::_1)))
     {

@@ -59,16 +59,14 @@ bool CChainComponent::ComponentInitialize()
     app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainComponent::OnNodeDisconnected);
 
     const CChainParams &chainParams = app().GetChainParams();
-    const CArgsManager &cArgs = app().GetArgsManager();
-
     LoadCheckPoint();
 
-    InitSignatureCache((int64_t)(gArgs.GetArg<uint32_t>("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2));
+    InitSignatureCache((int64_t)(Args().GetArg<uint32_t>("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2));
 
-    InitScriptExecutionCache(int64_t(gArgs.GetArg<uint32_t>("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2));
+    InitScriptExecutionCache(int64_t(Args().GetArg<uint32_t>("-maxsigcachesize", DEFAULT_MAX_SIG_CACHE_SIZE) / 2));
 
     // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
-    nScriptCheckThreads = gArgs.GetArg<int32_t>("-par", DEFAULT_SCRIPTCHECK_THREADS);
+    nScriptCheckThreads = Args().GetArg<int32_t>("-par", DEFAULT_SCRIPTCHECK_THREADS);
     if (nScriptCheckThreads <= 0)
         nScriptCheckThreads += GetNumCores();
     if (nScriptCheckThreads <= 1)
@@ -83,7 +81,7 @@ bool CChainComponent::ComponentInitialize()
     }
 
     // block pruning; get the amount of disk space (in MiB) to allot for block & undo files
-    int64_t iPruneArg = cArgs.GetArg<int32_t>("-prune", 0);
+    int64_t iPruneArg = Args().GetArg<int32_t>("-prune", 0);
     if (iPruneArg < 0)
     {
         return InitError(_("Prune cannot be configured with a negative value."));
@@ -106,17 +104,18 @@ bool CChainComponent::ComponentInitialize()
         fPruneMode = true;
     }
 
-    bool bReIndex = cArgs.GetArg<bool>("-reindex", false);
-    bool bReindexChainState = cArgs.GetArg<bool>("-reindex-chainstate", false);
+    bool bReIndex = Args().GetArg<bool>("-reindex", false);
+    bool bReindexChainState = Args().GetArg<bool>("-reindex-chainstate", false);
+    bool bTxIndex = Args().GetArg<bool>("-txindex", DEFAULT_TXINDEX);
 
     // cache size calculations
-    int64_t iTotalCache = (cArgs.GetArg<int64_t>("-dbcache", nDefaultDbCache) << 20);
+    int64_t iTotalCache = (Args().GetArg<int64_t>("-dbcache", nDefaultDbCache) << 20);
     iTotalCache = std::max(iTotalCache, nMinDbCache << 20); // total cache cannot be less than nMinDbCache
     iTotalCache = std::min(iTotalCache, nMaxDbCache << 20); // total cache cannot be greater than nMaxDbcache
     int64_t iBlockTreeDBCache = iTotalCache / 8;
     iBlockTreeDBCache = std::min(iBlockTreeDBCache,
-                                 (cArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX) ? nMaxBlockDBAndTxIndexCache
-                                                                                  : nMaxBlockDBCache) << 20);
+                                 (Args().GetArg<bool>("-txindex", DEFAULT_TXINDEX) ? nMaxBlockDBAndTxIndexCache
+                                                                                   : nMaxBlockDBCache) << 20);
     iTotalCache -= iBlockTreeDBCache;
     int64_t iCoinDBCache = std::min(iTotalCache / 2,
                                     (iTotalCache / 4) + (1 << 23)); // use 25%-50% of the remainder for disk cache
@@ -153,7 +152,7 @@ bool CChainComponent::ComponentInitialize()
                 break;
             }
 
-            int ret = cIndexManager.LoadBlockIndex(iBlockTreeDBCache, bReset, chainParams);
+            int ret = cIndexManager.LoadBlockIndex(chainParams.GetConsensus(), iBlockTreeDBCache, bReset, bTxIndex);
             if (ret == ERR_LOAD_INDEX_DB)
             {
                 strLoadError = _("Error loading block database");
@@ -540,8 +539,6 @@ bool CChainComponent::FlushStateToDisk(CValidationState &state, FlushStateMode m
 {
     LOCK(cs_main);
 
-    const CArgsManager &cArgs = app().GetArgsManager();
-
     static int64_t iLastWrite = 0;
     static int64_t iLastFlush = 0;
     static int64_t iLastSetChain = 0;
@@ -564,7 +561,7 @@ bool CChainComponent::FlushStateToDisk(CValidationState &state, FlushStateMode m
 
     GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
     int64_t iMempoolUsage = ifTxMempoolObj->GetMemPool().DynamicMemoryUsage();
-    int64_t iMempoolSizeMax = cArgs.GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
+    int64_t iMempoolSizeMax = Args().GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
     int64_t iCacheSize = cViewManager.GetCoinsTip()->DynamicMemoryUsage();
     int64_t iTotalSpace = iCoinCacheUsage + std::max<int64_t>(iMempoolSizeMax - iMempoolUsage, 0);
 
@@ -975,7 +972,6 @@ bool CChainComponent::ContextualCheckBlock(const CBlock &block, CValidationState
     // Check that all transactions are finalized
     for (const auto &tx : block.vtx)
     {
-        // todu
         if (!tx->IsFinalTx(nHeight, nLockTimeCutoff))
         {
             return state.DoS(10, false, REJECT_INVALID, "bad-txns-nonfinal", false, "non-final transaction");
@@ -1178,7 +1174,6 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     {
         const CTransaction &tx = *(block.vtx[i]);
 
-        //todo
         nInputs += tx.vin.size();
 
         if (!tx.IsCoinBase())
@@ -1510,10 +1505,9 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
     CBlockIndex *pIndexNewTip = nullptr;
 
     const CChainParams &params = app().GetChainParams();
-    const CArgsManager &appArgs = app().GetArgsManager();
     GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
 
-    int iStopAtHeight = appArgs.GetArg<int>("-stopatheight", DEFAULT_STOPATHEIGHT);
+    int iStopAtHeight = Args().GetArg<int>("-stopatheight", DEFAULT_STOPATHEIGHT);
     do
     {
         boost::this_thread::interruption_point();
@@ -1836,9 +1830,8 @@ int CChainComponent::VerifyBlocks()
     }
 
     const CChainParams &chainParams = app().GetChainParams();
-    const CArgsManager &cArgs = app().GetArgsManager();
-    uint32_t checkLevel = cArgs.GetArg<uint32_t>("-checklevel", DEFAULT_CHECKLEVEL);
-    int checkBlocks = cArgs.GetArg<int>("-checkblocks", DEFAULT_CHECKBLOCKS);
+    uint32_t checkLevel = Args().GetArg<uint32_t>("-checklevel", DEFAULT_CHECKLEVEL);
+    int checkBlocks = Args().GetArg<int>("-checkblocks", DEFAULT_CHECKBLOCKS);
     if (!VerifyDB(chainParams, cViewManager.GetCoinViewDB(), checkLevel, checkBlocks))
     {
         return ERR_VERIFY_DB;
@@ -1852,7 +1845,6 @@ void CChainComponent::ThreadImport()
     RenameThread("bitcoin-loadblk");
 
     const CChainParams &chainParams = app().GetChainParams();
-    const CArgsManager &cArgs = app().GetArgsManager();
 
     if (bReIndex)
     {
@@ -1898,7 +1890,7 @@ void CChainComponent::ThreadImport()
         }
     }
 
-    for (const std::string &strFile : cArgs.GetArgs("-loadblock"))
+    for (const std::string &strFile : Args().GetArgs("-loadblock"))
     {
         FILE *file = fsbridge::fopen(strFile, "rb");
         if (file)
@@ -1919,7 +1911,7 @@ void CChainComponent::ThreadImport()
         return;
     }
 
-    if (cArgs.GetArg<bool>("-stopafterblockimport", false))
+    if (Args().GetArg<bool>("-stopafterblockimport", false))
     {
         mlog.info("Stopping after block import");
         return;
