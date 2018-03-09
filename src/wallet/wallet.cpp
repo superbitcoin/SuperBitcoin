@@ -14,7 +14,6 @@
 #include "config/consensus.h"
 #include "chaincontrol/validation.h"
 #include "fs.h"
-#include "framework/init.h"
 #include "key.h"
 #include "keystore.h"
 #include "block/validation.h"

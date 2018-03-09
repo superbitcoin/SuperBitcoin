@@ -12,7 +12,6 @@
 #include "config/chainparams.h"
 #include "chaincontrol/validation.h"
 #include "hash.h"
-#include "framework/init.h"
 #include "block/validation.h"
 #include "merkleblock.h"
 #include "net.h"

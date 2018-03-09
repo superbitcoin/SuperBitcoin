@@ -14,7 +14,6 @@
 #include "sbtccore/clientversion.h"
 #include "compat/compat.h"
 #include "framework/sync.h"
-#include "framework/init.h"
 #include "framework/noui.h"
 #include "framework/scheduler.h"
 #include "utils/util.h"
@@ -36,7 +35,6 @@
 #include "wallet/wallet.h"
 #include "wallet/db.h"
 #include "wallet/walletdb.h"
-#include "framework/init.h"
 #include "rpc/protocol.h"
 
 CArgsManager gArgs;

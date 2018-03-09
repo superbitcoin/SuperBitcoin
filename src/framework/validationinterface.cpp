@@ -4,8 +4,6 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "validationinterface.h"
-
-#include "framework/init.h"
 #include "block/block.h"
 #include "scheduler.h"
 #include "sync.h"

@@ -7,7 +7,6 @@
 
 #include "utils/base58.h"
 #include "fs.h"
-#include "framework/init.h"
 #include "framework/base.hpp"
 #include "random.h"
 #include "framework/sync.h"

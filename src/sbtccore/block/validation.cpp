@@ -17,7 +17,6 @@
 #include "sbtccore/cuckoocache.h"
 #include "fs.h"
 #include "hash.h"
-#include "framework/init.h"
 #include "wallet/fees.h"
 #include "sbtccore/transaction/policy.h"
 #include "wallet/rbf.h"

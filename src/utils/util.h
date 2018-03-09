@@ -30,7 +30,6 @@
 #include <vector>
 
 #include <boost/signals2/signal.hpp>
-#include "framework/init.h"
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
 #include <boost/filesystem/path.hpp>

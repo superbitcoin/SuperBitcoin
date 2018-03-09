@@ -11,7 +11,6 @@
 #include "config/params.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/core_io.h"
-#include "framework/init.h"
 #include "block/validation.h"
 #include "miner/miner.h"
 #include "p2p/net.h"

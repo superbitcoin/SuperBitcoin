@@ -5,7 +5,6 @@
 #include "utils/base58.h"
 #include "chaincontrol/chain.h"
 #include "rpc/server.h"
-#include "framework/init.h"
 #include "block/validation.h"
 #include "script/script.h"
 #include "script/standard.h"

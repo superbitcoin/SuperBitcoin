@@ -12,7 +12,6 @@
 #include "uint256.h"
 #include "utils/util.h"
 #include "framework/ui_interface.h"
-#include "framework/init.h"
 
 #include <stdint.h>
 

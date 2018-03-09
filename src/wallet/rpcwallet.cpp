@@ -9,7 +9,6 @@
 #include "chaincontrol/validation.h"
 #include "chaincontrol/blockfilemanager.h"
 #include "sbtccore/core_io.h"
-#include "framework/init.h"
 #include "utils/net/httpserver.h"
 #include "block/validation.h"
 #include "p2p/net.h"

@@ -16,7 +16,6 @@
 #include "rpc/protocol.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-#include "framework/init.h"
 
 #include <stdio.h>
 

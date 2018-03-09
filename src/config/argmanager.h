@@ -23,39 +23,6 @@
 
 #include "utils/fs.h"
 
-
-//#include "chainparams.h"
-//#include "chainparamsbase.h"
-//#include "chaincontrol/checkpoints.h"
-
-//#include "sbtccore/clientversion.h"
-//#include "compat/compat.h"
-//#include "framework/sync.h"
-//#include "framework/init.h"
-//#include "framework/noui.h"
-//#include "framework/scheduler.h"
-//#include "utils/util.h"
-//#include "utils/net/httpserver.h"
-//#include "utils/net/httprpc.h"
-//#include "utils/utilstrencodings.h"
-
-
-//#include "transaction/txdb.h"
-//#include "p2p/net_processing.h"
-//#include "sbtccore/transaction/policy.h"
-//#include "block/validation.h"
-//#include "p2p/netbase.h"
-//#include "utils/net/torcontrol.h"
-//#include "script/sigcache.h"
-//#include "utils/utilmoneystr.h"
-//#include "script/standard.h"
-//#include "rpc/protocol.h"
-//#include "wallet/wallet.h"
-//#include "wallet/db.h"
-//#include "wallet/walletdb.h"
-//#include "framework/init.h"
-//#include "rpc/protocol.h"
-
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 using std::vector;
