@@ -209,38 +209,38 @@ bool CApp::AppInitParameterInteraction()
         return false;
     }
 
-    if (gArgs.IsArgSet("-debug"))
-    {
-        // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
-        const std::vector<std::string> categories = gArgs.GetArgs("-debug");
+//    if (gArgs.IsArgSet("-debug"))
+//    {
+//        // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
+//        const std::vector<std::string> categories = gArgs.GetArgs("-debug");
+//
+//        if ((find(categories.begin(), categories.end(), std::string("no")) == categories.end()) ||
+//            find(categories.begin(), categories.end(), std::string("n")) == categories.end())
+//        {
+//            for (const auto &cat : categories)
+//            {
+//                uint32_t flag = 0;
+//                if (!GetLogCategory(&flag, &cat))
+//                {
+//                    mlog_warn("Unsupported logging category %s=%s.", "-debug", cat);
+//                    continue;
+//                }
+//                logCategories |= flag;
+//            }
+//        }
+//    }
 
-        if ((find(categories.begin(), categories.end(), std::string("no")) == categories.end()) ||
-            find(categories.begin(), categories.end(), std::string("n")) == categories.end())
-        {
-            for (const auto &cat : categories)
-            {
-                uint32_t flag = 0;
-                if (!GetLogCategory(&flag, &cat))
-                {
-                    mlog_warn("Unsupported logging category %s=%s.", "-debug", cat);
-                    continue;
-                }
-                logCategories |= flag;
-            }
-        }
-    }
-
-    // Now remove the logging categories which were explicitly excluded
-    for (const std::string &cat : gArgs.GetArgs("-debugexclude"))
-    {
-        uint32_t flag = 0;
-        if (!GetLogCategory(&flag, &cat))
-        {
-            mlog_warn("Unsupported logging category %s=%s.", "-debugexclude", cat);
-            continue;
-        }
-        logCategories &= ~flag;
-    }
+//    // Now remove the logging categories which were explicitly excluded
+//    for (const std::string &cat : gArgs.GetArgs("-debugexclude"))
+//    {
+//        uint32_t flag = 0;
+//        if (!GetLogCategory(&flag, &cat))
+//        {
+//            mlog_warn("Unsupported logging category %s=%s.", "-debugexclude", cat);
+//            continue;
+//        }
+//        logCategories &= ~flag;
+//    }
 
     // Check for -debugnet
     if (gArgs.GetArg<bool>("-debugnet", false))

@@ -335,15 +335,16 @@ namespace
                                                                           nonce, strSubVersion, nNodeStartingHeight,
                                                                           ::fRelayTxes));
 
-        if (fLogIPs)
+        //if (fLogIPs)
         {
             LogPrint(BCLog::NET, "send version message: version %d, blocks=%d, us=%s, them=%s, peer=%d\n",
                      PROTOCOL_VERSION, nNodeStartingHeight, addrMe.ToString(), addrYou.ToString(), nodeid);
-        } else
-        {
-            LogPrint(BCLog::NET, "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION,
-                     nNodeStartingHeight, addrMe.ToString(), nodeid);
         }
+//        else
+//        {
+//            LogPrint(BCLog::NET, "send version message: version %d, blocks=%d, us=%s, peer=%d\n", PROTOCOL_VERSION,
+//                     nNodeStartingHeight, addrMe.ToString(), nodeid);
+//        }
     }
 
     // Requires cs_main.
@@ -2516,7 +2517,7 @@ bool PeerLogicValidation::ProcessVersionMsg(CNode *pfrom, CDataStream &vRecv)
     }
 
     std::string remoteAddr;
-    if (fLogIPs)
+    //if (fLogIPs)
         remoteAddr = ", peeraddr=" + pfrom->addr.ToString();
 
     mlog_notice("receive version message: %s: version %d, blocks=%d, us=%s, peer=%d%s\n",

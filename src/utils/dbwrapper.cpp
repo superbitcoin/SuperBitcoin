@@ -73,7 +73,7 @@ public:
 
             assert(p <= limit);
             base[std::min(bufsize - 1, (int)(p - base))] = '\0';
-            LogPrintStr(base);
+            LogPrintf(base);
             if (base != buffer)
             {
                 delete[] base;

@@ -37,32 +37,32 @@
 #include "framework/base.hpp"
 #include "config/argmanager.h"
 
-#define USING_LOG4CPP
-
+#define USE_LOG4CPP
 
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 using std::vector;
 using std::string;
 
+extern const char *const BITCOIN_CONF_FILENAME;
+extern const char *const BITCOIN_PID_FILENAME;
+
 inline appbase::CApp &app()
 {
     return appbase::CApp::Instance();
 }
+
 inline log4cpp::Category &mlog() {
     return appbase::CApp::mlog;
 }
 
-
-
-
 // Application startup time (used for uptime calculation)
 int64_t GetStartupTime();
 
-static const bool DEFAULT_LOGTIMEMICROS = false;
-static const bool DEFAULT_LOGIPS = false;
-static const bool DEFAULT_LOGTIMESTAMPS = true;
-static const bool DEFAULT_LOGFILEINFO = true;
+//static const bool DEFAULT_LOGTIMEMICROS = false;
+//static const bool DEFAULT_LOGIPS = false;
+//static const bool DEFAULT_LOGTIMESTAMPS = true;
+//static const bool DEFAULT_LOGFILEINFO = true;
 
 /** Signals for translation. */
 class CTranslationInterface
@@ -72,19 +72,7 @@ public:
     boost::signals2::signal<std::string(const char *psz)> Translate;
 };
 
-extern bool fPrintToConsole;
-extern bool fPrintToDebugLog;
-
-extern bool fLogTimestamps;
-extern bool fLogTimeMicros;
-extern bool fLogIPs;
-extern std::atomic<bool> fReopenDebugLog;
 extern CTranslationInterface translationInterface;
-
-extern const char *const BITCOIN_CONF_FILENAME;
-extern const char *const BITCOIN_PID_FILENAME;
-
-extern std::atomic<uint32_t> logCategories;
 
 /**
  * Translation function: Call Translate signal on UI interface, which returns a boost::optional result.
@@ -96,15 +84,15 @@ inline std::string _(const char *psz)
     return rv ? (*rv) : psz;
 }
 
-void SetupEnvironment();
 
-bool SetupNetworking();
-
-struct CLogCategoryActive
-{
-    std::string category;
-    bool active;
-};
+//extern bool fPrintToConsole;
+//extern bool fPrintToDebugLog;
+//extern bool fLogTimestamps;
+//extern bool fLogTimeMicros;
+//extern bool fLogIPs;
+//extern std::atomic<bool> fReopenDebugLog;
+//
+//extern std::atomic<uint32_t> logCategories;
 
 namespace BCLog
 {
@@ -137,46 +125,53 @@ namespace BCLog
     };
 }
 
-/** Return true if log accepts specified category */
+//struct CLogCategoryActive
+//{
+//    std::string category;
+//    bool active;
+//};
+///** Return true if log accepts specified category */
 static inline bool LogAcceptCategory(uint32_t category)
 {
-    return (logCategories.load(std::memory_order_relaxed) & category) != 0;
+    return true;
+    //return (logCategories.load(std::memory_order_relaxed) & category) != 0;
 }
 
-/** Returns a string with the log categories. */
-std::string ListLogCategories();
+///** Returns a string with the log categories. */
+inline std::string ListLogCategories() { return std::string(); }
 
-/** Returns a vector of the active log categories. */
-std::vector<CLogCategoryActive> ListActiveLogCategories();
+///** Returns a vector of the active log categories. */
+//std::vector<CLogCategoryActive> ListActiveLogCategories();
+//
+///** Return true if str parses as a log category and set the flags in f */
+//bool GetLogCategory(uint32_t *f, const std::string *str);
+//
+///** Send a string to the log output */
+//int LogPrintStr(const std::string &str);
+//
+///** Get format string from VA_ARGS for error reporting */
+//template<typename... Args>
+//std::string FormatStringFromLogArgs(const char *fmt, const Args &... args)
+//{
+//    return fmt;
+//}
 
-/** Return true if str parses as a log category and set the flags in f */
-bool GetLogCategory(uint32_t *f, const std::string *str);
+//static inline void MarkUsed()
+//{
+//}
+//
+//template<typename T, typename... Args>
+//static inline void MarkUsed(const T &t, const Args &... args)
+//{
+//    (void)t;
+//    MarkUsed(args...);
+//}
 
-/** Send a string to the log output */
-int LogPrintStr(const std::string &str);
-
-/** Get format string from VA_ARGS for error reporting */
-template<typename... Args>
-std::string FormatStringFromLogArgs(const char *fmt, const Args &... args)
-{
-    return fmt;
-}
-
-static inline void MarkUsed()
-{
-}
-
-template<typename T, typename... Args>
-static inline void MarkUsed(const T &t, const Args &... args)
-{
-    (void)t;
-    MarkUsed(args...);
-}
-
-#ifdef USING_LOG4CPP
-# define USE_COVERAGE
-#endif
-#ifdef USE_COVERAGE
+#ifdef USE_LOG4CPP
+#define  LogPrintf_(logger, fmt, a...) logger.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  LogPrintf(fmt, a...) LogPrintf_(LogFlag2Log4CppObj(0), fmt, ##a)
+#define  LogPrint(category, a...) LogPrintf_(LogFlag2Log4CppObj(category), ##a)
+#elif USE_COVERAGE
 #define LogPrintf(...) do { MarkUsed(__VA_ARGS__); } while(0)
 #define LogPrint(category, ...) do { MarkUsed(__VA_ARGS__); } while(0)
 #elif CHEAT_IDE
@@ -213,19 +208,21 @@ static inline void MarkUsed(const T &t, const Args &... args)
 
 #endif
 
-#define _TXT__(x) #x
-#define EMTOSTR(EM) _TXT__(EM)
-#define ADD_LOG4CPP_IN_HEAD_LOG(te)  public: \
-       static log4cpp::Category &mlog;
-#define ADD_LOG4CPP_IN_CPP_LOG(CLASS,DEBUG_ID)   public: \
-     log4cpp::Category &#CLASS::mlog = log4cpp::Category::getInstance(#DEBUG_ID)
 
-inline std::string int2string(int line) {
+
+inline std::string int2string(int line)
+{
     std::ostringstream oss;
     oss << "("<< line <<")";
     return oss.str();
 }
-#define STR(s)     #s
+
+#define _TXT__(x) #x
+#define EMTOSTR(EM) _TXT__(EM)
+#define ADD_LOG4CPP_IN_HEAD_LOG(te)  public: \
+    static log4cpp::Category &mlog;
+#define ADD_LOG4CPP_IN_CPP_LOG(CLASS,DEBUG_ID)   public: \
+    log4cpp::Category &#CLASS::mlog = log4cpp::Category::getInstance(#DEBUG_ID)
 #define __FILENAME__ (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1):__FILE__)
 
 #define  mlog_notice(fmt, a...) mlog.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
@@ -234,13 +231,25 @@ inline std::string int2string(int line) {
 #define  mlog_warn(fmt, a...) mlog.warn(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  mlog_fatal(fmt, a...) mlog.fatal(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  mlog_debug(fmt, a...) mlog.debug(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+
+//template<typename C, typename F, typename... Args>
+//void LogPrintf_(C& logger, F&& fmt, Args&&... args)
+//{
+//    logger.notice(tinyformat::format(fmt, args...).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str());
+//}
+
 template<typename... Args>
 bool error(const char *fmt, const Args &... args)
 {
-    mlog().error(fmt, args...);
-    //LogPrintStr("ERROR: " + tfm::format(fmt, args...) + "\n");
+    mlog().error(tinyformat::format(fmt, args...).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str());
     return false;
 }
+
+log4cpp::Category &LogFlag2Log4CppObj(int logFlag);
+
+void SetupEnvironment();
+
+bool SetupNetworking();
 
 void PrintExceptionContinue(const std::exception *pex, const char *pszThread);
 
@@ -274,10 +283,6 @@ void CreatePidFile(const fs::path &path, pid_t pid);
 #ifdef WIN32
 fs::path GetSpecialFolderPath(int nFolder, bool fCreate = true);
 #endif
-
-void OpenDebugLog();
-
-void ShrinkDebugFile();
 
 void runCommand(const std::string &strCommand);
 

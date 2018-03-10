@@ -627,10 +627,10 @@ uint32_t getCategoryMask(UniValue cats)
     {
         uint32_t flag = 0;
         std::string cat = cats[i].get_str();
-        if (!GetLogCategory(&flag, &cat))
-        {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "unknown logging category " + cat);
-        }
+//        if (!GetLogCategory(&flag, &cat))
+//        {
+//            throw JSONRPCError(RPC_INVALID_PARAMETER, "unknown logging category " + cat);
+//        }
         mask |= flag;
     }
     return mask;
@@ -657,42 +657,42 @@ UniValue logging(const JSONRPCRequest &request)
         );
     }
 
-    uint32_t originalLogCategories = logCategories;
-    if (request.params.size() > 0 && request.params[0].isArray())
-    {
-        logCategories |= getCategoryMask(request.params[0]);
-    }
-
-    if (request.params.size() > 1 && request.params[1].isArray())
-    {
-        logCategories &= ~getCategoryMask(request.params[1]);
-    }
+//    uint32_t originalLogCategories = logCategories;
+//    if (request.params.size() > 0 && request.params[0].isArray())
+//    {
+//        logCategories |= getCategoryMask(request.params[0]);
+//    }
+//
+//    if (request.params.size() > 1 && request.params[1].isArray())
+//    {
+//        logCategories &= ~getCategoryMask(request.params[1]);
+//    }
 
     // Update libevent logging if BCLog::LIBEVENT has changed.
     // If the library version doesn't allow it, UpdateHTTPServerLogging() returns false,
     // in which case we should clear the BCLog::LIBEVENT flag.
     // Throw an error if the user has explicitly asked to change only the libevent
     // flag and it failed.
-    uint32_t changedLogCategories = originalLogCategories ^logCategories;
-    if (changedLogCategories & BCLog::LIBEVENT)
-    {
-        if (!UpdateHTTPServerLogging(logCategories & BCLog::LIBEVENT))
-        {
-            logCategories &= ~BCLog::LIBEVENT;
-            if (changedLogCategories == BCLog::LIBEVENT)
-            {
-                throw JSONRPCError(RPC_INVALID_PARAMETER,
-                                   "libevent logging cannot be updated when using libevent before v2.1.1.");
-            }
-        }
-    }
+//    uint32_t changedLogCategories = originalLogCategories ^logCategories;
+//    if (changedLogCategories & BCLog::LIBEVENT)
+//    {
+//        if (!UpdateHTTPServerLogging(logCategories & BCLog::LIBEVENT))
+//        {
+//            logCategories &= ~BCLog::LIBEVENT;
+//            if (changedLogCategories == BCLog::LIBEVENT)
+//            {
+//                throw JSONRPCError(RPC_INVALID_PARAMETER,
+//                                   "libevent logging cannot be updated when using libevent before v2.1.1.");
+//            }
+//        }
+//    }
 
     UniValue result(UniValue::VOBJ);
-    std::vector<CLogCategoryActive> vLogCatActive = ListActiveLogCategories();
-    for (const auto &logCatActive : vLogCatActive)
-    {
-        result.pushKV(logCatActive.category, logCatActive.active);
-    }
+//    std::vector<CLogCategoryActive> vLogCatActive = ListActiveLogCategories();
+//    for (const auto &logCatActive : vLogCatActive)
+//    {
+//        result.pushKV(logCatActive.category, logCatActive.active);
+//    }
 
     return result;
 }
