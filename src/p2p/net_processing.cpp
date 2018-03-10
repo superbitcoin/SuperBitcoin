@@ -3200,7 +3200,10 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
         pfrom->nLastTXTime = GetTime();
 
     if (xnode.nMisbehavior > 0)
+    {
+        LOCK(cs_main);
         Misbehaving(xnode.nodeID, xnode.nMisbehavior);
+    }
 
     return ret;
 
