@@ -787,7 +787,7 @@ log4cpp::Category &LogFlag2Log4CppObj(int logFlag)
         case BCLog::CKECKPOINT:
         case BCLog::BENCH:
             return log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
-        defult:
+        default:
             return log4cpp::Category::getInstance(EMTOSTR(CID_APP));
     }
 }
