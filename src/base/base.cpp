@@ -32,8 +32,8 @@
 using namespace appbase;
 
 log4cpp::Category &IBaseApp::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP));
-std::unique_ptr<CArgsManager> appbase::IBaseApp::cArgs = std::make_unique<CArgsManager>();
-std::unique_ptr<CChainParams> appbase::IBaseApp::cChainParams = std::make_unique<CChainParams>();
+std::unique_ptr<CArgsManager> appbase::IBaseApp::pArgs = std::make_unique<CArgsManager>();
+std::unique_ptr<CChainParams> appbase::IBaseApp::pChainParams = std::make_unique<CChainParams>();
 
 const CArgsManager &Args()
 {
@@ -127,21 +127,21 @@ static void PrintVersion()
 
 bool IBaseApp::BaseInitialize(int argc, char **argv)
 {
-    if (!cArgs->Init(argc, argv))
+    if (!pArgs->Init(argc, argv))
     {
         return false;
     }
 
 
-    InitializeLogging(cArgs->GetDataDir(false));
+    InitializeLogging(pArgs->GetDataDir(false));
 
-    if (cArgs->IsArgSet("help") || cArgs->IsArgSet("usage"))
+    if (pArgs->IsArgSet("help") || pArgs->IsArgSet("usage"))
     {
-        std::cout << cArgs->GetHelpMessage();
+        std::cout << pArgs->GetHelpMessage();
         return false;
     }
 
-    if (cArgs->IsArgSet("version"))
+    if (pArgs->IsArgSet("version"))
     {
         PrintVersion();
         return false;
@@ -149,17 +149,17 @@ bool IBaseApp::BaseInitialize(int argc, char **argv)
 
     try
     {
-        if (!fs::is_directory(cArgs->GetDataDir(false)))
+        if (!fs::is_directory(pArgs->GetDataDir(false)))
         {
             mlog_error("Error: Specified data directory \"%s\" does not exist.",
-                       cArgs->GetArg<std::string>("-datadir", "").c_str());
+                       pArgs->GetArg<std::string>("-datadir", "").c_str());
             return false;
         }
 
-        cArgs->ReadConfigFile(cArgs->GetArg<std::string>("-conf", BITCOIN_CONF_FILENAME));
+        pArgs->ReadConfigFile(pArgs->GetArg<std::string>("-conf", BITCOIN_CONF_FILENAME));
 
         // Check for -testnet or -regtest parameter (Params() calls are only valid after this clause)
-        cChainParams = CreateChainParams(ChainNameFromCommandLine());
+        pChainParams = CreateChainParams(ChainNameFromCommandLine());
     }
     catch (const std::exception &e)
     {

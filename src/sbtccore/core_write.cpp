@@ -69,7 +69,7 @@ std::string FormatScript(const CScript &script)
     return ret.substr(0, ret.size() - 1);
 }
 
-const std::map<unsigned char, std::string> mapSigHashTypes = {
+static const std::map<unsigned char, std::string> mapSigHashTypes = {
         {static_cast<unsigned char>(SIGHASH_ALL),                                               std::string("ALL")},
         {static_cast<unsigned char>(SIGHASH_ALL | SIGHASH_SBTC_FORK),                           std::string(
                 "ALL|SBTC_FORK")},

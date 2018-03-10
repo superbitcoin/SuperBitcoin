@@ -48,76 +48,76 @@ void CApp::InitParameterInteraction()
 {
     // when specifying an explicit binding address, you want to listen on it
     // even when -connect or -proxy is specified
-    if (cArgs->IsArgSet("-bind"))
+    if (pArgs->IsArgSet("-bind"))
     {
-        if (cArgs->SoftSetArg("-listen", true))
+        if (pArgs->SoftSetArg("-listen", true))
             mlog_notice("%s: parameter interaction: -bind set -> setting -listen=1\n", __func__);
     }
-    if (cArgs->IsArgSet("-whitebind"))
+    if (pArgs->IsArgSet("-whitebind"))
     {
-        if (cArgs->SoftSetArg("-listen", true))
+        if (pArgs->SoftSetArg("-listen", true))
             mlog_notice("%s: parameter interaction: -whitebind set -> setting -listen=1\n", __func__);
     }
 
-    if (cArgs->IsArgSet("-connect"))
+    if (pArgs->IsArgSet("-connect"))
     {
         // when only connecting to trusted nodes, do not seed via DNS, or listen by default
-        if (cArgs->SoftSetArg("-dnsseed", false))
+        if (pArgs->SoftSetArg("-dnsseed", false))
             mlog_notice("%s: parameter interaction: -connect set -> setting -dnsseed=0\n", __func__);
-        if (cArgs->SoftSetArg("-listen", false))
+        if (pArgs->SoftSetArg("-listen", false))
             mlog_notice("%s: parameter interaction: -connect set -> setting -listen=0\n", __func__);
     }
 
-    if (cArgs->IsArgSet("-proxy"))
+    if (pArgs->IsArgSet("-proxy"))
     {
         // to protect privacy, do not listen by default if a default proxy server is specified
-        if (cArgs->SoftSetArg("-listen", false))
+        if (pArgs->SoftSetArg("-listen", false))
             mlog_notice("%s: parameter interaction: -proxy set -> setting -listen=0\n", __func__);
         // to protect privacy, do not use UPNP when a proxy is set. The user may still specify -listen=1
         // to listen locally, so don't rely on this happening through -listen below.
-        if (cArgs->SoftSetArg("-upnp", false))
+        if (pArgs->SoftSetArg("-upnp", false))
             mlog_notice("%s: parameter interaction: -proxy set -> setting -upnp=0\n", __func__);
         // to protect privacy, do not discover addresses by default
-        if (cArgs->SoftSetArg("-discover", false))
+        if (pArgs->SoftSetArg("-discover", false))
             mlog_notice("%s: parameter interaction: -proxy set -> setting -discover=0\n", __func__);
     }
 
-    if (!cArgs->GetArg<bool>("-listen", DEFAULT_LISTEN))
+    if (!pArgs->GetArg<bool>("-listen", DEFAULT_LISTEN))
     {
         // do not map ports or try to retrieve public IP when not listening (pointless)
-        if (cArgs->SoftSetArg("-upnp", false))
+        if (pArgs->SoftSetArg("-upnp", false))
             mlog_notice("%s: parameter interaction: -listen=0 -> setting -upnp=0\n", __func__);
-        if (cArgs->SoftSetArg("-discover", false))
+        if (pArgs->SoftSetArg("-discover", false))
             mlog_notice("%s: parameter interaction: -listen=0 -> setting -discover=0\n", __func__);
-        if (cArgs->SoftSetArg("-listenonion", false))
+        if (pArgs->SoftSetArg("-listenonion", false))
             mlog_notice("%s: parameter interaction: -listen=0 -> setting -listenonion=0\n", __func__);
     }
 
-    if (cArgs->IsArgSet("-externalip"))
+    if (pArgs->IsArgSet("-externalip"))
     {
         // if an explicit public IP is specified, do not try to find others
-        if (cArgs->SoftSetArg("-discover", false))
+        if (pArgs->SoftSetArg("-discover", false))
             mlog_notice("%s: parameter interaction: -externalip set -> setting -discover=0\n", __func__);
     }
 
     // disable whitelistrelay in blocksonly mode
-    if (cArgs->GetArg<bool>("-blocksonly", DEFAULT_BLOCKSONLY))
+    if (pArgs->GetArg<bool>("-blocksonly", DEFAULT_BLOCKSONLY))
     {
-        if (cArgs->SoftSetArg("-whitelistrelay", false))
+        if (pArgs->SoftSetArg("-whitelistrelay", false))
             mlog_notice("%s: parameter interaction: -blocksonly=1 -> setting -whitelistrelay=0\n", __func__);
     }
 
     // Forcing relay from whitelisted hosts implies we will accept relays from them in the first place.
-    if (cArgs->GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
+    if (pArgs->GetArg<bool>("-whitelistforcerelay", DEFAULT_WHITELISTFORCERELAY))
     {
-        if (cArgs->SoftSetArg("-whitelistrelay", true))
+        if (pArgs->SoftSetArg("-whitelistrelay", true))
             mlog_notice("%s: parameter interaction: -whitelistforcerelay=1 -> setting -whitelistrelay=1\n", __func__);
     }
 
-    if (cArgs->IsArgSet("-blockmaxsize"))
+    if (pArgs->IsArgSet("-blockmaxsize"))
     {
-        unsigned int max_size = cArgs->GetArg<uint32_t>("-blockmaxsize", 0U);
-        if (cArgs->SoftSetArg("-blockmaxweight", (uint32_t)(max_size * WITNESS_SCALE_FACTOR)))
+        unsigned int max_size = pArgs->GetArg<uint32_t>("-blockmaxsize", 0U);
+        if (pArgs->SoftSetArg("-blockmaxweight", (uint32_t)(max_size * WITNESS_SCALE_FACTOR)))
         {
             mlog_notice(
                     "%s: parameter interaction: -blockmaxsize=%d -> setting -blockmaxweight=%d (-blockmaxsize is deprecated!)\n",
@@ -192,9 +192,9 @@ bool CApp::AppInitParameterInteraction()
     // also see: InitParameterInteraction()
 
     // if using block pruning, then disallow txindex
-    if (cArgs->GetArg<int32_t>("-prune", 0))
+    if (pArgs->GetArg<int32_t>("-prune", 0))
     {
-        if (cArgs->GetArg<bool>("-txindex", DEFAULT_TXINDEX))
+        if (pArgs->GetArg<bool>("-txindex", DEFAULT_TXINDEX))
         {
             mlog_error("Prune mode is incompatible with -txindex.");
             return false;
@@ -202,52 +202,20 @@ bool CApp::AppInitParameterInteraction()
     }
 
     // -bind and -whitebind can't be set when not listening
-    size_t nUserBind = cArgs->GetArgs("-bind").size() + cArgs->GetArgs("-whitebind").size();
-    if (nUserBind != 0 && !cArgs->GetArg<bool>("listen", DEFAULT_LISTEN))
+    size_t nUserBind = pArgs->GetArgs("-bind").size() + pArgs->GetArgs("-whitebind").size();
+    if (nUserBind != 0 && !pArgs->GetArg<bool>("listen", DEFAULT_LISTEN))
     {
         mlog_error("Cannot set -bind or -whitebind together with -listen=0");
         return false;
     }
 
-    //    if (cArgs->IsArgSet("-debug"))
-    //    {
-    //        // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
-    //        const std::vector<std::string> categories = cArgs->GetArgs("-debug");
-    //
-    //        if ((find(categories.begin(), categories.end(), std::string("no")) == categories.end()) ||
-    //            find(categories.begin(), categories.end(), std::string("n")) == categories.end())
-    //        {
-    //            for (const auto &cat : categories)
-    //            {
-    //                uint32_t flag = 0;
-    //                if (!GetLogCategory(&flag, &cat))
-    //                {
-    //                    mlog_warn("Unsupported logging category %s=%s.", "-debug", cat);
-    //                    continue;
-    //                }
-    //                logCategories |= flag;
-    //            }
-    //        }
-    //    }
-
-    //    // Now remove the logging categories which were explicitly excluded
-    //    for (const std::string &cat : cArgs->GetArgs("-debugexclude"))
-    //    {
-    //        uint32_t flag = 0;
-    //        if (!GetLogCategory(&flag, &cat))
-    //        {
-    //            mlog_warn("Unsupported logging category %s=%s.", "-debugexclude", cat);
-    //            continue;
-    //        }
-    //        logCategories &= ~flag;
-    //    }
 
     // Check for -debugnet
-    if (cArgs->GetArg<bool>("-debugnet", false))
+    if (pArgs->GetArg<bool>("-debugnet", false))
         mlog_warn("Unsupported argument -debugnet ignored, use -debug=net.");
 
     // Check for -socks - as this is a privacy risk to continue, exit here
-    if (cArgs->IsArgSet("-socks"))
+    if (pArgs->IsArgSet("-socks"))
     {
         mlog_error(
                 "Unsupported argument -socks found. Setting SOCKS version isn't possible anymore, only SOCKS5 proxies are supported.");
@@ -255,26 +223,26 @@ bool CApp::AppInitParameterInteraction()
     }
 
     // Check for -tor - as this is a privacy risk to continue, exit here
-    if (cArgs->GetArg<bool>("-tor", false))
+    if (pArgs->GetArg<bool>("-tor", false))
     {
         mlog_error("Unsupported argument -tor found, use -onion.");
         return false;
     }
 
-    if (cArgs->GetArg<bool>("-benchmark", false))
+    if (pArgs->GetArg<bool>("-benchmark", false))
         mlog_warn("Unsupported argument -benchmark ignored, use -debug=bench.");
 
-    if (cArgs->GetArg<bool>("-whitelistalwaysrelay", false))
+    if (pArgs->GetArg<bool>("-whitelistalwaysrelay", false))
         mlog_warn(
                 "Unsupported argument -whitelistalwaysrelay ignored, use -whitelistrelay and/or -whitelistforcerelay.");
 
-    if (cArgs->IsArgSet("-blockminsize"))
+    if (pArgs->IsArgSet("-blockminsize"))
         mlog_warn("Unsupported argument -blockminsize ignored.");
 
     //TODO: mempool component init.
     //    // Checkmempool and checkblockindex default to true in regtest mode
     //    int ratio = std::min<int>(
-    //            std::max<int>(cArgs->GetArg<int32_t>("-checkmempool", chainparams.DefaultConsistencyChecks() ? 1 : 0), 0),
+    //            std::max<int>(pArgs->GetArg<int32_t>("-checkmempool", chainparams.DefaultConsistencyChecks() ? 1 : 0), 0),
     //            1000000);
     //    if (ratio != 0)
     //    {
@@ -282,19 +250,19 @@ bool CApp::AppInitParameterInteraction()
     //    }
 
     //TODO: remove these temp variables.
-    //    fCheckBlockIndex = cArgs->GetArg<bool>("-checkblockindex", chainparams.DefaultConsistencyChecks());
-    //    fCheckpointsEnabled = cArgs->GetArg<bool>("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
+    //    fCheckBlockIndex = pArgs->GetArg<bool>("-checkblockindex", chainparams.DefaultConsistencyChecks());
+    //    fCheckpointsEnabled = pArgs->GetArg<bool>("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
 
     uint256 hashAssumeValid = uint256S(
-            cArgs->GetArg<std::string>("-assumevalid", chainparams.GetConsensus().defaultAssumeValid.GetHex()));
+            pArgs->GetArg<std::string>("-assumevalid", chainparams.GetConsensus().defaultAssumeValid.GetHex()));
     if (!hashAssumeValid.IsNull())
         mlog_notice("Assuming ancestors of block %s have valid signatures.", hashAssumeValid.GetHex());
     else
         mlog_notice("Validating signatures for all blocks.");
 
-    if (cArgs->IsArgSet("-minimumchainwork"))
+    if (pArgs->IsArgSet("-minimumchainwork"))
     {
-        const std::string minChainWorkStr = cArgs->GetArg<std::string>("-minimumchainwork", "");
+        const std::string minChainWorkStr = pArgs->GetArg<std::string>("-minimumchainwork", "");
         if (!IsHexNumber(minChainWorkStr))
         {
             mlog_error("Invalid non-hex (%s) minimum chain work value specified", minChainWorkStr);
@@ -313,9 +281,9 @@ bool CApp::AppInitParameterInteraction()
     }
 
     // mempool limits
-    int64_t nMempoolSizeMax = cArgs->GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
+    int64_t nMempoolSizeMax = pArgs->GetArg<uint32_t>("-maxmempool", DEFAULT_MAX_MEMPOOL_SIZE) * 1000000;
     int64_t nMempoolSizeMin =
-            cArgs->GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000 * 40;
+            pArgs->GetArg<uint32_t>("-limitdescendantsize", DEFAULT_DESCENDANT_SIZE_LIMIT) * 1000 * 40;
     if (nMempoolSizeMax < 0 || nMempoolSizeMax < nMempoolSizeMin)
     {
         mlog_error("-maxmempool must be at least %d MB", std::ceil(nMempoolSizeMin / 1000000.0));
@@ -324,13 +292,13 @@ bool CApp::AppInitParameterInteraction()
 
     // incremental relay fee sets the minimum feerate increase necessary for BIP 125 replacement in the mempool
     // and the amount the mempool min fee increases above the feerate of txs evicted due to mempool limiting.
-    if (cArgs->IsArgSet("-incrementalrelayfee"))
+    if (pArgs->IsArgSet("-incrementalrelayfee"))
     {
         CAmount n = 0;
-        if (!ParseMoney(cArgs->GetArg<std::string>("-incrementalrelayfee", ""), n))
+        if (!ParseMoney(pArgs->GetArg<std::string>("-incrementalrelayfee", ""), n))
         {
             mlog_error(
-                    AmountErrMsg("incrementalrelayfee", cArgs->GetArg<std::string>("-incrementalrelayfee", "")));
+                    AmountErrMsg("incrementalrelayfee", pArgs->GetArg<std::string>("-incrementalrelayfee", "")));
             return false;
         }
 
@@ -338,7 +306,7 @@ bool CApp::AppInitParameterInteraction()
     }
 
     // block pruning; get the amount of disk space (in MiB) to allot for block & undo files
-    int64_t nPruneArg = cArgs->GetArg<int32_t>("-prune", 0);
+    int64_t nPruneArg = pArgs->GetArg<int32_t>("-prune", 0);
     if (nPruneArg < 0)
     {
         mlog_error("Prune cannot be configured with a negative value.");
@@ -363,16 +331,16 @@ bool CApp::AppInitParameterInteraction()
         fPruneMode = true;
     }
 
-    nConnectTimeout = cArgs->GetArg<int32_t>("-timeout", DEFAULT_CONNECT_TIMEOUT);
+    nConnectTimeout = pArgs->GetArg<int32_t>("-timeout", DEFAULT_CONNECT_TIMEOUT);
     if (nConnectTimeout <= 0)
         nConnectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
-    if (cArgs->IsArgSet("-minrelaytxfee"))
+    if (pArgs->IsArgSet("-minrelaytxfee"))
     {
         CAmount n = 0;
-        if (!ParseMoney(cArgs->GetArg<std::string>("-minrelaytxfee", ""), n))
+        if (!ParseMoney(pArgs->GetArg<std::string>("-minrelaytxfee", ""), n))
         {
-            mlog_error(AmountErrMsg("minrelaytxfee", cArgs->GetArg<std::string>("-minrelaytxfee", "")));
+            mlog_error(AmountErrMsg("minrelaytxfee", pArgs->GetArg<std::string>("-minrelaytxfee", "")));
             return false;
         }
         // High fee check is done afterward in CWallet::ParameterInteraction()
@@ -386,30 +354,30 @@ bool CApp::AppInitParameterInteraction()
 
     // Sanity check argument for min fee for including tx in block
     // TODO: Harmonize which arguments need sanity checking and where that happens
-    if (cArgs->IsArgSet("-blockmintxfee"))
+    if (pArgs->IsArgSet("-blockmintxfee"))
     {
         CAmount n = 0;
-        if (!ParseMoney(cArgs->GetArg<std::string>("-blockmintxfee", ""), n))
+        if (!ParseMoney(pArgs->GetArg<std::string>("-blockmintxfee", ""), n))
         {
-            mlog_error(AmountErrMsg("blockmintxfee", cArgs->GetArg<std::string>("-blockmintxfee", "")));
+            mlog_error(AmountErrMsg("blockmintxfee", pArgs->GetArg<std::string>("-blockmintxfee", "")));
             return false;
         }
     }
 
     // Feerate used to define dust.  Shouldn't be changed lightly as old
     // implementations may inadvertently create non-standard transactions
-    if (cArgs->IsArgSet("-dustrelayfee"))
+    if (pArgs->IsArgSet("-dustrelayfee"))
     {
         CAmount n = 0;
-        if (!ParseMoney(cArgs->GetArg<std::string>("-dustrelayfee", ""), n) || 0 == n)
+        if (!ParseMoney(pArgs->GetArg<std::string>("-dustrelayfee", ""), n) || 0 == n)
         {
-            mlog_error(AmountErrMsg("dustrelayfee", cArgs->GetArg<std::string>("-dustrelayfee", "")));
+            mlog_error(AmountErrMsg("dustrelayfee", pArgs->GetArg<std::string>("-dustrelayfee", "")));
             return false;
         }
         dustRelayFee = CFeeRate(n);
     }
 
-    fRequireStandard = !cArgs->GetArg<bool>("-acceptnonstdtxn", !chainparams.RequireStandard());
+    fRequireStandard = !pArgs->GetArg<bool>("-acceptnonstdtxn", !chainparams.RequireStandard());
     if (chainparams.RequireStandard() && !fRequireStandard)
     {
         mlog_error(
@@ -417,40 +385,40 @@ bool CApp::AppInitParameterInteraction()
         return false;
     }
 
-    nBytesPerSigOp = cArgs->GetArg<uint32_t>("-bytespersigop", nBytesPerSigOp);
+    nBytesPerSigOp = pArgs->GetArg<uint32_t>("-bytespersigop", nBytesPerSigOp);
 
     //#ifdef ENABLE_WALLET
     //    if (!CWallet::ParameterInteraction())
     //        return false;
     //#endif
 
-    fIsBareMultisigStd = cArgs->GetArg<bool>("-permitbaremultisig", DEFAULT_PERMIT_BAREMULTISIG);
-    fAcceptDatacarrier = cArgs->GetArg<bool>("-datacarrier", DEFAULT_ACCEPT_DATACARRIER);
-    nMaxDatacarrierBytes = cArgs->GetArg<uint32_t>("-datacarriersize", nMaxDatacarrierBytes);
+    fIsBareMultisigStd = pArgs->GetArg<bool>("-permitbaremultisig", DEFAULT_PERMIT_BAREMULTISIG);
+    fAcceptDatacarrier = pArgs->GetArg<bool>("-datacarrier", DEFAULT_ACCEPT_DATACARRIER);
+    nMaxDatacarrierBytes = pArgs->GetArg<uint32_t>("-datacarriersize", nMaxDatacarrierBytes);
 
     // Option to startup with mocktime set (used for regression testing):
-    SetMockTime(cArgs->GetArg<int32_t>("-mocktime", 0)); // SetMockTime(0) is a no-op
+    SetMockTime(pArgs->GetArg<int32_t>("-mocktime", 0)); // SetMockTime(0) is a no-op
 
-    if (cArgs->GetArg<bool>("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
+    if (pArgs->GetArg<bool>("-peerbloomfilters", DEFAULT_PEERBLOOMFILTERS))
         nLocalServices = ServiceFlags(nLocalServices | NODE_BLOOM);
 
-    if (cArgs->GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) < 0)
+    if (pArgs->GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) < 0)
     {
         mlog_error("rpcserialversion must be non-negative.");
         return false;
     }
 
-    if (cArgs->GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) > 1)
+    if (pArgs->GetArg<uint32_t>("-rpcserialversion", DEFAULT_RPC_SERIALIZE_VERSION) > 1)
     {
         mlog_error("unknown rpcserialversion requested.");
         return false;
     }
 
-    nMaxTipAge = cArgs->GetArg<int64_t>("maxtipage", DEFAULT_MAX_TIP_AGE);
+    nMaxTipAge = pArgs->GetArg<int64_t>("maxtipage", DEFAULT_MAX_TIP_AGE);
 
-    fEnableReplacement = cArgs->GetArg<bool>("-mempoolreplacement", DEFAULT_ENABLE_REPLACEMENT);
+    fEnableReplacement = pArgs->GetArg<bool>("-mempoolreplacement", DEFAULT_ENABLE_REPLACEMENT);
 
-    if (cArgs->IsArgSet("-vbparams"))
+    if (pArgs->IsArgSet("-vbparams"))
     {
         // Allow overriding version bits parameters for testing
         if (!chainparams.MineBlocksOnDemand())
@@ -458,7 +426,7 @@ bool CApp::AppInitParameterInteraction()
             mlog_error("Version bits parameters may only be overridden on regtest.");
             return false;
         }
-        for (const std::string &strDeployment : cArgs->GetArgs("-vbparams"))
+        for (const std::string &strDeployment : pArgs->GetArgs("-vbparams"))
         {
             std::vector<std::string> vDeploymentParams;
             boost::split(vDeploymentParams, strDeployment, boost::is_any_of(":"));
@@ -483,7 +451,7 @@ bool CApp::AppInitParameterInteraction()
             {
                 if (vDeploymentParams[0].compare(VersionBitsDeploymentInfo[j].name) == 0)
                 {
-                    cChainParams->UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
+                    pChainParams->UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
                     found = true;
                     mlog_notice("Setting version bits activation parameters for %s to start=%ld, timeout=%ld\n",
                                 vDeploymentParams[0], nStartTime, nTimeout);
@@ -593,7 +561,7 @@ bool CApp::AppInitialize(int argc, char *argv[])
     noui_connect();
 
     // -server defaults to true for bitcoind but not for the GUI so do this here
-    cArgs->SoftSetArg("-server", true);
+    pArgs->SoftSetArg("-server", true);
 
     // Set this early so that parameter interactions go to console
     // InitLogging();
@@ -613,7 +581,7 @@ bool CApp::AppInitialize(int argc, char *argv[])
         // InitError will have been called with detailed error, which ends up on console
         exit(EXIT_FAILURE);
     }
-    if (cArgs->GetArg<bool>("-daemon", false))
+    if (pArgs->GetArg<bool>("-daemon", false))
     {
 #if HAVE_DECL_DAEMON
         mlog_notice("sbtcd server starting.");
@@ -656,7 +624,7 @@ bool CApp::AppInitialize(int argc, char *argv[])
     mlog_notice("Default data directory %s.", GetDefaultDataDir().string());
     mlog_notice("Using data directory %s.", GetDataDir().string());
     mlog_notice("Using config file %s.",
-                GetConfigFile(cArgs->GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
+                GetConfigFile(pArgs->GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
 
     return true;
 }

@@ -34,19 +34,19 @@ namespace appbase
 
         static const CArgsManager &GetArgsManager()
         {
-            return *cArgs.get();
+            return *pArgs.get();
         }
 
         static const CChainParams &GetChainParams()
         {
-            return *cChainParams.get();
+            return *pChainParams.get();
         }
 
     public:
         static log4cpp::Category &mlog;
     protected:
-        static std::unique_ptr<CArgsManager> cArgs;
-        static std::unique_ptr<CChainParams> cChainParams;
+        static std::unique_ptr<CArgsManager> pArgs;
+        static std::unique_ptr<CChainParams> pChainParams;
     };
 }
 
