@@ -168,48 +168,8 @@ inline std::string ListLogCategories() { return std::string(); }
 //}
 
 #ifdef USE_LOG4CPP
-#define  LogPrintf_(logger, fmt, a...) logger.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
-#define  LogPrintf(fmt, a...) LogPrintf_(LogFlag2Log4CppObj(0), fmt, ##a)
-#define  LogPrint(category, a...) LogPrintf_(LogFlag2Log4CppObj(category), ##a)
-#elif USE_COVERAGE
-#define LogPrintf(...) do { MarkUsed(__VA_ARGS__); } while(0)
-#define LogPrint(category, ...) do { MarkUsed(__VA_ARGS__); } while(0)
-#elif CHEAT_IDE
-#define LogPrintf(...) do { MarkUsed(__VA_ARGS__); } while(0)
-#define LogPrint(category, ...) do { MarkUsed(__VA_ARGS__); } while(0)
-#else
-#define LogPrintfFmt(...) do { \
-    std::string _log_msg_; /* Unlikely name to avoid shadowing variables */ \
-    try { \
-        _log_msg_ = tfm::format(__VA_ARGS__); \
-    } catch (tinyformat::format_error &fmterr) { \
-        /* Original format string will have newline so don't add one here */ \
-        _log_msg_ = "Error \"" + std::string(fmterr.what()) + "\" while formatting log message: " + FormatStringFromLogArgs(__VA_ARGS__); \
-    } \
-    LogPrintStr(_log_msg_); \
-} while(0)
-//;
-#define LogPrintfWithFileInfo(fmt1, fmt2, a1, a2, a...) do{ \
-    bool fileinfo = gArgs.GetArg<bool>("-logfileinfo", true) ; \
-    if(fileinfo){ \
-        LogPrintfFmt(fmt1, a1, a2, ##a); \
-    }else{ \
-        LogPrintfFmt(fmt2, ##a); \
-    } \
-} while(0)
 
-#define LogPrintf(fmt, a...) LogPrintfWithFileInfo("%s(%d)" fmt, fmt, __FILE__, __LINE__, ##a)
-
-#define LogPrint(category, ...) do { \
-    if (LogAcceptCategory((category))) { \
-        LogPrintf(__VA_ARGS__); \
-    } \
-} while(0)
-
-#endif
-
-
-
+log4cpp::Category &LogFlag2Log4CppObj(int logFlag);
 inline std::string int2string(int line)
 {
     std::ostringstream oss;
@@ -217,14 +177,12 @@ inline std::string int2string(int line)
     return oss.str();
 }
 
+#define  LogPrintf_(logger, fmt, a...) logger.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  LogPrintf(fmt, a...) LogPrintf_(LogFlag2Log4CppObj(0), fmt, ##a)
+#define  LogPrint(category, a...) LogPrintf_(LogFlag2Log4CppObj(category), ##a)
 #define _TXT__(x) #x
 #define EMTOSTR(EM) _TXT__(EM)
-#define ADD_LOG4CPP_IN_HEAD_LOG(te)  public: \
-    static log4cpp::Category &mlog;
-#define ADD_LOG4CPP_IN_CPP_LOG(CLASS,DEBUG_ID)   public: \
-    log4cpp::Category &#CLASS::mlog = log4cpp::Category::getInstance(#DEBUG_ID)
 #define __FILENAME__ (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1):__FILE__)
-
 #define  mlog_notice(fmt, a...) mlog.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  mlog_error(fmt, a...) mlog.error(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  mlog_info(fmt, a...) mlog.info(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
@@ -232,11 +190,19 @@ inline std::string int2string(int line)
 #define  mlog_fatal(fmt, a...) mlog.fatal(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  mlog_debug(fmt, a...) mlog.debug(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 
-//template<typename C, typename F, typename... Args>
-//void LogPrintf_(C& logger, F&& fmt, Args&&... args)
-//{
-//    logger.notice(tinyformat::format(fmt, args...).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str());
-//}
+#else
+
+#define  LogPrintf_(logger, fmt, a...)
+#define  LogPrintf(fmt, a...)
+#define  LogPrint(category, a...)
+#define  mlog_notice(fmt, a...)
+#define  mlog_error(fmt, a...)
+#define  mlog_info(fmt, a...)
+#define  mlog_warn(fmt, a...)
+#define  mlog_fatal(fmt, a...)
+#define  mlog_debug(fmt, a...)
+#endif
+
 
 template<typename... Args>
 bool error(const char *fmt, const Args &... args)
@@ -245,7 +211,7 @@ bool error(const char *fmt, const Args &... args)
     return false;
 }
 
-log4cpp::Category &LogFlag2Log4CppObj(int logFlag);
+
 
 void SetupEnvironment();
 
