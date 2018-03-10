@@ -197,7 +197,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0,
                                                                int64_t(Args().GetArg<uint32_t>("-maxorphantx",
-                                                                                                DEFAULT_MAX_ORPHAN_TRANSACTIONS)));
+                                                                                               DEFAULT_MAX_ORPHAN_TRANSACTIONS)));
             unsigned int nEvicted = COrphanTx::Instance().LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
             {
@@ -386,4 +386,18 @@ CMempoolComponent::NetRequestTxInventory(ExNode *xnode, bool sendMempool, int64_
     }
 
     return true;
+}
+
+size_t vExtraTxnForCompactIt = 0;
+
+void CMempoolComponent::AddToCompactExtraTransactions(const CTransactionRef &tx)
+{
+    size_t max_extra_txn = Args().GetArg<uint32_t>("-blockreconstructionextratxn",
+                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
+    if (max_extra_txn <= 0)
+        return;
+    if (!vExtraTxnForCompact.size())
+        vExtraTxnForCompact.resize(max_extra_txn);
+    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
+    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
 }

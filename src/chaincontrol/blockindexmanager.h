@@ -164,7 +164,7 @@ public:
     bool ContextualCheckBlockHeader(const CBlockHeader &block, CValidationState &state, const CChainParams &params,
                                     const CBlockIndex *pindexPrev, int64_t nAdjustedTime);
 
-    bool PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex);
+    void PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex);
 
     bool ResetBlockFailureFlags(CBlockIndex *pindex);
 

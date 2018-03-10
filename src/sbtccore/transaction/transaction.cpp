@@ -96,22 +96,25 @@ uint256 CTransaction::GetWitnessHash() const
 }
 
 /* For backward compatibility, the hash is initialized to 0. TODO: remove the need for this default constructor entirely. */
-CTransaction::CTransaction() : nVersion(CTransaction::CURRENT_VERSION), vin(), vout(), nLockTime(0), hash(),
-                               CTransactionBase(Utox2UtoxTransaction)
+CTransaction::CTransaction() : CTransactionBase(Utox2UtoxTransaction), nVersion(CTransaction::CURRENT_VERSION), vin(),
+                               vout(), nLockTime(0), hash()
+
 //        , cPolicy(*this)
 {
 }
 
-CTransaction::CTransaction(const CMutableTransaction &tx) : nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout),
-                                                            nLockTime(tx.nLockTime), hash(ComputeHash()),
-                                                            CTransactionBase(Utox2UtoxTransaction)
+CTransaction::CTransaction(const CMutableTransaction &tx) : CTransactionBase(Utox2UtoxTransaction),
+                                                            nVersion(tx.nVersion), vin(tx.vin), vout(tx.vout),
+                                                            nLockTime(tx.nLockTime), hash(ComputeHash())
+
 //        , cPolicy(*this)
 {
 }
 
-CTransaction::CTransaction(CMutableTransaction &&tx) : nVersion(tx.nVersion), vin(std::move(tx.vin)),
+CTransaction::CTransaction(CMutableTransaction &&tx) : CTransactionBase(Utox2UtoxTransaction), nVersion(tx.nVersion),
+                                                       vin(std::move(tx.vin)),
                                                        vout(std::move(tx.vout)), nLockTime(tx.nLockTime),
-                                                       hash(ComputeHash()), CTransactionBase(Utox2UtoxTransaction)
+                                                       hash(ComputeHash())
 //        ,                                                       cPolicy(*this)
 {
 }

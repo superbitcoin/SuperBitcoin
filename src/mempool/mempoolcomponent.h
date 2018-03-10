@@ -12,8 +12,6 @@
 #include "interface/imempoolcomponent.h"
 #include "txmempool.h"
 
-static const char *FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
-
 namespace
 {
     /**
@@ -39,7 +37,6 @@ namespace
     std::unique_ptr<CRollingBloomFilter> recentRejects;
     uint256 hashRecentRejectsChainTip;
 
-    size_t vExtraTxnForCompactIt = 0;
     std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
 
 

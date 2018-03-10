@@ -1239,14 +1239,14 @@ bool CBlockIndexManager::ReceivedBlockTransactions(const CBlock &block, CValidat
     return true;
 }
 
-bool CBlockIndexManager::PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex)
+void CBlockIndexManager::PreciousBlock(CValidationState &state, const CChainParams &params, CBlockIndex *pindex)
 {
     {
         LOCK(cs);
         if (pindex->nChainWork < cChainActive.Tip()->nChainWork)
         {
             // Nothing to do, this block is not at the tip.
-            return true;
+            return;
         }
         if (cChainActive.Tip()->nChainWork > nLastPreciousChainwork)
         {
@@ -1336,9 +1336,11 @@ int64_t CBlockIndexManager::GetBlockProofEquivalentTime(uint256 hashAssumeValid,
             //  artificially set the default assumed verified block further back.
             // The test against nMinimumChainWork prevents the skipping when denied access to any chain at
             //  least as good as the expected chain.
-            ::GetBlockProofEquivalentTime(*pIndexBestHeader, *pindex, *pIndexBestHeader, params.GetConsensus());
+            return ::GetBlockProofEquivalentTime(*pIndexBestHeader, *pindex, *pIndexBestHeader, params.GetConsensus());
         }
     }
+
+    return 0;
 }
 
 std::set<const CBlockIndex *, CompareBlocksByHeight> CBlockIndexManager::GetTips()

@@ -162,7 +162,8 @@ public:
     /** (try to) add transaction to memory pool
         * plTxnReplaced will be appended to with all transactions replaced from mempool **/
     virtual bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                                    bool *pfMissingInputs, bool fOverrideMempoolLimit = false,
+                                    bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,
+                                    bool fOverrideMempoolLimit = false,
                                     const CAmount nAbsurdFee = 0);
 
     /** (try to) add transaction to memory pool with a specified acceptance time **/

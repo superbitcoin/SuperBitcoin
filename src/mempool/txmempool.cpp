@@ -32,10 +32,10 @@ using namespace appbase;
 log4cpp::Category &CTxMemPool::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
 
 bool CTxMemPool::AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
-                                    bool *pfMissingInputs, bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
+                                    bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,
+                                    bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
 {
-    std::list<CTransactionRef> TxnReplaced;
-    return AcceptToMemoryPoolWithTime(Params(), state, tx, fLimitFree, pfMissingInputs, GetTime(), &TxnReplaced,
+    return AcceptToMemoryPoolWithTime(Params(), state, tx, fLimitFree, pfMissingInputs, GetTime(), plTxnReplaced,
                                       fOverrideMempoolLimit, nAbsurdFee);
 }
 
@@ -575,7 +575,7 @@ void CTxMemPool::UpdateMempoolForReorg(DisconnectedBlockTransactions &disconnect
         // ignore validation errors in resurrected transactions
         CValidationState stateDummy;
         if (!fAddToMempool || (*it)->IsCoinBase() ||
-            !AcceptToMemoryPool(stateDummy, *it, false, nullptr, true))
+            !AcceptToMemoryPool(stateDummy, *it, false, nullptr, nullptr, true))
         {
             // If the transaction doesn't make it in to the mempool, remove any
             // transactions that depend on it (which would now be orphans).

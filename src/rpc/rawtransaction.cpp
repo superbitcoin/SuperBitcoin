@@ -1039,8 +1039,8 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         CValidationState state;
         bool fMissingInputs;
         bool fLimitFree = true;
-        if (!mempool.AcceptToMemoryPool(state, std::move(tx), fLimitFree, &fMissingInputs, false,
-                                           nMaxRawTxFee))
+        if (!mempool.AcceptToMemoryPool(state, std::move(tx), fLimitFree, &fMissingInputs, nullptr, false,
+                                        nMaxRawTxFee))
         {
             if (state.IsInvalid())
             {

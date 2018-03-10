@@ -13,6 +13,8 @@
 
 log4cpp::Category &CMempoolComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
 
+static const char *FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
+
 CMempoolComponent::CMempoolComponent()
 {
 
@@ -188,18 +190,6 @@ void CMempoolComponent::DumpMempool(void)
     {
         mlog_notice("Failed to dump mempool: %s. Continuing anyway.\n", e.what());
     }
-}
-
-void CMempoolComponent::AddToCompactExtraTransactions(const CTransactionRef &tx)
-{
-    size_t max_extra_txn = Args().GetArg<uint32_t>("-blockreconstructionextratxn",
-                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
-    if (max_extra_txn <= 0)
-        return;
-    if (!vExtraTxnForCompact.size())
-        vExtraTxnForCompact.resize(max_extra_txn);
-    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
-    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
 }
 
 void CMempoolComponent::InitFeeEstimate()
