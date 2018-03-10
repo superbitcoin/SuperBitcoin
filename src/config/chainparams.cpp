@@ -103,6 +103,7 @@ class CMainParams : public CChainParams
 public:
     CMainParams()
     {
+        nRPCPort = 8333;
         strNetworkID = "main";
         consensus.nSubsidyHalvingInterval = 210000;
         consensus.BIP34Height = 227931;
@@ -220,6 +221,8 @@ class CTestNetParams : public CChainParams
 public:
     CTestNetParams()
     {
+        nRPCPort = 18333;
+        strDataDir = "testnet3";
         strNetworkID = "test";
         consensus.nSubsidyHalvingInterval = 210000;
         consensus.BIP34Height = 21111;
@@ -316,6 +319,8 @@ class CRegTestParams : public CChainParams
 public:
     CRegTestParams()
     {
+        nRPCPort = 18333;
+        strDataDir = "regtest";
         strNetworkID = "regtest";
         consensus.nSubsidyHalvingInterval = 150;
         consensus.BIP34Height = 100000000; // BIP34 has not activated on regtest (far in the future so block v1 are not rejected in tests)
@@ -391,11 +396,6 @@ public:
     }
 
 };
-
-const CChainParams &Params()
-{
-    return appbase::CApp::Instance().GetChainParams();
-}
 
 std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain)
 {

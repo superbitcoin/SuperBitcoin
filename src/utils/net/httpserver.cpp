@@ -41,6 +41,7 @@
 #endif
 #endif
 
+#include "chainparams.h"
 /** Maximum size of http request (request line + headers) */
 static const size_t MAX_HEADERS_SIZE = 8192;
 
@@ -354,7 +355,7 @@ static bool ThreadHTTP(struct event_base *base, struct evhttp *http)
 /** Bind HTTP server to specified addresses */
 static bool HTTPBindAddresses(struct evhttp *http)
 {
-    int defaultPort = Args().GetArg<int>("-rpcport", BaseParams().RPCPort());
+    int defaultPort = Args().GetArg<int>("-rpcport", Params().RPCPort());
     std::vector<std::pair<std::string, uint16_t> > endpoints;
 
     // Determine what addresses to bind to
@@ -438,10 +439,10 @@ bool InitHTTPServer()
     // Update libevent's log handling. Returns false if our version of
     // libevent doesn't support debug logging, in which case we should
     // clear the BCLog::LIBEVENT flag.
-//    if (!UpdateHTTPServerLogging(logCategories & BCLog::LIBEVENT))
-//    {
-//        logCategories &= ~BCLog::LIBEVENT;
-//    }
+    //    if (!UpdateHTTPServerLogging(logCategories & BCLog::LIBEVENT))
+    //    {
+    //        logCategories &= ~BCLog::LIBEVENT;
+    //    }
 
 #ifdef WIN32
     evthread_use_windows_threads();

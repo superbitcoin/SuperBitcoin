@@ -1,7 +1,7 @@
 #include <vector>
 #include <string>
 #include "netcomponent.h"
-#include "base.hpp"
+#include "baseimpl.hpp"
 #include "addrman.h"
 #include "netbase.h"
 #include "net.h"

@@ -20,7 +20,7 @@
 #include "utils/utiltime.h"
 #include "net_processing.h"
 #include "wallet/rbf.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "interface/inetcomponent.h"
 #include "interface/ichaincomponent.h"
 #include "utils/net/netmessagehelper.h"

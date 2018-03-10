@@ -9,7 +9,7 @@
 
 #endif
 
-#include "config/chainparamsbase.h"
+#include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
 #include "fs.h"
 #include "rpc/client.h"
@@ -259,7 +259,7 @@ UniValue CallRPC(const std::string &strMethod, const UniValue &params)
     //     1. -rpcport
     //     2. port in -rpcconnect (ie following : in ipv4 or ]: in ipv6)
     //     3. default port for chain
-    int port = BaseParams().RPCPort();
+    int port = Params().RPCPort();
     SplitHostPort(gArgs.GetArg<std::string>("-rpcconnect", DEFAULT_RPCCONNECT), port, host);
     port = gArgs.GetArg<int>("-rpcport", port);
 

@@ -5,7 +5,7 @@
 #include "utils/util.h"
 #include "utils/net/httpserver.h"
 #include "utils/net/httprpc.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "config/argmanager.h"
 
 log4cpp::Category &CHttpRpcComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_HTTP_RPC));

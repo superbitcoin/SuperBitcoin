@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <thread>
+#include "base/base.hpp"
 #include "icomponent.h"
 #include "utils/iterator.h"
 #include "ui_interface.h"
@@ -22,15 +23,10 @@ class ECCVerifyHandle;
 
 namespace appbase
 {
-    class CApp : public IComponent
+    class CApp : public IComponent, public IBaseApp
     {
     public:
         static CApp &Instance();
-
-        static log4cpp::Category &mlog;
-
-
-        bool InitializeLogging(fs::path path);
 
         // the following four override methods were meaningless,
         // only just make CApp become a non-abstract class.
@@ -54,7 +50,6 @@ namespace appbase
             return mlog;
         }
 
-
         uint64_t Version() const
         {
             return nVersion;
@@ -76,7 +71,7 @@ namespace appbase
         }
 
 
-        bool Initialize(int argc, char **argv);
+        bool Initialize(int argc, char **argv) override;
 
         bool Startup() override;
 
@@ -120,21 +115,6 @@ namespace appbase
             return isOk;
         }
 
-        const CArgsManager &GetArgsManager() const
-        {
-            return gArgs;
-        }
-
-        const CChainParams &GetChainParams() const
-        {
-            return *cChainParams.get();
-        }
-
-        const CBaseChainParams &GetBaseChainParams() const
-        {
-            return *cBaseChainParams.get();
-        }
-
         CScheduler &GetScheduler()
         {
             return *scheduler.get();
@@ -174,8 +154,6 @@ namespace appbase
     private:
         uint64_t nVersion;
         volatile bool bShutdown;
-        std::unique_ptr<CChainParams> cChainParams;
-        std::unique_ptr<CBaseChainParams> cBaseChainParams;
 
         std::thread schedulerThread;
         std::unique_ptr<CScheduler> scheduler;

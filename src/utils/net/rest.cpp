@@ -18,7 +18,7 @@
 #include "mempool/txmempool.h"
 #include "utils/utilstrencodings.h"
 #include "framework/version.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "interface/ichaincomponent.h"
 
 #include <boost/algorithm/string.hpp>

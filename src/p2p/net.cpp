@@ -21,7 +21,7 @@
 #include "hash.h"
 #include "transaction/transaction.h"
 #include "netbase.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "framework/scheduler.h"
 #include "framework/ui_interface.h"
 #include "eventmanager/eventmanager.h"

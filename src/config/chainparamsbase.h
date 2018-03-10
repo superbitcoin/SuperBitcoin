@@ -31,10 +31,11 @@ public:
         return nRPCPort;
     }
 
-protected:
     CBaseChainParams()
     {
     }
+
+protected:
 
     int nRPCPort;
     std::string strDataDir;

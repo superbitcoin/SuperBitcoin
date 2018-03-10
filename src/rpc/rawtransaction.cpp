@@ -9,7 +9,7 @@
 #include "chaincontrol/validation.h"
 #include "chaincontrol/blockfilemanager.h"
 #include "sbtccore/core_io.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "wallet/keystore.h"
 #include "block/validation.h"
 #include "merkleblock.h"

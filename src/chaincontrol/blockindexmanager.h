@@ -17,7 +17,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "sbtccore/transaction/txdb.h"
 #include "sbtccore/block/validation.h"
 #include "config/chainparamsbase.h"

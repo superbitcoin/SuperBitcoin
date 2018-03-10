@@ -7,7 +7,7 @@
 
 #include "utils/base58.h"
 #include "fs.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "random.h"
 #include "framework/sync.h"
 #include "framework/ui_interface.h"

@@ -11,7 +11,7 @@
 #include "rpcwallet.h"
 #include "server.h"
 #include "scheduler.h"
-#include "base.hpp"
+#include "baseimpl.hpp"
 
 CWalletComponent::CWalletComponent()
 {

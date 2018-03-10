@@ -40,7 +40,7 @@
 #include "framework/validationinterface.h"
 #include "framework/versionbits.h"
 #include "framework/warnings.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "chaincontrol/blockfilemanager.h"
 
 #include <atomic>

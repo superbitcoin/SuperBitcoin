@@ -17,7 +17,7 @@
 
 #include "rpcwallet.h"
 
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "interface/ichaincomponent.h"
 
 #include <fstream>

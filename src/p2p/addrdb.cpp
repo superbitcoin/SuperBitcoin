@@ -6,7 +6,7 @@
 #include "addrdb.h"
 
 #include "p2p/addrman.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
 #include "fs.h"

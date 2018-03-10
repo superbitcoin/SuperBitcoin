@@ -17,7 +17,7 @@
 #include "sbtccore/checkqueue.h"
 #include "sbtccore/block/undo.h"
 #include "utils/merkleblock.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "framework/validationinterface.h"
 #include "eventmanager/eventmanager.h"
 #include "utils.h"
@@ -121,10 +121,10 @@ bool CChainComponent::ComponentInitialize()
     iCoinDBCache = std::min(iCoinDBCache, nMaxCoinsDBCache << 20); // cap total coins db cache
     iTotalCache -= iCoinDBCache;
     iCoinCacheUsage = iTotalCache; // the rest goes to in-memory cache
-    mlog_error("Cache configuration:\n");
-    mlog_error("* Using %.1fMiB for block index database\n", iBlockTreeDBCache * (1.0 / 1024 / 1024));
-    mlog_error("* Using %.1fMiB for chain state database\n", iCoinDBCache * (1.0 / 1024 / 1024));
-    mlog_error("* Using %.1fMiB for in-memory UTXO set \n", iCoinCacheUsage * (1.0 / 1024 / 1024));
+    mlog_notice("Cache configuration:\n");
+    mlog_notice("* Using %.1fMiB for block index database\n", iBlockTreeDBCache * (1.0 / 1024 / 1024));
+    mlog_notice("* Using %.1fMiB for chain state database\n", iCoinDBCache * (1.0 / 1024 / 1024));
+    mlog_notice("* Using %.1fMiB for in-memory UTXO set \n", iCoinCacheUsage * (1.0 / 1024 / 1024));
 
     int64_t iStart;
     bool bLoaded = false;
@@ -535,7 +535,6 @@ bool CChainComponent::NeedFullFlush(FlushStateMode mode)
 bool CChainComponent::FlushStateToDisk(CValidationState &state, FlushStateMode mode, const CChainParams &chainparams)
 {
     LOCK(cs_main);
-
     static int64_t iLastWrite = 0;
     static int64_t iLastFlush = 0;
     static int64_t iLastSetChain = 0;

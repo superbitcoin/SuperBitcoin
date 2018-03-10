@@ -68,6 +68,15 @@ public:
         MAX_BASE58_TYPES
     };
 
+    const std::string &DataDir() const
+    {
+        return strDataDir;
+    }
+
+    const int RPCPort() const
+    {
+        return nRPCPort;
+    }
 
     const Consensus::Params &GetConsensus() const
     {
@@ -152,11 +161,13 @@ public:
         return std::move(cCheckPointPubKey);
     }
 
-protected:
     CChainParams()
     {
     }
 
+protected:
+    int nRPCPort;
+    std::string strDataDir;
     Consensus::Params consensus;
     CMessageHeader::MessageStartChars pchMessageStart;
     int nDefaultPort;

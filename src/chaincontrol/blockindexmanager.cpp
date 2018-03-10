@@ -238,7 +238,7 @@ void CBlockIndexManager::SortBlockIndex()
 
 bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex)
 {
-    mlog.info("initialize index manager \n");
+    mlog_info("initialize index manager \n");
 
     UnLoadBlockIndex();
 

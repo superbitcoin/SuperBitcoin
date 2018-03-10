@@ -11,7 +11,7 @@
  * Author:
  * Modification:
 *************************************************/
-#include "base.hpp"
+#include "baseimpl.hpp"
 #include "p2p/netcomponent.h"
 #include "rpc/rpccomponent.h"
 #include "chaincontrol/chaincomponent.h"

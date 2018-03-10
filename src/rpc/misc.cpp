@@ -7,7 +7,7 @@
 #include "chaincontrol/chain.h"
 #include "sbtccore/clientversion.h"
 #include "sbtccore/core_io.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "interface/ichaincomponent.h"
 #include "block/validation.h"
 #include "utils/net/httpserver.h"

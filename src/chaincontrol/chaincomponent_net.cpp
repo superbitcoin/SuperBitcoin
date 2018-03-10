@@ -16,7 +16,7 @@
 #include "sbtccore/checkqueue.h"
 #include "sbtccore/block/undo.h"
 #include "utils/merkleblock.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "framework/validationinterface.h"
 #include "eventmanager/eventmanager.h"
 #include "utils.h"

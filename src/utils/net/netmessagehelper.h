@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include "sbtccore/streams.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "interface/inetcomponent.h"
 
 template<typename... TArgs>

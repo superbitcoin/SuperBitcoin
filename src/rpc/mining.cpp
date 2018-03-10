@@ -24,7 +24,7 @@
 #include "utils/utilstrencodings.h"
 #include "framework/validationinterface.h"
 #include "framework/warnings.h"
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "interface/ichaincomponent.h"
 
 #include <memory>

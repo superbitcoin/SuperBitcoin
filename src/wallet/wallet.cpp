@@ -31,7 +31,7 @@
 #include "utils/util.h"
 #include "framework/ui_interface.h"
 #include "utils/utilmoneystr.h"
-#include "base.hpp"
+#include "baseimpl.hpp"
 #include "argmanager.h"
 #include "walletcomponent.h"
 #include "interface/ichaincomponent.h"

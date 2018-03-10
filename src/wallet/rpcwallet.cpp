@@ -26,7 +26,7 @@
 #include "wallet/feebumper.h"
 #include "wallet/wallet.h"
 #include "wallet/walletdb.h"
-#include "base.hpp"
+#include "baseimpl.hpp"
 #include "argmanager.h"
 #include "walletcomponent.h"
 #include "interface/ichaincomponent.h"

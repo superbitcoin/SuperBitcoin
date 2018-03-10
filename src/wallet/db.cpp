@@ -21,7 +21,7 @@
 #endif
 
 #include <boost/thread.hpp>
-#include "base.hpp"
+#include "baseimpl.hpp"
 #include "argmanager.h"
 
 namespace

@@ -5,7 +5,7 @@
 //  Original author: ranger
 ///////////////////////////////////////////////////////////
 
-#include "framework/base.hpp"
+#include "sbtcd/baseimpl.hpp"
 #include "viewmanager.h"
 #include "config/argmanager.h"
 #include "sbtccore/block/undo.h"
