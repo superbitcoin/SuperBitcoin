@@ -556,7 +556,7 @@ bool CApp::AppInitLockDataDirectory()
     return true;
 }
 
-bool CApp::AppInitialize(int argc, char *argv[])
+bool CApp::AppInitialize()
 {
     noui_connect();
 
@@ -637,7 +637,7 @@ bool CApp::ComponentInitialize()
 
 bool CApp::Initialize(int argc, char **argv)
 {
-    return BaseInitialize(argc, argv) && AppInitialize(argc, argv) && ComponentInitialize();
+    return BaseInitialize(argc, argv) && AppInitialize() && ComponentInitialize();
 }
 
 bool CApp::Startup()

@@ -147,7 +147,7 @@ namespace appbase
 
         bool AppInitLockDataDirectory();
 
-        bool AppInitialize(int argc, char *argv[]);
+        bool AppInitialize();
 
         bool ComponentInitialize();
 
