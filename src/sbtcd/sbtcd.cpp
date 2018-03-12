@@ -477,6 +477,7 @@ bool AppInit(int argc, char *argv[])
     CScheduler scheduler;
 
     bool fRet = false;
+    bool tt = false ; //sbtc-debug
 
     //
     // Parameters
