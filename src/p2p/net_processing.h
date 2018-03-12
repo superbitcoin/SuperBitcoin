@@ -10,9 +10,6 @@
 #include "framework/validationinterface.h"
 #include "config/params.h"
 
-
-/** Default number of orphan+recently-replaced txn to keep around for block reconstruction */
-static const unsigned int DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN = 100;
 /** Headers download timeout expressed in microseconds
  *  Timeout = base + per_header * (expected number of headers) */
 static constexpr int64_t HEADERS_DOWNLOAD_TIMEOUT_BASE = 15 * 60 * 1000000; // 15 minutes
@@ -165,7 +162,5 @@ int  GetInFlightBlockCount();
 bool DoseBlockInFlight(uint256 hash);
 
 bool MarkNodeBlockInFlight(int64_t nodeid, uint256 hash, const CBlockIndex *pindex);
-
-//void AddToCompactExtraTransactions(const CTransactionRef &tx);
 
 #endif // BITCOIN_NET_PROCESSING_H

@@ -6,6 +6,7 @@
 #include "chaincontrol/validation.h"
 #include "block/validation.h"
 #include "sbtccore/transaction/policy.h"
+#include "sbtccore/block/blockencodings.h"
 #include "wallet/fees.h"
 #include "reverse_iterator.h"
 #include "sbtccore/streams.h"
@@ -21,6 +22,66 @@
 #include "utils/net/netmessagehelper.h"
 #include "orphantx.h"
 #include "chaincontrol/utils.h"
+
+namespace
+{
+    /**
+     * Filter for transactions that were recently rejected by
+     * AcceptToMemoryPool. These are not rerequested until the chain tip
+     * changes, at which point the entire filter is reset. Protected by
+     * cs_main.
+     *
+     * Without this filter we'd be re-requesting txs from each of our peers,
+     * increasing bandwidth consumption considerably. For instance, with 100
+     * peers, half of which relay a tx we don't accept, that might be a 50x
+     * bandwidth increase. A flooding attacker attempting to roll-over the
+     * filter using minimum-sized, 60byte, transactions might manage to send
+     * 1000/sec if we have fast peers, so we pick 120,000 to give our peers a
+     * two minute window to send invs to us.
+     *
+     * Decreasing the false positive rate is fairly cheap, so we pick one in a
+     * million to make it highly unlikely for users to have issues with this
+     * filter.
+     *
+     * Memory used: 1.3 MB
+     */
+    std::unique_ptr<CRollingBloomFilter> recentRejects;
+    uint256 hashRecentRejectsChainTip;
+
+
+    /** Relay map, protected by cs_main. */
+    typedef std::map<uint256, CTransactionRef> MapRelay;
+
+    MapRelay mapRelay;
+
+    /** Expiration-time ordered list of (expire time, relay map entry) pairs, protected by cs_main). */
+    std::deque<std::pair<int64_t, MapRelay::iterator>> vRelayExpiration;
+}
+
+void CMempoolComponent::InitializeForNet()
+{
+    // Initialize global variables that cannot be constructed at startup.
+    recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
+}
+
+bool CMempoolComponent::DoesTxExist(uint256 txHash, uint256 tipBlockHash)
+{
+    if (recentRejects)
+    {
+        if (tipBlockHash != hashRecentRejectsChainTip)
+        {
+            // If the chain tip has changed previously rejected transactions
+            // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
+            // or a double-spend. Reset the rejects filter and give those
+            // txs a second chance.
+            hashRecentRejectsChainTip = tipBlockHash;
+            recentRejects->reset();
+        }
+    }
+
+    return recentRejects->contains(txHash) || mempool.exists(txHash) ||
+           COrphanTx::Instance().Exists(txHash);
+}
 
 bool CMempoolComponent::NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq)
 {
@@ -388,16 +449,3 @@ CMempoolComponent::NetRequestTxInventory(ExNode *xnode, bool sendMempool, int64_
     return true;
 }
 
-size_t vExtraTxnForCompactIt = 0;
-
-void CMempoolComponent::AddToCompactExtraTransactions(const CTransactionRef &tx)
-{
-    size_t max_extra_txn = Args().GetArg<uint32_t>("-blockreconstructionextratxn",
-                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
-    if (max_extra_txn <= 0)
-        return;
-    if (!vExtraTxnForCompact.size())
-        vExtraTxnForCompact.resize(max_extra_txn);
-    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
-    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
-}

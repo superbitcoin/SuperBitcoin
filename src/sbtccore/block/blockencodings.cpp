@@ -13,8 +13,27 @@
 #include "validation.h"
 #include "utils/util.h"
 #include "interface/ichaincomponent.h"
-
+#include <vector>
 #include <unordered_map>
+
+/** Default number of orphan+recently-replaced txn to keep around for block reconstruction */
+static const unsigned int DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN = 100;
+
+static size_t vExtraTxnForCompactIt = 0;
+static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
+
+void AddToCompactExtraTransactions(const CTransactionRef &tx)
+{
+    static size_t max_extra_txn = Args().GetArg<uint32_t>("-blockreconstructionextratxn",
+                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
+    if (max_extra_txn <= 0)
+        return;
+
+    if (!vExtraTxnForCompact.size())
+        vExtraTxnForCompact.resize(max_extra_txn);
+    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
+    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
+}
 
 CBlockHeaderAndShortTxIDs::CBlockHeaderAndShortTxIDs(const CBlock &block, bool fUseWTXID) :
         nonce(GetRand(std::numeric_limits<uint64_t>::max())),
@@ -49,9 +68,10 @@ uint64_t CBlockHeaderAndShortTxIDs::GetShortID(const uint256 &txhash) const
 }
 
 
-ReadStatus PartiallyDownloadedBlock::InitData(const CBlockHeaderAndShortTxIDs &cmpctblock,
-                                              const std::vector<std::pair<uint256, CTransactionRef>> &extra_txn)
+ReadStatus PartiallyDownloadedBlock::InitData(const CBlockHeaderAndShortTxIDs &cmpctblock)
 {
+    const std::vector<std::pair<uint256, CTransactionRef>> &extra_txn = vExtraTxnForCompact;
+
     if (cmpctblock.header.IsNull() || (cmpctblock.shorttxids.empty() && cmpctblock.prefilledtxn.empty()))
         return READ_STATUS_INVALID;
     if (cmpctblock.shorttxids.size() + cmpctblock.prefilledtxn.size() >

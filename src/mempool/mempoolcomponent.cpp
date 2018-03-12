@@ -28,6 +28,8 @@ bool CMempoolComponent::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
 
+    InitializeForNet();
+
     InitFeeEstimate();
     GetMemPool().SetEstimator(&feeEstimator);
 

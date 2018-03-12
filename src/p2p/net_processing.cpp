@@ -49,30 +49,8 @@
 std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of when we last received a block
 
 
-//class CompareInvMempoolOrder
-//{
-//    CTxMemPool *mp;
-//public:
-//    CompareInvMempoolOrder(CTxMemPool *_mempool)
-//    {
-//        mp = _mempool;
-//    }
-//
-//    bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b)
-//    {
-//        /* As std::make_heap produces a max-heap, we want the entries with the
-//         * fewest ancestors/highest fee to sort later. */
-//        return mp->CompareDepthAndScore(*b, *a);
-//    }
-//};
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-//static size_t vExtraTxnForCompactIt = 0;
-static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static const uint64_t RANDOMIZER_ID_ADDRESS_RELAY = 0x3cac0035b5866b90ULL; // SHA256("main address relay")[0:8]
 
@@ -90,29 +68,6 @@ namespace
      * punished if the block is invalid.
      */
     std::map<uint256, std::pair<NodeId, bool>> mapBlockSource;
-
-    /**
-     * Filter for transactions that were recently rejected by
-     * AcceptToMemoryPool. These are not rerequested until the chain tip
-     * changes, at which point the entire filter is reset. Protected by
-     * cs_main.
-     *
-     * Without this filter we'd be re-requesting txs from each of our peers,
-     * increasing bandwidth consumption considerably. For instance, with 100
-     * peers, half of which relay a tx we don't accept, that might be a 50x
-     * bandwidth increase. A flooding attacker attempting to roll-over the
-     * filter using minimum-sized, 60byte, transactions might manage to send
-     * 1000/sec if we have fast peers, so we pick 120,000 to give our peers a
-     * two minute window to send invs to us.
-     *
-     * Decreasing the false positive rate is fairly cheap, so we pick one in a
-     * million to make it highly unlikely for users to have issues with this
-     * filter.
-     *
-     * Memory used: 1.3 MB
-     */
-    std::unique_ptr<CRollingBloomFilter> recentRejects;
-    uint256 hashRecentRejectsChainTip;
 
     /** Blocks that are in flight, and that are in the queue to be downloaded. Protected by cs_main. */
     struct QueuedBlock
@@ -139,11 +94,11 @@ namespace
     /** When our tip was last updated. */
     int64_t g_last_tip_update = 0;
 
-    /** Relay map, protected by cs_main. */
-    typedef std::map<uint256, CTransactionRef> MapRelay;
-    MapRelay mapRelay;
-    /** Expiration-time ordered list of (expire time, relay map entry) pairs, protected by cs_main). */
-    std::deque<std::pair<int64_t, MapRelay::iterator>> vRelayExpiration;
+//    /** Relay map, protected by cs_main. */
+//    typedef std::map<uint256, CTransactionRef> MapRelay;
+//    MapRelay mapRelay;
+//    /** Expiration-time ordered list of (expire time, relay map entry) pairs, protected by cs_main). */
+//    std::deque<std::pair<int64_t, MapRelay::iterator>> vRelayExpiration;
 } // namespace
 
 namespace
@@ -728,29 +683,16 @@ static uint32_t GetFetchFlags(CNode *pfrom)
 bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    CChain &chainActive = ifChainObj->GetActiveChain();
-    CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
-    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
-
     switch (inv.type)
     {
         case MSG_TX:
         case MSG_WITNESS_TX:
         {
-            assert(recentRejects);
-            if (chainActive.Tip()->GetBlockHash() != hashRecentRejectsChainTip)
-            {
-                // If the chain tip has changed previously rejected transactions
-                // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
-                // or a double-spend. Reset the rejects filter and give those
-                // txs a second chance.
-                hashRecentRejectsChainTip = chainActive.Tip()->GetBlockHash();
-                recentRejects->reset();
-            }
+            CChain &chainActive = ifChainObj->GetActiveChain();
+            CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+            GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
 
-            return recentRejects->contains(inv.hash) ||
-                   ifTxMempoolObj->GetMemPool().exists(inv.hash) ||
-                   COrphanTx::Instance().Exists(inv.hash) ||
+            return ifTxMempoolObj->DoesTxExist(inv.hash, chainActive.Tip()->GetBlockHash()) ||
                    pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 0)) || // Best effort: only try output 0 and 1
                    pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 1));
         }
@@ -1089,10 +1031,6 @@ PeerLogicValidation::PeerLogicValidation(CConnman *connmanIn, CScheduler &schedu
         : connman(connmanIn), m_stale_tip_check_time(0), appArgs(Args()),
           mlog(log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET)))
 {
-    // Initialize global variables that cannot be constructed at startup.
-    recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
-
-
     // Stale tip checking and peer eviction are on two different timers, but we
     // don't want them to get out of sync due to drift in the scheduler, so we
     // combine them in one function and schedule at the quicker (peer-eviction)
@@ -3376,7 +3314,7 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
                 }
 
                 PartiallyDownloadedBlock &partialBlock = *(*queuedBlockIt)->partialBlock;
-                ReadStatus status = partialBlock.InitData(cmpctblock, vExtraTxnForCompact);
+                ReadStatus status = partialBlock.InitData(cmpctblock);
                 if (status == READ_STATUS_INVALID)
                 {
                     MarkBlockAsReceived(pindex->GetBlockHash()); // Reset in-flight state in case of whitelist
@@ -3419,7 +3357,7 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
                 // Optimistically try to reconstruct anyway since we might be
                 // able to without any round trips.
                 PartiallyDownloadedBlock tempBlock(&mempool);
-                ReadStatus status = tempBlock.InitData(cmpctblock, vExtraTxnForCompact);
+                ReadStatus status = tempBlock.InitData(cmpctblock);
                 if (status != READ_STATUS_OK)
                 {
                     // TODO: don't ignore failures
