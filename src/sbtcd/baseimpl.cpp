@@ -637,7 +637,7 @@ bool CApp::ComponentInitialize()
 
 bool CApp::Initialize(int argc, char **argv)
 {
-    return BaseInitialize(argc, argv) && AppInitialize() && ComponentInitialize();
+    return Init(argc, argv) && ComponentInitialize();
 }
 
 bool CApp::Startup()

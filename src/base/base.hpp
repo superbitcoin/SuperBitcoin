@@ -26,11 +26,7 @@ namespace appbase
     {
     public:
 
-        virtual bool Initialize(int argc, char **argv) = 0;
-
-        bool BaseInitialize(int argc, char **argv);
-
-        bool InitializeLogging(fs::path path);
+        virtual bool AppInitialize() = 0;
 
         static const CArgsManager &GetArgsManager()
         {
@@ -44,9 +40,17 @@ namespace appbase
 
     public:
         static log4cpp::Category &mlog;
+
+    protected:
+        bool Init(int argc, char **argv);
+        bool InitializeLogging(fs::path path);
+
     protected:
         static std::unique_ptr<CArgsManager> pArgs;
         static std::unique_ptr<CChainParams> pChainParams;
+
+    private:
+        bool ParamsInitialize(int argc, char **argv);
     };
 }
 

@@ -20,32 +20,16 @@ class CBaseChainParams;
 
 class ECCVerifyHandle;
 
-
 namespace appbase
 {
-    class CApp : public IComponent, public IBaseApp
+    class CApp : public IBaseApp
     {
     public:
         static CApp &Instance();
 
-        // the following four override methods were meaningless,
-        // only just make CApp become a non-abstract class.
-        int GetID() const override
-        {
-            return CID_APP;
-        }
+        bool Initialize(int argc, char **argv);
 
-        state GetState() const override
-        {
-            return initialized;
-        }
-
-        bool Initialize() override
-        {
-            return false;
-        }
-
-        log4cpp::Category &getLog() override
+        log4cpp::Category &getLog()
         {
             return mlog;
         }
@@ -70,12 +54,9 @@ namespace appbase
             return bShutdown;
         }
 
+        bool Startup();
 
-        bool Initialize(int argc, char **argv) override;
-
-        bool Startup() override;
-
-        bool Shutdown() override;
+        bool Shutdown();
 
         bool Run();
 
@@ -130,6 +111,9 @@ namespace appbase
             return *uiInterface.get();
         }
 
+    protected:
+        bool AppInitialize() override;
+
     private:
         CApp();
 
@@ -146,8 +130,6 @@ namespace appbase
         bool AppInitSanityChecks();
 
         bool AppInitLockDataDirectory();
-
-        bool AppInitialize();
 
         bool ComponentInitialize();
 

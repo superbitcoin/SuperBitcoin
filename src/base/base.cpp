@@ -125,7 +125,7 @@ static void PrintVersion()
                  FormatParagraph(LicenseInfo()) << std::endl;
 }
 
-bool IBaseApp::BaseInitialize(int argc, char **argv)
+bool IBaseApp::ParamsInitialize(int argc, char **argv)
 {
     if (!pArgs->Init(argc, argv))
     {
@@ -172,4 +172,9 @@ bool IBaseApp::BaseInitialize(int argc, char **argv)
         return false;
     }
     return true;
+}
+
+bool IBaseApp::Init(int argc, char **argv)
+{
+    return ParamsInitialize(argc, argv) && AppInitialize();
 }
