@@ -62,6 +62,8 @@ public:
 
     bool ComponentShutdown() override;
 
+    bool DoesTxExist(uint256 txHash, uint256 tipBlockHash) override;
+
     bool NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) override;
 
     bool NetReceiveTxData(ExNode *xnode, CDataStream &stream, uint256 &txHash) override;

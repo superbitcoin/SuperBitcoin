@@ -22,6 +22,25 @@
 #include "orphantx.h"
 #include "chaincontrol/utils.h"
 
+bool CMempoolComponent::DoesTxExist(uint256 txHash, uint256 tipBlockHash)
+{
+    if (recentRejects)
+    {
+        if (tipBlockHash != hashRecentRejectsChainTip)
+        {
+            // If the chain tip has changed previously rejected transactions
+            // might be now valid, e.g. due to a nLockTime'd tx becoming valid,
+            // or a double-spend. Reset the rejects filter and give those
+            // txs a second chance.
+            hashRecentRejectsChainTip = tipBlockHash;
+            recentRejects->reset();
+        }
+    }
+
+    return recentRejects->contains(txHash) || mempool.exists(txHash) ||
+           COrphanTx::Instance().Exists(txHash);
+}
+
 bool CMempoolComponent::NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq)
 {
     assert(xnode != nullptr);
