@@ -37,8 +37,6 @@ namespace
     std::unique_ptr<CRollingBloomFilter> recentRejects;
     uint256 hashRecentRejectsChainTip;
 
-    std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
-
 
     /** Relay map, protected by cs_main. */
     typedef std::map<uint256, CTransactionRef> MapRelay;
@@ -70,8 +68,6 @@ public:
 
     bool NetRequestTxInventory(ExNode *xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter *txFilter,
                                std::vector<uint256> &toSendTxHashes, std::vector<uint256> &haveSentTxHashes) override;
-
-    void AddToCompactExtraTransactions(const CTransactionRef &tx) override;
 
     CTxMemPool &GetMemPool() override;
 

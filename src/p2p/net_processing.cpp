@@ -49,30 +49,8 @@
 std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of when we last received a block
 
 
-//class CompareInvMempoolOrder
-//{
-//    CTxMemPool *mp;
-//public:
-//    CompareInvMempoolOrder(CTxMemPool *_mempool)
-//    {
-//        mp = _mempool;
-//    }
-//
-//    bool operator()(std::set<uint256>::iterator a, std::set<uint256>::iterator b)
-//    {
-//        /* As std::make_heap produces a max-heap, we want the entries with the
-//         * fewest ancestors/highest fee to sort later. */
-//        return mp->CompareDepthAndScore(*b, *a);
-//    }
-//};
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-//static size_t vExtraTxnForCompactIt = 0;
-static std::vector<std::pair<uint256, CTransactionRef>> vExtraTxnForCompact GUARDED_BY(cs_main);
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 static const uint64_t RANDOMIZER_ID_ADDRESS_RELAY = 0x3cac0035b5866b90ULL; // SHA256("main address relay")[0:8]
 
@@ -116,11 +94,11 @@ namespace
     /** When our tip was last updated. */
     int64_t g_last_tip_update = 0;
 
-    /** Relay map, protected by cs_main. */
-    typedef std::map<uint256, CTransactionRef> MapRelay;
-    MapRelay mapRelay;
-    /** Expiration-time ordered list of (expire time, relay map entry) pairs, protected by cs_main). */
-    std::deque<std::pair<int64_t, MapRelay::iterator>> vRelayExpiration;
+//    /** Relay map, protected by cs_main. */
+//    typedef std::map<uint256, CTransactionRef> MapRelay;
+//    MapRelay mapRelay;
+//    /** Expiration-time ordered list of (expire time, relay map entry) pairs, protected by cs_main). */
+//    std::deque<std::pair<int64_t, MapRelay::iterator>> vRelayExpiration;
 } // namespace
 
 namespace
@@ -3336,7 +3314,7 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
                 }
 
                 PartiallyDownloadedBlock &partialBlock = *(*queuedBlockIt)->partialBlock;
-                ReadStatus status = partialBlock.InitData(cmpctblock, vExtraTxnForCompact);
+                ReadStatus status = partialBlock.InitData(cmpctblock);
                 if (status == READ_STATUS_INVALID)
                 {
                     MarkBlockAsReceived(pindex->GetBlockHash()); // Reset in-flight state in case of whitelist
@@ -3379,7 +3357,7 @@ bool PeerLogicValidation::ProcessCmpctBlockMsg(CNode *pfrom, CDataStream &vRecv,
                 // Optimistically try to reconstruct anyway since we might be
                 // able to without any round trips.
                 PartiallyDownloadedBlock tempBlock(&mempool);
-                ReadStatus status = tempBlock.InitData(cmpctblock, vExtraTxnForCompact);
+                ReadStatus status = tempBlock.InitData(cmpctblock);
                 if (status != READ_STATUS_OK)
                 {
                     // TODO: don't ignore failures

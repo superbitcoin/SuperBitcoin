@@ -6,6 +6,7 @@
 #include "chaincontrol/validation.h"
 #include "block/validation.h"
 #include "sbtccore/transaction/policy.h"
+#include "sbtccore/block/blockencodings.h"
 #include "wallet/fees.h"
 #include "reverse_iterator.h"
 #include "sbtccore/streams.h"
@@ -407,16 +408,3 @@ CMempoolComponent::NetRequestTxInventory(ExNode *xnode, bool sendMempool, int64_
     return true;
 }
 
-size_t vExtraTxnForCompactIt = 0;
-
-void CMempoolComponent::AddToCompactExtraTransactions(const CTransactionRef &tx)
-{
-    size_t max_extra_txn = Args().GetArg<uint32_t>("-blockreconstructionextratxn",
-                                                   DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN);
-    if (max_extra_txn <= 0)
-        return;
-    if (!vExtraTxnForCompact.size())
-        vExtraTxnForCompact.resize(max_extra_txn);
-    vExtraTxnForCompact[vExtraTxnForCompactIt] = std::make_pair(tx->GetWitnessHash(), tx);
-    vExtraTxnForCompactIt = (vExtraTxnForCompactIt + 1) % max_extra_txn;
-}

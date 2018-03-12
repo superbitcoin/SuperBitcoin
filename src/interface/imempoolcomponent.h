@@ -43,7 +43,6 @@ public:
                                        std::vector<uint256> &toSendTxHashes,
                                        std::vector<uint256> &haveSentTxHashes) = 0;
 
-    virtual void AddToCompactExtraTransactions(const CTransactionRef &tx) = 0;
     //add other interface methods here ...
 
 };
