@@ -10,6 +10,7 @@
 #include <log4cpp/Category.hh>
 #include "utils/util.h"
 #include "interface/imempoolcomponent.h"
+#include "orphantx.h"
 #include "txmempool.h"
 
 class CMempoolComponent : public ITxMempoolComponent
@@ -25,7 +26,9 @@ public:
 
     bool ComponentShutdown() override;
 
-    bool DoesTxExist(uint256 txHash, uint256 tipBlockHash) override;
+    CTxMemPool &GetMemPool() override;
+
+    bool DoesTxExist(uint256 txHash) override;
 
     bool NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) override;
 
@@ -34,7 +37,9 @@ public:
     bool NetRequestTxInventory(ExNode *xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter *txFilter,
                                std::vector<uint256> &toSendTxHashes, std::vector<uint256> &haveSentTxHashes) override;
 
-    CTxMemPool &GetMemPool() override;
+    bool RemoveOrphanTxForNode(int64_t nodeId) override;
+
+    bool RemoveOrphanTxForBlock(const CBlock* pblock) override;
 
 public:
     static log4cpp::Category &mlog;
@@ -44,6 +49,7 @@ private:
     void InitializeForNet();
 
     CTxMemPool mempool;
+    COrphanTxMgr orphanTxMgr;
 
     CCriticalSection cs;
 

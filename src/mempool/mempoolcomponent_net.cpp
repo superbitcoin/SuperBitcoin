@@ -20,7 +20,6 @@
 #include "interface/inetcomponent.h"
 #include "interface/ichaincomponent.h"
 #include "utils/net/netmessagehelper.h"
-#include "orphantx.h"
 #include "chaincontrol/utils.h"
 
 namespace
@@ -64,10 +63,13 @@ void CMempoolComponent::InitializeForNet()
     recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
 }
 
-bool CMempoolComponent::DoesTxExist(uint256 txHash, uint256 tipBlockHash)
+bool CMempoolComponent::DoesTxExist(uint256 txHash)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
     if (recentRejects)
     {
+        CChain &chainActive = ifChainObj->GetActiveChain();
+        uint256 tipBlockHash = chainActive.Tip()->GetBlockHash();
         if (tipBlockHash != hashRecentRejectsChainTip)
         {
             // If the chain tip has changed previously rejected transactions
@@ -77,10 +79,18 @@ bool CMempoolComponent::DoesTxExist(uint256 txHash, uint256 tipBlockHash)
             hashRecentRejectsChainTip = tipBlockHash;
             recentRejects->reset();
         }
+        else if (recentRejects->contains(txHash))
+            return true;
     }
 
-    return recentRejects->contains(txHash) || mempool.exists(txHash) ||
-           COrphanTx::Instance().Exists(txHash);
+    if (mempool.exists(txHash) || orphanTxMgr.Exists(txHash))
+        return true;
+
+    if (CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip())
+        return pcoinsTip->HaveCoinInCache(COutPoint(txHash, 0)) || // Best effort: only try output 0 and 1
+               pcoinsTip->HaveCoinInCache(COutPoint(txHash, 1));
+
+    return false;
 }
 
 bool CMempoolComponent::NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq)
@@ -139,7 +149,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
 
     std::list<CTransactionRef> lRemovedTxn;
 
-    if (!GetMemPool().exists(tx.GetHash()) &&
+    if (!DoesTxExist(tx.GetHash()) &&
         GetMemPool().AcceptToMemoryPool(state, ptx, true, &fMissingInputs, &lRemovedTxn))
     {
         GET_CHAIN_INTERFACE(ifChainObj);
@@ -164,7 +174,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
         while (!vWorkQueue.empty())
         {
             ITBYPREV itByPrev;
-            int ret = COrphanTx::Instance().FindOrphanTransactionsByPrev(&(vWorkQueue.front()), itByPrev);
+            int ret = orphanTxMgr.FindOrphanTransactionsByPrev(vWorkQueue.front(), itByPrev);
             vWorkQueue.pop_front();
             if (ret == 0)
                 continue;
@@ -225,7 +235,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
         }
 
         for (uint256 hash : vEraseQueue)
-            COrphanTx::Instance().EraseOrphanTx(hash);
+            orphanTxMgr.EraseOrphanTx(hash);
     } else if (fMissingInputs)
     {
         bool fRejectedParents = false; // It may be the case that the orphans parents have all been rejected
@@ -248,18 +258,18 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
             for (const CTxIn &txin : tx.vin)
             {
                 CInv _inv(MSG_TX | nFetchFlags, txin.prevout.hash);
-                // pfrom->AddInventoryKnown(_inv);
-                if (!GetMemPool().exists(_inv.hash))
+                ifNetObj->AddTxInventoryKnown(xnode->nodeID, _inv.hash, nFetchFlags);
+                if (!DoesTxExist(_inv.hash))
                     ifNetObj->AskForTransaction(xnode->nodeID, _inv.hash, nFetchFlags);
             }
 
-            COrphanTx::Instance().AddOrphanTx(ptx, xnode->nodeID);
+            orphanTxMgr.AddOrphanTx(ptx, xnode->nodeID);
 
             // DoS prevention: do not allow mapOrphanTransactions to grow unbounded
             unsigned int nMaxOrphanTx = (unsigned int)std::max((int64_t)0,
                                                                int64_t(Args().GetArg<uint32_t>("-maxorphantx",
                                                                                                DEFAULT_MAX_ORPHAN_TRANSACTIONS)));
-            unsigned int nEvicted = COrphanTx::Instance().LimitOrphanTxSize(nMaxOrphanTx);
+            unsigned int nEvicted = orphanTxMgr.LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
             {
                 mlog_notice("mapOrphan overflow, removed %u tx\n", nEvicted);
@@ -449,3 +459,48 @@ CMempoolComponent::NetRequestTxInventory(ExNode *xnode, bool sendMempool, int64_
     return true;
 }
 
+bool CMempoolComponent::RemoveOrphanTxForNode(int64_t nodeId)
+{
+    return orphanTxMgr.EraseOrphansFor(nodeId) > 0;
+}
+
+bool CMempoolComponent::RemoveOrphanTxForBlock(const CBlock* pblock)
+{
+    if (!pblock)
+        return false;
+
+    std::vector<uint256> vOrphanErase;
+    for (const CTransactionRef &ptx : pblock->vtx)
+    {
+        const CTransaction &tx = *ptx;
+
+        // Which orphan pool entries must we evict?
+        for (const auto &txin : tx.vin)
+        {
+            ITBYPREV itByPrev;
+            int ret = orphanTxMgr.FindOrphanTransactionsByPrev(txin.prevout, itByPrev);
+            if (ret == 0)
+                continue;
+            for (auto mi = itByPrev->second.begin(); mi != itByPrev->second.end(); ++mi)
+            {
+                const CTransaction &orphanTx = *(*mi)->second.tx;
+                const uint256 &orphanHash = orphanTx.GetHash();
+                vOrphanErase.push_back(orphanHash);
+            }
+        }
+    }
+
+    // Erase orphan transactions include or precluded by this block
+    if (!vOrphanErase.empty())
+    {
+        int nErased = 0;
+        for (uint256 &orphanHash : vOrphanErase)
+        {
+            nErased += orphanTxMgr.EraseOrphanTx(orphanHash);
+        }
+        mlog.info("Erased %d orphan tx included or conflicted by block", nErased);
+        return true;
+    }
+
+    return false;
+}

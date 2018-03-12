@@ -5,8 +5,10 @@
 #ifndef SUPERBITCOIN_ORPHANTX_H
 #define SUPERBITCOIN_ORPHANTX_H
 
+#include <stdint.h>
+#include <log4cpp/Category.hh>
+#include "framework/threadsafety.h"
 #include "sbtccore/transaction/transaction.h"
-#include "p2p/net.h"
 
 /** Default for -maxorphantx, maximum number of orphan transactions kept in memory */
 static const unsigned int DEFAULT_MAX_ORPHAN_TRANSACTIONS = 100;
@@ -24,33 +26,33 @@ struct IteratorComparator
     }
 };
 
-struct _OrphanTx
+struct OrphanTx
 {
     CTransactionRef tx;
-    NodeId fromPeer;
+    int64_t fromPeer;
     int64_t nTimeExpire;
 };
 
-typedef std::map<COutPoint, std::set<std::map<uint256, _OrphanTx>::iterator, IteratorComparator>>::iterator ITBYPREV;
+typedef std::map<COutPoint, std::set<std::map<uint256, OrphanTx>::iterator, IteratorComparator>>::iterator ITBYPREV;
 
-class COrphanTx
+class COrphanTxMgr
 {
+    static log4cpp::Category &mlog;
+
 public:
-    static COrphanTx &Instance();
-    bool AddOrphanTx(const CTransactionRef &tx, NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-    int EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    COrphanTxMgr();
+    ~COrphanTxMgr();
+
+    bool AddOrphanTx(const CTransactionRef &tx, int64_t peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    int  EraseOrphanTx(uint256 hash) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
     unsigned int LimitOrphanTxSize(unsigned int nMaxOrphans) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
-    void EraseOrphansFor(NodeId peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
+    int  EraseOrphansFor(int64_t peer) EXCLUSIVE_LOCKS_REQUIRED(cs_main);
     void Clear() GUARDED_BY(cs_main);
     bool Exists(uint256 hash) GUARDED_BY(cs_main);
-    int FindOrphanTransactionsByPrev(const COutPoint* op, ITBYPREV& itByPrev);
+    int  FindOrphanTransactionsByPrev(const COutPoint& op, ITBYPREV& itByPrev);
+
 private:
-    COrphanTx();
-    ~COrphanTx();
-private:
-    std::map<uint256, _OrphanTx> m_mapOrphanTransactions GUARDED_BY(cs_main);
-    std::map<COutPoint, std::set<std::map<uint256, _OrphanTx>::iterator, IteratorComparator>> m_mapOrphanTransactionsByPrev GUARDED_BY(cs_main);
-public:
-    static log4cpp::Category & mlog;
+    std::map<uint256, OrphanTx> m_mapOrphanTransactions GUARDED_BY(cs_main);
+    std::map<COutPoint, std::set<std::map<uint256, OrphanTx>::iterator, IteratorComparator>> m_mapOrphanTransactionsByPrev GUARDED_BY(cs_main);
 };
 #endif //SUPERBITCOIN_ORPHANTX_H
