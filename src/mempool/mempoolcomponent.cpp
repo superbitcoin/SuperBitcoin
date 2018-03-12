@@ -28,8 +28,7 @@ bool CMempoolComponent::ComponentInitialize()
 {
     std::cout << "initialize CTxMemPool component\n";
 
-    // Initialize global variables that cannot be constructed at startup.
-    recentRejects.reset(new CRollingBloomFilter(120000, 0.000001));
+    InitializeForNet();
 
     InitFeeEstimate();
     GetMemPool().SetEstimator(&feeEstimator);
