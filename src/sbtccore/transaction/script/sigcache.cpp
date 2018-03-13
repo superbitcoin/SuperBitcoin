@@ -6,7 +6,7 @@
 #include "sigcache.h"
 
 #include "memusage.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "random.h"
 #include "uint256.h"
 #include "utils/util.h"

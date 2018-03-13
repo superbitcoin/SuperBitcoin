@@ -6,7 +6,7 @@
 #include "bitcoinconsensus.h"
 
 #include "transaction/transaction.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "script/interpreter.h"
 #include "framework/version.h"
 

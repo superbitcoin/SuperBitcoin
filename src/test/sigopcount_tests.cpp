@@ -4,7 +4,7 @@
 
 #include "sbtccore/transaction/tx_verify.h"
 #include "chaincontrol/validation.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "wallet/key.h"
 #include "script/script.h"
 #include "script/standard.h"

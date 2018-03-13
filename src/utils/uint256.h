@@ -14,6 +14,12 @@
 #include <vector>
 #include "crypto/common.h"
 
+//////////////////////////////////////// sbtc
+#include <libdevcore/Common.h>
+#include <libdevcore/CommonData.h>
+#include <libdevcore/FixedHash.h>
+////////////////////////////////////////
+
 /** Template base class for fixed-sized opaque blobs. */
 template<unsigned int BITS>
 class base_blob
@@ -195,6 +201,20 @@ inline uint256 uint256S(const std::string &str)
     uint256 rv;
     rv.SetHex(str);
     return rv;
+}
+
+////////////////////////////////////////////////////// sbtc
+inline dev::h256 uintToh256(const uint256& in)
+{
+    std::vector<unsigned char> vHashBlock;
+    vHashBlock.assign(in.begin(), in.end());
+    return dev::h256(vHashBlock);
+}
+
+inline uint256 h256Touint(const dev::h256& in)
+{
+    std::vector<unsigned char> vHashBlock = in.asBytes();
+    return uint256(vHashBlock);
 }
 
 #endif // BITCOIN_UINT256_H

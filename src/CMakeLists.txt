@@ -4,6 +4,8 @@
 add_subdirectory( chaincontrol )
 add_subdirectory( compat )
 add_subdirectory( config )
+add_subdirectory( contract )
+add_subdirectory( contract-api)
 add_subdirectory( framework )
 add_subdirectory( mempool )
 add_subdirectory( miner )

@@ -14,6 +14,8 @@
 #include "boost/multi_index_container.hpp"
 #include "boost/multi_index/ordered_index.hpp"
 
+#include "sbtccore/block/validation.h"  //sbtc-vm
+
 class CBlockIndex;
 
 class CChainParams;
@@ -116,7 +118,7 @@ typedef boost::multi_index_container<
                 // sorted by modified ancestor fee rate
                 boost::multi_index::ordered_non_unique<
                         // Reuse same tag from CTxMemPool's similar index
-                        boost::multi_index::tag<ancestor_score>,
+                        boost::multi_index::tag<ancestor_score_or_gas_price>,   //sbtc-vm
                         boost::multi_index::identity<CTxMemPoolModifiedEntry>,
                         CompareModifiedEntry
                 >
@@ -124,7 +126,7 @@ typedef boost::multi_index_container<
 > indexed_modified_transaction_set;
 
 typedef indexed_modified_transaction_set::nth_index<0>::type::iterator modtxiter;
-typedef indexed_modified_transaction_set::index<ancestor_score>::type::iterator modtxscoreiter;
+typedef indexed_modified_transaction_set::index<ancestor_score_or_gas_price>::type::iterator modtxscoreiter;  //sbtc-vm
 
 struct update_for_parent_inclusion
 {
@@ -168,6 +170,17 @@ private:
     int64_t nLockTimeCutoff;
     const CChainParams &chainparams;
 
+///////////////////////////////////////////// // sbtc-vm
+    ByteCodeExecResult bceResult;
+    uint64_t minGasPrice = 1;
+    uint64_t hardBlockGasLimit;
+    uint64_t softBlockGasLimit;
+    uint64_t txGasLimit;
+
+    // The original constructed reward tx (either coinbase or coinstake) without gas refund adjustments
+    CMutableTransaction originalRewardTx; // sbtc-vm
+/////////////////////////////////////////////
+
 public:
     struct Options
     {
@@ -193,11 +206,15 @@ private:
     /** Add a tx to the block */
     void AddToBlock(CTxMemPool::txiter iter);
 
+    bool AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64_t minGasPrice); //sbtc-vm
     // Methods for how to add transactions to a block.
     /** Add transactions based on feerate including unconfirmed ancestors
       * Increments nPackagesSelected / nDescendantsUpdated with corresponding
       * statistics from the package selection (for logging statistics). */
     void addPackageTxs(int &nPackagesSelected, int &nDescendantsUpdated);
+
+    /** Rebuild the coinbase/coinstake transaction to account for new gas refunds **/
+    void RebuildRefundTransaction(); // sbtc-vm
 
     // helper functions for addPackageTxs()
     /** Remove confirmed (inBlock) entries from given set */

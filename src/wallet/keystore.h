@@ -7,7 +7,7 @@
 #define BITCOIN_KEYSTORE_H
 
 #include "key.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "script/script.h"
 #include "script/standard.h"
 #include "framework/sync.h"

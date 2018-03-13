@@ -11,7 +11,7 @@
 #include "block/validation.h"
 #include "miner/miner.h"
 #include "sbtccore/transaction/policy.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "script/standard.h"
 #include "mempool/txmempool.h"
 #include "uint256.h"

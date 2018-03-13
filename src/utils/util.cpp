@@ -196,6 +196,10 @@ static FILE *fileout = nullptr;
 static boost::mutex *mutexDebugLog = nullptr;
 static std::list<std::string> *vMsgsBeforeOpenLog;
 
+/////////////////////////////////////////////////////////////////////// // sbtc-vm
+static FILE* fileoutVM = nullptr;
+///////////////////////////////////////////////////////////////////////
+
 static int FileWriteStr(const std::string &str, FILE *fp)
 {
     return fwrite(str.data(), 1, str.size(), fp);
@@ -214,9 +218,12 @@ void OpenDebugLog()
     boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
 
     assert(fileout == nullptr);
+    assert(fileoutVM == nullptr); //sbtc-vm
     assert(vMsgsBeforeOpenLog);
     fs::path pathDebug = GetDataDir() / "debug.log";
+    boost::filesystem::path pathDebugVM = GetDataDir() / "vm.log"; // sbtc-vm
     fileout = fsbridge::fopen(pathDebug, "a");
+    fileoutVM = fsbridge::fopen(pathDebugVM.string().c_str(), "a"); // sbtc-vm
     if (fileout)
     {
         setbuf(fileout, nullptr); // unbuffered
@@ -227,6 +234,16 @@ void OpenDebugLog()
             vMsgsBeforeOpenLog->pop_front();
         }
     }
+    ///////////////////////////////////////////// // sbtc-vm
+    if (fileoutVM) {
+        setbuf(fileoutVM, NULL); // unbuffered
+        // dump buffered messages from before we opened the log
+        while (!vMsgsBeforeOpenLog->empty()) {
+            FileWriteStr(vMsgsBeforeOpenLog->front(), fileoutVM);
+            vMsgsBeforeOpenLog->pop_front();
+        }
+    }
+    /////////////////////////////////////////////
 
     delete vMsgsBeforeOpenLog;
     vMsgsBeforeOpenLog = nullptr;
@@ -357,8 +374,15 @@ static std::string LogTimestampStr(const std::string &str, std::atomic_bool *fSt
     return strStamped;
 }
 
-int LogPrintStr(const std::string &str)
+int LogPrintStr(const std::string &str, bool useVMLog)
 {
+    //////////////////////////////// // sbtc-vm
+    FILE* file = fileout;
+    if(useVMLog){
+        file = fileoutVM;
+    }
+    ////////////////////////////////
+
     int ret = 0; // Returns total number of characters written
     static std::atomic_bool fStartedNewLine(true);
 

@@ -8,7 +8,7 @@
 #include "config/chainparamsbase.h"
 #include "fs.h"
 #include "wallet/key.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "random.h"
 #include "framework/scheduler.h"
 #include "transaction/txdb.h"

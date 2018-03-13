@@ -6,7 +6,7 @@
 #include "keystore.h"
 
 #include "key.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "utils/util.h"
 
 bool CKeyStore::AddKey(const CKey &key)

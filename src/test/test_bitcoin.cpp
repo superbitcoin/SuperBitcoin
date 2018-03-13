@@ -13,7 +13,7 @@
 #include "block/validation.h"
 #include "miner/miner.h"
 #include "p2p/net_processing.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "random.h"
 #include "transaction/txdb.h"
 #include "mempool/txmempool.h"

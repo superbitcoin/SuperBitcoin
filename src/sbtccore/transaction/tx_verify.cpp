@@ -14,6 +14,9 @@
 #include "chaincontrol/coins.h"
 #include "utils/utilmoneystr.h"
 
+#include "script/standard.h"  //sbtc-vm
+
+
 bool IsFinalTx(const CTransaction &tx, int nBlockHeight, int64_t nBlockTime)
 {
     if (tx.nLockTime == 0)
@@ -174,7 +177,7 @@ bool CheckTransaction(const CTransaction &tx, CValidationState &state, bool fChe
         return state.DoS(10, false, REJECT_INVALID, "bad-txns-vout-empty");
     // Size limits (this doesn't take the witness into account, as that hasn't been checked for malleability)
     if (::GetSerializeSize(tx, SER_NETWORK, PROTOCOL_VERSION | SERIALIZE_TRANSACTION_NO_WITNESS) *
-        WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT)
+        WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT)  //sbtc-vm dgpMaxBlockSize 暂时不用
         return state.DoS(100, false, REJECT_INVALID, "bad-txns-oversize");
 
     // Check for negative or overflow output values
@@ -188,6 +191,16 @@ bool CheckTransaction(const CTransaction &tx, CValidationState &state, bool fChe
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+
+        /////////////////////////////////////////////////////////// // sbtc-vm
+        if (txout.scriptPubKey.HasOpCall() || txout.scriptPubKey.HasOpCreate()) {
+            std::vector<std::vector<unsigned char>> vSolutions;
+            txnouttype whichType;
+            if (!Solver(txout.scriptPubKey, whichType, vSolutions, true)) {
+                return state.DoS(100, false, REJECT_INVALID, "bad-txns-contract-nonstandard");
+            }
+        }
+        ///////////////////////////////////////////////////////////
     }
 
     // Check for duplicate inputs - note that this check is slow so we skip it in CheckBlock

@@ -6,7 +6,7 @@
 #include "wallet/key.h"
 #include "block/validation.h"
 #include "miner/miner.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "mempool/txmempool.h"
 #include "random.h"
 #include "script/standard.h"

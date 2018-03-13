@@ -366,6 +366,11 @@ public:
      */
     unsigned int GetTotalSize() const;
 
+    //////////////////////////////////////// //sbtc-evm
+    bool HasCreateOrCall() const;
+    bool HasOpSpend() const;
+    ////////////////////////////////////////
+
     bool IsCoinBase() const
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull());

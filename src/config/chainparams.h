@@ -10,7 +10,7 @@
 #include "params.h"
 #include "block/block.h"
 #include "p2p/protocol.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 
 #include <memory>
 #include <vector>

@@ -20,7 +20,7 @@
 #include "sbtccore/streams.h"
 #include "block/undo.h"
 #include "framework/version.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 
 #include <stdint.h>
 #include <unistd.h>

@@ -7,7 +7,7 @@
 #include "utils/arith_uint256.h"
 #include "crypto/common.h"
 #include "crypto/hmac_sha512.h"
-#include "pubkey.h"
+#include "utils/pubkey.h"
 #include "random.h"
 
 #include <secp256k1.h>
