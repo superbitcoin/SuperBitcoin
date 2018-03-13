@@ -105,8 +105,8 @@ uint64_t VM::gasForMem(u512 _size)
 void VM::updateIOGas()
 {
 	if (m_io_gas < m_runGas) {
-		cout<<"m_io_gas="<<m_io_gas<<endl;
-		cout<<"m_runGas="<<m_runGas<<endl;
+//		cout<<"m_io_gas="<<m_io_gas<<endl; //sbtc-debug
+//		cout<<"m_runGas="<<m_runGas<<endl;
 		throwOutOfGas();
 	}
 	m_io_gas -= m_runGas;
@@ -118,8 +118,8 @@ void VM::updateGas()
 		m_runGas += toInt63(gasForMem(m_newMemSize) - gasForMem(m_mem.size()));
 	m_runGas += (m_schedule->copyGas * ((m_copyMemSize + 31) / 32));
 	if (m_io_gas < m_runGas) {
-		cout<<"m_io_gas="<<m_io_gas<<endl;
-		cout<<"m_runGas="<<m_runGas<<endl;
+//		cout<<"m_io_gas="<<m_io_gas<<endl; //sbtc-debug
+//		cout<<"m_runGas="<<m_runGas<<endl;
 		throwOutOfGas();
 	}
 }
@@ -151,8 +151,8 @@ void VM::fetchInstruction()
 	m_newMemSize = m_mem.size();
 	m_copyMemSize = 0;
 
-	cout<<"pc="<<m_PC<<endl;
-	cout<<"m_OP=" << static_cast<size_t>(m_OP) <<endl;
+//	cout<<"pc="<<m_PC<<endl;
+//	cout<<"m_OP=" << static_cast<size_t>(m_OP) <<endl;  //sbtc-debug
 }
 
 #if EVM_HACK_ON_OPERATION
@@ -239,7 +239,7 @@ void VM::interpretCases()
 			size_t s = (size_t)*m_SP--;
 			m_output = owning_bytes_ref{std::move(m_mem), b, s};
 			m_bounce = 0;
-			cout<<"RETURN"<<endl;
+//			cout<<"RETURN"<<endl; //sbtc-debug
 		}
 		BREAK
 
@@ -259,7 +259,7 @@ void VM::interpretCases()
 			updateIOGas();
 			m_ext->suicide(dest);
 			m_bounce = 0;
-			cout<<"SUICIDE"<<endl;
+//			cout<<"SUICIDE"<<endl; //sbtc-debug
 		}
 		BREAK
 
@@ -268,7 +268,7 @@ void VM::interpretCases()
 			ON_OP();
 			updateIOGas();
 			m_bounce = 0;
-			cout<<"STOP"<<endl;
+//			cout<<"STOP"<<endl;  //sbtc-debug
 		}
 		BREAK;
 			
@@ -675,13 +675,10 @@ void VM::interpretCases()
 
 			if (u512(*m_SP) + 31 < m_ext->data.size()) {
                 *m_SP = (u256) *(h256 const *) (m_ext->data.data() + (size_t) *m_SP);
-
-//                u256 test = *m_SP;
-//				std::cout << "m_SP/data01 = " << toHex(test) << std::endl; //sbtc-debug
+//				std::cout << "m_SP/data01 = " << toHex(*m_SP) << std::endl; //sbtc-debug
             }
 			else if (*m_SP >= m_ext->data.size()) {
                 *m_SP = u256(0);
-//                std::cout<<"m_SP/data02 = 0"<<std::endl; //sbtc-debug
             }
 			else
 			{
@@ -689,9 +686,7 @@ void VM::interpretCases()
 				for (uint64_t i = (uint64_t)*m_SP, e = (uint64_t)*m_SP + (uint64_t)32, j = 0; i < e; ++i, ++j)
 					r[j] = i < m_ext->data.size() ? m_ext->data[i] : 0;
 				*m_SP = (u256)r;
-
-//				u256 test = *m_SP;
-//				std::cout << "funstionid/data03=" << toHex(test) << std::endl; //sbtc-debug
+//				std::cout << "funstionid/data03=" << toHex(*m_SP) << std::endl; //sbtc-debug
 			}
 		}
 		NEXT
@@ -1022,17 +1017,6 @@ void VM::interpretCases()
 			ON_OP();
 			updateIOGas();
 
-			if(m_PC == 2022){
-
-//                u256 test = *(m_SP - 1);
-//                std::cout << "m_SP-1/data01 = " << toHex(test) << std::endl; //sbtc-debug
-//
-//                u256 test02 = *m_SP;
-//                std::cout << "m_SP/data01 = " << toHex(test02) << std::endl; //sbtc-debug
-//
-//                uint64_t test03 =uint64_t(*m_SP);
-//                std::cout << "m_SP/data01 = " << test03 << std::endl; //sbtc-debug
-			}
 			if (*(m_SP - 1))
 				m_PC = uint64_t(*m_SP);
 			else
