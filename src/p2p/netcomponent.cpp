@@ -398,6 +398,20 @@ bool CNetComponent::AskForTransaction(int64_t nodeID, uint256 txHash, int flags)
     return false;
 }
 
+bool CNetComponent::AddTxInventoryKnown(int64_t nodeID, uint256 txHash, int flags)
+{
+    if (netConnMgr)
+    {
+        if (CNode *node = netConnMgr->QueryNode(nodeID))
+        {
+            node->AddInventoryKnown(CInv(MSG_TX | flags, txHash));
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool CNetComponent::MisbehaveNode(int64_t nodeID, int num)
 {
     if (netConnMgr)

@@ -1,32 +1,22 @@
-//
-// Created by root1 on 18-2-3.
-//
-
 #include "orphantx.h"
 #include "chaincontrol/validation.h"
 #include "sbtccore/transaction/policy.h"
 #include "sbtccore/block/blockencodings.h"
 #include "mempoolcomponent.h"
 
-void AddToCompactExtraTransactions(const CTransactionRef &tx);
-
-COrphanTx::COrphanTx()
-{
-
-}
-COrphanTx::~COrphanTx()
+COrphanTxMgr::COrphanTxMgr()
 {
 
 }
 
-COrphanTx &COrphanTx::Instance()
+COrphanTxMgr::~COrphanTxMgr()
 {
-    static COrphanTx _orphantx;
-    return _orphantx;
-}
-log4cpp::Category &COrphanTx::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
 
-bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
+}
+
+log4cpp::Category &COrphanTxMgr::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
+
+bool COrphanTxMgr::AddOrphanTx(const CTransactionRef &tx, int64_t peer)
 {
     const uint256 &hash = tx->GetHash();
     if (m_mapOrphanTransactions.count(hash))
@@ -46,7 +36,7 @@ bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
         return false;
     }
 
-    auto ret = m_mapOrphanTransactions.emplace(hash, _OrphanTx{tx, peer, GetTime() + ORPHAN_TX_EXPIRE_TIME});
+    auto ret = m_mapOrphanTransactions.emplace(hash, OrphanTx{tx, peer, GetTime() + ORPHAN_TX_EXPIRE_TIME});
     assert(ret.second);
     for (const CTxIn &txin : tx->vin)
     {
@@ -60,9 +50,9 @@ bool COrphanTx::AddOrphanTx(const CTransactionRef &tx, NodeId peer)
     return true;
 }
 
-int COrphanTx::EraseOrphanTx(uint256 hash)
+int COrphanTxMgr::EraseOrphanTx(uint256 hash)
 {
-    std::map<uint256, _OrphanTx>::iterator it = m_mapOrphanTransactions.find(hash);
+    auto it = m_mapOrphanTransactions.find(hash);
     if (it == m_mapOrphanTransactions.end())
         return 0;
     for (const CTxIn &txin : it->second.tx->vin)
@@ -78,8 +68,7 @@ int COrphanTx::EraseOrphanTx(uint256 hash)
     return 1;
 }
 
-
-unsigned int COrphanTx::LimitOrphanTxSize(unsigned int nMaxOrphans)
+unsigned int COrphanTxMgr::LimitOrphanTxSize(unsigned int nMaxOrphans)
 {
     unsigned int nEvicted = 0;
     static int64_t nNextSweep;
@@ -89,10 +78,10 @@ unsigned int COrphanTx::LimitOrphanTxSize(unsigned int nMaxOrphans)
         // Sweep out expired orphan pool entries:
         int nErased = 0;
         int64_t nMinExpTime = nNow + ORPHAN_TX_EXPIRE_TIME - ORPHAN_TX_EXPIRE_INTERVAL;
-        std::map<uint256, _OrphanTx>::iterator iter = m_mapOrphanTransactions.begin();
+        auto iter = m_mapOrphanTransactions.begin();
         while (iter != m_mapOrphanTransactions.end())
         {
-            std::map<uint256, _OrphanTx>::iterator maybeErase = iter++;
+            auto maybeErase = iter++;
             if (maybeErase->second.nTimeExpire <= nNow)
             {
                 nErased += EraseOrphanTx(maybeErase->second.tx->GetHash());
@@ -110,7 +99,7 @@ unsigned int COrphanTx::LimitOrphanTxSize(unsigned int nMaxOrphans)
     {
         // Evict a random orphan:
         uint256 randomhash = GetRandHash();
-        std::map<uint256, _OrphanTx>::iterator it = m_mapOrphanTransactions.lower_bound(randomhash);
+        auto it = m_mapOrphanTransactions.lower_bound(randomhash);
         if (it == m_mapOrphanTransactions.end())
             it = m_mapOrphanTransactions.begin();
         EraseOrphanTx(it->first);
@@ -119,13 +108,13 @@ unsigned int COrphanTx::LimitOrphanTxSize(unsigned int nMaxOrphans)
     return nEvicted;
 }
 
-void COrphanTx::EraseOrphansFor(NodeId peer)
+int COrphanTxMgr::EraseOrphansFor(int64_t peer)
 {
     int nErased = 0;
-    std::map<uint256, _OrphanTx>::iterator iter = m_mapOrphanTransactions.begin();
+    std::map<uint256, OrphanTx>::iterator iter = m_mapOrphanTransactions.begin();
     while (iter != m_mapOrphanTransactions.end())
     {
-        std::map<uint256, _OrphanTx>::iterator maybeErase = iter++; // increment to avoid iterator becoming invalid
+        auto maybeErase = iter++; // increment to avoid iterator becoming invalid
         if (maybeErase->second.fromPeer == peer)
         {
             nErased += EraseOrphanTx(maybeErase->second.tx->GetHash());
@@ -133,25 +122,25 @@ void COrphanTx::EraseOrphansFor(NodeId peer)
     }
     if (nErased > 0)
         mlog_notice("Erased %d orphan tx from peer=%d", nErased, peer);
+
+    return nErased;
 }
-void COrphanTx::Clear()
+
+void COrphanTxMgr::Clear()
 {
     //LOCK(cs_main);
     m_mapOrphanTransactions.clear();
     m_mapOrphanTransactionsByPrev.clear();
 }
-bool COrphanTx::Exists(uint256 hash)
+
+bool COrphanTxMgr::Exists(uint256 hash)
 {
     return  (m_mapOrphanTransactions.count(hash) != 0);
 }
 
-int COrphanTx::FindOrphanTransactionsByPrev(const COutPoint* op, ITBYPREV& itByPrev)
+int COrphanTxMgr::FindOrphanTransactionsByPrev(const COutPoint& op, ITBYPREV& itByPrev)
 {
-    if(op == nullptr)
-    {
-        return 0;
-    }
-    itByPrev = m_mapOrphanTransactionsByPrev.find(*op);
+    itByPrev = m_mapOrphanTransactionsByPrev.find(op);
     if (itByPrev == m_mapOrphanTransactionsByPrev.end())
     {
         return 0;

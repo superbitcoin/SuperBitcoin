@@ -23,17 +23,14 @@
 #include "transaction/transaction.h"
 #include "random.h"
 #include "reverse_iterator.h"
-#include "sbtcd/baseimpl.hpp"
 #include "framework/scheduler.h"
 #include "tinyformat.h"
 #include "framework/ui_interface.h"
 #include "utils/util.h"
 #include "utils/utilmoneystr.h"
 #include "utils/utilstrencodings.h"
-#include "sbtcd/baseimpl.hpp"
 #include "framework/validationinterface.h"
 #include "mempool/txmempool.h"
-#include "mempool/orphantx.h"
 #include "interface/imempoolcomponent.h"
 #include "interface/exchangeformat.h"
 #include "interface/ichaincomponent.h"
@@ -682,23 +679,21 @@ static uint32_t GetFetchFlags(CNode *pfrom)
 
 bool static AlreadyHave(const CInv &inv) EXCLUSIVE_LOCKS_REQUIRED(cs_main)
 {
-    GET_CHAIN_INTERFACE(ifChainObj);
     switch (inv.type)
     {
         case MSG_TX:
         case MSG_WITNESS_TX:
         {
-            CChain &chainActive = ifChainObj->GetActiveChain();
-            CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
             GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
-
-            return ifTxMempoolObj->DoesTxExist(inv.hash, chainActive.Tip()->GetBlockHash()) ||
-                   pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 0)) || // Best effort: only try output 0 and 1
-                   pcoinsTip->HaveCoinInCache(COutPoint(inv.hash, 1));
+            return ifTxMempoolObj->DoesTxExist(inv.hash);
         }
         case MSG_BLOCK:
         case MSG_WITNESS_BLOCK:
+        {
+            GET_CHAIN_INTERFACE(ifChainObj);
             return ifChainObj->DoesBlockExist(inv.hash);
+        }
+
     }
     // Don't know what it is, just say we already got one
     return true;
@@ -1047,40 +1042,8 @@ void PeerLogicValidation::BlockConnected(const std::shared_ptr<const CBlock> &pb
                                          const std::vector<CTransactionRef> &vtxConflicted)
 {
     LOCK(cs_main);
-
-    std::vector<uint256> vOrphanErase;
-
-    for (const CTransactionRef &ptx : pblock->vtx)
-    {
-        const CTransaction &tx = *ptx;
-
-        // Which orphan pool entries must we evict?
-        for (const auto &txin : tx.vin)
-        {
-            ITBYPREV itByPrev;
-            int ret = COrphanTx::Instance().FindOrphanTransactionsByPrev(&(txin.prevout), itByPrev);
-            if (ret == 0)
-                continue;
-            for (auto mi = itByPrev->second.begin(); mi != itByPrev->second.end(); ++mi)
-            {
-                const CTransaction &orphanTx = *(*mi)->second.tx;
-                const uint256 &orphanHash = orphanTx.GetHash();
-                vOrphanErase.push_back(orphanHash);
-            }
-        }
-    }
-
-    // Erase orphan transactions include or precluded by this block
-    if (vOrphanErase.size())
-    {
-        int nErased = 0;
-        for (uint256 &orphanHash : vOrphanErase)
-        {
-            nErased += COrphanTx::Instance().EraseOrphanTx(orphanHash);
-        }
-        mlog.info("Erased %d orphan tx included or conflicted by block", nErased);
-    }
-
+    GET_TXMEMPOOL_INTERFACE(ifMempoolObj);
+    ifMempoolObj->RemoveOrphanTxForBlock(pblock.get());
     g_last_tip_update = GetTime();
 }
 
@@ -2013,7 +1976,8 @@ void PeerLogicValidation::FinalizeNode(NodeId nodeid, bool &fUpdateConnectionTim
     {
         mapBlocksInFlight.erase(entry.hash);
     }
-    COrphanTx::Instance().EraseOrphansFor(nodeid);
+    GET_TXMEMPOOL_INTERFACE(ifMempoolObj);
+    ifMempoolObj->RemoveOrphanTxForNode(nodeid);
     nPreferredDownload -= state->fPreferredDownload;
     nPeersWithValidatedDownloads -= (state->nBlocksInFlightValidHeaders != 0);
     assert(nPeersWithValidatedDownloads >= 0);
@@ -3032,16 +2996,14 @@ bool PeerLogicValidation::ProcessBlockMsg(CNode *pfrom, CDataStream &vRecv)
 
 bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
 {
+    LOCK(cs_main);
     NodeExchangeInfo xnode = FromCNode(pfrom);
     InitFlagsBit(xnode.flags, NF_WHITELIST, pfrom->fWhitelisted);
     InitFlagsBit(xnode.flags, NF_DISCONNECT, pfrom->fDisconnect);
     InitFlagsBit(xnode.flags, NF_OUTBOUND, !pfrom->fInbound);
     InitFlagsBit(xnode.flags, NF_RELAYTX, fRelayTxes);
-    {
-        LOCK(cs_main);
-        CNodeState *state = State(pfrom->GetId());
-        InitFlagsBit(xnode.flags, NF_WITNESS, state->fHaveWitness);
-    }
+    CNodeState *state = State(pfrom->GetId());
+    InitFlagsBit(xnode.flags, NF_WITNESS, state->fHaveWitness);
 
     uint256 txHash;
 
@@ -3056,10 +3018,7 @@ bool PeerLogicValidation::ProcessTxMsg(CNode *pfrom, CDataStream &vRecv)
         pfrom->nLastTXTime = GetTime();
 
     if (xnode.nMisbehavior > 0)
-    {
-        LOCK(cs_main);
         Misbehaving(xnode.nodeID, xnode.nMisbehavior);
-    }
 
     return ret;
 }

@@ -9,6 +9,7 @@
 #include "framework/component.hpp"
 #include "mempool/txmempool.h"
 
+class CBlock;
 class ITxMempoolComponent : public appbase::TComponent<ITxMempoolComponent>
 {
 public:
@@ -34,7 +35,7 @@ public:
 
     virtual CTxMemPool &GetMemPool() = 0;
 
-    virtual bool DoesTxExist(uint256 txHash, uint256 tipBlockHash) = 0;
+    virtual bool DoesTxExist(uint256 txHash) = 0;
 
     virtual bool NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) = 0;
 
@@ -43,6 +44,10 @@ public:
     virtual bool NetRequestTxInventory(ExNode *xnode, bool sendMempool, int64_t minFeeFilter, CBloomFilter *txFilter,
                                        std::vector<uint256> &toSendTxHashes,
                                        std::vector<uint256> &haveSentTxHashes) = 0;
+
+    virtual bool RemoveOrphanTxForNode(int64_t nodeId) = 0;
+
+    virtual bool RemoveOrphanTxForBlock(const CBlock* pblock) = 0;
 
     //add other interface methods here ...
 

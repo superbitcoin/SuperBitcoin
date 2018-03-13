@@ -33,6 +33,8 @@ public:
 
     virtual bool AskForTransaction(int64_t nodeID, uint256 txHash, int flags = 0) = 0;
 
+    virtual bool AddTxInventoryKnown(int64_t nodeID, uint256 txHash, int flags = 0) = 0;
+
     virtual bool MisbehaveNode(int64_t nodeID, int num) = 0;
 
     //!check if the outbound target is reached
