@@ -1737,40 +1737,6 @@ bool AppInitMain(boost::thread_group &threadGroup, CScheduler &scheduler)
                 if (!mapBlockIndex.empty() && mapBlockIndex.count(chainparams.GetConsensus().hashGenesisBlock) == 0)
                     return InitError(_("Incorrect or no genesis block found. Wrong datadir for network?"));
 
-                /////////////////////////////////////////////////////////// sbtc-vm
-                if((gArgs.IsArgSet("-dgpstorage") && gArgs.IsArgSet("-dgpevm")) || (!gArgs.IsArgSet("-dgpstorage") && gArgs.IsArgSet("-dgpevm")) ||
-                   (!gArgs.IsArgSet("-dgpstorage") && !gArgs.IsArgSet("-dgpevm"))){
-                    fGettingValuesDGP = true;
-                } else {
-                    fGettingValuesDGP = false;
-                }
-                LogPrintf("AppInitMain fGettingValuesDGP = %d\n",fGettingValuesDGP);
-
-                dev::eth::Ethash::init();
-                boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
-                bool fStatus = boost::filesystem::exists(stateDir);
-                const std::string dirSbtc(stateDir.string());
-                const dev::h256 hashDB(dev::sha3(dev::rlp("")));
-                dev::eth::BaseState existstate = fStatus ? dev::eth::BaseState::PreExisting : dev::eth::BaseState::Empty;
-                globalState = std::unique_ptr<SbtcState>(new SbtcState(dev::u256(0), SbtcState::openDB(dirSbtc, hashDB, dev::WithExisting::Trust), dirSbtc, existstate));
-                dev::eth::ChainParams cp((dev::eth::genesisInfo(dev::eth::Network::sbtcMainNetwork)));
-                globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
-
-                if(chainActive.Tip() != NULL){
-                    globalState->setRoot(uintToh256(chainActive.Tip()->hashStateRoot));
-                    globalState->setRootUTXO(uintToh256(chainActive.Tip()->hashUTXORoot));
-                } else {
-                    globalState->setRoot(dev::sha3(dev::rlp("")));
-                    globalState->setRootUTXO(uintToh256(chainparams.GenesisBlock().hashUTXORoot));
-                    globalState->populateFrom(cp.genesisState);
-                }
-                globalState->db().commit();
-                globalState->dbUtxo().commit();
-
-                fRecordLogOpcodes = gArgs.IsArgSet("-record-log-opcodes");
-                fIsVMlogFile = boost::filesystem::exists(GetDataDir() / "vmExecLogs.json");
-                ///////////////////////////////////////////////////////////
-
                 // Check for changed -txindex state
                 if (fTxIndex != gArgs.GetArg<bool>("-txindex", DEFAULT_TXINDEX))
                 {
@@ -1853,6 +1819,41 @@ bool AppInitMain(boost::thread_group &threadGroup, CScheduler &scheduler)
                     assert(state.IsValid());
                     assert(chainActive.Tip() != nullptr);
                 }
+
+                /////////////////////////////////////////////////////////// sbtc-vm
+                if((gArgs.IsArgSet("-dgpstorage") && gArgs.IsArgSet("-dgpevm")) || (!gArgs.IsArgSet("-dgpstorage") && gArgs.IsArgSet("-dgpevm")) ||
+                   (!gArgs.IsArgSet("-dgpstorage") && !gArgs.IsArgSet("-dgpevm"))){
+                    fGettingValuesDGP = true;
+                } else {
+                    fGettingValuesDGP = false;
+                }
+                LogPrintf("AppInitMain fGettingValuesDGP = %d\n",fGettingValuesDGP);
+
+                dev::eth::Ethash::init();
+                boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
+                bool fStatus = boost::filesystem::exists(stateDir);
+                const std::string dirSbtc(stateDir.string());
+                const dev::h256 hashDB(dev::sha3(dev::rlp("")));
+                dev::eth::BaseState existstate = fStatus ? dev::eth::BaseState::PreExisting : dev::eth::BaseState::Empty;
+                globalState = std::unique_ptr<SbtcState>(new SbtcState(dev::u256(0), SbtcState::openDB(dirSbtc, hashDB, dev::WithExisting::Trust), dirSbtc, existstate));
+                dev::eth::ChainParams cp((dev::eth::genesisInfo(dev::eth::Network::sbtcMainNetwork)));
+                globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
+
+                if(chainActive.Tip() != NULL){
+                    globalState->setRoot(uintToh256(chainActive.Tip()->hashStateRoot));
+                    globalState->setRootUTXO(uintToh256(chainActive.Tip()->hashUTXORoot));
+                } else {
+                    globalState->setRoot(dev::sha3(dev::rlp("")));
+                    globalState->setRootUTXO(uintToh256(chainparams.GenesisBlock().hashUTXORoot));
+                    globalState->populateFrom(cp.genesisState);
+                }
+
+                globalState->db().commit();
+                globalState->dbUtxo().commit();
+
+                fRecordLogOpcodes = gArgs.IsArgSet("-record-log-opcodes");
+                fIsVMlogFile = boost::filesystem::exists(GetDataDir() / "vmExecLogs.json");
+                ///////////////////////////////////////////////////////////
 
                 if (!fReset)
                 {
