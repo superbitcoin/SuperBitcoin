@@ -56,7 +56,7 @@ bool CChainComponent::ComponentInitialize()
 {
     std::cout << "initialize chain component \n";
 
-    app().GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainComponent::OnNodeDisconnected);
+    GetApp()->GetEventManager().RegisterEventHandler(EID_NODE_DISCONNECTED, this, &CChainComponent::OnNodeDisconnected);
 
     LoadCheckPoint();
 
@@ -1503,7 +1503,7 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
     do
     {
         boost::this_thread::interruption_point();
-        if (app().ShutdownRequested())
+        if (GetApp()->ShutdownRequested())
             break;
 
         const CBlockIndex *pIndexFork;
@@ -1564,7 +1564,7 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
         }
 
         if (iStopAtHeight && pIndexNewTip && pIndexNewTip->nHeight >= iStopAtHeight)
-            app().RequestShutdown();
+            GetApp()->RequestShutdown();
 
     } while (pIndexNewTip != pIndexMostWork);
 
@@ -2281,7 +2281,7 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
                 nGoodTransactions += block.vtx.size();
             }
         }
-        if (app().ShutdownRequested())
+        if (GetApp()->ShutdownRequested())
             return true;
     }
     if (pindexFailure)

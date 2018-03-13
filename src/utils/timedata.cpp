@@ -8,8 +8,10 @@
 
 #endif
 
-#include "timedata.h"
+#include <log4cpp/Category.hh>
 
+#include "base/base.hpp"
+#include "timedata.h"
 #include "p2p/netaddress.h"
 #include "framework/sync.h"
 #include "framework/ui_interface.h"

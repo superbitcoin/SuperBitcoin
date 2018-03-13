@@ -5,6 +5,7 @@
 
 #include "sigcache.h"
 
+#include "base/base.hpp"
 #include "memusage.h"
 #include "pubkey.h"
 #include "random.h"

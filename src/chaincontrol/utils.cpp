@@ -51,7 +51,7 @@ bool AbortNode(const std::string &strMessage, const std::string &userMessage)
 //                                         : userMessage;
 //    mlog_error(message);
 //    uiInterface.ThreadSafeMessageBox(message, "", CClientUIInterface::MSG_ERROR);
-    app().RequestShutdown();
+    GetApp()->RequestShutdown();
     return false;
 }
 

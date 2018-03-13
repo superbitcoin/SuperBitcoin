@@ -9,8 +9,10 @@
 
 #endif
 
-#include "util.h"
+#include <log4cpp/Category.hh>
 
+#include "base/base.hpp"
+#include "util.h"
 #include "config/chainparamsbase.h"
 #include "fs.h"
 #include "random.h"

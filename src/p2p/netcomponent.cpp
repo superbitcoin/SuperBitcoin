@@ -1,7 +1,6 @@
 #include <vector>
 #include <string>
 #include "netcomponent.h"
-#include "baseimpl.hpp"
 #include "addrman.h"
 #include "netbase.h"
 #include "net.h"
@@ -40,7 +39,7 @@ bool CNetComponent::ComponentInitialize()
     netConnMgr.reset(new CConnman(GetRand(std::numeric_limits<uint64_t>::max()),
                                   GetRand(std::numeric_limits<uint64_t>::max())));
 
-    peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), app().GetScheduler()));
+    peerLogic.reset(new PeerLogicValidation(netConnMgr.get(), GetApp()->GetScheduler()));
     RegisterValidationInterface(peerLogic.get());
 
     g_connman.reset(netConnMgr.get());
@@ -234,7 +233,7 @@ bool CNetComponent::ComponentInitialize()
     netConnOptions.nMaxOutboundLimit = nMaxOutboundLimit;
     netConnOptions.nMaxFeeler = 1;
     netConnOptions.nBestHeight = ifChainObj->GetActiveChainHeight();
-    netConnOptions.uiInterface = &app().GetUIInterface();
+    netConnOptions.uiInterface = &GetApp()->GetUIInterface();
     netConnOptions.m_msgproc = peerLogic.get();
     netConnOptions.nSendBufferMaxSize = 1000 * Args().GetArg("-maxsendbuffer", DEFAULT_MAXSENDBUFFER);
     netConnOptions.nReceiveFloodSize = 1000 * Args().GetArg("-maxreceivebuffer", DEFAULT_MAXRECEIVEBUFFER);
@@ -306,7 +305,7 @@ bool CNetComponent::ComponentStartup()
     // Map ports with UPnP
     MapPort(Args().GetArg<bool>("upnp", DEFAULT_UPNP));
 
-    return netConnMgr->Start(app().GetScheduler(), netConnOptions);
+    return netConnMgr->Start(GetApp()->GetScheduler(), netConnOptions);
 }
 
 bool CNetComponent::ComponentShutdown()

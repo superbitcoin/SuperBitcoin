@@ -8,6 +8,7 @@
 
 #endif
 
+#include "baseimpl.hpp"
 #include "utils/base58.h"
 #include "sbtccore/clientversion.h"
 #include "chaincontrol/coins.h"
@@ -916,6 +917,13 @@ static int CommandLineRawTx(int argc, char *argv[])
         fprintf((nRet == 0 ? stdout : stderr), "%s\n", strPrint.c_str());
     }
     return nRet;
+}
+
+CApp gApp;
+
+appbase::IBaseApp *GetApp()
+{
+    return &gApp;
 }
 
 int main(int argc, char *argv[])

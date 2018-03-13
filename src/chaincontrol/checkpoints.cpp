@@ -4,6 +4,7 @@
 
 #include "checkpoints.h"
 
+#include "base/base.hpp"
 #include "chain.h"
 #include "chainparams.h"
 #include "chaincomponent.h"

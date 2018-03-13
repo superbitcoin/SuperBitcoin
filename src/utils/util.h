@@ -16,6 +16,7 @@
 
 #endif
 
+#include "base/base.hpp"
 #include "compat/compat.h"
 #include "fs.h"
 #include "framework/sync.h"
@@ -34,7 +35,6 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/filesystem/path.hpp>
 #include <boost/algorithm/string.hpp>
-#include "sbtcd/baseimpl.hpp"
 #include "config/argmanager.h"
 
 #define USE_LOG4CPP
@@ -46,15 +46,6 @@ using std::string;
 
 extern const char *const BITCOIN_CONF_FILENAME;
 extern const char *const BITCOIN_PID_FILENAME;
-
-inline appbase::CApp &app()
-{
-    return appbase::CApp::Instance();
-}
-
-inline log4cpp::Category &mlog() {
-    return appbase::CApp::mlog;
-}
 
 // Application startup time (used for uptime calculation)
 int64_t GetStartupTime();

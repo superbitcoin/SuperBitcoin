@@ -5,6 +5,7 @@
 
 #include "validation.h"
 
+#include "base/base.hpp"
 #include "utils/arith_uint256.h"
 #include "chaincontrol/chain.h"
 #include "config/chainparams.h"

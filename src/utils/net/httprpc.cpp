@@ -4,6 +4,7 @@
 
 #include "httprpc.h"
 
+#include "base/base.hpp"
 #include "utils/base58.h"
 #include "config/chainparams.h"
 #include "httpserver.h"

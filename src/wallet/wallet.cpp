@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "base/base.hpp"
 #include "wallet/wallet.h"
-
 #include "utils/base58.h"
 #include "chaincontrol/checkpoints.h"
 #include "chaincontrol/chain.h"
@@ -31,7 +31,6 @@
 #include "utils/util.h"
 #include "framework/ui_interface.h"
 #include "utils/utilmoneystr.h"
-#include "baseimpl.hpp"
 #include "argmanager.h"
 #include "walletcomponent.h"
 #include "interface/ichaincomponent.h"

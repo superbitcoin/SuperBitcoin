@@ -2,8 +2,14 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include "core_io.h"
+#include <log4cpp/Category.hh>
+#include <boost/algorithm/string/classification.hpp>
+#include <boost/algorithm/string/predicate.hpp>
+#include <boost/algorithm/string/replace.hpp>
+#include <boost/algorithm/string/split.hpp>
 
+#include "base/base.hpp"
+#include "core_io.h"
 #include "block/block.h"
 #include "transaction/transaction.h"
 #include "script/script.h"
@@ -13,11 +19,6 @@
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
 #include "framework/version.h"
-
-#include <boost/algorithm/string/classification.hpp>
-#include <boost/algorithm/string/predicate.hpp>
-#include <boost/algorithm/string/replace.hpp>
-#include <boost/algorithm/string/split.hpp>
 
 CScript ParseScript(const std::string &s)
 {

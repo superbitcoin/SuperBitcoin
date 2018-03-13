@@ -9,6 +9,7 @@
 
 #endif
 
+#include "baseimpl.hpp"
 #include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
 #include "fs.h"
@@ -467,6 +468,13 @@ int CommandLineRPC(int argc, char *argv[])
         fprintf((nRet == 0 ? stdout : stderr), "%s\n", strPrint.c_str());
     }
     return nRet;
+}
+
+CApp gApp;
+
+appbase::IBaseApp *GetApp()
+{
+    return &gApp;
 }
 
 int main(int argc, char *argv[])

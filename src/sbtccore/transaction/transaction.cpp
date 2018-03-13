@@ -17,7 +17,7 @@
 #include "utils/utilstrencodings.h"
 #include "chain.h"
 #include "policy.h"
-#include "sbtcd/baseimpl.hpp"
+#include "base/base.hpp"
 #include "interface/ichaincomponent.h"
 //#include "block.h"
 

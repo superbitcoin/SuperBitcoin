@@ -1,3 +1,6 @@
+#include <log4cpp/Category.hh>
+
+#include "base/base.hpp"
 #include "scriptcheck.h"
 #include "utils/util.h"
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "base/base.hpp"
 #include "componentid.h"
 #include "exchangeformat.h"
 #include "sbtccore/streams.h"
@@ -48,4 +49,4 @@ public:
 };
 
 #define GET_TXMEMPOOL_INTERFACE(ifObj) \
-    auto ifObj = appbase::CApp::Instance().FindComponent<ITxMempoolComponent>()
+    auto ifObj = GetApp()->FindComponent<ITxMempoolComponent>()

@@ -5,6 +5,7 @@
 
 #include "script/standard.h"
 
+#include "base/base.hpp"
 #include "pubkey.h"
 #include "script/script.h"
 #include "utils/util.h"

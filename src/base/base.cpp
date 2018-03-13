@@ -125,6 +125,11 @@ static void PrintVersion()
                  FormatParagraph(LicenseInfo()) << std::endl;
 }
 
+IBaseApp::IBaseApp() : nVersion(1), bShutdown(false)
+{
+
+}
+
 bool IBaseApp::ParamsInitialize(int argc, char **argv)
 {
     if (!pArgs->Init(argc, argv))
@@ -174,7 +179,52 @@ bool IBaseApp::ParamsInitialize(int argc, char **argv)
     return true;
 }
 
-bool IBaseApp::Init(int argc, char **argv)
+bool IBaseApp::Initialize(int argc, char **argv)
 {
-    return ParamsInitialize(argc, argv) && AppInitialize();
+    return ParamsInitialize(argc, argv) && AppInitialize() && ComponentInitialize();
+}
+
+bool IBaseApp::ComponentInitialize()
+{
+    return ForEachComponent(true, [](IComponent *component)
+    { return component->Initialize(); });
+}
+
+bool IBaseApp::Startup()
+{
+    return ForEachComponent(true, [](IComponent *component)
+    { return component->Startup(); });
+}
+
+bool IBaseApp::Shutdown()
+{
+    bool fRet = ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false,
+                                                                                              [](IComponent *component)
+                                                                                              { return component->Shutdown(); });
+
+    return fRet;
+}
+
+bool IBaseApp::Run()
+{
+    while (!bShutdown)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
+    return true;
+}
+
+bool IBaseApp::RegisterComponent(IComponent *component)
+{
+    if (component)
+    {
+        int id = component->GetID();
+        if (m_mapComponents.find(id) == m_mapComponents.end())
+        {
+            m_mapComponents.emplace(id, component);
+            return true;
+        }
+    }
+
+    return false;
 }

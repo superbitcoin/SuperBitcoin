@@ -31,16 +31,10 @@
 
 using namespace appbase;
 
-
-CApp &CApp::Instance()
-{
-    static CApp _app;
-    return _app;
-}
-
 CApp::CApp()
-        : nVersion(1), bShutdown(false)
 {
+    nVersion = 1;
+    bShutdown = false;
 }
 
 // Parameter interaction based on rules
@@ -131,7 +125,7 @@ void CApp::InitParameterInteraction()
 
 static void HandleSIGTERM(int)
 {
-    app().RequestShutdown();
+    GetApp()->RequestShutdown();
 }
 
 bool CApp::AppInitBasicSetup()
@@ -629,23 +623,6 @@ bool CApp::AppInitialize()
     return true;
 }
 
-bool CApp::ComponentInitialize()
-{
-    return ForEachComponent(true, [](IComponent *component)
-    { return component->Initialize(); });
-}
-
-bool CApp::Initialize(int argc, char **argv)
-{
-    return Init(argc, argv) && ComponentInitialize();
-}
-
-bool CApp::Startup()
-{
-    return ForEachComponent(true, [](IComponent *component)
-    { return component->Startup(); });
-}
-
 bool CApp::Shutdown()
 {
     if (scheduler)
@@ -662,9 +639,7 @@ bool CApp::Shutdown()
         eventManager->Uninit(true);
     }
 
-    bool fRet = ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false,
-                                                                                              [](IComponent *component)
-                                                                                              { return component->Shutdown(); });
+    bool fRet = IBaseApp::Shutdown();
 
 #ifndef WIN32
     try
@@ -684,27 +659,4 @@ bool CApp::Shutdown()
     return fRet;
 }
 
-bool CApp::Run()
-{
-    while (!bShutdown)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    }
-    return true;
-}
-
-bool CApp::RegisterComponent(IComponent *component)
-{
-    if (component)
-    {
-        int id = component->GetID();
-        if (m_mapComponents.find(id) == m_mapComponents.end())
-        {
-            m_mapComponents.emplace(id, component);
-            return true;
-        }
-    }
-
-    return false;
-}
 

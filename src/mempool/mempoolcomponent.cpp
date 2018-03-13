@@ -121,7 +121,7 @@ bool CMempoolComponent::LoadMempool(void)
             {
                 ++skipped;
             }
-            if (app().ShutdownRequested())
+            if (GetApp()->ShutdownRequested())
                 return false;
         }
         std::map<uint256, CAmount> mapDeltas;

@@ -5,6 +5,7 @@
 
 #include "noui.h"
 
+#include "base/base.hpp"
 #include "ui_interface.h"
 #include "utils/util.h"
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2015-2016 The Super Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+#include <base/base.hpp>
 #include "httpserver.h"
 
 #include "config/chainparamsbase.h"

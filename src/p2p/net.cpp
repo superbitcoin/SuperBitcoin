@@ -1177,7 +1177,8 @@ void CConnman::AcceptConnection(const ListenSocket &hListenSocket)
         totalNodeCount = (int)vNodes.size();
     }
 
-    app().GetEventManager().PostEvent(EID_NODE_CONNECTED, id, true, totalNodeCount);
+    GetApp()->GetEventManager().PostEvent(EID_NODE_CONNECTED, id, true, totalNodeCount);
+
 }
 
 void CConnman::ThreadSocketHandler()
@@ -2629,7 +2630,7 @@ void CConnman::DeleteNode(CNode *pnode)
         addrman.Connected(pnode->addr);
     }
 
-    app().GetEventManager().PostEvent(EID_NODE_DISCONNECTED, pnode->GetId(), pnode->fInbound, 0);
+    GetApp()->GetEventManager().PostEvent(EID_NODE_DISCONNECTED, pnode->GetId(), pnode->fInbound, 0);
 
     delete pnode;
 }

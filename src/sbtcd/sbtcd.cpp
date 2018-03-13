@@ -37,20 +37,24 @@
 #include "log4cpp/Category.hh"
 #include "log4cpp/PropertyConfigurator.hh"
 #include "log4cpp/PatternLayout.hh"
-#include "log4cpp/RollingFileAppender.hh"
 #include "log4cpp/OstreamAppender.hh"
 
+CApp gApp;
+
+IBaseApp *GetApp()
+{
+    return &gApp;
+}
 
 int main(int argc, char **argv)
 {
-    CApp &app = appbase::CApp::Instance();
-    app.RegisterComponent(new CChainComponent);
-    app.RegisterComponent(new CMempoolComponent);
-    app.RegisterComponent(new CHttpRpcComponent);
-    app.RegisterComponent(new CNetComponent);
-    app.RegisterComponent(new CWalletComponent);
-    app.Initialize(argc, argv) && app.Startup() && app.Run();
-    app.Shutdown();
+    gApp.RegisterComponent(new CChainComponent);
+    gApp.RegisterComponent(new CMempoolComponent);
+    gApp.RegisterComponent(new CHttpRpcComponent);
+    gApp.RegisterComponent(new CNetComponent);
+    gApp.RegisterComponent(new CWalletComponent);
+    gApp.Initialize(argc, argv) && gApp.Startup() && gApp.Run();
+    gApp.Shutdown();
 
     return 0;
 }

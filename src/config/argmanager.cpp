@@ -4,8 +4,9 @@
 //  Created on:      29-2-2018 11:38:05
 //  Original author: marco
 ///////////////////////////////////////////////////////////
+#include <log4cpp/Category.hh>
 
-#include "baseimpl.hpp"
+#include "base/base.hpp"
 #include "argmanager.h"
 #include "chainparams.h"
 #include "chainparamsbase.h"

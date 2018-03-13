@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "base/base.hpp"
 #include "componentid.h"
 #include "exchangeformat.h"
 #include "utils/uint256.h"
@@ -141,4 +142,4 @@ public:
 };
 
 #define GET_CHAIN_INTERFACE(ifObj) \
-    auto ifObj = appbase::CApp::Instance().FindComponent<IChainComponent>()
+    auto ifObj = GetApp()->FindComponent<IChainComponent>()

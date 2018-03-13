@@ -4,6 +4,8 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "torcontrol.h"
+
+#include "base/base.hpp"
 #include "utils/utilstrencodings.h"
 #include "p2p/netbase.h"
 #include "p2p/net.h"

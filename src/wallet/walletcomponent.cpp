@@ -11,7 +11,6 @@
 #include "rpcwallet.h"
 #include "server.h"
 #include "scheduler.h"
-#include "baseimpl.hpp"
 
 CWalletComponent::CWalletComponent()
 {
@@ -66,7 +65,7 @@ bool CWalletComponent::ComponentStartup()
 
     if (!vpWallets.empty())
     {
-        app().GetScheduler().scheduleEvery(std::bind(MaybeCompactWalletDB, vpWallets), 500);
+        GetApp()->GetScheduler().scheduleEvery(std::bind(MaybeCompactWalletDB, vpWallets), 500);
     }
 
     return true;

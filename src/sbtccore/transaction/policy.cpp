@@ -4,7 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 // NOTE: This file is intended to be customised by the end user, and includes only local node policy logic
-
+#include "base/base.hpp"
 #include "policy.h"
 
 #include "chaincontrol/validation.h"
