@@ -37,6 +37,22 @@ enum HelpMessageMode
     HMM_EMPTY
 };
 
+struct option_item
+{
+    const char *name;
+    const void *s;
+    const char *description;
+
+    option_item(const char *name_, const char *description_) : name(name_), description(description_), s(nullptr)
+    {
+    }
+
+    option_item(const char *name_, const void *s_, const char *description_) : name(name_), description(description_),
+                                                                               s(s_)
+    {
+    }
+};
+
 class CArgsManager
 {
 
@@ -79,13 +95,6 @@ public:
 
     void
     GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char *> &argv_arr);
-
-    bool PreProc(std::function<void(bpo::options_description *app, bpo::variables_map &vm, int argc,
-                                    const char **argv, HelpMessageMode mode)> callback,
-                 bpo::options_description *app, int argc, const char **argv, HelpMessageMode mode);
-
-    void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv,
-                         HelpMessageMode mode);
 
     static bool InterpretBool(const std::string &strValue);
 
@@ -144,6 +153,10 @@ public:
         return true;
     }
 
+    void SetOptionName(const std::string &optionName) const;
+
+    void SetOptionTable(std::map<std::string, std::vector<option_item>> &optionTable) const;
+
 protected:
     /**
      * reconfiguration
@@ -159,6 +172,9 @@ private:
      * if the option has multiple arguments, add to this arr
      */
     vector<string> options_arr;
+
+    mutable std::string optionName;
+    mutable std::map<std::string, std::vector<option_item>> optionTable;
 
     bool merge_variable_map(bpo::variables_map &desc, bpo::variables_map &source);
 

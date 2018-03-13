@@ -47,6 +47,8 @@ namespace appbase
     protected:
         bool AppInitialize() override;
 
+        void InitOptionMap() override;
+
     private:
 
         CApp(const CApp &) = delete;

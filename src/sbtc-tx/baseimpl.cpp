@@ -41,4 +41,8 @@ bool CApp::AppInitialize()
     return true;
 }
 
+void CApp::InitOptionMap()
+{
+
+}
 

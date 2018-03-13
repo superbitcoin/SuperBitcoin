@@ -29,8 +29,11 @@ namespace appbase
     public:
 
         virtual bool AppInitialize() = 0;
+
         virtual CScheduler &GetScheduler() = 0;
+
         virtual CEventManager &GetEventManager() = 0;
+
         virtual CClientUIInterface &GetUIInterface() = 0;
 
         IBaseApp();
@@ -119,6 +122,8 @@ namespace appbase
         uint64_t nVersion;
         volatile bool bShutdown;
     protected:
+        virtual void InitOptionMap() = 0;
+
         bool InitializeLogging(fs::path path);
 
     protected:

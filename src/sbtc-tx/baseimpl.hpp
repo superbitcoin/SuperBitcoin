@@ -49,4 +49,5 @@ public:
 protected:
     bool AppInitialize() override;
 
+    void InitOptionMap() override;
 };

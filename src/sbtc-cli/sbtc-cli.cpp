@@ -9,6 +9,8 @@
 
 #endif
 
+#include <map>
+
 #include "baseimpl.hpp"
 #include "config/chainparams.h"
 #include "sbtccore/clientversion.h"
@@ -30,69 +32,11 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options/options_description.hpp>
 
+using namespace std;
 namespace bpo = boost::program_options;
 using std::string;
 
-static const char DEFAULT_RPCCONNECT[] = "127.0.0.1";
-static const int DEFAULT_HTTP_CLIENT_TIMEOUT = 900;
-static const bool DEFAULT_NAMED = false;
 static const int CONTINUE_EXECUTION = -1;
-
-//////////////////////////////////////////////////////////////////////////////
-//
-// Start
-//
-//
-// Exception thrown on connection error.  This error is used to determine
-// when to wait if -rpcwait is given.
-//
-void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int argc, const char **argv,
-                     HelpMessageMode mode)
-{
-    const auto defaultBaseParams = CreateBaseChainParams(CBaseChainParams::MAIN);
-    const auto testnetBaseParams = CreateBaseChainParams(CBaseChainParams::TESTNET);
-
-    bpo::options_description confGroup("configuration options:");
-    confGroup.add_options()
-            ("help,h", "Print this message and exit.")
-            ("?", "Print this message and exit.")
-            ("version", "Print version and exit")
-            ("conf", bpo::value<string>(),
-             strprintf(_("Specify configuration file (default: %s)"), BITCOIN_CONF_FILENAME).c_str())
-            ("datadir", bpo::value<string>(), "Specify data directory");
-    app->add(confGroup);
-
-    bpo::options_description chainGroup("Chain selection options:");
-    chainGroup.add_options()
-            ("testnet", bpo::value<string>(), "Use the test chain")
-            ("regtest", bpo::value<string>(),
-             "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
-                     "This is intended for regression testing tools and app_bpo development.");
-    app->add(chainGroup);
-
-    bpo::options_description rpcGroup("rpc options:");
-    rpcGroup.add_options()
-            ("named", bpo::value<string>(),
-             strprintf(_("Pass named instead of positional arguments (default: %s)"), DEFAULT_NAMED).c_str())
-            ("rpcconnect", bpo::value<string>(),
-             strprintf(_("Send commands to node running on <ip> (default: %s)"), DEFAULT_RPCCONNECT).c_str())
-            ("rpcport", bpo::value<int>(),
-             strprintf(_("Connect to JSON-RPC on <port> (default: %u or testnet: %u)"), defaultBaseParams->RPCPort(),
-                       testnetBaseParams->RPCPort()).c_str())
-            ("rpcwait", bpo::value<string>(), "Wait for RPC server to start")
-            ("rpcuser", bpo::value<string>(), "Username for JSON-RPC connections")
-            ("rpcpassword", bpo::value<string>(), "Password for JSON-RPC connections")
-            ("rpcclienttimeout", bpo::value<int>(),
-             strprintf(_("Timeout in seconds during HTTP requests, or 0 for no timeout. (default: %d)"),
-                       DEFAULT_HTTP_CLIENT_TIMEOUT).c_str())
-            ("stdin", bpo::value<string>(),
-             "Read extra arguments from standard input, one per line until EOF/Ctrl-D (recommended for sensitive information such as passphrases)")
-            ("rpcwallet", bpo::value<string>(),
-             "Send RPC for non-default wallet on RPC server (argument is wallet filename in bitcoind directory, required if bitcoind/-Qt runs with multiple wallets)");
-    app->add(rpcGroup);
-
-    bpo::store(bpo::parse_command_line(argc, argv, *app), vm);
-}
 
 class CConnectionFailed : public std::runtime_error
 {
@@ -123,25 +67,6 @@ static int AppInitRPC(int argc, char *argv[])
     {
         fprintf(stdout, "%s", "Error: too few parameters, please enter: sbtc-cli --help for help.\n");
 
-        return EXIT_FAILURE;
-    }
-
-    std::string strHead =
-            strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n" + "\n" +
-            _("Usage:") + "\n" +
-            "  bitcoin-cli [options] <command> [params]  " + strprintf(_("Send command to %s"), _(PACKAGE_NAME)) +
-            "\n" +
-            "  bitcoin-cli [options] -named <command> [name=value] ... " +
-            strprintf(_("Send command to %s (with named arguments)"), _(PACKAGE_NAME)) + "\n" +
-            "  bitcoin-cli [options] help                " + _("List commands") + "\n" +
-            "  bitcoin-cli [options] help <command>      " + _("Get help for a command") + "\n";
-
-    vector<string> argv_arr_tmp;
-    vector<const char *> argv_arr;
-    GenerateOptFormat(argc, (const char **)argv, argv_arr_tmp, argv_arr);
-    bpo::options_description *app = new bpo::options_description(strHead.c_str());
-    if (!gArgs.PreProc(InitPromOptions, app, argv_arr.size(), &argv_arr[0], HMM_EMPTY))
-    {
         return EXIT_FAILURE;
     }
 
@@ -479,12 +404,8 @@ appbase::IBaseApp *GetApp()
 
 int main(int argc, char *argv[])
 {
-    SetupEnvironment();
-    if (!SetupNetworking())
-    {
-        fprintf(stderr, "Error: Initializing networking failed\n");
-        return EXIT_FAILURE;
-    }
+    gApp.Initialize(argc, argv) && gApp.Startup() && gApp.Run();
+    gApp.Shutdown();
 
     try
     {

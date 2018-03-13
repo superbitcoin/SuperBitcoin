@@ -132,6 +132,7 @@ IBaseApp::IBaseApp() : nVersion(1), bShutdown(false)
 
 bool IBaseApp::ParamsInitialize(int argc, char **argv)
 {
+    InitOptionMap();
     if (!pArgs->Init(argc, argv))
     {
         return false;
