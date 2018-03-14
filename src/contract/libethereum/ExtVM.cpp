@@ -138,6 +138,7 @@ void ExtVM::suicide(Address _a)
 	if(!m_s.addressInUse(_a)){
 		m_sealEngine.deleteAddresses.insert(_a);
 	}
+	std::cout<<"ExtVM::suicide"<<std::endl; //sbtd-vm debug
 	m_s.transferBalance(myAddress, _a, m_s.balance(myAddress));
 	ExtVMFace::suicide(_a);
 }

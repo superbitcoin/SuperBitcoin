@@ -226,10 +226,10 @@ unordered_map<Address, u256> State::addresses() const
 	unordered_map<Address, u256> ret;
 	for (auto& i: m_cache)
 		if (i.second.isAlive())
-			ret[i.first] = i.second.balance();
+            ret[i.first] = i.second.balance();
 	for (auto const& i: m_state)
 		if (m_cache.find(i.first) == m_cache.end())
-			ret[i.first] = RLP(i.second)[1].toInt<u256>();
+            ret[i.first] = RLP(i.second)[1].toInt<u256>();
 	return ret;
 #else
 	BOOST_THROW_EXCEPTION(InterfaceNotSupported("State::addresses()"));

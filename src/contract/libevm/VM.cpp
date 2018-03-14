@@ -151,8 +151,8 @@ void VM::fetchInstruction()
 	m_newMemSize = m_mem.size();
 	m_copyMemSize = 0;
 
-//	cout<<"pc="<<m_PC<<endl;
-//	cout<<"m_OP=" << static_cast<size_t>(m_OP) <<endl;  //sbtc-debug
+	cout<<"pc="<<m_PC<<endl;
+	cout<<"m_OP=" << static_cast<size_t>(m_OP) <<endl;  //sbtc-debug
 }
 
 #if EVM_HACK_ON_OPERATION
@@ -239,7 +239,7 @@ void VM::interpretCases()
 			size_t s = (size_t)*m_SP--;
 			m_output = owning_bytes_ref{std::move(m_mem), b, s};
 			m_bounce = 0;
-//			cout<<"RETURN"<<endl; //sbtc-debug
+			cout<<"RETURN"<<endl; //sbtc-debug
 		}
 		BREAK
 
@@ -259,7 +259,7 @@ void VM::interpretCases()
 			updateIOGas();
 			m_ext->suicide(dest);
 			m_bounce = 0;
-//			cout<<"SUICIDE"<<endl; //sbtc-debug
+			cout<<"SUICIDE"<<endl; //sbtc-debug
 		}
 		BREAK
 
@@ -268,7 +268,7 @@ void VM::interpretCases()
 			ON_OP();
 			updateIOGas();
 			m_bounce = 0;
-//			cout<<"STOP"<<endl;  //sbtc-debug
+			cout<<"STOP"<<endl;  //sbtc-debug
 		}
 		BREAK;
 			
@@ -675,7 +675,7 @@ void VM::interpretCases()
 
 			if (u512(*m_SP) + 31 < m_ext->data.size()) {
                 *m_SP = (u256) *(h256 const *) (m_ext->data.data() + (size_t) *m_SP);
-//				std::cout << "m_SP/data01 = " << toHex(*m_SP) << std::endl; //sbtc-debug
+				std::cout << "m_SP/data01 = " << toHex(*m_SP) << std::endl; //sbtc-debug
             }
 			else if (*m_SP >= m_ext->data.size()) {
                 *m_SP = u256(0);
@@ -686,7 +686,7 @@ void VM::interpretCases()
 				for (uint64_t i = (uint64_t)*m_SP, e = (uint64_t)*m_SP + (uint64_t)32, j = 0; i < e; ++i, ++j)
 					r[j] = i < m_ext->data.size() ? m_ext->data[i] : 0;
 				*m_SP = (u256)r;
-//				std::cout << "funstionid/data03=" << toHex(*m_SP) << std::endl; //sbtc-debug
+				std::cout << "funstionid/data03=" << toHex(*m_SP) << std::endl; //sbtc-debug
 			}
 		}
 		NEXT

@@ -130,11 +130,9 @@ ResultExecute SbtcState::execute(EnvInfo const& _envInfo, SealEngineFace const& 
             refund.vout.push_back(CTxOut(CAmount(_t.value().convert_to<uint64_t>()), script));
         }
         //make sure to use empty transaction if no vouts made
-        LogPrintf("SbtcState::execute voutLimit\n"); //sbtc debug
+        LogPrintf("SbtcState::execute voutLimit true\n"); //sbtc debug
         return ResultExecute{ex, dev::eth::TransactionReceipt(oldStateRoot, gas, e.logs()), refund.vout.empty() ? CTransaction() : CTransaction(refund)};
     }else{
-        //sbtc debug print tx
-        LogPrintf("SbtcState::execute success\n"); //sbtc debug
         return ResultExecute{res, dev::eth::TransactionReceipt(rootHash(), startGasUsed + e.gasUsed(), e.logs()), tx ? *tx : CTransaction()};
     }
 }
@@ -156,8 +154,12 @@ std::unordered_map<dev::Address, Vin> SbtcState::vins() const // temp
 void SbtcState::transferBalance(dev::Address const& _from, dev::Address const& _to, dev::u256 const& _value) {
     subBalance(_from, _value);
     addBalance(_to, _value);
-    if (_value > 0)
+    if (_value > 0) {
+        LogPrintf("SbtcState::transferBalance _from=%s\n",HexStr(_from.asBytes())); //sbtc debug
+        LogPrintf("SbtcState::transferBalance _to=%s\n",HexStr(_to.asBytes())); //sbtc debug
+        LogPrintf("SbtcState::transferBalance _value=%s\n",toHex(_value)); //sbtc debug
         transfers.push_back({_from, _to, _value});
+    }
 }
 
 Vin const* SbtcState::vin(dev::Address const& _a) const
@@ -219,7 +221,6 @@ void SbtcState::addBalance(dev::Address const& _id, dev::u256 const& _amount)
             // accounts, as other accounts does not matter.
             // TODO: to save space we can combine this event with Balance by having
             //       Balance and Balance+Touch events.
-        LogPrintf("SbtcState::addBalance account exist\n"); //sbtc debug
         if (!a->isDirty() && a->isEmpty())
             m_changeLog.emplace_back(dev::eth::detail::Change::Touch, _id);
 
@@ -230,7 +231,6 @@ void SbtcState::addBalance(dev::Address const& _id, dev::u256 const& _amount)
     }
     else
     {
-        LogPrintf("SbtcState::addBalance createAccount\n"); //sbtc debug
         if(!addressInUse(newAddress) && newAddress != dev::Address()){
             const_cast<dev::Address&>(_id) = newAddress;
             newAddress = dev::Address();
@@ -359,24 +359,18 @@ void CondensingTX::calculatePlusAndMinus(){
     for(const TransferInfo& ti : transfers){
         LogPrintf("CondensingTX::calculatePlusAndMinus from=%s\n",HexStr(ti.from.asBytes())); //sbtc debug
         if(!plusMinusInfo.count(ti.from)){
-            LogPrintf("CondensingTX::calculatePlusAndMinus from0\n"); //sbtc debug
             plusMinusInfo[ti.from] = std::make_pair(0, ti.value);
             LogPrintf("first= %d,second value=%s\n",0,toHex(ti.value)); //sbtc debug
         } else {
-            LogPrintf("CondensingTX::calculatePlusAndMinus from1\n"); //sbtc debug
-            LogPrintf("before second value= %s,value=%s\n",toHex(plusMinusInfo[ti.from].second),toHex(ti.value)); //sbtc debug
             plusMinusInfo[ti.from] = std::make_pair(plusMinusInfo[ti.from].first, plusMinusInfo[ti.from].second + ti.value);
             LogPrintf("first= %s,second value=%s\n",toHex(plusMinusInfo[ti.from].first),toHex(plusMinusInfo[ti.from].second)); //sbtc debug
         }
 
         LogPrintf("CondensingTX::calculatePlusAndMinus to=%s\n",HexStr(ti.to.asBytes())); //sbtc debug
         if(!plusMinusInfo.count(ti.to)){
-            LogPrintf("CondensingTX::calculatePlusAndMinus to0\n"); //sbtc debug
             plusMinusInfo[ti.to] = std::make_pair(ti.value, 0);
             LogPrintf("first value= %s,second=%d\n",toHex(ti.value),0); //sbtc debug
         } else {
-            LogPrintf("CondensingTX::calculatePlusAndMinus to1\n"); //sbtc debug
-            LogPrintf("before first value= %s,value=%s\n",toHex(plusMinusInfo[ti.to].first),toHex(ti.value)); //sbtc debug
             plusMinusInfo[ti.to] = std::make_pair(plusMinusInfo[ti.to].first + ti.value, plusMinusInfo[ti.to].second);
             LogPrintf("first value= %s,second=%s\n",toHex(plusMinusInfo[ti.to].first),toHex(plusMinusInfo[ti.to].second)); //sbtc debug
         }
@@ -389,17 +383,11 @@ bool CondensingTX::createNewBalances(){
         if((vins.count(p.first) && vins[p.first].alive) || (!vins[p.first].alive && !checkDeleteAddress(p.first))){
             balance = vins[p.first].value;
         }
-        LogPrintf("CondensingTX::createNewBalances,balance0=%s\n",toHex(balance)); //sbtc debug
-        LogPrintf("CondensingTX::createNewBalances,p.second.first=%s\n",toHex(p.second.first)); //sbtc debug
         balance += p.second.first;
-        LogPrintf("CondensingTX::createNewBalances,balance1=%s\n",toHex(balance)); //sbtc debug
 
         if(balance < p.second.second)
             return false;
-        LogPrintf("CondensingTX::createNewBalances,p.second.second=%s\n",toHex(p.second.second)); //sbtc debug
         balance -= p.second.second;
-        LogPrintf("CondensingTX::createNewBalances,balance2=%s\n",toHex(balance)); //sbtc debug
-        LogPrintf("hash=%s\n",p.first.hex()); //sbtc debug
         balances[p.first] = balance;
 
     }

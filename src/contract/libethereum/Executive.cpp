@@ -331,6 +331,7 @@ bool Executive::call(CallParameters const& _p, u256 const& _gasPrice, Address co
 	////////////////////////////////////////////////
 
 	// Transfer ether.
+	std::cout<<"Executive::call"<<std::endl; //sbtd-vm debug
 	m_s.transferBalance(_p.senderAddress, _p.receiveAddress, _p.valueTransfer);
 	return !m_ext;
 }
@@ -351,6 +352,7 @@ bool Executive::create(Address _sender, u256 _endowment, u256 _gasPrice, u256 _g
 
 	// Transfer ether before deploying the code. This will also create new
 	// account if it does not exist yet.
+	std::cout<<"Executive::create"<<std::endl; //sbtd-vm debug
 	m_s.transferBalance(_sender, m_newAddress, _endowment);
 
 	if (m_envInfo.number() >= m_sealEngine.chainParams().u256Param("EIP158ForkBlock"))
@@ -401,6 +403,9 @@ bool Executive::go(OnOpFunc const& _onOp)
 			auto vm = _onOp ? VMFactory::create(VMKind::Interpreter) : VMFactory::create();
 			if (m_isCreation)
 			{
+				cout<<"Executive::go create m_output======="<<endl;   //sbtc-debug
+				cout << "input code = " << toHex(m_ext->code) << endl;
+				cout << "input data = " << toHex(m_ext->data) << endl;
 				auto out = vm->exec(m_gas, *m_ext, _onOp);
 				if (m_res)
 				{
@@ -428,6 +433,9 @@ bool Executive::go(OnOpFunc const& _onOp)
 				}
 				if (m_res)
 					m_res->output = out.toVector(); // copy output to execution result
+				if(out.size() < 1){
+					cout<<"Executive::go create m_ext->code err"<<endl;   //sbtc-debug
+				}
 				m_s.setNewCode(m_ext->myAddress, out.toVector());
 			}
 			else

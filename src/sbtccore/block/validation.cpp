@@ -2074,10 +2074,8 @@ valtype GetSenderAddress(const CTransaction& tx, const CCoinsViewCache* coinsVie
 
     // First check the current (or in-progress) block for zero-confirmation change spending that won't yet be in txindex
     if(blockTxs){
-        LogPrintf("GetSenderAddress 0\n"); //sbtc debug
         for(auto btx : *blockTxs){
             if(btx->GetHash() == tx.vin[0].prevout.hash){
-                LogPrintf("GetSenderAddress 1\n"); //sbtc debug
                 script = btx->vout[tx.vin[0].prevout.n].scriptPubKey;
                 scriptFilled=true;
                 break;
@@ -2085,7 +2083,6 @@ valtype GetSenderAddress(const CTransaction& tx, const CCoinsViewCache* coinsVie
         }
     }
     if(!scriptFilled && coinsView){
-        LogPrintf("GetSenderAddress 2\n"); //sbtc debug
         script = coinsView->AccessCoin(tx.vin[0].prevout).out.scriptPubKey;
         scriptFilled = true;
     }
@@ -2096,7 +2093,6 @@ valtype GetSenderAddress(const CTransaction& tx, const CCoinsViewCache* coinsVie
         uint256 hashBlock;
         if(GetTransaction(tx.vin[0].prevout.hash, txPrevout, Params().GetConsensus(), hashBlock, true)){
             script = txPrevout->vout[tx.vin[0].prevout.n].scriptPubKey;
-            LogPrintf("GetSenderAddress 3\n"); //sbtc debug
         } else {
             LogPrintf("Error fetching transaction details of tx %s. This will probably cause more errors", tx.vin[0].prevout.hash.ToString());
             return valtype();
@@ -2108,7 +2104,6 @@ valtype GetSenderAddress(const CTransaction& tx, const CCoinsViewCache* coinsVie
     if(ExtractDestination(script, addressBit, &txType)){
         if ((txType == TX_PUBKEY || txType == TX_PUBKEYHASH) &&
             addressBit.type() == typeid(CKeyID)){
-            LogPrintf("GetSenderAddress 4\n"); //sbtc debug
             CKeyID senderAddress(boost::get<CKeyID>(addressBit));
             return valtype(senderAddress.begin(), senderAddress.end());
         }
@@ -2180,7 +2175,6 @@ void writeVMlog(const std::vector<ResultExecute>& res, const CTransaction& tx, c
 }
 
 bool ByteCodeExec::performByteCode(dev::eth::Permanence type){
-    LogPrintf("performByteCode start=====\n"); //sbtc debug
     for(SbtcTransaction& tx : txs){
         //validate VM version
         if(tx.getVersion().toRaw() != VersionVM::GetEVMDefault().toRaw()){
@@ -2200,7 +2194,6 @@ bool ByteCodeExec::performByteCode(dev::eth::Permanence type){
     globalState->db().commit();
     globalState->dbUtxo().commit();
     globalSealEngine.get()->deleteAddresses.clear();
-    LogPrintf("performByteCode end=====\n"); //sbtc debug
     return true;
 }
 
@@ -2209,7 +2202,7 @@ bool ByteCodeExec::processingResults(ByteCodeExecResult& resultBCE){
         uint64_t gasUsed = (uint64_t) result[i].execRes.gasUsed;
         if(result[i].execRes.excepted != dev::eth::TransactionException::None){
             LogPrintf("TransactionException != None\n"); //sbtc debug
-            if(txs[i].value() > 0){
+            if(txs[i].value() > 0){ //refund the value to sender
                 CMutableTransaction tx;
                 tx.vin.push_back(CTxIn(h256Touint(txs[i].getHashWith()), txs[i].getNVout(), CScript() << OP_SPEND));
                 CScript script(CScript() << OP_DUP << OP_HASH160 << txs[i].sender().asBytes() << OP_EQUALVERIFY << OP_CHECKSIG);
@@ -2223,7 +2216,6 @@ bool ByteCodeExec::processingResults(ByteCodeExecResult& resultBCE){
                txs[i].gasPrice() > UINT64_MAX){
                 return false;
             }
-            LogPrintf("TransactionException::None\n"); //sbtc debug
             uint64_t gas = (uint64_t) txs[i].gas();
             uint64_t gasPrice = (uint64_t) txs[i].gasPrice();
 
@@ -2239,6 +2231,7 @@ bool ByteCodeExec::processingResults(ByteCodeExecResult& resultBCE){
             }
         }
         if(result[i].tx != CTransaction()){
+            LogPrintf("processingResults %d\n",i); //sbtc debug
             resultBCE.valueTransfers.push_back(result[i].tx);
         }
     }
@@ -2248,7 +2241,6 @@ bool ByteCodeExec::processingResults(ByteCodeExecResult& resultBCE){
 dev::eth::EnvInfo ByteCodeExec::BuildEVMEnvironment(){
     dev::eth::EnvInfo env;
     CBlockIndex* tip = chainActive.Tip();
-    LogPrintf("ByteCodeExec::BuildEVMEnvironment %d\n",tip->nHeight + 1); //sbtc debug
     env.setNumber(dev::u256(tip->nHeight + 1));
     env.setTimestamp(dev::u256(block.nTime));
     env.setDifficulty(dev::u256(block.nBits));
