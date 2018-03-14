@@ -79,6 +79,13 @@ bool CChainComponent::ComponentInitialize()
             threadGroup.create_thread(boost::bind(&CChainComponent::ThreadScriptCheck, this));
     }
 
+    hashAssumeValid = uint256S(
+            Args().GetArg<std::string>("-assumevalid", Params().GetConsensus().defaultAssumeValid.GetHex()));
+    if (!hashAssumeValid.IsNull())
+        mlog_notice("Assuming ancestors of block %s have valid signatures.", hashAssumeValid.GetHex());
+    else
+        mlog_notice("Validating signatures for all blocks.");
+
     // block pruning; get the amount of disk space (in MiB) to allot for block & undo files
     int64_t iPruneArg = Args().GetArg<int32_t>("-prune", 0);
     if (iPruneArg < 0)

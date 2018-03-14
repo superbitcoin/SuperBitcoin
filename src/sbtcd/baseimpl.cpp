@@ -642,13 +642,6 @@ bool CApp::AppInitParameterInteraction()
     //    fCheckBlockIndex = pArgs->GetArg<bool>("-checkblockindex", chainparams.DefaultConsistencyChecks());
     //    fCheckpointsEnabled = pArgs->GetArg<bool>("-checkpoints", DEFAULT_CHECKPOINTS_ENABLED);
 
-    uint256 hashAssumeValid = uint256S(
-            pArgs->GetArg<std::string>("-assumevalid", chainparams.GetConsensus().defaultAssumeValid.GetHex()));
-    if (!hashAssumeValid.IsNull())
-        mlog_notice("Assuming ancestors of block %s have valid signatures.", hashAssumeValid.GetHex());
-    else
-        mlog_notice("Validating signatures for all blocks.");
-
     if (pArgs->IsArgSet("-minimumchainwork"))
     {
         const std::string minChainWorkStr = pArgs->GetArg<std::string>("-minimumchainwork", "");

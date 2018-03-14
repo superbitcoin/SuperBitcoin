@@ -126,6 +126,8 @@ namespace appbase
 
         bool InitializeLogging(fs::path path);
 
+        bool ParseCommandline(int argc, char **argv);
+
     protected:
         std::map<int, std::unique_ptr<IComponent>> m_mapComponents; ///< all registered plugins ordered by id.
         static std::unique_ptr<CArgsManager> pArgs;

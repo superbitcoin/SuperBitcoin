@@ -54,7 +54,7 @@ bool IBaseApp::InitializeLogging(fs::path path)
     } catch (log4cpp::ConfigureFailure &f)
     {
         std::cout << f.what() << std::endl;
-        std::cout << "using default log conf" << std::endl;
+        std::cout << "using default log conf" << __FILE__ << __LINE__ << std::endl;
         bOk = false;
     }
 
@@ -130,16 +130,13 @@ IBaseApp::IBaseApp() : nVersion(1), bShutdown(false)
 
 }
 
-bool IBaseApp::ParamsInitialize(int argc, char **argv)
+bool IBaseApp::ParseCommandline(int argc, char **argv)
 {
     InitOptionMap();
     if (!pArgs->Init(argc, argv))
     {
         return false;
     }
-
-
-    InitializeLogging(pArgs->GetDataDir(false));
 
     if (pArgs->IsArgSet("help") || pArgs->IsArgSet("usage"))
     {
@@ -152,6 +149,18 @@ bool IBaseApp::ParamsInitialize(int argc, char **argv)
         PrintVersion();
         return false;
     }
+
+    return true;
+}
+
+bool IBaseApp::ParamsInitialize(int argc, char **argv)
+{
+    if (!ParseCommandline(argc, argv))
+    {
+        return false;
+    }
+
+    InitializeLogging(pArgs->GetDataDir(false));
 
     try
     {

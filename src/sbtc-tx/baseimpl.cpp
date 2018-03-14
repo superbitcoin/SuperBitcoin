@@ -42,18 +42,6 @@ CApp::CApp()
 
 bool CApp::AppInitialize()
 {
-    if (!SetupNetworking())
-    {
-        fprintf(stderr, "Error: Initializing networking failed\n");
-        return false;
-    }
-
-    if (Args().GetArg<bool>("-rpcssl", false))
-    {
-        fprintf(stderr, "Error: SSL mode for RPC (-rpcssl) is no longer supported.\n");
-        return false;
-    }
-
     return true;
 }
 
@@ -65,10 +53,10 @@ void CApp::InitOptionMap()
     std::map<string, vector<option_item>> optionMap;
 
     vector<option_item> item = {
-            {"-?",      _("This help message")},
-            {"-create", "Create new, empty TX."},
-            {"-json",   "Select JSON output"},
-            {"-txid",   "Output only the hex-encoded transaction id of the resultant transaction."}
+            {"help,h", "Print this message and exit."},
+            {"create", "Create new, empty TX."},
+            {"json",   "Select JSON output"},
+            {"txid",   "Output only the hex-encoded transaction id of the resultant transaction."}
     };
     optionMap.emplace("Options:", item);
 
@@ -821,9 +809,9 @@ static void OutputTxHex(const CTransaction &tx)
 
 static void OutputTx(const CTransaction &tx)
 {
-    if (gArgs.GetArg<bool>("-json", false))
+    if (Args().GetArg<bool>("-json", false))
         OutputTxJSON(tx);
-    else if (gArgs.GetArg<bool>("-txid", false))
+    else if (Args().GetArg<bool>("-txid", false))
         OutputTxHash(tx);
     else
         OutputTxHex(tx);
@@ -852,7 +840,7 @@ static std::string readStdin()
 
 bool CApp::Run(int argc, char *argv[])
 {
-    fCreateBlank = gArgs.GetArg<bool>("-create", false);
+    fCreateBlank = Args().GetArg<bool>("-create", false);
     if (argc < 2)
     {
         fprintf(stderr, "Error: too few parameters\n");
@@ -939,3 +927,24 @@ bool CApp::Startup()
     return true;
 }
 
+bool CApp::Initialize(int argc, char **argv)
+{
+    SetupEnvironment();
+    if (!ParseCommandline(argc, argv))
+    {
+        return false;
+    }
+
+    //    InitializeLogging(pArgs->GetDataDir(false));
+    try
+    {
+        pChainParams = CreateChainParams(ChainNameFromCommandLine());
+    }
+    catch (const std::exception &e)
+    {
+        mlog_error("Error: %s.", e.what());
+        return false;
+    }
+
+    return true;
+}
