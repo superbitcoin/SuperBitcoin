@@ -6,7 +6,6 @@
 #ifndef BITCOIN_CHAINPARAMS_H
 #define BITCOIN_CHAINPARAMS_H
 
-#include "chainparamsbase.h"
 #include "params.h"
 #include "block/block.h"
 #include "p2p/protocol.h"
@@ -56,6 +55,14 @@ struct ChainTxData
  */
 class CChainParams
 {
+
+public:
+    /** BIP70 chain name strings (main, test or regtest) */
+    static const std::string MAIN;
+    static const std::string TESTNET;
+    static const std::string REGTEST;
+
+
 public:
     enum Base58Type
     {

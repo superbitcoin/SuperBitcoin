@@ -17,8 +17,6 @@ class CArgsManager;
 
 class CChainParams;
 
-class CBaseChainParams;
-
 class ECCVerifyHandle;
 
 
@@ -145,7 +143,7 @@ const CArgsManager &Args();
 
 const CChainParams &Params();
 
-const CBaseChainParams &BaseParams();
+const CChainParams &BaseParams();
 
 appbase::IBaseApp *GetApp();
 

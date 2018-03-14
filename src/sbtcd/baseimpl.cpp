@@ -9,7 +9,6 @@
 #include <log4cpp/OstreamAppender.hh>
 #include "baseimpl.hpp"
 #include "noui.h"
-#include "config/chainparamsbase.h"
 #include "config/chainparams.h"
 #include "compat/sanity.h"
 #include "config/sbtc-config.h"
@@ -40,8 +39,8 @@ CApp::CApp()
 
 void CApp::InitOptionMap()
 {
-    const auto defaultChainParams = CreateChainParams(CBaseChainParams::MAIN);
-    const auto testnetChainParams = CreateChainParams(CBaseChainParams::TESTNET);
+    const auto defaultChainParams = CreateChainParams(CChainParams::MAIN);
+    const auto testnetChainParams = CreateChainParams(CChainParams::TESTNET);
 
     std::map<string, vector<option_item>> optionMap;
 

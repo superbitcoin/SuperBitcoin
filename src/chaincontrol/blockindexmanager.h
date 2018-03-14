@@ -20,7 +20,6 @@
 #include "sbtcd/baseimpl.hpp"
 #include "sbtccore/transaction/txdb.h"
 #include "sbtccore/block/validation.h"
-#include "config/chainparamsbase.h"
 #include "config/chainparams.h"
 #include "config/argmanager.h"
 

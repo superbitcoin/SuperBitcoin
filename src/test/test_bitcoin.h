@@ -63,7 +63,7 @@ struct BasicTestingSetup
 {
     ECCVerifyHandle globalVerifyHandle;
 
-    BasicTestingSetup(const std::string &chainName = CBaseChainParams::MAIN);
+    BasicTestingSetup(const std::string &chainName = CChainParams::MAIN);
 
     ~BasicTestingSetup();
 };
@@ -93,7 +93,7 @@ struct TestingSetup : public BasicTestingSetup
     CScheduler scheduler;
     std::unique_ptr<PeerLogicValidation> peerLogic;
 
-    TestingSetup(const std::string &chainName = CBaseChainParams::MAIN);
+    TestingSetup(const std::string &chainName = CChainParams::MAIN);
 
     ~TestingSetup();
 };

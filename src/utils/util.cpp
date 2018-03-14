@@ -13,7 +13,6 @@
 
 #include "base/base.hpp"
 #include "util.h"
-#include "config/chainparamsbase.h"
 #include "fs.h"
 #include "random.h"
 #include "sbtccore/serialize.h"
