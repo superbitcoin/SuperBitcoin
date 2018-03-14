@@ -182,6 +182,7 @@ bool IBaseApp::ParamsInitialize(int argc, char **argv)
 
 bool IBaseApp::Initialize(int argc, char **argv)
 {
+    SetupEnvironment();
     return ParamsInitialize(argc, argv) && AppInitialize() && ComponentInitialize();
 }
 

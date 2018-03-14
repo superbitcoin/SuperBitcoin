@@ -46,12 +46,12 @@ CArgsManager::~CArgsManager()
 
 }
 
-void CArgsManager::SetOptionName(const std::string &optionName) const
+void CArgsManager::SetOptionName(const std::string &optionName)
 {
     this->optionName = optionName;
 }
 
-void CArgsManager::SetOptionTable(std::map<std::string, std::vector<option_item>> &optionTable) const
+void CArgsManager::SetOptionTable(std::map<std::string, std::vector<option_item>> &optionTable)
 {
     this->optionTable = std::move(optionTable);
 }
@@ -134,17 +134,16 @@ bool CArgsManager::Init(int argc, char *argv[])
         bpo::options_description_easy_init odei = group.add_options();
         for (auto &item: groupItem.second)
         {
-            if (item.s && item.description)
+            if (item.s && !item.description.empty())
             {
-                odei(item.name, (const bpo::value_semantic *)item.s, item.description);
+                odei(item.name, (const bpo::value_semantic *)item.s, item.description.c_str());
             } else if (item.s)
             {
                 odei(item.name, (const bpo::value_semantic *)item.s);
             } else
             {
-                odei(item.name, item.description);
+                odei(item.name, item.description.c_str());
             }
-
         }
 
         app_bpo->add(group);

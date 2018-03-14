@@ -38,7 +38,7 @@ namespace appbase
 
         IBaseApp();
 
-        bool Initialize(int argc, char **argv);
+        virtual bool Initialize(int argc, char **argv);
 
         static const CArgsManager &GetArgsManager()
         {
@@ -75,7 +75,7 @@ namespace appbase
             return bShutdown;
         }
 
-        bool Startup();
+        virtual bool Startup();
 
         virtual bool Shutdown();
 

@@ -41,16 +41,19 @@ struct option_item
 {
     const char *name;
     const void *s;
-    const char *description;
+    string description;
 
-    option_item(const char *name_, const char *description_) : name(name_), description(description_), s(nullptr)
+    option_item(const char *name_, const string description_) : name(name_), s(nullptr), description(description_)
     {
     }
 
-    option_item(const char *name_, const void *s_, const char *description_) : name(name_), description(description_),
-                                                                               s(s_)
+    option_item(const char *name_, const void *s_, const string &description_) : name(name_),
+                                                                                 s(s_),
+                                                                                 description(description_)
     {
     }
+
+
 };
 
 class CArgsManager
@@ -153,9 +156,9 @@ public:
         return true;
     }
 
-    void SetOptionName(const std::string &optionName) const;
+    void SetOptionName(const std::string &optionName);
 
-    void SetOptionTable(std::map<std::string, std::vector<option_item>> &optionTable) const;
+    void SetOptionTable(std::map<std::string, std::vector<option_item>> &optionTable);
 
 protected:
     /**

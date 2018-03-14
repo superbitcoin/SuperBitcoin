@@ -29,6 +29,8 @@ class CApp : public appbase::IBaseApp
 public:
     CApp();
 
+    bool Run(int argc, char *argv[]);
+
     virtual CScheduler &GetScheduler()
     {
         assert(false);
@@ -49,6 +51,8 @@ public:
         static CClientUIInterface clientUIInterface;
         return clientUIInterface;
     }
+
+    bool Startup() override;
 
 protected:
     bool AppInitialize() override;
