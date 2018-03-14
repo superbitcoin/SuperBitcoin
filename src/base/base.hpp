@@ -81,6 +81,8 @@ namespace appbase
 
         bool RegisterComponent(IComponent *component);
 
+        std::string ChainNameFromCommandLine();
+
 
         template<typename Component>
         Component *FindComponent() const

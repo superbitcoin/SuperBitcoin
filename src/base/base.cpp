@@ -163,20 +163,6 @@ bool IBaseApp::ParamsInitialize(int argc, char **argv)
 
     try
     {
-        auto ChainNameFromCommandLine = []
-        {
-            bool fRegTest = Args().IsArgSet("-regtest");
-            bool fTestNet = Args().IsArgSet("-testnet");
-
-            if (fTestNet && fRegTest)
-                throw std::runtime_error("Invalid combination of -regtest and -testnet.");
-            if (fRegTest)
-                return CChainParams::REGTEST;
-            if (fTestNet)
-                return CChainParams::TESTNET;
-            return CChainParams::MAIN;
-        };
-
         if (!fs::is_directory(pArgs->GetDataDir(false)))
         {
             mlog_error("Error: Specified data directory \"%s\" does not exist.",
@@ -251,4 +237,18 @@ bool IBaseApp::RegisterComponent(IComponent *component)
     }
 
     return false;
+}
+
+std::string IBaseApp::ChainNameFromCommandLine()
+{
+    bool fRegTest = Args().IsArgSet("-regtest");
+    bool fTestNet = Args().IsArgSet("-testnet");
+
+    if (fTestNet && fRegTest)
+        throw std::runtime_error("Invalid combination of -regtest and -testnet.");
+    if (fRegTest)
+        return CChainParams::REGTEST;
+    if (fTestNet)
+        return CChainParams::TESTNET;
+    return CChainParams::MAIN;
 }
