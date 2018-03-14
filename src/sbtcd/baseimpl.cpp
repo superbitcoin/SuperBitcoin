@@ -427,8 +427,8 @@ void CApp::InitOptionMap()
     };
     optionMap.emplace("RPC server options:", item);
 
-    Args().SetOptionName("sbtcd");
-    Args().SetOptionTable(optionMap);
+    pArgs->SetOptionName("sbtcd");
+    pArgs->SetOptionTable(optionMap);
 }
 
 // Parameter interaction based on rules
