@@ -10,7 +10,6 @@
 
 #include "argmanager.h"
 #include "chainparams.h"
-#include "chainparamsbase.h"
 #include "chaincontrol/checkpoints.h"
 
 #include "sbtccore/clientversion.h"

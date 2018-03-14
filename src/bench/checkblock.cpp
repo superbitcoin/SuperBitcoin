@@ -44,7 +44,7 @@ static void DeserializeAndCheckBlockTest(benchmark::State &state)
     char a = '\0';
     stream.write(&a, 1); // Prevent compaction
 
-    const auto chainParams = CreateChainParams(CBaseChainParams::MAIN);
+    const auto chainParams = CreateChainParams(CChainParams::MAIN);
 
     while (state.KeepRunning())
     {

@@ -288,7 +288,7 @@ BOOST_FIXTURE_TEST_SUITE(versionbits_tests, TestingSetup)
         }
 
         // Sanity checks of version bit deployments
-        const auto chainParams = CreateChainParams(CBaseChainParams::MAIN);
+        const auto chainParams = CreateChainParams(CChainParams::MAIN);
         const Consensus::Params &mainnetParams = chainParams->GetConsensus();
         for (int i = 0; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; i++)
         {
@@ -318,7 +318,7 @@ BOOST_FIXTURE_TEST_SUITE(versionbits_tests, TestingSetup)
     {
         // Check that ComputeBlockVersion will set the appropriate bit correctly
         // on mainnet.
-        const auto chainParams = CreateChainParams(CBaseChainParams::MAIN);
+        const auto chainParams = CreateChainParams(CChainParams::MAIN);
         const Consensus::Params &mainnetParams = chainParams->GetConsensus();
 
         // Use the TESTDUMMY deployment for testing purposes.

@@ -16,7 +16,7 @@ class CArgsManager;
 
 class CChainParams;
 
-class CBaseChainParams;
+class CChainParams;
 
 class ECCVerifyHandle;
 

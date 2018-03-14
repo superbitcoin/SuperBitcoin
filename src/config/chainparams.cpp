@@ -402,16 +402,17 @@ public:
 
 std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain)
 {
-    if (chain == CBaseChainParams::MAIN)
+    if (chain == CChainParams::MAIN)
         return std::unique_ptr<CChainParams>(new CMainParams());
-    else if (chain == CBaseChainParams::TESTNET)
+    else if (chain == CChainParams::TESTNET)
         return std::unique_ptr<CChainParams>(new CTestNetParams());
-    else if (chain == CBaseChainParams::REGTEST)
+    else if (chain == CChainParams::REGTEST)
         return std::unique_ptr<CChainParams>(new CRegTestParams());
     throw std::runtime_error(strprintf("%s: Unknown chain %s.", __func__, chain));
 }
 
-void SelectParams(const std::string &network)
-{
+const std::string CChainParams::MAIN = "main";
+const std::string CChainParams::TESTNET = "test";
+const std::string CChainParams::REGTEST = "regtest";
 
-}
+

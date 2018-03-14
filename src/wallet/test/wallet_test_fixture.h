@@ -11,7 +11,7 @@
  */
 struct WalletTestingSetup : public TestingSetup
 {
-    WalletTestingSetup(const std::string &chainName = CBaseChainParams::MAIN);
+    WalletTestingSetup(const std::string &chainName = CChainParams::MAIN);
 
     ~WalletTestingSetup();
 };

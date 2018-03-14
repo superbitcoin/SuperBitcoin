@@ -37,8 +37,8 @@ bool CApp::AppInitialize()
 
 void CApp::InitOptionMap()
 {
-    const auto defaultChainParams = CreateChainParams(CBaseChainParams::MAIN);
-    const auto testnetChainParams = CreateChainParams(CBaseChainParams::TESTNET);
+    const auto defaultChainParams = CreateChainParams(CChainParams::MAIN);
+    const auto testnetChainParams = CreateChainParams(CChainParams::TESTNET);
 
     std::map<string, vector<option_item>> optionMap;
 

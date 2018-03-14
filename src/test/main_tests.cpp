@@ -54,7 +54,7 @@ BOOST_FIXTURE_TEST_SUITE(main_tests, TestingSetup)
 
     BOOST_AUTO_TEST_CASE(block_subsidy_test)
     {
-        const auto chainParams = CreateChainParams(CBaseChainParams::MAIN);
+        const auto chainParams = CreateChainParams(CChainParams::MAIN);
         TestBlockSubsidyHalvings(chainParams->GetConsensus()); // As in main
         TestBlockSubsidyHalvings(150); // As in regtest
         TestBlockSubsidyHalvings(1000); // Just another interval
@@ -62,7 +62,7 @@ BOOST_FIXTURE_TEST_SUITE(main_tests, TestingSetup)
 
     BOOST_AUTO_TEST_CASE(subsidy_limit_test)
     {
-        const auto chainParams = CreateChainParams(CBaseChainParams::MAIN);
+        const auto chainParams = CreateChainParams(CChainParams::MAIN);
         CAmount nSum = 0;
         for (int nHeight = 0; nHeight < 14000000; nHeight += 1000)
         {

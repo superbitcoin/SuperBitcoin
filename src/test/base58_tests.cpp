@@ -139,7 +139,7 @@ BOOST_FIXTURE_TEST_SUITE(base58_tests, BasicTestingSetup)
                                                json_tests::base58_keys_valid + sizeof(json_tests::base58_keys_valid)));
         CBitcoinSecret secret;
         CBitcoinAddress addr;
-        SelectParams(CBaseChainParams::MAIN);
+        SelectParams(CChainParams::MAIN);
 
         for (unsigned int idx = 0; idx < tests.size(); idx++)
         {
@@ -156,9 +156,9 @@ BOOST_FIXTURE_TEST_SUITE(base58_tests, BasicTestingSetup)
             bool isPrivkey = find_value(metadata, "isPrivkey").get_bool();
             bool isTestnet = find_value(metadata, "isTestnet").get_bool();
             if (isTestnet)
-                SelectParams(CBaseChainParams::TESTNET);
+                SelectParams(CChainParams::TESTNET);
             else
-                SelectParams(CBaseChainParams::MAIN);
+                SelectParams(CChainParams::MAIN);
             if (isPrivkey)
             {
                 bool isCompressed = find_value(metadata, "isCompressed").get_bool();
@@ -214,9 +214,9 @@ BOOST_FIXTURE_TEST_SUITE(base58_tests, BasicTestingSetup)
             bool isPrivkey = find_value(metadata, "isPrivkey").get_bool();
             bool isTestnet = find_value(metadata, "isTestnet").get_bool();
             if (isTestnet)
-                SelectParams(CBaseChainParams::TESTNET);
+                SelectParams(CChainParams::TESTNET);
             else
-                SelectParams(CBaseChainParams::MAIN);
+                SelectParams(CChainParams::MAIN);
             if (isPrivkey)
             {
                 bool isCompressed = find_value(metadata, "isCompressed").get_bool();
@@ -255,7 +255,7 @@ BOOST_FIXTURE_TEST_SUITE(base58_tests, BasicTestingSetup)
         CTxDestination nodest = CNoDestination();
         BOOST_CHECK(!dummyAddr.Set(nodest));
 
-        SelectParams(CBaseChainParams::MAIN);
+        SelectParams(CChainParams::MAIN);
     }
 
     // Goal: check that base58 parsing code is robust against a variety of corrupted data

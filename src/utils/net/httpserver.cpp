@@ -4,7 +4,6 @@
 #include <base/base.hpp>
 #include "httpserver.h"
 
-#include "config/chainparamsbase.h"
 #include "compat/compat.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
