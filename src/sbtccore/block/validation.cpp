@@ -2564,7 +2564,7 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
 
     uint64_t nValueOut=0;
     uint64_t nValueIn=0;
-    ///////////////////////////////////////////////////////// // sbtc-vm
+    /////////////////////////////////////////////////////////
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = *(block.vtx[i]);
@@ -2927,8 +2927,9 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
     nTimeCallbacks += nTime6 - nTime5;
     LogPrint(BCLog::BENCH, "    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
     //sbtc-vm
-    if (fLogEvents)
+    if (fLogEvents) {
         storageRes.commitResults();
+    }
 
     return true;
 }

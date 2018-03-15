@@ -1743,22 +1743,6 @@ bool AppInitMain(boost::thread_group &threadGroup, CScheduler &scheduler)
                     strLoadError = _("You need to rebuild the database using -reindex to change -txindex");
                     break;
                 }
-                //sbtc-vm
-                // Check for changed -logevents state
-                if (fLogEvents != gArgs.GetArg<bool>("-logevents", DEFAULT_LOGEVENTS) && !fLogEvents) {
-                    strLoadError = _("You need to rebuild the database using -reindex-chainstate to enable -logevents");
-                    break;
-                }
-
-                if (!gArgs.GetArg<bool>("-logevents", DEFAULT_LOGEVENTS))
-                {
-                    boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
-                    StorageResults storageRes(stateDir.string());
-                    storageRes.wipeResults();
-                    pblocktree->WipeHeightIndex();
-                    fLogEvents = false;
-                    pblocktree->WriteFlag("logevents", fLogEvents);
-                }
 
                 // Check for changed -prune state.  What we are concerned about is a user who has pruned blocks
                 // in the past, but is now trying to run unpruned.
@@ -1853,6 +1837,22 @@ bool AppInitMain(boost::thread_group &threadGroup, CScheduler &scheduler)
 
                 fRecordLogOpcodes = gArgs.IsArgSet("-record-log-opcodes");
                 fIsVMlogFile = boost::filesystem::exists(GetDataDir() / "vmExecLogs.json");
+
+                // Check for changed -logevents state
+                if (fLogEvents != gArgs.GetArg<bool>("-logevents", DEFAULT_LOGEVENTS) && !fLogEvents) {
+                    strLoadError = _("You need to rebuild the database using -reindex-chainstate to enable -logevents");
+                    break;
+                }
+
+                if (!gArgs.GetArg<bool>("-logevents", DEFAULT_LOGEVENTS))
+                {
+                    boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
+                    StorageResults storageRes(stateDir.string());
+                    storageRes.wipeResults();
+                    pblocktree->WipeHeightIndex();
+                    fLogEvents = false;
+                    pblocktree->WriteFlag("logevents", fLogEvents);
+                }
                 ///////////////////////////////////////////////////////////
 
                 if (!fReset)
