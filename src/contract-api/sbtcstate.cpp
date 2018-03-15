@@ -171,7 +171,6 @@ Vin* SbtcState::vin(dev::Address const& _addr)
 {
     auto it = cacheUTXO.find(_addr);
     if (it == cacheUTXO.end()){
-        LogPrintf("SbtcState::vin end\n"); //sbtc debug
         std::string stateBack = stateUTXO.at(_addr);
         LogPrintf("SbtcState::stateBack %s\n",stateBack); //sbtc debug
         if (stateBack.empty())
@@ -183,8 +182,10 @@ Vin* SbtcState::vin(dev::Address const& _addr)
             std::forward_as_tuple(_addr),
             std::forward_as_tuple(Vin{state[0].toHash<dev::h256>(), state[1].toInt<uint32_t>(), state[2].toInt<dev::u256>(), state[3].toInt<uint8_t>()})
         );
+        LogPrintf("SbtcState::stateBack construct\n"); //sbtc debug
         return &i.first->second;
     }
+    LogPrintf("SbtcState::vin find\n"); //sbtc debug
     return &it->second;
 }
 
@@ -283,14 +284,17 @@ void SbtcState::updateUTXO(const std::unordered_map<dev::Address, Vin>& vins){
     for(auto& v : vins){
         Vin* vi = const_cast<Vin*>(vin(v.first));
 
+        LogPrintf("updateUTXO inaddress=%s\n",v.first.hex()); //sbtc debug
+        logVin("updateUTXO invin",v.second);//sbtc debug
         if(vi){
+            logVin("SbtcState::updateUTXO 00",*vi);//sbtc debug
             vi->hash = v.second.hash;
             vi->nVout = v.second.nVout;
             vi->value = v.second.value;
             vi->alive = v.second.alive;
+            logVin("SbtcState::updateUTXO 11",*vi);//sbtc debug
         } else if(v.second.alive > 0) {
-            LogPrintf("address=%s\n",v.first.hex()); //sbtc debug
-            logVin("updateUTXO",v.second);//sbtc debug
+            LogPrintf("btcState::updateUTXO 22\n"); //sbtc debug
             cacheUTXO[v.first] = v.second;
         }
     }
