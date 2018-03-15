@@ -5541,6 +5541,7 @@ bool LoadBlockIndex(const CChainParams &chainparams)
         pblocktree->WriteFlag("txindex", fTxIndex);
 
         //sbtc-vm
+        // Use the provided setting for -logevents in the new database
         fLogEvents = gArgs.GetArg<bool>("-logevents", DEFAULT_LOGEVENTS);
         pblocktree->WriteFlag("logevents", fLogEvents);
     }

@@ -180,7 +180,8 @@ void InitPromOptions(bpo::options_description *app, bpo::variables_map &vm, int 
             ("sysperms", bpo::value<string>(),
              "Create new files with system default permissions, instead of umask 077, only effective with disabled wallet functionality (parameters: n, no, y, yes)")
 #endif
-
+            ("logevents", bpo::value<string>(),
+             "Maintain a full EVM log index, used by searchlogs and gettransactionreceipt rpc calls (parameters: n, no, y, yes)")  //sbtc-vm
             ("txindex", bpo::value<string>(),
              "Maintain a full transaction index, used by the getrawtransaction rpc call(parameters: n, no, y, yes)");
     app->add(helpGroup);
