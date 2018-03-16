@@ -84,7 +84,7 @@ public:
 	virtual bigint costOfPrecompiled(Address const& _a, bytesConstRef _in, u256 const&) const { return m_params.precompiled.at(_a).cost(_in); }
 	virtual std::pair<bool, bytes> executePrecompiled(Address const& _a, bytesConstRef _in, u256 const&) const { return m_params.precompiled.at(_a).execute(_in); }
 
-////////////////////////////////////////////////////////////// // qtum
+////////////////////////////////////////////////////////////// // sbtc
 	void setSbtcSchedule(EVMSchedule _sbtcSchedule) const { sbtcSchedule = _sbtcSchedule; }
 
 	EVMSchedule& getSbtcSchedule() const { return sbtcSchedule; }

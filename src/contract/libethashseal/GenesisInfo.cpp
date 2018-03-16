@@ -31,8 +31,8 @@ using namespace dev;
 #include "genesis/eip158Test.cpp"
 #include "genesis/metropolisTest.cpp"
 #include "genesis/transitionnetTest.cpp"
-#include "contract/libethashseal/genesis/sbtcMainNetwork.cpp"
-#include "contract/libethashseal/genesis/sbtcTestNetwork.cpp"
+#include "genesis/sbtcMainNetwork.cpp"
+#include "genesis/sbtcTestNetwork.cpp"
 
 std::string const& dev::eth::genesisInfo(Network _n)
 {

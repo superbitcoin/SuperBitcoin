@@ -57,14 +57,12 @@ static const uint64_t DEFAULT_GAS_LIMIT_OP_SEND=250000;
 static const CAmount DEFAULT_GAS_PRICE=0.00000040*COIN;
 static const CAmount MAX_RPC_GAS_PRICE=0.00000100*COIN;
 
-//static const size_t MAX_CONTRACT_VOUTS = 1000;
+static const size_t MAX_CONTRACT_VOUTS = 1000;
 
 /** Minimum gas limit that is allowed in a transaction within a block - prevent various types of tx and mempool spam **/
 static const uint64_t MINIMUM_GAS_LIMIT = 10000;
 
 static const uint64_t MEMPOOL_MIN_GAS_LIMIT = 22000;
-
-static const size_t MAX_CONTRACT_VOUTS = 1000;
 
 #define CONTRACT_STATE_DIR "stateContract"
 ///////////////////////////////////////////
