@@ -290,7 +290,8 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, CDataStream &stream)
     if (nCount > MAX_HEADERS_RESULTS)
     {
         xnode->nMisbehavior = 20;
-        return error("headers message size = %u", nCount);
+        mlog_error("headers message size = %u", nCount);
+        return false;
     }
 
     headers.resize(nCount);
@@ -354,7 +355,8 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
         if (!hashLastBlock.IsNull() && header.hashPrevBlock != hashLastBlock)
         {
             xnode->nMisbehavior += 20;
-            return error("non-continuous headers sequence");
+            mlog_error("non-continuous headers sequence");
+            return false;
         }
         hashLastBlock = header.GetHash();
     }
@@ -412,7 +414,8 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                 // etc), and not just the duplicate-invalid case.
                 SetFlagsBit(xnode->retFlags, NF_DISCONNECT);
             }
-            return error("invalid header received");
+            mlog_error("invalid header received");
+            return false;
         }
     }
 

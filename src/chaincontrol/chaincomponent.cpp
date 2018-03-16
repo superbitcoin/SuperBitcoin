@@ -399,15 +399,25 @@ bool CChainComponent::LoadGenesisBlock(const CChainParams &chainparams)
         CDiskBlockPos blockPos;
         CValidationState state;
         if (!cIndexManager.FindBlockPos(state, blockPos, nBlockSize + 8, 0, block.GetBlockTime()))
-            return error("%s: FindBlockPos failed", __func__);
+        {
+            mlog_error("%s: FindBlockPos failed", __func__);
+            return false;
+        }
         if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
-            return error("%s: writing genesis block to disk failed", __func__);
+        {
+            mlog_error("%s: writing genesis block to disk failed", __func__);
+            return false;
+        }
         CBlockIndex *pindex = cIndexManager.AddToBlockIndex(block);
         if (!cIndexManager.ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
-            return error("%s: genesis block not accepted", __func__);
+        {
+            mlog_error("%s: genesis block not accepted", __func__);
+            return false;
+        }
     } catch (const std::runtime_error &e)
     {
-        return error("%s: failed to write genesis block: %s", __func__, e.what());
+        mlog_error("%s: failed to write genesis block: %s", __func__, e.what());
+        return false;
     }
 
     return true;
@@ -458,7 +468,10 @@ bool CChainComponent::ReplayBlocks()
     if (vecHashHeads.empty())
         return true; // We're already in a consistent state.
     if (vecHashHeads.size() != 2)
-        return error("ReplayBlocks(): unknown inconsistent state");
+    {
+        mlog_error("ReplayBlocks(): unknown inconsistent state");
+        return false;
+    }
 
     mlog_info("Replaying blocks\n");
 
@@ -491,8 +504,9 @@ bool CChainComponent::ReplayBlocks()
             CBlock block;
             if (!ReadBlockFromDisk(block, pIndexOld, Params().GetConsensus()))
             {
-                return error("RollbackBlock(): ReadBlockFromDisk() failed at %d, hash=%s", pIndexOld->nHeight,
-                             pIndexOld->GetBlockHash().ToString());
+                mlog_error("RollbackBlock(): ReadBlockFromDisk() failed at %d, hash=%s", pIndexOld->nHeight,
+                           pIndexOld->GetBlockHash().ToString());
+                return false;
             }
 
             mlog_info("Rolling back %s (%i)\n", pIndexOld->GetBlockHash().ToString(), pIndexOld->nHeight);
@@ -500,8 +514,9 @@ bool CChainComponent::ReplayBlocks()
             DisconnectResult res = cViewManager.DisconnectBlock(block, pIndexOld, cache);
             if (res == DISCONNECT_FAILED)
             {
-                return error("RollbackBlock(): DisconnectBlock failed at %d, hash=%s", pIndexOld->nHeight,
-                             pIndexOld->GetBlockHash().ToString());
+                mlog_error("RollbackBlock(): DisconnectBlock failed at %d, hash=%s", pIndexOld->nHeight,
+                           pIndexOld->GetBlockHash().ToString());
+                return false;
             }
             // If DISCONNECT_UNCLEAN is returned, it means a non-existing UTXO was deleted, or an existing UTXO was
             // overwritten. It corresponds to cases where the block-to-be-disconnect never had all its operations
@@ -520,8 +535,9 @@ bool CChainComponent::ReplayBlocks()
         CBlock block;
         if (!ReadBlockFromDisk(block, pIndex, Params().GetConsensus()))
         {
-            return error("ReplayBlock(): ReadBlockFromDisk failed at %d, hash=%s", pIndex->nHeight,
-                         pIndex->GetBlockHash().ToString());
+            mlog_error("ReplayBlock(): ReadBlockFromDisk failed at %d, hash=%s", pIndex->nHeight,
+                       pIndex->GetBlockHash().ToString());
+            return false;
         }
         if (!cViewManager.ConnectBlock(block, pIndex, cache))
             return false;
@@ -764,14 +780,15 @@ bool CChainComponent::DisconnectTip(CValidationState &state, const CChainParams 
         assert(view.GetBestBlock() == pIndexDelete->GetBlockHash());
         if (cViewManager.DisconnectBlock(block, pIndexDelete, view))
         {
-            return error("DisconnectTip(): DisconnectBlock %s failed", pIndexDelete->GetBlockHash().ToString());
+            mlog_error("DisconnectTip(): DisconnectBlock %s failed", pIndexDelete->GetBlockHash().ToString());
+            return  false;
         }
 
         bool bFlush = view.Flush();
         assert(bFlush);
     }
 
-    mlog_info("- Disconnect block: %.2fms\n", (GetTimeMicros() - nStart) * 0.001);
+    mlog_info("- Disconnect block: %.2fms", (GetTimeMicros() - nStart) * 0.001);
 
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED, chainparams))
@@ -1069,7 +1086,10 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     // Check it again in case a previous version let a bad block in
     if (!CheckBlock(block, state, chainparams.GetConsensus(), !fJustCheck, !fJustCheck))
-        return error("%s: Consensus::CheckBlock: %s", __func__, FormatStateMessage(state));
+    {
+        mlog_error("%s: Consensus::CheckBlock: %s", __func__, FormatStateMessage(state));
+        return false;
+    }
 
     // verify that the view's current state corresponds to the previous block
     uint256 hashPrevBlock = pindex->pprev == nullptr ? uint256() : pindex->pprev->GetBlockHash();
@@ -1132,8 +1152,8 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             {
                 if (view.HaveCoin(COutPoint(tx->GetHash(), o)))
                 {
-                    return state.DoS(100, error("ConnectBlock(): tried to overwrite transaction"),
-                                     REJECT_INVALID, "bad-txns-BIP30");
+                    mlog_error("ConnectBlock(): tried to overwrite transaction");
+                    return state.DoS(100, false, REJECT_INVALID, "bad-txns-BIP30");
                 }
             }
         }
@@ -1178,9 +1198,10 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
-                return state.DoS(100, error("ConnectBlock(): inputs missing/spent"),
-                                 REJECT_INVALID, "bad-txns-inputs-missingorspent");
-
+            {
+                mlog_error("ConnectBlock(): inputs missing/spent");
+                return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-missingorspent");
+            }
             // Check that transaction is BIP68 final
             // BIP68 lock checks (as opposed to nLockTime checks) must
             // be in ConnectBlock because they require the UTXO set
@@ -1192,8 +1213,8 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
             if (!tx.SequenceLocks(nLockTimeFlags, &prevheights, *pindex))
             {
-                return state.DoS(100, error("%s: contains a non-BIP68-final transaction", __func__),
-                                 REJECT_INVALID, "bad-txns-nonfinal");
+                mlog_error("%s: contains a non-BIP68-final transaction", __func__);
+                return state.DoS(100, false, REJECT_INVALID, "bad-txns-nonfinal");
             }
         }
 
@@ -1203,9 +1224,10 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         // * witness (when witness enabled in flags and excludes coinbase)
         nSigOpsCost += tx.GetTransactionSigOpCost(view, flags);
         if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
-            return state.DoS(100, error("ConnectBlock(): too many sigops"),
-                             REJECT_INVALID, "bad-blk-sigops");
-
+        {
+            mlog_error("ConnectBlock(): too many sigops");
+            return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops");
+        }
         txdata.emplace_back(tx);
         if (!tx.IsCoinBase())
         {
@@ -1215,8 +1237,11 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
             if (!tx.CheckInputs(state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
                                 nScriptCheckThreads ? &vChecks : nullptr))
-                return error("ConnectBlock(): CheckInputs on %s failed with %s",
-                             tx.GetHash().ToString(), FormatStateMessage(state));
+            {
+                mlog_error("ConnectBlock(): CheckInputs on %s failed with %s",
+                           tx.GetHash().ToString(), FormatStateMessage(state));
+                return false;
+            }
             control.Add(vChecks);
         }
 
@@ -1239,13 +1264,18 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     CAmount blockReward = 0;
     blockReward = nFees + GetBlockSubsidy(pindex->nHeight);
     if (block.vtx[0]->GetValueOut() > blockReward)
-        return state.DoS(100,
-                         error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
-                               block.vtx[0]->GetValueOut(), blockReward),
-                         REJECT_INVALID, "bad-cb-amount");
+    {
+        mlog_error("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
+                   block.vtx[0]->GetValueOut(), blockReward);
+        return state.DoS(100, false, REJECT_INVALID, "bad-cb-amount");
+    }
 
     if (!control.Wait())
-        return state.DoS(100, error("%s: CheckQueue failed", __func__), REJECT_INVALID, "block-validation-failed");
+    {
+        mlog_error("%s: CheckQueue failed", __func__);
+        return state.DoS(100, false, REJECT_INVALID, "block-validation-failed");
+
+    }
     int64_t nTime4 = GetTimeMicros();
     nTimeVerify += nTime4 - nTime2;
     mlog_error("- Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]\n", nInputs - 1,
@@ -1263,7 +1293,10 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             CDiskBlockPos _pos;
             if (!cIndexManager.FindUndoPos(state, pindex->nFile, _pos,
                                            ::GetSerializeSize(blockundo, SER_DISK, CLIENT_VERSION) + 40))
-                return error("ConnectBlock(): FindUndoPos failed");
+            {
+                mlog_error("ConnectBlock(): FindUndoPos failed");
+                return false;
+            }
             if (!UndoWriteToDisk(blockundo, _pos, pindex->pprev->GetBlockHash(), chainparams.MessageStart()))
                 return AbortNode(state, "Failed to write undo data");
 
@@ -1285,11 +1318,11 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     int64_t nTime5 = GetTimeMicros();
     nTimeIndex += nTime5 - nTime4;
-    mlog_error("    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimeIndex * 0.000001);
+    mlog_info("    - Index writing: %.2fms [%.2fs]\n", 0.001 * (nTime5 - nTime4), nTimeIndex * 0.000001);
 
     int64_t nTime6 = GetTimeMicros();
     nTimeCallbacks += nTime6 - nTime5;
-    mlog_error("    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
+    mlog_info("    - Callbacks: %.2fms [%.2fs]\n", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
     return true;
 }
 
@@ -1332,12 +1365,13 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
         {
             if (state.IsInvalid())
                 cIndexManager.InvalidBlockFound(pIndexNew, state);
-            return error("ConnectTip(): ConnectBlock %s failed", pIndexNew->GetBlockHash().ToString());
+            mlog_error("ConnectTip(): ConnectBlock %s failed", pIndexNew->GetBlockHash().ToString());
+            return false;
         }
         nTime3 = GetTimeMicros();
         nTimeConnectTotal += nTime3 - nTime2;
-        mlog_error("  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001,
-                   nTimeConnectTotal * 0.000001);
+        mlog_info("  - Connect total: %.2fms [%.2fs]\n", (nTime3 - nTime2) * 0.001,
+                  nTimeConnectTotal * 0.000001);
         bool flushed = view.Flush();
         assert(flushed);
     }
@@ -1349,8 +1383,8 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
         return false;
     int64_t nTime5 = GetTimeMicros();
     nTimeChainState += nTime5 - nTime4;
-    mlog_error("  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001,
-               nTimeChainState * 0.000001);
+    mlog_info("  - Writing chainstate: %.2fms [%.2fs]\n", (nTime5 - nTime4) * 0.001,
+              nTimeChainState * 0.000001);
 
     // Remove conflicting transactions from the mempool.;
     GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
@@ -1362,9 +1396,9 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
     int64_t nTime6 = GetTimeMicros();
     nTimePostConnect += nTime6 - nTime5;
     nTimeTotal += nTime6 - nTime1;
-    mlog_error("  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001,
-               nTimePostConnect * 0.000001);
-    mlog_error("- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
+    mlog_info("  - Connect postprocess: %.2fms [%.2fs]\n", (nTime6 - nTime5) * 0.001,
+              nTimePostConnect * 0.000001);
+    mlog_info("- Connect block: %.2fms [%.2fs]\n", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
 
     connectTrace.BlockConnected(pIndexNew, std::move(pthisBlock));
     return true;
@@ -1752,7 +1786,8 @@ bool CChainComponent::RewindBlock(const CChainParams &params)
         }
         if (!DisconnectTip(state, params, nullptr))
         {
-            return error("RewindBlock: unable to disconnect block at height %i", pIndex->nHeight);
+            mlog_error("RewindBlock: unable to disconnect block at height %i", pIndex->nHeight);
+            return false;
         }
         // Occasionally flush state to disk.
         if (!FlushStateToDisk(state, FLUSH_STATE_PERIODIC, params))
@@ -2142,7 +2177,8 @@ bool CChainComponent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, C
             pindex->nStatus |= BLOCK_FAILED_VALID;
             cIndexManager.SetDirtyIndex(pindex);
         }
-        return error("%s: %s", __func__, FormatStateMessage(state));
+        mlog_error("%s: %s", __func__, FormatStateMessage(state));
+        return false;
     }
 
     // Header is valid/has work, merkle tree and segwit merkle tree are good...RELAY NOW
@@ -2160,12 +2196,18 @@ bool CChainComponent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, C
         if (dbp != nullptr)
             blockPos = *dbp;
         if (!cIndexManager.FindBlockPos(state, blockPos, nBlockSize + 8, nHeight, block.GetBlockTime(), dbp != nullptr))
-            return error("AcceptBlock(): FindBlockPos failed");
+        {
+            mlog_error("AcceptBlock(): FindBlockPos failed");
+            return false;
+        }
         if (dbp == nullptr)
             if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
                 AbortNode(state, "Failed to write block");
         if (!cIndexManager.ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
-            return error("AcceptBlock(): ReceivedBlockTransactions failed");
+        {
+            mlog_error("AcceptBlock(): ReceivedBlockTransactions failed");
+            return false;
+        }
     } catch (const std::runtime_error &e)
     {
         return AbortNode(state, std::string("System error: ") + e.what());
@@ -2244,12 +2286,18 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
         CBlock block;
         // check level 0: read from disk
         if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
-            return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight,
-                         pindex->GetBlockHash().ToString());
+        {
+            mlog_error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight,
+                       pindex->GetBlockHash().ToString());
+            return false;
+        }
         // check level 1: verify block validity
         if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams.GetConsensus(), false, false))
-            return error("%s: *** found bad block at %d, hash=%s (%s)\n", __func__,
-                         pindex->nHeight, pindex->GetBlockHash().ToString(), FormatStateMessage(state));
+        {
+            mlog_error("%s: *** found bad block at %d, hash=%s (%s)\n", __func__,
+                       pindex->nHeight, pindex->GetBlockHash().ToString(), FormatStateMessage(state));
+            return false;
+        }
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex)
         {
@@ -2258,8 +2306,11 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
             if (!pos.IsNull())
             {
                 if (!UndoReadFromDisk(undo, pos, pindex->pprev->GetBlockHash()))
-                    return error("VerifyDB(): *** found bad undo data at %d, hash=%s\n", pindex->nHeight,
-                                 pindex->GetBlockHash().ToString());
+                {
+                    mlog_error("VerifyDB(): *** found bad undo data at %d, hash=%s", pindex->nHeight,
+                               pindex->GetBlockHash().ToString());
+                    return false;
+                }
             }
         }
         // check level 3: check for inconsistencies during memory-only disconnect of tip blocks
@@ -2270,8 +2321,9 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
             DisconnectResult res = cViewManager.DisconnectBlock(block, pindex, coins);
             if (res == DISCONNECT_FAILED)
             {
-                return error("VerifyDB(): *** irrecoverable inconsistency in block data at %d, hash=%s",
-                             pindex->nHeight, pindex->GetBlockHash().ToString());
+                mlog_error("VerifyDB(): *** irrecoverable inconsistency in block data at %d, hash=%s",
+                           pindex->nHeight, pindex->GetBlockHash().ToString());
+                return false;
             }
             pindexState = pindex->pprev;
             if (res == DISCONNECT_UNCLEAN)
@@ -2287,9 +2339,12 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
             return true;
     }
     if (pindexFailure)
-        return error(
-                "VerifyDB(): *** coin database inconsistencies found (last %i blocks, %i good transactions before that)\n",
+    {
+        mlog_error(
+                "VerifyDB(): *** coin database inconsistencies found (last %i blocks, %i good transactions before that)",
                 chainActive.Height() - pindexFailure->nHeight + 1, nGoodTransactions);
+        return false;
+    }
 
     // check level 4: try reconnecting blocks
     if (nCheckLevel >= 4)
@@ -2303,16 +2358,22 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
             pindex = chainActive.Next(pindex);
             CBlock block;
             if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
-                return error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight,
-                             pindex->GetBlockHash().ToString());
+            {
+                mlog_error("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight,
+                           pindex->GetBlockHash().ToString());
+                return false;
+            }
             if (!ConnectBlock(block, state, pindex, coins, chainparams))
-                return error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight,
-                             pindex->GetBlockHash().ToString());
+            {
+                mlog_error("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight,
+                           pindex->GetBlockHash().ToString());
+                return false;
+            }
         }
     }
 
-    LogPrintf("[DONE].\n");
-    LogPrintf("No coin database inconsistencies in last %i blocks (%i transactions)\n",
+    mlog_info("[DONE].");
+    mlog_info("No coin database inconsistencies in last %i blocks (%i transactions)",
               chainActive.Height() - pindexState->nHeight, nGoodTransactions);
 
     uiInterface.ShowProgress("", 100);
@@ -2372,7 +2433,8 @@ bool CChainComponent::ProcessNewBlock(const CChainParams &chainparams, const std
         if (!ret)
         {
             GetMainSignals().BlockChecked(*pblock, state);
-            return error("%s: AcceptBlock FAILED", __func__);
+            mlog_error("%s: AcceptBlock FAILED", __func__);
+            return false;
         }
     }
 
@@ -2380,7 +2442,10 @@ bool CChainComponent::ProcessNewBlock(const CChainParams &chainparams, const std
 
     CValidationState state; // Only used to report errors, not invalidity - ignore it
     if (!ActivateBestChain(state, chainparams, pblock))
-        return error("%s: ActivateBestChain failed", __func__);
+    {
+        mlog_error("%s: ActivateBestChain failed", __func__);
+        return false;
+    }
 
     return true;
 }
@@ -2397,11 +2462,20 @@ bool CChainComponent::TestBlockValidity(CValidationState &state, const CChainPar
 
     // NOTE: CheckBlockHeader is called by CheckBlock
     if (!cIndexManager.ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, GetAdjustedTime()))
-        return error("%s: Consensus::ContextualCheckBlockHeader: %s", __func__, FormatStateMessage(state));
+    {
+        mlog_error("%s: Consensus::ContextualCheckBlockHeader: %s", __func__, FormatStateMessage(state));
+        return false;
+    }
     if (!CheckBlock(block, state, chainparams.GetConsensus(), fCheckPOW, fCheckMerkleRoot))
-        return error("%s: Consensus::CheckBlock: %s", __func__, FormatStateMessage(state));
+    {
+        mlog_error("%s: Consensus::CheckBlock: %s", __func__, FormatStateMessage(state));
+        return false;
+    }
     if (!ContextualCheckBlock(block, state, chainparams.GetConsensus(), pindexPrev))
-        return error("%s: Consensus::ContextualCheckBlock: %s", __func__, FormatStateMessage(state));
+    {
+        mlog_error("%s: Consensus::ContextualCheckBlock: %s", __func__, FormatStateMessage(state));
+        return false;
+    }
     if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true))
         return false;
     assert(state.IsValid());

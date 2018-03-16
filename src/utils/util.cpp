@@ -651,7 +651,7 @@ void runCommand(const std::string &strCommand)
 {
     int nErr = ::system(strCommand.c_str());
     if (nErr)
-        error("runCommand error: system(%s) returned %d\n", strCommand, nErr);
+        mlog_error("runCommand error: system(%s) returned %d\n", strCommand, nErr);
 }
 
 void RenameThread(const char *name)

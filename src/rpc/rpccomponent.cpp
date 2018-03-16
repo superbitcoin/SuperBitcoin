@@ -35,24 +35,39 @@ bool CHttpRpcComponent::ComponentStartup()
     if (!Args().GetArg<bool>("-server", false))
         return true;
 
-//    RPCServer::OnStarted(&OnRPCStarted);
-//    RPCServer::OnStopped(&OnRPCStopped);
-//    RPCServer::OnPreCommand(&OnRPCPreCommand);
+    //    RPCServer::OnStarted(&OnRPCStarted);
+    //    RPCServer::OnStopped(&OnRPCStopped);
+    //    RPCServer::OnPreCommand(&OnRPCPreCommand);
 
     if (!InitHTTPServer())
-        return error("Unable to init HTTP server. See debug log for details.");
+    {
+        mlog_error("Unable to init HTTP server. See debug log for details.");
+        return false;
+    }
 
     if (!StartRPC())
-        return error("Unable to start RPC server. See debug log for details.");
+    {
+        mlog_error("Unable to start RPC server. See debug log for details.");
+        return false;
+    }
 
     if (!StartHTTPRPC())
-        return error("Unable to start HTTP RPC server. See debug log for details.");
+    {
+        mlog_error("Unable to start HTTP RPC server. See debug log for details.");
+        return false;
+    }
 
     if (Args().GetArg<bool>("-rest", false) && !StartREST())
-        return error("Unable to start REST server. See debug log for details.");
+    {
+        mlog_error("Unable to start REST server. See debug log for details.");
+        return false;
+    }
 
     if (!StartHTTPServer())
-        return error("Unable to start HTTP server. See debug log for details.");
+    {
+        mlog_error("Unable to start HTTP server. See debug log for details.");
+        return false;
+    }
 
     SetRPCWarmupFinished();
 
@@ -76,7 +91,7 @@ bool CHttpRpcComponent::ComponentShutdown()
     return true;
 }
 
-const char* CHttpRpcComponent::whoru() const
+const char *CHttpRpcComponent::whoru() const
 {
     return "I am CHttpRpcComponent\n";
 }

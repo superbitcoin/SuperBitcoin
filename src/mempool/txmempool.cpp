@@ -490,16 +490,18 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
             // does not before printing an ominous warning
             if (!(~scriptVerifyFlags & currentBlockScriptVerifyFlags))
             {
-                return error(
+                mlog_error(
                         "%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against latest-block but not STANDARD flags %s, %s",
                         __func__, hash.ToString(), FormatStateMessage(state));
+                return false;
             } else
             {
                 if (!tx.CheckInputs(state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, false, txdata))
                 {
-                    return error(
+                    mlog_error(
                             "%s: ConnectInputs failed against MANDATORY but not STANDARD flags due to promiscuous mempool %s, %s",
                             __func__, hash.ToString(), FormatStateMessage(state));
+                    return false;
                 } else
                 {
                     mlog_notice(
@@ -656,7 +658,8 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
             Coin coin;
             if (!viewMemPool.GetCoin(txin.prevout, coin))
             {
-                return error("%s: Missing input", __func__);
+                mlog_error("%s: Missing input", __func__);
+                return false;
             }
             if (coin.nHeight == MEMPOOL_HEIGHT)
             {

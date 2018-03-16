@@ -335,12 +335,16 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params &consensusParams,
                 pindexNew->nTx = diskindex.nTx;
 
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
-                    return error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
+                {
+                    mlog_error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
+                return false;
+                }
 
                 pcursor->Next();
             } else
             {
-                return error("%s: failed to read value", __func__);
+                mlog_error("%s: failed to read value", __func__);
+                return false;
             }
         } else
         {
@@ -461,7 +465,8 @@ bool CCoinsViewDB::Upgrade()
             CCoins old_coins;
             if (!pcursor->GetValue(old_coins))
             {
-                return error("%s: cannot parse CCoins record", __func__);
+                mlog_error("%s: cannot parse CCoins record", __func__);
+                return  false;
             }
             COutPoint outpoint(key.second, 0);
             for (size_t i = 0; i < old_coins.vout.size(); ++i)

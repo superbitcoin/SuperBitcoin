@@ -175,7 +175,10 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
         {
             CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
             if (file.IsNull())
-                return error("%s: OpenBlockFile failed", __func__);
+            {
+                mlog_error("%s: OpenBlockFile failed", __func__);
+                return false;
+            }
             CBlockHeader header;
             try
             {
@@ -184,11 +187,15 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
                 file >> txOut;
             } catch (const std::exception &e)
             {
-                return error("%s: Deserialize or I/O error - %s", __func__, e.what());
+                mlog_error("%s: Deserialize or I/O error - %s", __func__, e.what());
+                return false;
             }
             hashBlock = header.GetHash();
             if (txOut->GetHash() != hash)
-                return error("%s: txid mismatch", __func__);
+            {
+                mlog_error("%s: txid mismatch", __func__);
+                return false;
+            }
             return true;
         }
     }

@@ -172,9 +172,6 @@ inline std::string int2string(int line)
 }
 
 
-
-
-
 #define  LogPrintf_(logger, fmt, a...) logger.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  LogPrintf(fmt, a...) LogPrintf_(LogFlag2Log4CppObj(0), fmt, ##a)
 #define  LogPrint(category, a...) LogPrintf_(LogFlag2Log4CppObj(category), ##a)
@@ -190,14 +187,8 @@ static log4cpp::Category *mlog = & log4cpp::Category::getInstance("CID_APP");
 #define  mlog_warn(fmt, a...) mlog->warn(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  mlog_fatal(fmt, a...) mlog->fatal(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  mlog_debug(fmt, a...) mlog->debug(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
-//#define  error(fmt, a...)   asdfasdf("%s",tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 
-template<typename... Args>
-bool error(const char *fmt, const Args &... args)
-{
-    mlog->error(tinyformat::format(fmt, args...).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str());
-    return false;
-}
+
 #else
 
 #define  LogPrintf_(logger, fmt, a...)

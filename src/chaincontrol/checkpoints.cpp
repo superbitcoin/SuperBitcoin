@@ -53,7 +53,8 @@ namespace Checkpoints
         uint256 sighash = Hash(data.begin(), data.end());
         if (!cPubKey.Verify(sighash, m_vchSig))
         {
-            return error("CCheckData::CheckSignature : verify signature failed");
+            mlog_error("CCheckData::CheckSignature : verify signature failed");
+            return false;
         }
         return true;
     }
@@ -65,7 +66,8 @@ namespace Checkpoints
         uint256 sighash = Hash(data.begin(), data.end());
         if (!cKey.Sign(sighash, m_vchSig))
         {
-            return error("CCheckData::Sign: Unable to sign checkpoint, check private key?");
+            mlog_error("CCheckData::Sign: Unable to sign checkpoint, check private key?");
+            return false;
         }
         return true;
     }
@@ -149,7 +151,8 @@ namespace Checkpoints
                     values.insert(std::make_pair(data1.getHeight(), data1));
                 } else
                 {
-                    return error("%s: failed to read value", __func__);
+                    mlog_error("%s: failed to read value", __func__);
+                    return false;
                 }
             } else
             {

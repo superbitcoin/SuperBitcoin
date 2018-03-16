@@ -928,7 +928,8 @@ static bool GetUTXOStats(CCoinsView *view, CCoinsStats &stats)
             outputs[key.n] = std::move(coin);
         } else
         {
-            return error("%s: unable to read value", __func__);
+            mlog_error("%s: unable to read value", __func__);
+            return false;
         }
         pcursor->Next();
     }

@@ -1063,7 +1063,10 @@ bool CBlockPolicyEstimator::Read(CAutoFile &filein)
         int nVersionRequired, nVersionThatWrote;
         filein >> nVersionRequired >> nVersionThatWrote;
         if (nVersionRequired > CLIENT_VERSION)
-            return error("CBlockPolicyEstimator::Read(): up-version (%d) fee estimate file", nVersionRequired);
+        {
+            mlog_error("CBlockPolicyEstimator::Read(): up-version (%d) fee estimate file", nVersionRequired);
+            return false;
+        }
 
         // Read fee estimates file into temporary variables so existing data
         // structures aren't corrupted if there is an exception.

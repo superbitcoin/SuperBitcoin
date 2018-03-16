@@ -148,7 +148,8 @@ bool CDBEnv::Open(const fs::path &pathIn)
     if (ret != 0)
     {
         dbenv->close(0);
-        return error("CDBEnv::Open: Error %d opening database environment: %s\n", ret, DbEnv::strerror(ret));
+        mlog_error("CDBEnv::Open: Error %d opening database environment: %s", ret, DbEnv::strerror(ret));
+        return false;
     }
 
     fDbEnvInit = true;

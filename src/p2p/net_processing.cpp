@@ -801,7 +801,8 @@ static bool ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::ve
             if (!hashLastBlock.IsNull() && header.hashPrevBlock != hashLastBlock)
             {
                 Misbehaving(pfrom->GetId(), 20);
-                return error("non-continuous headers sequence");
+                mlog_error("non-continuous headers sequence");
+                return false;
             }
             hashLastBlock = header.GetHash();
         }
@@ -861,7 +862,8 @@ static bool ProcessHeadersMessage(CNode *pfrom, CConnman *connman, const std::ve
                 // etc), and not just the duplicate-invalid case.
                 pfrom->fDisconnect = true;
             }
-            return error("invalid header received");
+            mlog_error("invalid header received");
+            return false;
         }
     }
 
@@ -2509,7 +2511,8 @@ bool PeerLogicValidation::ProcessAddrMsg(CNode *pfrom, CDataStream &vRecv, const
     {
         LOCK(cs_main);
         Misbehaving(pfrom->GetId(), 20);
-        return error("message addr size() = %u", vAddr.size());
+        mlog_error("message addr size() = %u", vAddr.size());
+        return false;
     }
 
     // Store the new addresses
@@ -2827,7 +2830,8 @@ bool PeerLogicValidation::ProcessInvMsg(CNode *pfrom, CDataStream &vRecv, const 
     {
         LOCK(cs_main);
         Misbehaving(pfrom->GetId(), 20);
-        return error("message inv size() = %u", vInv.size());
+        mlog_error("message inv size() = %u", vInv.size());
+        return false;
     }
 
     bool fBlocksOnly = !fRelayTxes;
@@ -2919,7 +2923,8 @@ bool PeerLogicValidation::ProcessHeadersMsg(CNode *pfrom, CDataStream &vRecv)
     {
         LOCK(cs_main);
         Misbehaving(pfrom->GetId(), 20);
-        return error("headers message size = %u", nCount);
+        mlog_error("headers message size = %u", nCount);
+        return false;
     }
     headers.resize(nCount);
     for (unsigned int n = 0; n < nCount; n++)

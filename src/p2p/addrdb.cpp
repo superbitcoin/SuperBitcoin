@@ -31,7 +31,8 @@ namespace
             stream << hasher.GetHash();
         } catch (const std::exception &e)
         {
-            return error("%s: Serialize or I/O error - %s", __func__, e.what());
+            mlog_error("%s: Serialize or I/O error - %s", __func__, e.what());
+            return false;
         }
 
         return true;
@@ -50,7 +51,10 @@ namespace
         FILE *file = fsbridge::fopen(pathTmp, "wb");
         CAutoFile fileout(file, SER_DISK, CLIENT_VERSION);
         if (fileout.IsNull())
-            return error("%s: Failed to open file %s", __func__, pathTmp.string());
+        {
+            mlog_error("%s: Failed to open file %s", __func__, pathTmp.string());
+            return false;
+        }
 
         // Serialize
         if (!SerializeDB(fileout, data))
@@ -60,7 +64,10 @@ namespace
 
         // replace existing file, if any, with new file
         if (!RenameOver(pathTmp, path))
-            return error("%s: Rename-into-place failed", __func__);
+        {
+            mlog_error("%s: Rename-into-place failed", __func__);
+            return false;
+        }
 
         return true;
     }
@@ -76,7 +83,10 @@ namespace
             verifier >> FLATDATA(pchMsgTmp);
             // ... verify the network matches ours
             if (memcmp(pchMsgTmp, Params().MessageStart(), sizeof(pchMsgTmp)))
-                return error("%s: Invalid network magic number", __func__);
+            {
+                mlog_error("%s: Invalid network magic number", __func__);
+                return false;
+            }
 
             // de-serialize data
             verifier >> data;
@@ -88,13 +98,15 @@ namespace
                 stream >> hashTmp;
                 if (hashTmp != verifier.GetHash())
                 {
-                    return error("%s: Checksum mismatch, data corrupted", __func__);
+                    mlog_error("%s: Checksum mismatch, data corrupted", __func__);
+                    return false;
                 }
             }
         }
         catch (const std::exception &e)
         {
-            return error("%s: Deserialize or I/O error - %s", __func__, e.what());
+            mlog_error("%s: Deserialize or I/O error - %s", __func__, e.what());
+            return false;
         }
 
         return true;
@@ -107,7 +119,10 @@ namespace
         FILE *file = fsbridge::fopen(path, "rb");
         CAutoFile filein(file, SER_DISK, CLIENT_VERSION);
         if (filein.IsNull())
-            return error("%s: Failed to open file %s", __func__, path.string());
+        {
+            mlog_error("%s: Failed to open file %s", __func__, path.string());
+            return false;
+        }
 
         return DeserializeDB(filein, data);
     }
