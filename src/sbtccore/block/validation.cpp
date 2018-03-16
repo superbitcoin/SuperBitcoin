@@ -1775,12 +1775,11 @@ static DisconnectResult DisconnectBlock(const CBlock &block, const CBlockIndex *
     globalState->setRoot(uintToh256(pindex->pprev->hashStateRoot)); // sbtc-vm
     globalState->setRootUTXO(uintToh256(pindex->pprev->hashUTXORoot)); // sbtc-vm
 //    if(pfClean == NULL && fLogEvents){
-    if(fLogEvents){
-        boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
-        StorageResults storageRes(stateDir.string());
-        storageRes.deleteResults(block.vtx);
-        pblocktree->EraseHeightIndex(pindex->nHeight);
-    }
+//        boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
+//        StorageResults storageRes(stateDir.string());
+//        storageRes.deleteResults(block.vtx);
+//        pblocktree->EraseHeightIndex(pindex->nHeight);
+//    }
     return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
 }
 
