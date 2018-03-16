@@ -645,7 +645,7 @@ UniValue logging(const JSONRPCRequest &request)
                         "Gets and sets the logging configuration.\n"
                         "When called without an argument, returns the list of categories that are currently being debug logged.\n"
                         "When called with arguments, adds or removes categories from debug logging.\n"
-                        "The valid logging categories are: " + ListLogCategories() + "\n"
+                        "The valid logging categories are: " + std::string() + "\n"
                         "libevent logging is configured on startup and cannot be modified by this RPC during runtime."
                         "Arguments:\n"
                         "1. \"include\" (array of strings) add debug logging for these categories.\n"

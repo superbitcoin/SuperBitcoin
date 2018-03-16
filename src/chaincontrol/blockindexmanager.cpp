@@ -12,6 +12,8 @@
 #include "chain.h"
 #include "utils/timedata.h"
 
+REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+
 CBlockIndexManager &CBlockIndexManager::Instance()
 {
     static CBlockIndexManager indexManager;
@@ -238,7 +240,7 @@ void CBlockIndexManager::SortBlockIndex()
 
 bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex)
 {
-    mlog_info("initialize index manager \n");
+    NLogFormat("initialize index manager \n");
 
     UnLoadBlockIndex();
 
@@ -424,13 +426,13 @@ bool CBlockIndexManager::LoadBlockIndexDB(const Consensus::Params &consensus)
     pBlcokTreee->ReadFlag("prunedblockfiles", bHavePruned);
     if (bHavePruned)
     {
-        mlog_info("LoadBlockIndexDB(): Block files have previously been pruned\n");
+        NLogFormat("LoadBlockIndexDB(): Block files have previously been pruned");
     }
 
     pBlcokTreee->ReadReindexing(bReIndexing);
 
     pBlcokTreee->ReadFlag("txindex", bTxIndex);
-    mlog_info("transaction index %s\n", bTxIndex ? "enabled" : "disabled");
+    NLogFormat("transaction index %s", bTxIndex ? "enabled" : "disabled");
 
     return true;
 }
@@ -493,13 +495,13 @@ void CBlockIndexManager::InvalidChainFound(CBlockIndex *pIndexNew)
     if (!pIndexBestInvalid || pIndexNew->nChainWork > pIndexBestInvalid->nChainWork)
         pIndexBestInvalid = pIndexNew;
 
-    mlog_notice("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s", __func__,
+    NLogFormat("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s", __func__,
                 pIndexNew->GetBlockHash().ToString(), pIndexNew->nHeight,
                 log(pIndexNew->nChainWork.getdouble()) / log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
                                                                                      pIndexNew->GetBlockTime()));
     CBlockIndex *tip = cChainActive.Tip();
     assert (tip);
-    mlog_notice("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s", __func__,
+    NLogFormat("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s", __func__,
                 tip->GetBlockHash().ToString(), cChainActive.Height(), log(tip->nChainWork.getdouble()) / log(2.0),
                 DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
     //    CheckForkWarningConditions();
@@ -814,16 +816,16 @@ void CBlockIndexManager::CheckForkWarningConditions()
         }
         if (pIndexBestForkTip && pIndexBestForkBase)
         {
-            mlog_warn(
-                    "%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.\n",
+            WLogFormat(
+                    "%s: Warning: Large valid fork found\n  forking the chain at height %d (%s)\n  lasting to height %d (%s).\nChain state database corruption likely.",
                     __func__,
                     pIndexBestForkBase->nHeight, pIndexBestForkBase->phashBlock->ToString(),
                     pIndexBestForkTip->nHeight, pIndexBestForkTip->phashBlock->ToString());
             SetfLargeWorkForkFound(true);
         } else
         {
-            mlog_warn(
-                    "%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.\n",
+            WLogFormat(
+                    "%s: Warning: Found invalid chain at least ~6 blocks longer than our best chain.\nChain state database corruption likely.",
                     __func__);
             SetfLargeWorkInvalidChainFound(true);
         }
@@ -962,7 +964,7 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
                 *ppindex = pindex;
             if (pindex->nStatus & BLOCK_FAILED_MASK)
             {
-                mlog_error("%s: block %s is marked invalid", __func__, hash.ToString());
+                ELogFormat("%s: block %s is marked invalid", __func__, hash.ToString());
                 return state.Invalid(false, 0, "duplicate");
             }
             return true;
@@ -970,7 +972,7 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
 
         if (!CheckBlockHeader(block, state, chainparams.GetConsensus()))
         {
-            mlog_error("%s: Consensus::CheckBlockHeader: %s, %s", __func__, hash.ToString(), FormatStateMessage(state));
+            ELogFormat("%s: Consensus::CheckBlockHeader: %s, %s", __func__, hash.ToString(), FormatStateMessage(state));
             return false;
         }
 
@@ -979,18 +981,18 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
         BlockMap::iterator mi = mBlockIndex.find(block.hashPrevBlock);
         if (mi == mBlockIndex.end())
         {
-            mlog_error("%s: prev block not found", __func__);
+            ELogFormat("%s: prev block not found", __func__);
             return state.DoS(10, false, 0, "prev-blk-not-found");
         }
         pindexPrev = (*mi).second;
         if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
         {
-            mlog_error("%s: prev block invalid", __func__);
+            ELogFormat("%s: prev block invalid", __func__);
             return state.DoS(100, false, REJECT_INVALID, "bad-prevblk");
         }
         if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, GetAdjustedTime()))
         {
-            mlog_error("%s: Consensus::ContextualCheckBlockHeader: %s, %s", __func__, hash.ToString(),
+            ELogFormat("%s: Consensus::ContextualCheckBlockHeader: %s, %s", __func__, hash.ToString(),
                        FormatStateMessage(state));
             return false;
         }
@@ -1008,7 +1010,7 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
                         setDirtyBlockIndex.insert(invalid_walk);
                         invalid_walk = invalid_walk->pprev;
                     }
-                    mlog_error("%s: prev block invalid", __func__);
+                    ELogFormat("%s: prev block invalid", __func__);
                     return state.DoS(100, false, REJECT_INVALID, "bad-prevblk");
                 }
             }
@@ -1059,7 +1061,7 @@ bool CBlockIndexManager::ContextualCheckBlockHeader(const CBlockHeader &block, C
         // MapBlockIndex.
         if (IsAgainstCheckPoint(params, pindexPrev) || IsAgainstCheckPoint(params, nHeight, block.GetHash()))
         {
-            mlog_error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight);
+            ELogFormat("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight);
             return state.DoS(100, false, REJECT_CHECKPOINT, "bad-fork-prior-to-checkpoint");
         }
     }
@@ -1124,7 +1126,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
     {
         if (!fKnown)
         {
-            mlog_info("Leaving block file %i: %s\n", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
+            NLogFormat("Leaving block file %i: %s\n", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
         }
         FlushBlockFile(!fKnown, vecBlockFileInfo[iLastBlockFile].nSize, vecBlockFileInfo[iLastBlockFile].nUndoSize);
         iLastBlockFile = nFile;
@@ -1149,7 +1151,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
                 FILE *file = OpenBlockFile(pos);
                 if (file)
                 {
-                    mlog_info("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE,
+                    NLogFormat("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE,
                               pos.nFile);
                     AllocateFileRange(file, pos.nPos, nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos);
                     fclose(file);
@@ -1183,7 +1185,7 @@ bool CBlockIndexManager::FindUndoPos(CValidationState &state, int nFile, CDiskBl
             FILE *file = OpenUndoFile(pos);
             if (file)
             {
-                LogPrintf("Pre-allocating up to position 0x%x in rev%05u.dat\n", nNewChunks * UNDOFILE_CHUNK_SIZE,
+                NLogFormat("Pre-allocating up to position 0x%x in rev%05u.dat", nNewChunks * UNDOFILE_CHUNK_SIZE,
                           pos.nFile);
                 AllocateFileRange(file, pos.nPos, nNewChunks * UNDOFILE_CHUNK_SIZE - pos.nPos);
                 fclose(file);

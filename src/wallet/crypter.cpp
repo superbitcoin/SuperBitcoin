@@ -13,6 +13,8 @@
 #include <string>
 #include <vector>
 
+REDIRECT_SBTC_LOGGER(CID_WALLET);
+
 int CCrypter::BytesToKeySHA512AES(const std::vector<unsigned char> &chSalt, const SecureString &strKeyData, int count,
                                   unsigned char *key, unsigned char *iv) const
 {
@@ -199,7 +201,7 @@ bool CCryptoKeyStore::Unlock(const CKeyingMaterial &vMasterKeyIn)
         }
         if (keyPass && keyFail)
         {
-            LogPrintf("The wallet is probably corrupted: Some keys decrypt but not all.\n");
+            ELogFormat("The wallet is probably corrupted: Some keys decrypt but not all");
             assert(false);
         }
         if (keyFail || !keyPass)

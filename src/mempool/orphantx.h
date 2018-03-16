@@ -37,8 +37,6 @@ typedef std::map<COutPoint, std::set<std::map<uint256, OrphanTx>::iterator, Iter
 
 class COrphanTxMgr
 {
-
-
 public:
     COrphanTxMgr();
     ~COrphanTxMgr();

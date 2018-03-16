@@ -12,6 +12,8 @@
 #include "sbtccore/clientversion.h"
 #include "interface/ichaincomponent.h"
 
+REDIRECT_SBTC_LOGGER(CID_P2P_NET);
+
 std::unique_ptr<CConnman, NoopDeleter<CConnman>> g_connman;
 
 CNetComponent::CNetComponent()
@@ -24,16 +26,14 @@ CNetComponent::~CNetComponent()
 
 bool CNetComponent::ComponentInitialize()
 {
-    mlog_info("initialize p2p net component.");
+    ILogFormat("initialize p2p net component.");
 
     if (!SetupNetworking())
     {
-        mlog_error("Initializing networking failed");
-        return false;
+        return rLogError("Initializing networking failed");
     }
 
     GET_CHAIN_INTERFACE(ifChainObj);
-
 
     netConnMgr.reset(new CConnman(GetRand(std::numeric_limits<uint64_t>::max()),
                                   GetRand(std::numeric_limits<uint64_t>::max())));
@@ -49,18 +49,16 @@ bool CNetComponent::ComponentInitialize()
     {
         if (cmt != SanitizeString(cmt, SAFE_CHARS_UA_COMMENT))
         {
-            mlog_error("User Agent comment (%s) contains unsafe characters.", cmt);
-            return false;
+            return rLogError("User Agent comment (%s) contains unsafe characters.", cmt);
         }
         uacomments.push_back(cmt);
     }
     strSubVersion = FormatSubVersion(CLIENT_NAME, CLIENT_VERSION, uacomments);
     if (strSubVersion.size() > MAX_SUBVERSION_LENGTH)
     {
-        mlog_error(
+        return rLogError(
                 "Total length of network version string (%i) exceeds maximum length (%i). Reduce the number or size of uacomments.",
                 strSubVersion.size(), MAX_SUBVERSION_LENGTH);
-        return false;
     }
 
     if (Args().IsArgSet("-onlynet"))
@@ -71,8 +69,7 @@ bool CNetComponent::ComponentInitialize()
             enum Network net = ParseNetwork(snet);
             if (net == NET_UNROUTABLE)
             {
-                mlog_error("Unknown network specified in -onlynet: '%s'", snet);
-                return false;
+                return rLogError("Unknown network specified in -onlynet: '%s'", snet);
             }
 
             nets.insert(net);
@@ -98,15 +95,13 @@ bool CNetComponent::ComponentInitialize()
         CService proxyAddr;
         if (!Lookup(proxyArg.c_str(), proxyAddr, 9050, fNameLookup))
         {
-            mlog_error("Invalid -proxy address or hostname: '%s'", proxyArg);
-            return false;
+            return rLogError("Invalid -proxy address or hostname: '%s'", proxyArg);
         }
 
         proxyType addrProxy = proxyType(proxyAddr, proxyRandomize);
         if (!addrProxy.IsValid())
         {
-            mlog_error("Invalid -proxy address or hostname: '%s'", proxyArg);
-            return false;
+            return rLogError("Invalid -proxy address or hostname: '%s'", proxyArg);
         }
 
         SetProxy(NET_IPV4, addrProxy);
@@ -131,15 +126,13 @@ bool CNetComponent::ComponentInitialize()
             CService onionProxy;
             if (!Lookup(onionArg.c_str(), onionProxy, 9050, fNameLookup))
             {
-                mlog_error("Invalid -onion address or hostname: '%s'", onionArg);
-                return false;
+                return rLogError("Invalid -onion address or hostname: '%s'", onionArg);
             }
 
             proxyType addrOnion = proxyType(onionProxy, proxyRandomize);
             if (!addrOnion.IsValid())
             {
-                mlog_error("Invalid -onion address or hostname: '%s'", onionArg);
-                return false;
+                return rLogError("Invalid -onion address or hostname: '%s'", onionArg);
             }
 
             SetProxy(NET_TOR, addrOnion);
@@ -159,8 +152,7 @@ bool CNetComponent::ComponentInitialize()
             AddLocal(addrLocal, LOCAL_MANUAL);
         else
         {
-            mlog_error("Cannot resolve externalip address: '%s'", strAddr);
-            return false;
+            return rLogError("Cannot resolve externalip address: '%s'", strAddr);
         }
     }
 
@@ -184,8 +176,7 @@ bool CNetComponent::ComponentInitialize()
     size_t nUserBind = Args().GetArgs("-bind").size() + Args().GetArgs("-whitebind").size();
     if (nUserBind != 0 && !Args().GetArg<bool>("-listen", DEFAULT_LISTEN))
     {
-        mlog_error("Cannot set -bind or -whitebind together with -listen=0");
-        return false;
+        return rLogError("Cannot set -bind or -whitebind together with -listen=0");
     }
 
     // Make sure enough file descriptors are available
@@ -209,19 +200,18 @@ bool CNetComponent::ComponentInitialize()
     int nFD = RaiseFileDescriptorLimit(nMaxConnections + MIN_CORE_FILEDESCRIPTORS + MAX_ADDNODE_CONNECTIONS);
     if (nFD < MIN_CORE_FILEDESCRIPTORS)
     {
-        mlog_error("Not enough file descriptors available.");
-        return false;
+        return rLogError("Not enough file descriptors available.");
     }
 
     nMaxConnections = std::min(nFD - MIN_CORE_FILEDESCRIPTORS - MAX_ADDNODE_CONNECTIONS, nMaxConnections);
 
     if (nMaxConnections < nUserMaxConnections)
     {
-        mlog_warn("Reducing -maxconnections from %d to %d, because of system limitations.", nUserMaxConnections,
+        WLogFormat("Reducing -maxconnections from %d to %d, because of system limitations.", nUserMaxConnections,
                   nMaxConnections);
     }
 
-    mlog_info("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
+    ILogFormat("Using at most %i automatic connections (%i file descriptors available)", nMaxConnections, nFD);
 
     netConnOptions.nLocalServices = nLocalServices;
     netConnOptions.nRelevantServices = nRelevantServices;
@@ -242,8 +232,7 @@ bool CNetComponent::ComponentInitialize()
         CService addrBind;
         if (!Lookup(strBind.c_str(), addrBind, GetListenPort(), false))
         {
-            mlog_error("Cannot resolve bind address: '%s'", strBind);
-            return false;
+            return rLogError("Cannot resolve bind address: '%s'", strBind);
         }
         netConnOptions.vBinds.push_back(addrBind);
     }
@@ -253,13 +242,11 @@ bool CNetComponent::ComponentInitialize()
         CService addrBind;
         if (!Lookup(strBind.c_str(), addrBind, 0, false))
         {
-            mlog_error("Cannot resolve whitebind address: '%s'", strBind);
-            return false;
+            return rLogError("Cannot resolve whitebind address: '%s'", strBind);
         }
         if (addrBind.GetPort() == 0)
         {
-            mlog_error("Need to specify a port with -whitebind: '%s'", strBind);
-            return false;
+            return rLogError("Need to specify a port with -whitebind: '%s'", strBind);
         }
         netConnOptions.vWhiteBinds.push_back(addrBind);
     }
@@ -270,8 +257,7 @@ bool CNetComponent::ComponentInitialize()
         LookupSubNet(net.c_str(), subnet);
         if (!subnet.IsValid())
         {
-            mlog_error("Invalid netmask specified in -whitelist: '%s'", net);
-            return false;
+            return rLogError("Invalid netmask specified in -whitelist: '%s'", net);
         }
 
         netConnOptions.vWhitelistedRange.push_back(subnet);
@@ -287,7 +273,7 @@ bool CNetComponent::ComponentInitialize()
 
 bool CNetComponent::ComponentStartup()
 {
-    mlog_info("startup p2p net component.");
+    ILogFormat("startup p2p net component.");
 
     if (!netConnMgr || !peerLogic)
     {
@@ -309,7 +295,7 @@ bool CNetComponent::ComponentStartup()
 
 bool CNetComponent::ComponentShutdown()
 {
-    mlog_info("shutdown p2p net component.");
+    ILogFormat("shutdown p2p net component.");
 
     InterruptTorControl();
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <log4cpp/Category.hh>
-
 namespace appbase
 {
     class IComponent
@@ -26,6 +24,5 @@ namespace appbase
         virtual bool Startup() = 0;
 
         virtual bool Shutdown() = 0;
-
     };
 }

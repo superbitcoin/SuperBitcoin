@@ -1,16 +1,10 @@
-/*************************************
- * File name:       walletcomponent.cpp
- * Author:          Adolph
- * Date:            2018.2.1
- * Description:     implement the wallet component common interface
- *
- * History:         Record the edit history
- ************************************/
 #include "walletcomponent.h"
 #include "utils/util.h"
 #include "rpcwallet.h"
 #include "server.h"
 #include "scheduler.h"
+
+REDIRECT_SBTC_LOGGER(CID_WALLET);
 
 CWalletComponent::CWalletComponent()
 {
@@ -32,6 +26,8 @@ CWalletComponent::~CWalletComponent()
 
 bool CWalletComponent::ComponentInitialize()
 {
+    ILogStream() << "Wallet component initialize";
+
     RegisterWalletRPCCommands(tableRPC);
 
     return CWallet::ParameterInteraction() && CWallet::Verify();
@@ -39,9 +35,11 @@ bool CWalletComponent::ComponentInitialize()
 
 bool CWalletComponent::ComponentStartup()
 {
+    ILogStream() << "Wallet component startup";
+
     if (Args().GetArg<bool>("-disablewallet", DEFAULT_DISABLE_WALLET))
     {
-        mlog_notice("Wallet disabled!");
+        NLogFormat("Wallet disabled!");
         return true;
     }
 
@@ -73,6 +71,8 @@ bool CWalletComponent::ComponentStartup()
 
 bool CWalletComponent::ComponentShutdown()
 {
+    ILogStream() << "Wallet component shutdown";
+
     for (CWalletRef pWallet : vpWallets)
     {
         pWallet->Flush(false);

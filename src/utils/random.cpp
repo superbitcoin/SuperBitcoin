@@ -61,7 +61,7 @@
 
 static void RandFailure()
 {
-    LogPrintf("Failed to read randomness, aborting\n");
+    ELogFormat("Failed to read randomness, aborting");
     abort();
 }
 
@@ -96,7 +96,7 @@ static void RDRandInit()
     uint32_t eax, ebx, ecx, edx;
     if (__get_cpuid(1, &eax, &ebx, &ecx, &edx) && (ecx & CPUID_F1_ECX_RDRAND))
     {
-        LogPrintf("Using RdRand as an additional entropy source\n");
+        NLogFormat("Using RdRand as an additional entropy source");
         rdrand_supported = true;
     }
     hwrand_initialized.store(true);

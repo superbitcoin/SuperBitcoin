@@ -20,6 +20,8 @@
 #include <stdint.h>
 #include <univalue/include/univalue.h>
 
+REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+
 namespace Checkpoints
 {
     bool GetCheckpointByHeight(const int nHeight, std::vector<CCheckData> &vnCheckPoints)
@@ -53,8 +55,7 @@ namespace Checkpoints
         uint256 sighash = Hash(data.begin(), data.end());
         if (!cPubKey.Verify(sighash, m_vchSig))
         {
-            mlog_error("CCheckData::CheckSignature : verify signature failed");
-            return false;
+            return rLogError("CCheckData::CheckSignature : verify signature failed");
         }
         return true;
     }
@@ -66,8 +67,7 @@ namespace Checkpoints
         uint256 sighash = Hash(data.begin(), data.end());
         if (!cKey.Sign(sighash, m_vchSig))
         {
-            mlog_error("CCheckData::Sign: Unable to sign checkpoint, check private key?");
-            return false;
+            return rLogError("CCheckData::Sign: Unable to sign checkpoint, check private key?");
         }
         return true;
     }
@@ -151,8 +151,7 @@ namespace Checkpoints
                     values.insert(std::make_pair(data1.getHeight(), data1));
                 } else
                 {
-                    mlog_error("%s: failed to read value", __func__);
-                    return false;
+                    return rLogError("%s: failed to read value", __func__);
                 }
             } else
             {

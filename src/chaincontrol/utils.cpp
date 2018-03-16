@@ -9,6 +9,8 @@
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
 
+REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+
 bool CheckDiskSpace(uint64_t nAdditionalBytes)
 {
     fs::path path = GetDataDir();
@@ -45,12 +47,12 @@ void AlertNotify(const std::string &strMessage)
 bool AbortNode(const std::string &strMessage, const std::string &userMessage)
 {
     SetMiscWarning(strMessage);
-    // TODU
-//    mlog_error(strMessage);
-//    string message = userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
-//                                         : userMessage;
-//    mlog_error(message);
-//    uiInterface.ThreadSafeMessageBox(message, "", CClientUIInterface::MSG_ERROR);
+
+    ELogFormat(strMessage);
+    string message = userMessage.empty() ? _("Error: A fatal internal error occurred, see debug.log for details")
+                                         : userMessage;
+    ELogFormat(message);
+    // uiInterface.ThreadSafeMessageBox(message, "", CClientUIInterface::MSG_ERROR);
     GetApp()->RequestShutdown();
     return false;
 }

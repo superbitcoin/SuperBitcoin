@@ -4,6 +4,8 @@
 #include "sbtccore/block/blockencodings.h"
 #include "mempoolcomponent.h"
 
+REDIRECT_SBTC_LOGGER(CID_TX_MEMPOOL);
+
 COrphanTxMgr::COrphanTxMgr()
 {
 
@@ -31,7 +33,7 @@ bool COrphanTxMgr::AddOrphanTx(const CTransactionRef &tx, int64_t peer)
     unsigned int sz = GetTransactionWeight(*tx);
     if (sz >= MAX_STANDARD_TX_WEIGHT)
     {
-        mlog_notice( "ignoring large orphan tx (size: %u, hash: %s)", sz, hash.ToString());
+        WLogFormat( "ignoring large orphan tx (size: %u, hash: %s)", sz, hash.ToString());
         return false;
     }
 
@@ -44,7 +46,7 @@ bool COrphanTxMgr::AddOrphanTx(const CTransactionRef &tx, int64_t peer)
 
     AddToCompactExtraTransactions(tx);
 
-    mlog_notice("stored orphan tx %s (mapsz %u outsz %u)", hash.ToString(),
+    NLogFormat("stored orphan tx %s (mapsz %u outsz %u)", hash.ToString(),
              m_mapOrphanTransactions.size(), m_mapOrphanTransactionsByPrev.size());
     return true;
 }
@@ -92,7 +94,7 @@ unsigned int COrphanTxMgr::LimitOrphanTxSize(unsigned int nMaxOrphans)
         // Sweep again 5 minutes after the next entry that expires in order to batch the linear scan.
         nNextSweep = nMinExpTime + ORPHAN_TX_EXPIRE_INTERVAL;
         if (nErased > 0)
-            mlog_notice("Erased %d orphan tx due to expiration", nErased);
+            NLogFormat("Erased %d orphan tx due to expiration", nErased);
     }
     while (m_mapOrphanTransactions.size() > nMaxOrphans)
     {
@@ -120,7 +122,7 @@ int COrphanTxMgr::EraseOrphansFor(int64_t peer)
         }
     }
     if (nErased > 0)
-        mlog_notice("Erased %d orphan tx from peer=%d", nErased, peer);
+        NLogFormat("Erased %d orphan tx from peer=%d", nErased, peer);
 
     return nErased;
 }

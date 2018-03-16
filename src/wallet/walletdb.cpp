@@ -20,27 +20,7 @@
 
 #include <boost/thread.hpp>
 
-//#ifdef mlog
-//#undef mlog
-////DECLEAR_CATEOGRY("sdfdsf");
-//static log4cpp::Category *mlog = & log4cpp::Category::getInstance("123");
-//#endif
-
-//
-//class  tem {
-//public:
-//    tem( void (*te)(void) )
-//    {
-//        te();
-//    }
-//};
-//static tem  tem1([&]() -> void { mlog = & log4cpp::Category::getInstance("123");  });
-
-//mlog = nullptr;
-//DECLEAR_CATEOGRY("sdfdsf");
-//
-// CWalletDB
-//
+REDIRECT_SBTC_LOGGER(CID_WALLET);
 
 bool CWalletDB::WriteName(const std::string &strAddress, const std::string &strName)
 {
@@ -562,7 +542,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
         Dbc *pcursor = batch.GetCursor();
         if (!pcursor)
         {
-            mlog_error("Error getting wallet database cursor");
+            ELogFormat("Error getting wallet database cursor");
             return DB_CORRUPT;
         }
 
@@ -576,7 +556,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                 break;
             else if (ret != 0)
             {
-                mlog_error("Error reading next record from wallet database");
+                ELogFormat("Error reading next record from wallet database");
                 return DB_CORRUPT;
             }
 
@@ -599,7 +579,7 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
                 }
             }
             if (!strErr.empty())
-                mlog_error("%s", strErr);
+                ELogFormat("%s", strErr);
         }
         pcursor->close();
     }
@@ -620,9 +600,9 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
     if (result != DB_LOAD_OK)
         return result;
 
-    mlog_info("nFileVersion = %d\n", wss.nFileVersion);
+    ILogFormat("nFileVersion = %d", wss.nFileVersion);
 
-    mlog_info("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total\n",
+    ILogFormat("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total",
               wss.nKeys, wss.nCKeys, wss.nKeyMeta, wss.nKeys + wss.nCKeys);
 
     // nTimeFirstKey is only reliable if all keys have metadata
@@ -670,7 +650,7 @@ DBErrors CWalletDB::FindWalletTx(std::vector<uint256> &vTxHash, std::vector<CWal
         Dbc *pcursor = batch.GetCursor();
         if (!pcursor)
         {
-            mlog_error("Error getting wallet database cursor");
+            ELogFormat("Error getting wallet database cursor");
             return DB_CORRUPT;
         }
 
@@ -684,7 +664,7 @@ DBErrors CWalletDB::FindWalletTx(std::vector<uint256> &vTxHash, std::vector<CWal
                 break;
             else if (ret != 0)
             {
-                mlog_error("Error reading next record from wallet database");
+                ELogFormat("Error reading next record from wallet database");
                 return DB_CORRUPT;
             }
 
@@ -749,7 +729,7 @@ DBErrors CWalletDB::ZapSelectTx(std::vector<uint256> &vTxHashIn, std::vector<uin
         {
             if (!EraseTx(hash))
             {
-                mlog_error("Transaction was found for deletion but returned database error: %s\n",
+                ELogFormat("Transaction was found for deletion but returned database error: %s",
                          hash.GetHex());
                 delerror = true;
             }
@@ -851,7 +831,7 @@ bool CWalletDB::RecoverKeysOnlyFilter(void *callbackData, CDataStream ssKey, CDa
         return false;
     if (!fReadOK)
     {
-        mlog_error("WARNING: CWalletDB::Recover skipping %s: %s\n", strType, strErr);
+        ELogFormat("WARNING: CWalletDB::Recover skipping %s: %s", strType, strErr);
         return false;
     }
 

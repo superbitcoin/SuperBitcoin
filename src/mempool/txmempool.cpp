@@ -29,6 +29,8 @@
 
 using namespace appbase;
 
+REDIRECT_SBTC_LOGGER(CID_TX_MEMPOOL);
+
 
 bool CTxMemPool::AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
                                     bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,
@@ -490,22 +492,20 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
             // does not before printing an ominous warning
             if (!(~scriptVerifyFlags & currentBlockScriptVerifyFlags))
             {
-                mlog_error(
+                return rLogError(
                         "%s: BUG! PLEASE REPORT THIS! ConnectInputs failed against latest-block but not STANDARD flags %s, %s",
                         __func__, hash.ToString(), FormatStateMessage(state));
-                return false;
             } else
             {
                 if (!tx.CheckInputs(state, view, true, MANDATORY_SCRIPT_VERIFY_FLAGS, true, false, txdata))
                 {
-                    mlog_error(
+                    return rLogError(
                             "%s: ConnectInputs failed against MANDATORY but not STANDARD flags due to promiscuous mempool %s, %s",
                             __func__, hash.ToString(), FormatStateMessage(state));
-                    return false;
                 } else
                 {
-                    mlog_notice(
-                            "Warning: -promiscuousmempool flags set to not include currently enforced soft forks, this may break mining or otherwise cause instability!\n");
+                    NLogFormat(
+                            "Warning: -promiscuousmempool flags set to not include currently enforced soft forks, this may break mining or otherwise cause instability!");
                 }
             }
         }
@@ -513,7 +513,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         // Remove conflicting transactions from the mempool
         for (const CTxMemPool::txiter it : allConflicting)
         {
-            mlog_notice("replacing tx %s with %s for %s BTC additional fees, %d delta bytes",
+            NLogFormat("replacing tx %s with %s for %s BTC additional fees, %d delta bytes",
                         it->GetTx().GetHash().ToString(),
                         hash.ToString(),
                         FormatMoney(nModifiedFees - nConflictingFees),
@@ -610,7 +610,7 @@ void CTxMemPool::LimitMempoolSize(size_t limit, unsigned long age)
     int expired = this->Expire(GetTime() - age);
     if (expired != 0)
     {
-        mlog_notice("Expired %i transactions from the memory pool\n", expired);
+        NLogFormat("Expired %i transactions from the memory pool", expired);
     }
 
     GET_CHAIN_INTERFACE(ifChainObj);
@@ -658,8 +658,7 @@ bool CTxMemPool::CheckSequenceLocks(const CTransaction &tx, int flags, LockPoint
             Coin coin;
             if (!viewMemPool.GetCoin(txin.prevout, coin))
             {
-                mlog_error("%s: Missing input", __func__);
-                return false;
+                return rLogError("%s: Missing input", __func__);
             }
             if (coin.nHeight == MEMPOOL_HEIGHT)
             {
@@ -1388,7 +1387,7 @@ void CTxMemPool::Check(const CCoinsViewCache *pcoins) const
     if (GetRand(std::numeric_limits<uint32_t>::max()) >= nCheckFrequency)
         return;
 
-    mlog_notice("Checking mempool with %u transactions and %u inputs\n", (unsigned int)mapTx.size(),
+    NLogFormat("Checking mempool with %u transactions and %u inputs", (unsigned int)mapTx.size(),
                 (unsigned int)mapNextTx.size());
 
     uint64_t checkTotal = 0;
@@ -1661,7 +1660,7 @@ void CTxMemPool::PrioritiseTransaction(const uint256 &hash, const CAmount &nFeeD
             ++nTransactionsUpdated;
         }
     }
-    mlog_notice("PrioritiseTransaction: %s feerate += %s\n", hash.ToString(), FormatMoney(nFeeDelta));
+    NLogFormat("PrioritiseTransaction: %s feerate += %s", hash.ToString(), FormatMoney(nFeeDelta));
 }
 
 void CTxMemPool::ApplyDelta(const uint256 hash, CAmount &nFeeDelta) const
@@ -1860,7 +1859,7 @@ void CTxMemPool::TrimToSize(size_t sizelimit, std::vector<COutPoint> *pvNoSpends
 
     if (maxFeeRateRemoved > CFeeRate(0))
     {
-        mlog_notice("Removed %u txn, rolling minimum fee bumped to %s\n", nTxnRemoved,
+        NLogFormat("Removed %u txn, rolling minimum fee bumped to %s", nTxnRemoved,
                     maxFeeRateRemoved.ToString());
     }
 }

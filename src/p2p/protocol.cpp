@@ -9,10 +9,10 @@
 #include "utils/utilstrencodings.h"
 
 #ifndef WIN32
-
 # include <arpa/inet.h>
-
 #endif
+
+REDIRECT_SBTC_LOGGER(CID_P2P_NET);
 
 namespace NetMsgType
 {
@@ -127,8 +127,7 @@ bool CMessageHeader::IsValid(const MessageStartChars &pchMessageStartIn) const
     // Message size
     if (nMessageSize > MAX_SIZE)
     {
-        LogPrintf("CMessageHeader::IsValid(): (%s, %u bytes) nMessageSize > MAX_SIZE", GetCommand(), nMessageSize);
-        return false;
+        return rLogError("CMessageHeader::IsValid(): (%s, %u bytes) nMessageSize > MAX_SIZE", GetCommand(), nMessageSize);
     }
 
     return true;

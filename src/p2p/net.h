@@ -517,7 +517,6 @@ private:
     std::atomic_bool m_try_another_outbound_peer;
 
     friend struct CConnmanTest;
-public:
 };
 
 template<typename T>

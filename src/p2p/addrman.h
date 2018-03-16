@@ -475,7 +475,8 @@ public:
         }
         if (nLost + nLostUnk > 0)
         {
-            LogPrint(BCLog::ADDRMAN, "addrman lost %i new and %i tried addresses due to collisions\n", nLostUnk, nLost);
+            SET_TEMP_LOG_CATEGORY(CID_P2P_NET);
+            NLogFormat("addrman lost %i new and %i tried addresses due to collisions", nLostUnk, nLost);
         }
 
         Check();
@@ -548,7 +549,8 @@ public:
         Check();
         if (fRet)
         {
-            LogPrint(BCLog::ADDRMAN, "Added %s from %s: %i tried, %i new\n", addr.ToStringIPPort(), source.ToString(),
+            SET_TEMP_LOG_CATEGORY(CID_P2P_NET);
+            NLogFormat("Added %s from %s: %i tried, %i new", addr.ToStringIPPort(), source.ToString(),
                      nTried, nNew);
         }
         return fRet;
@@ -565,7 +567,8 @@ public:
         Check();
         if (nAdd)
         {
-            LogPrint(BCLog::ADDRMAN, "Added %i addresses from %s: %i tried, %i new\n", nAdd, source.ToString(), nTried,
+            SET_TEMP_LOG_CATEGORY(CID_P2P_NET);
+            NLogFormat("Added %i addresses from %s: %i tried, %i new", nAdd, source.ToString(), nTried,
                      nNew);
         }
         return nAdd > 0;

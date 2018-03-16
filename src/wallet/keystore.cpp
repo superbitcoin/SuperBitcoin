@@ -9,6 +9,8 @@
 #include "pubkey.h"
 #include "utils/util.h"
 
+REDIRECT_SBTC_LOGGER(CID_WALLET);
+
 bool CKeyStore::AddKey(const CKey &key)
 {
     return AddKeyPubKey(key, key.GetPubKey());
@@ -43,8 +45,7 @@ bool CBasicKeyStore::AddCScript(const CScript &redeemScript)
 {
     if (redeemScript.size() > MAX_SCRIPT_ELEMENT_SIZE)
     {
-        mlog_error("CBasicKeyStore::AddCScript(): redeemScripts > %i bytes are invalid", MAX_SCRIPT_ELEMENT_SIZE);
-        return false;
+        return rLogError("CBasicKeyStore::AddCScript(): redeemScripts > %i bytes are invalid", MAX_SCRIPT_ELEMENT_SIZE);
     }
 
     LOCK(cs_KeyStore);

@@ -12,6 +12,8 @@
 #include "sbtccore/streams.h"
 #include "sbtccore/clientversion.h"
 
+REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+
 CCriticalSection csLastBlockFile;
 
 fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix)
@@ -30,14 +32,14 @@ FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly)
         file = fsbridge::fopen(path, "wb+");
     if (!file)
     {
-        LogPrintf("Unable to open file %s\n", path.string());
+        ELogFormat("Unable to open file %s", path.string());
         return nullptr;
     }
     if (pos.nPos)
     {
         if (fseek(file, pos.nPos, SEEK_SET))
         {
-            LogPrintf("Unable to seek to position %u of %s\n", pos.nPos, path.string());
+            ELogFormat("Unable to seek to position %u of %s", pos.nPos, path.string());
             fclose(file);
             return nullptr;
         }
@@ -64,7 +66,7 @@ bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus:
     CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
     {
-        mlog_error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+        ELogFormat("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
         return false;
     }
 
@@ -75,14 +77,14 @@ bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus:
     }
     catch (const std::exception &e)
     {
-        mlog_error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
+        ELogFormat("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
         return false;
     }
 
     // Check the header
     if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
     {
-        mlog_error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+        ELogFormat("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
         return false;
     }
     return true;
@@ -94,7 +96,7 @@ bool ReadBlockFromDisk(CBlock &block, const CBlockIndex *pindex, const Consensus
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
     {
-        mlog_error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
+        ELogFormat("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
                    pindex->ToString(), pindex->GetBlockPos().ToString());
         return false;
     }
@@ -107,7 +109,7 @@ bool UndoReadFromDisk(CBlockUndo &blockundo, const CDiskBlockPos &pos, const uin
     CAutoFile filein(OpenUndoFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
     {
-        mlog_error("%s: OpenUndoFile failed", __func__);
+        ELogFormat("%s: OpenUndoFile failed", __func__);
         return false;
     }
 
@@ -122,14 +124,14 @@ bool UndoReadFromDisk(CBlockUndo &blockundo, const CDiskBlockPos &pos, const uin
     }
     catch (const std::exception &e)
     {
-        mlog_error("%s: Deserialize or I/O error - %s", __func__, e.what());
+        ELogFormat("%s: Deserialize or I/O error - %s", __func__, e.what());
         return false;
     }
 
     // Verify checksum
     if (hashChecksum != verifier.GetHash())
     {
-        mlog_error("%s: Checksum mismatch", __func__);
+        ELogFormat("%s: Checksum mismatch", __func__);
         return false;
     }
 
@@ -142,8 +144,7 @@ bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHea
     CAutoFile fileout(OpenBlockFile(pos), SER_DISK, CLIENT_VERSION);
     if (fileout.IsNull())
     {
-        mlog_error("WriteBlockToDisk: OpenBlockFile failed");
-        return false;
+        return rLogError("WriteBlockToDisk: OpenBlockFile failed");
     }
 
     // Write index header
@@ -154,7 +155,7 @@ bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHea
     long fileOutPos = ftell(fileout.Get());
     if (fileOutPos < 0)
     {
-        mlog_error("WriteBlockToDisk: ftell failed");
+        ELogFormat("WriteBlockToDisk: ftell failed");
         return false;
     }
     pos.nPos = (unsigned int)fileOutPos;
@@ -170,7 +171,7 @@ bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint
     CAutoFile fileout(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
     if (fileout.IsNull())
     {
-        mlog_error("%s: OpenUndoFile failed", __func__);
+        ELogFormat("%s: OpenUndoFile failed", __func__);
         return false;
     }
 
@@ -182,7 +183,7 @@ bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint
     long fileOutPos = ftell(fileout.Get());
     if (fileOutPos < 0)
     {
-        mlog_error("%s: ftell failed", __func__);
+        ELogFormat("%s: ftell failed", __func__);
         return false;
     }
     pos.nPos = (unsigned int)fileOutPos;
@@ -235,7 +236,7 @@ void CleanupBlockRevFiles()
     // Glob all blk?????.dat and rev?????.dat files from the blocks directory.
     // Remove the rev files immediately and insert the blk file paths into an
     // ordered map keyed by block file index.
-    LogPrintf("Removing unusable blk?????.dat and rev?????.dat files for -reindex with -prune\n");
+    NLogFormat("Removing unusable blk?????.dat and rev?????.dat files for -reindex with -prune");
     fs::path blocksdir = GetDataDir() / "blocks";
     for (fs::directory_iterator it(blocksdir); it != fs::directory_iterator(); it++)
     {

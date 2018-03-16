@@ -293,7 +293,6 @@ public:
     //! Write wallet version
     bool WriteVersion(int nVersion);
 
-public:
 private:
     CDB batch;
     CWalletDBWrapper &m_dbw;

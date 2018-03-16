@@ -28,6 +28,7 @@
 
 #include <univalue.h>
 
+REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
 
 std::string static EncodeDumpTime(int64_t nTime)
 {
@@ -553,7 +554,7 @@ UniValue importwallet(const JSONRPCRequest &request)
         CKeyID keyid = pubkey.GetID();
         if (pwallet->HaveKey(keyid))
         {
-            LogPrintf("Skipping import of %s (key already present)\n", CBitcoinAddress(keyid).ToString());
+            NLogFormat("Skipping import of %s (key already present)", CBitcoinAddress(keyid).ToString());
             continue;
         }
         int64_t nTime = DecodeDumpTime(vstr[1]);
@@ -573,7 +574,7 @@ UniValue importwallet(const JSONRPCRequest &request)
                 fLabel = true;
             }
         }
-        LogPrintf("Importing %s...\n", CBitcoinAddress(keyid).ToString());
+        NLogFormat("Importing %s...", CBitcoinAddress(keyid).ToString());
         if (!pwallet->AddKeyPubKey(key, pubkey))
         {
             fGood = false;

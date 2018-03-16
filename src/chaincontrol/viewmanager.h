@@ -68,10 +68,6 @@ private:
     std::vector<uint256> getHeads();
 
     int ApplyTxInUndo(Coin &&undo, CCoinsViewCache &view, const COutPoint &out);
-
-public:
-
-
 };
 
 #endif // !defined(__SBTC_VIEWMANAGER_H__)

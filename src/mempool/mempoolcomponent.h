@@ -41,9 +41,6 @@ public:
 
     bool RemoveOrphanTxForBlock(const CBlock* pblock) override;
 
-public:
-//
-
 private:
 
     void InitializeForNet();

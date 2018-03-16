@@ -17,10 +17,4 @@ public:
     bool ComponentShutdown() override;
 
     const char *whoru() const override;
-
-
-
-
-private:
-
 };

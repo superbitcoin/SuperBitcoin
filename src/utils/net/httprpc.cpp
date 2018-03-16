@@ -20,6 +20,8 @@
 
 #include <boost/algorithm/string.hpp> // boost::trim
 
+REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+
 /** WWW-Authenticate to present with 401 Unauthorized response */
 static const char *WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";
 
@@ -174,7 +176,7 @@ static bool HTTPReq_JSONRPC(HTTPRequest *req, const std::string &)
     JSONRPCRequest jreq;
     if (!RPCAuthorized(authHeader.second, jreq.authUser))
     {
-        LogPrintf("ThreadRPCServer incorrect password attempt from %s\n", req->GetPeer().ToString());
+        WLogFormat("ThreadRPCServer incorrect password attempt from %s", req->GetPeer().ToString());
 
         /* Deter brute-forcing
            If this results in a DoS the user really
@@ -231,7 +233,7 @@ static bool InitRPCAuthentication()
 {
     if (Args().GetArg<std::string>("-rpcpassword", "") == "")
     {
-        LogPrintf("No rpcpassword set - using random cookie authentication\n");
+        NLogFormat("No rpcpassword set - using random cookie authentication");
         if (!GenerateAuthCookie(&strRPCUserColonPass))
         {
             uiInterface.ThreadSafeMessageBox(
@@ -241,8 +243,8 @@ static bool InitRPCAuthentication()
         }
     } else
     {
-        LogPrintf(
-                "Config options rpcuser and rpcpassword will soon be deprecated. Locally-run instances may remove rpcuser to use cookie-based auth, or may be replaced with rpcauth. Please see share/rpcuser for rpcauth auth generation.\n");
+        NLogFormat(
+                "Config options rpcuser and rpcpassword will soon be deprecated. Locally-run instances may remove rpcuser to use cookie-based auth, or may be replaced with rpcauth. Please see share/rpcuser for rpcauth auth generation");
         strRPCUserColonPass =
                 Args().GetArg<std::string>("-rpcuser", "") + ":" + Args().GetArg<std::string>("-rpcpassword", "");
     }
@@ -251,7 +253,7 @@ static bool InitRPCAuthentication()
 
 bool StartHTTPRPC()
 {
-    LogPrint(BCLog::RPC, "Starting HTTP RPC server\n");
+    NLogFormat("Starting HTTP RPC server");
     if (!InitRPCAuthentication())
         return false;
 
@@ -268,12 +270,12 @@ bool StartHTTPRPC()
 
 void InterruptHTTPRPC()
 {
-    LogPrint(BCLog::RPC, "Interrupting HTTP RPC server\n");
+    NLogFormat("Interrupting HTTP RPC server");
 }
 
 void StopHTTPRPC()
 {
-    LogPrint(BCLog::RPC, "Stopping HTTP RPC server\n");
+    NLogFormat("Stopping HTTP RPC server");
     UnregisterHTTPHandler("/", true);
     if (httpRPCTimerInterface)
     {

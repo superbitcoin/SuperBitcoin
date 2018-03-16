@@ -78,12 +78,6 @@ bool IBaseApp::InitializeLogging(fs::path path)
             root.addAppender(osAppender);
             root.notice("log conf is using defalt !");
 
-            log4cpp::Category &mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP));
-            mlog.addAppender(rollfileAppender);
-            mlog.setPriority(log4cpp::Priority::NOTICE);//设置Category的优先级;
-            mlog.addAppender(osAppender);
-            mlog.notice("CID_APP log conf is using defalt !");
-
         } catch (...)
         {
             return false;
@@ -165,8 +159,8 @@ bool IBaseApp::ParamsInitialize(int argc, char **argv)
     {
         if (!fs::is_directory(pArgs->GetDataDir(false)))
         {
-            mlog_error("Error: Specified data directory \"%s\" does not exist.",
-                       pArgs->GetArg<std::string>("-datadir", "").c_str());
+            ELogFormat("Error: Specified data directory \"%s\" does not exist.",
+                       pArgs->GetArg<std::string>("-datadir", ""));
             return false;
         }
 
@@ -177,12 +171,12 @@ bool IBaseApp::ParamsInitialize(int argc, char **argv)
     }
     catch (const std::exception &e)
     {
-        mlog_error("Error: %s.", e.what());
+        ELogFormat("Error: %s.", e.what());
         return false;
     }
     catch (...)
     {
-        mlog_error("Error: initParams!");
+        ELogFormat("Error: initParams!");
         return false;
     }
     return true;

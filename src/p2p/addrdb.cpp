@@ -16,6 +16,8 @@
 #include "tinyformat.h"
 #include "utils/util.h"
 
+REDIRECT_SBTC_LOGGER(CID_P2P_NET);
+
 namespace
 {
 
@@ -31,8 +33,7 @@ namespace
             stream << hasher.GetHash();
         } catch (const std::exception &e)
         {
-            mlog_error("%s: Serialize or I/O error - %s", __func__, e.what());
-            return false;
+            return rLogError("%s: Serialize or I/O error - %s", __func__, e.what());
         }
 
         return true;
@@ -52,8 +53,7 @@ namespace
         CAutoFile fileout(file, SER_DISK, CLIENT_VERSION);
         if (fileout.IsNull())
         {
-            mlog_error("%s: Failed to open file %s", __func__, pathTmp.string());
-            return false;
+            return rLogError("%s: Failed to open file %s", __func__, pathTmp.string());
         }
 
         // Serialize
@@ -65,8 +65,7 @@ namespace
         // replace existing file, if any, with new file
         if (!RenameOver(pathTmp, path))
         {
-            mlog_error("%s: Rename-into-place failed", __func__);
-            return false;
+            return rLogError("%s: Rename-into-place failed", __func__);
         }
 
         return true;
@@ -84,8 +83,7 @@ namespace
             // ... verify the network matches ours
             if (memcmp(pchMsgTmp, Params().MessageStart(), sizeof(pchMsgTmp)))
             {
-                mlog_error("%s: Invalid network magic number", __func__);
-                return false;
+                return rLogError("%s: Invalid network magic number", __func__);
             }
 
             // de-serialize data
@@ -98,15 +96,13 @@ namespace
                 stream >> hashTmp;
                 if (hashTmp != verifier.GetHash())
                 {
-                    mlog_error("%s: Checksum mismatch, data corrupted", __func__);
-                    return false;
+                    return rLogError("%s: Checksum mismatch, data corrupted", __func__);
                 }
             }
         }
         catch (const std::exception &e)
         {
-            mlog_error("%s: Deserialize or I/O error - %s", __func__, e.what());
-            return false;
+            return rLogError("%s: Deserialize or I/O error - %s", __func__, e.what());
         }
 
         return true;
@@ -120,8 +116,7 @@ namespace
         CAutoFile filein(file, SER_DISK, CLIENT_VERSION);
         if (filein.IsNull())
         {
-            mlog_error("%s: Failed to open file %s", __func__, path.string());
-            return false;
+            return rLogError("%s: Failed to open file %s", __func__, path.string());
         }
 
         return DeserializeDB(filein, data);

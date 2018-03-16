@@ -19,6 +19,8 @@
 
 #include <boost/thread.hpp>
 
+REDIRECT_SBTC_LOGGER(CID_TX_CORE);
+
 static const char DB_COIN = 'C';
 static const char DB_COINS = 'c';
 static const char DB_BLOCK_FILES = 'f';
@@ -139,7 +141,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock)
         mapCoins.erase(itOld);
         if (batch.SizeEstimate() > batch_size)
         {
-            LogPrint(BCLog::COINDB, "Writing partial batch of %.2f MiB\n", batch.SizeEstimate() * (1.0 / 1048576.0));
+            NLogFormat("Writing partial batch of %.2f MiB", batch.SizeEstimate() * (1.0 / 1048576.0));
             db.WriteBatch(batch);
             batch.Clear();
             if (crash_simulate)
@@ -147,7 +149,7 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock)
                 static FastRandomContext rng;
                 if (rng.randrange(crash_simulate) == 0)
                 {
-                    LogPrintf("Simulating a crash. Goodbye.\n");
+                    FLogFormat("Simulating a crash. Goodbye");
                     _Exit(0);
                 }
             }
@@ -158,9 +160,9 @@ bool CCoinsViewDB::BatchWrite(CCoinsMap &mapCoins, const uint256 &hashBlock)
     batch.Erase(DB_HEAD_BLOCKS);
     batch.Write(DB_BEST_BLOCK, hashBlock);
 
-    LogPrint(BCLog::COINDB, "Writing final batch of %.2f MiB\n", batch.SizeEstimate() * (1.0 / 1048576.0));
+    NLogFormat("Writing final batch of %.2f MiB", batch.SizeEstimate() * (1.0 / 1048576.0));
     bool ret = db.WriteBatch(batch);
-    LogPrint(BCLog::COINDB, "Committed %u changed transaction outputs (out of %u) to coin database...\n",
+    NLogFormat("Committed %u changed transaction outputs (out of %u) to coin database...",
              (unsigned int)changed, (unsigned int)count);
     return ret;
 }
@@ -336,15 +338,13 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params &consensusParams,
 
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
                 {
-                    mlog_error("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
-                return false;
+                    return rLogError("%s: CheckProofOfWork failed: %s", __func__, pindexNew->ToString());
                 }
 
                 pcursor->Next();
             } else
             {
-                mlog_error("%s: failed to read value", __func__);
-                return false;
+                return rLogError("%s: failed to read value", __func__);
             }
         } else
         {
@@ -431,8 +431,8 @@ bool CCoinsViewDB::Upgrade()
     }
 
     int64_t count = 0;
-    LogPrintf("Upgrading utxo-set database...\n");
-    LogPrintf("[0%%]...");
+    NLogFormat("Upgrading utxo-set database...");
+    NLogFormat("[0%%]...");
     size_t batch_size = 1 << 24;
     CDBBatch batch(db);
     //uiInterface.SetProgressBreakAction(StartShutdown);
@@ -458,15 +458,14 @@ bool CCoinsViewDB::Upgrade()
                 if (reportDone < percentageDone / 10)
                 {
                     // report max. every 10% step
-                    LogPrintf("[%d%%]...", percentageDone);
+                    NLogFormat("[%d%%]...", percentageDone);
                     reportDone = percentageDone / 10;
                 }
             }
             CCoins old_coins;
             if (!pcursor->GetValue(old_coins))
             {
-                mlog_error("%s: cannot parse CCoins record", __func__);
-                return  false;
+                return rLogError("%s: cannot parse CCoins record", __func__);
             }
             COutPoint outpoint(key.second, 0);
             for (size_t i = 0; i < old_coins.vout.size(); ++i)
@@ -496,6 +495,6 @@ bool CCoinsViewDB::Upgrade()
     db.WriteBatch(batch);
     db.CompactRange({DB_COINS, uint256()}, key);
     uiInterface.SetProgressBreakAction(std::function<void(void)>());
-    LogPrintf("[%s].\n", shutdown ? "CANCELLED" : "DONE");
+    NLogFormat("[%s].", shutdown ? "CANCELLED" : "DONE");
     return !shutdown;
 }

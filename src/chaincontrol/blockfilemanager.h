@@ -14,25 +14,6 @@
 #include "p2p/protocol.h"
 #include "sbtccore/block/undo.h"
 
-//
-//class CBlockFileManager
-//{
-//public:
-//    static fs::path GetBlockPosFilename(const CDiskBlockPos &pos, const char *prefix);
-//
-//    static FILE *OpenDiskFile(const CDiskBlockPos &pos, const char *prefix, bool fReadOnly);
-//
-//    static FILE *OpenUndoFile(const CDiskBlockPos &pos, bool fReadOnly = false);
-//
-//    static void Flush(int iLastBlockFile, int iSize, int iUndoSize, bool bFinalize = false);
-//
-//    void CleanupBlockRevFiles();
-//
-//private:
-//    CCriticalSection csLastBlockFile;
-//
-//    FILE *OpenBlockFile(const CDiskBlockPos &pos, bool fReadOnly);
-//};
 
 extern CCriticalSection csLastBlockFile;
 

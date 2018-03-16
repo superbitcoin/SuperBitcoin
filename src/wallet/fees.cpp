@@ -402,8 +402,8 @@ double TxConfirmStats::EstimateMedianVal(int confTarget, double sufficientTxVal,
         failBucket.leftMempool = failNum;
     }
 
-    LogPrint(BCLog::ESTIMATEFEE,
-             "FeeEst: %d %s%.0f%% decay %.5f: feerate: %g from (%g - %g) %.2f%% %.1f/(%.1f %d mem %.1f out) Fail: (%g - %g) %.2f%% %.1f/(%.1f %d mem %.1f out)\n",
+    NLogFormat(
+             "FeeEst: %d %s%.0f%% decay %.5f: feerate: %g from (%g - %g) %.2f%% %.1f/(%.1f %d mem %.1f out) Fail: (%g - %g) %.2f%% %.1f/(%.1f %d mem %.1f out)",
              confTarget, requireGreater ? ">" : "<", 100.0 * successBreakPoint, decay,
              median, passBucket.start, passBucket.end,
              100 * passBucket.withinTarget /
@@ -507,7 +507,7 @@ void TxConfirmStats::Read(CAutoFile &filein, int nFileVersion, size_t numBuckets
     // to match the number of confirms and buckets
     resizeInMemoryCounters(numBuckets);
 
-    LogPrint(BCLog::ESTIMATEFEE, "Reading estimates: %u buckets counting confirms up to %u blocks\n",
+    NLogFormat("Reading estimates: %u buckets counting confirms up to %u blocks",
              numBuckets, maxConfirms);
 }
 
@@ -528,7 +528,7 @@ TxConfirmStats::removeTx(unsigned int entryHeight, unsigned int nBestSeenHeight,
         blocksAgo = 0;
     if (blocksAgo < 0)
     {
-        LogPrint(BCLog::ESTIMATEFEE, "Blockpolicy error, blocks ago is negative for mempool tx\n");
+        ELogFormat("Blockpolicy error, blocks ago is negative for mempool tx");
         return;  //This can't happen because we call this with our best seen height, no entries can have higher
     }
 
@@ -539,8 +539,8 @@ TxConfirmStats::removeTx(unsigned int entryHeight, unsigned int nBestSeenHeight,
             oldUnconfTxs[bucketindex]--;
         } else
         {
-            LogPrint(BCLog::ESTIMATEFEE,
-                     "Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex=%u already\n",
+            NLogFormat(
+                     "Blockpolicy error, mempool tx removed from >25 blocks,bucketIndex=%u already",
                      bucketindex);
         }
     } else
@@ -551,8 +551,8 @@ TxConfirmStats::removeTx(unsigned int entryHeight, unsigned int nBestSeenHeight,
             unconfTxs[blockIndex][bucketindex]--;
         } else
         {
-            LogPrint(BCLog::ESTIMATEFEE,
-                     "Blockpolicy error, mempool tx removed from blockIndex=%u,bucketIndex=%u already\n",
+            NLogFormat(
+                     "Blockpolicy error, mempool tx removed from blockIndex=%u,bucketIndex=%u already",
                      blockIndex, bucketindex);
         }
     }
@@ -623,7 +623,7 @@ void CBlockPolicyEstimator::processTransaction(const CTxMemPoolEntry &entry, boo
     uint256 hash = entry.GetTx().GetHash();
     if (mapMemPoolTxs.count(hash))
     {
-        LogPrint(BCLog::ESTIMATEFEE, "Blockpolicy error mempool tx %s already being tracked\n",
+        ELogFormat("Blockpolicy error mempool tx %s already being tracked",
                  hash.ToString().c_str());
         return;
     }
@@ -674,8 +674,7 @@ bool CBlockPolicyEstimator::processBlockTx(unsigned int nBlockHeight, const CTxM
     {
         // This can't happen because we don't process transactions from a block with a height
         // lower than our greatest seen height
-        LogPrint(BCLog::ESTIMATEFEE, "Blockpolicy error Transaction had negative blocksToConfirm\n");
-        return false;
+        return rLogError("Blockpolicy error Transaction had negative blocksToConfirm");
     }
 
     // Feerates are stored and reported as BTC-per-kb:
@@ -727,12 +726,12 @@ void CBlockPolicyEstimator::processBlock(unsigned int nBlockHeight,
     if (firstRecordedHeight == 0 && countedTxs > 0)
     {
         firstRecordedHeight = nBestSeenHeight;
-        LogPrint(BCLog::ESTIMATEFEE, "Blockpolicy first recorded height %u\n", firstRecordedHeight);
+        NLogFormat("Blockpolicy first recorded height %u", firstRecordedHeight);
     }
 
 
-    LogPrint(BCLog::ESTIMATEFEE,
-             "Blockpolicy estimates updated by %u of %u block txs, since last block %u of %u tracked, mempool map size %u, max target %u from %s\n",
+    NLogFormat(
+             "Blockpolicy estimates updated by %u of %u block txs, since last block %u of %u tracked, mempool map size %u, max target %u from %s",
              countedTxs, entries.size(), trackedTxs, trackedTxs + untrackedTxs, mapMemPoolTxs.size(),
              MaxUsableEstimate(), HistoricalBlockSpan() > BlockSpan() ? "historical" : "current");
 
@@ -1049,8 +1048,7 @@ bool CBlockPolicyEstimator::Write(CAutoFile &fileout) const
     }
     catch (const std::exception &)
     {
-        LogPrintf("CBlockPolicyEstimator::Write(): unable to write policy estimator data (non-fatal)\n");
-        return false;
+        return rLogError("CBlockPolicyEstimator::Write(): unable to write policy estimator data (non-fatal)");
     }
     return true;
 }
@@ -1064,7 +1062,7 @@ bool CBlockPolicyEstimator::Read(CAutoFile &filein)
         filein >> nVersionRequired >> nVersionThatWrote;
         if (nVersionRequired > CLIENT_VERSION)
         {
-            mlog_error("CBlockPolicyEstimator::Read(): up-version (%d) fee estimate file", nVersionRequired);
+            NLogFormat("CBlockPolicyEstimator::Read(): up-version (%d) fee estimate file", nVersionRequired);
             return false;
         }
 
@@ -1148,8 +1146,7 @@ bool CBlockPolicyEstimator::Read(CAutoFile &filein)
     }
     catch (const std::exception &e)
     {
-        LogPrintf("CBlockPolicyEstimator::Read(): unable to read policy estimator data (non-fatal): %s\n", e.what());
-        return false;
+        return rLogError("CBlockPolicyEstimator::Read(): unable to read policy estimator data (non-fatal): %s", e.what());
     }
     return true;
 }
@@ -1165,7 +1162,7 @@ void CBlockPolicyEstimator::FlushUnconfirmed(CTxMemPool &pool)
         removeTx(txid, false);
     }
     int64_t endclear = GetTimeMicros();
-    LogPrint(BCLog::ESTIMATEFEE, "Recorded %u unconfirmed txs from mempool in %gs\n", txids.size(),
+    NLogFormat("Recorded %u unconfirmed txs from mempool in %gs", txids.size(),
              (endclear - startclear) * 0.000001);
 }
 

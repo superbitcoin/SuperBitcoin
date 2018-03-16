@@ -33,6 +33,8 @@
 #include <queue>
 #include <utility>
 
+REDIRECT_SBTC_LOGGER(CID_MINER);
+
 //////////////////////////////////////////////////////////////////////////////
 //
 // Super BitcoinMiner
@@ -185,7 +187,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     // This is only needed in case the witness softfork activation is reverted
     // (which would require a very deep reorganization) or when
     // -promiscuousmempoolflags is used.
-    // TODO: replace this with a call to main to assess validity of a mempool
+    // replace this with a call to main to assess validity of a mempool
     // transaction (which in most cases can be a no-op).
     fIncludeWitness = IsWitnessEnabled(pindexPrev, chainparams.GetConsensus()) && fMineWitnessTx;
 
@@ -210,7 +212,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     pblocktemplate->vchCoinbaseCommitment = GenerateCoinbaseCommitment(*pblock, pindexPrev, chainparams.GetConsensus());
     pblocktemplate->vTxFees[0] = -nFees;
 
-    LogPrintf("CreateNewBlock(): block weight: %u txs: %u fees: %ld sigops %d\n", GetBlockWeight(*pblock), nBlockTx,
+    NLogFormat("CreateNewBlock(): block weight: %u txs: %u fees: %ld sigops %d", GetBlockWeight(*pblock), nBlockTx,
               nFees, nBlockSigOpsCost);
 
     // Fill in header
@@ -227,8 +229,8 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     }
     int64_t nTime2 = GetTimeMicros();
 
-    LogPrint(BCLog::BENCH,
-             "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)\n",
+    NLogFormat(
+             "CreateNewBlock() packages: %.2fms (%d packages, %d updated descendants), validity: %.2fms (total %.2fms)",
              0.001 * (nTime1 - nTimeStart), nPackagesSelected, nDescendantsUpdated, 0.001 * (nTime2 - nTime1),
              0.001 * (nTime2 - nTimeStart));
 
@@ -291,7 +293,7 @@ void BlockAssembler::AddToBlock(CTxMemPool::txiter iter)
     bool fPrintPriority = Args().GetArg<bool>("-printpriority", DEFAULT_PRINTPRIORITY);
     if (fPrintPriority)
     {
-        LogPrintf("fee %s txid %s\n",
+        NLogFormat("fee %s txid %s",
                   CFeeRate(iter->GetModifiedFee(), iter->GetTxSize()).ToString(),
                   iter->GetTx().GetHash().ToString());
     }

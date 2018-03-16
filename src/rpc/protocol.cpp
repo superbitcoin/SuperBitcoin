@@ -24,6 +24,8 @@
  * 1.2 spec: http://jsonrpc.org/historical/json-rpc-over-http.html
  */
 
+REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+
 UniValue JSONRPCRequestObj(const std::string &strMethod, const UniValue &params, const UniValue &id)
 {
     UniValue request(UniValue::VOBJ);
@@ -88,8 +90,7 @@ bool GenerateAuthCookie(std::string *cookie_out)
     file.open(filepath_tmp.string().c_str());
     if (!file.is_open())
     {
-        LogPrintf("Unable to open cookie authentication file %s for writing\n", filepath_tmp.string());
-        return false;
+        return rLogError("Unable to open cookie authentication file %s for writing", filepath_tmp.string());
     }
     file << cookie;
     file.close();
@@ -97,10 +98,10 @@ bool GenerateAuthCookie(std::string *cookie_out)
     fs::path filepath = GetAuthCookieFile(false);
     if (!RenameOver(filepath_tmp, filepath))
     {
-        LogPrintf("Unable to rename cookie authentication file %s to %s\n", filepath_tmp.string(), filepath.string());
-        return false;
+        return rLogError("Unable to rename cookie authentication file %s to %s", filepath_tmp.string(), filepath.string());
     }
-    LogPrintf("Generated RPC authentication cookie %s\n", filepath.string());
+
+    NLogFormat("Generated RPC authentication cookie %s", filepath.string());
 
     if (cookie_out)
         *cookie_out = cookie;
@@ -130,7 +131,7 @@ void DeleteAuthCookie()
         fs::remove(GetAuthCookieFile());
     } catch (const fs::filesystem_error &e)
     {
-        LogPrintf("%s: Unable to remove random auth cookie file: %s\n", __func__, e.what());
+        ELogFormat("%s: Unable to remove random auth cookie file: %s", __func__, e.what());
     }
 }
 

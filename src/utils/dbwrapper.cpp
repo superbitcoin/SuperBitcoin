@@ -14,8 +14,8 @@
 #include <leveldb/env.h>
 #include <leveldb/filter_policy.h>
 #include <leveldb/helpers/memenv.h>
-#include <stdint.h>
-#include <algorithm>
+
+REDIRECT_SBTC_LOGGER(CID_DB);
 
 class CBitcoinLevelDBLogger : public leveldb::Logger
 {
@@ -24,10 +24,6 @@ public:
     // Please do not do this in normal code
     virtual void Logv(const char *format, va_list ap) override
     {
-        if (!LogAcceptCategory(BCLog::LEVELDB))
-        {
-            return;
-        }
         char buffer[500];
         for (int iter = 0; iter < 2; iter++)
         {
@@ -75,7 +71,7 @@ public:
 
             assert(p <= limit);
             base[std::min(bufsize - 1, (int)(p - base))] = '\0';
-            LogPrintf(base);
+            NLogFormat(base);
             if (base != buffer)
             {
                 delete[] base;
@@ -120,22 +116,22 @@ CDBWrapper::CDBWrapper(const fs::path &path, size_t nCacheSize, bool fMemory, bo
     {
         if (fWipe)
         {
-            LogPrintf("Wiping LevelDB in %s\n", path.string());
+            NLogFormat("Wiping LevelDB in %s", path.string());
             leveldb::Status result = leveldb::DestroyDB(path.string(), options);
             dbwrapper_private::HandleError(result);
         }
         TryCreateDirectories(path);
-        LogPrintf("Opening LevelDB in %s\n", path.string());
+        NLogFormat("Opening LevelDB in %s", path.string());
     }
     leveldb::Status status = leveldb::DB::Open(options, path.string(), &pdb);
     dbwrapper_private::HandleError(status);
-    LogPrintf("Opened LevelDB successfully\n");
+    NLogFormat("Opened LevelDB successfully");
 
     if (Args().GetArg<bool>("-forcecompactdb", false))
     {
-        LogPrintf("Starting database compaction of %s\n", path.string());
+        NLogFormat("Starting database compaction of %s", path.string());
         pdb->CompactRange(nullptr, nullptr);
-        LogPrintf("Finished database compaction of %s\n", path.string());
+        NLogFormat("Finished database compaction of %s", path.string());
     }
 
     // The base-case obfuscation key, which is a noop.
@@ -153,10 +149,10 @@ CDBWrapper::CDBWrapper(const fs::path &path, size_t nCacheSize, bool fMemory, bo
         Write(OBFUSCATE_KEY_KEY, new_key);
         obfuscate_key = new_key;
 
-        LogPrintf("Wrote new obfuscate key for %s: %s\n", path.string(), HexStr(obfuscate_key));
+        NLogFormat("Wrote new obfuscate key for %s: %s", path.string(), HexStr(obfuscate_key));
     }
 
-    LogPrintf("Using obfuscation key for %s: %s\n", path.string(), HexStr(obfuscate_key));
+    NLogFormat("Using obfuscation key for %s: %s", path.string(), HexStr(obfuscate_key));
 }
 
 CDBWrapper::~CDBWrapper()
@@ -234,7 +230,7 @@ namespace dbwrapper_private
     {
         if (status.ok())
             return;
-        LogPrintf("%s\n", status.ToString());
+        NLogFormat(status.ToString());
         if (status.IsCorruption())
             throw dbwrapper_error("Database corrupted");
         if (status.IsIOError())

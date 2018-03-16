@@ -1,13 +1,4 @@
-/*************************************
- * File name:       walletcomponent.h
- * Author:          Adolph
- * Date:            2018.2.1
- * Description:     Define the wallet component common interface
- *
- * History:         Record the edit history
- ************************************/
-#ifndef SUPERBITCOIN_WALLETCOMPONENT_H
-#define SUPERBITCOIN_WALLETCOMPONENT_H
+#pragma once
 
 #include <vector>
 #include "interface/iwalletcomponent.h"
@@ -50,4 +41,3 @@ private:
     std::vector<CWalletRef> vpWallets;
 };
 
-#endif //SUPERBITCOIN_WALLETCOMPONENT_H

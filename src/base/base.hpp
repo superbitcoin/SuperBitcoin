@@ -3,7 +3,6 @@
 #include <map>
 #include <memory>
 #include <thread>
-#include <log4cpp/Category.hh>
 
 #include "icomponent.h"
 #include "utils/iterator.h"

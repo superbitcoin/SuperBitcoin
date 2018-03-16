@@ -16,6 +16,8 @@
 #include "utils/util.h"
 #include "p2p/net.h"
 
+REDIRECT_SBTC_LOGGER(CID_WALLET);
+
 // Calculate the size of the transaction assuming all signatures are max size
 // Use DummySignatureCreator, which inserts 72 byte signatures everywhere.
 // TODO: re-use this in CWallet::CreateTransaction (right now
@@ -256,7 +258,7 @@ CFeeBumper::CFeeBumper(const CWallet *pWallet, const uint256 txidIn, const CCoin
     poutput->nValue -= nDelta;
     if (poutput->nValue <= GetDustThreshold(*poutput, ::dustRelayFee))
     {
-        LogPrint(BCLog::RPC, "Bumping fee and discarding dust output\n");
+        NLogFormat("Bumping fee and discarding dust output");
         nNewFee += poutput->nValue;
         mtx.vout.erase(mtx.vout.begin() + nOutput);
     }

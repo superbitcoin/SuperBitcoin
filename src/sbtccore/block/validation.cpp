@@ -55,6 +55,8 @@
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 
+REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+
 /**
  * Global state
  */
@@ -176,8 +178,7 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
             CAutoFile file(OpenBlockFile(postx, true), SER_DISK, CLIENT_VERSION);
             if (file.IsNull())
             {
-                mlog_error("%s: OpenBlockFile failed", __func__);
-                return false;
+                return rLogError("%s: OpenBlockFile failed", __func__);
             }
             CBlockHeader header;
             try
@@ -187,14 +188,12 @@ bool GetTransaction(const uint256 &hash, CTransactionRef &txOut, const Consensus
                 file >> txOut;
             } catch (const std::exception &e)
             {
-                mlog_error("%s: Deserialize or I/O error - %s", __func__, e.what());
-                return false;
+                return rLogError("%s: Deserialize or I/O error - %s", __func__, e.what());
             }
             hashBlock = header.GetHash();
             if (txOut->GetHash() != hash)
             {
-                mlog_error("%s: txid mismatch", __func__);
-                return false;
+                return rLogError("%s: txid mismatch", __func__);
             }
             return true;
         }

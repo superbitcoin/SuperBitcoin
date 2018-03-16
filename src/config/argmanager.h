@@ -22,6 +22,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "utils/fs.h"
+#include "utils/logger.h"
 #include "framework/sync.h"
 
 namespace bpo = boost::program_options;

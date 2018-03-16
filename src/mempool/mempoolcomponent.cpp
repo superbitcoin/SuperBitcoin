@@ -11,6 +11,7 @@
 #include "p2p/net_processing.h"
 #include "wallet/fees.h"
 
+REDIRECT_SBTC_LOGGER(CID_TX_MEMPOOL);
 
 static const char *FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
 
@@ -25,7 +26,7 @@ CMempoolComponent::~CMempoolComponent()
 
 bool CMempoolComponent::ComponentInitialize()
 {
-    std::cout << "initialize CTxMemPool component\n";
+    NLogStream() << "initialize CTxMemPool component";
 
     InitializeForNet();
 
@@ -42,13 +43,13 @@ bool CMempoolComponent::ComponentInitialize()
 
 bool CMempoolComponent::ComponentStartup()
 {
-    std::cout << "starting CTxMemPool component \n";
+    NLogStream() << "starting CTxMemPool component";
     return true;
 }
 
 bool CMempoolComponent::ComponentShutdown()
 {
-    std::cout << "shutdown CTxMemPool component \n";
+    NLogStream() << "shutdown CTxMemPool component";
 
     if (bDumpMempoolLater && Args().GetArg<bool>("-persistmempool", DEFAULT_PERSIST_MEMPOOL))
     {
@@ -71,8 +72,7 @@ bool CMempoolComponent::LoadMempool(void)
     CAutoFile file(filestr, SER_DISK, CLIENT_VERSION);
     if (file.IsNull())
     {
-        mlog_notice("Failed to open mempool file from disk. Continuing anyway.\n");
-        return false;
+        return rLogError("Failed to open mempool file from disk. Continuing anyway");
     }
 
     int64_t count = 0;
@@ -132,11 +132,10 @@ bool CMempoolComponent::LoadMempool(void)
         }
     } catch (const std::exception &e)
     {
-        mlog_notice("Failed to deserialize mempool data on disk: %s. Continuing anyway.\n", e.what());
-        return false;
+        return rLogError("Failed to deserialize mempool data on disk: %s. Continuing anyway", e.what());
     }
 
-    mlog_notice("Imported mempool transactions from disk: %i successes, %i failed, %i expired\n", count, failed,
+    NLogFormat("Imported mempool transactions from disk: %i successes, %i failed, %i expired", count, failed,
                 skipped);
     return true;
 }
@@ -186,10 +185,10 @@ void CMempoolComponent::DumpMempool(void)
         file.fclose();
         RenameOver(Args().GetDataDir() / "mempool.dat.new", Args().GetDataDir() / "mempool.dat");
         int64_t last = GetTimeMicros();
-        mlog_notice("Dumped mempool: %gs to copy, %gs to dump\n", (mid - start) * 0.000001, (last - mid) * 0.000001);
+        NLogFormat("Dumped mempool: %gs to copy, %gs to dump", (mid - start) * 0.000001, (last - mid) * 0.000001);
     } catch (const std::exception &e)
     {
-        mlog_notice("Failed to dump mempool: %s. Continuing anyway.\n", e.what());
+        ELogFormat("Failed to dump mempool: %s. Continuing anyway", e.what());
     }
 }
 
@@ -213,7 +212,7 @@ void CMempoolComponent::FlushFeeEstimate()
         if (!est_fileout.IsNull())
             ::feeEstimator.Write(est_fileout);
         else
-            LogPrintf("%s: Failed to write fee estimates to %s\n", __func__, est_path.string());
+            ELogFormat("%s: Failed to write fee estimates to %s", __func__, est_path.string());
         bFeeEstimatesInitialized = false;
     }
 }

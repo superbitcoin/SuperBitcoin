@@ -16,6 +16,8 @@
 #include <vector>
 #include <unordered_map>
 
+REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+
 /** Default number of orphan+recently-replaced txn to keep around for block reconstruction */
 static const unsigned int DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN = 100;
 
@@ -202,7 +204,7 @@ ReadStatus PartiallyDownloadedBlock::InitData(const CBlockHeaderAndShortTxIDs &c
             break;
     }
 
-    LogPrint(BCLog::CMPCTBLOCK, "Initialized PartiallyDownloadedBlock for block %s using a cmpctblock of size %lu\n",
+    NLogFormat("Initialized PartiallyDownloadedBlock for block %s using a cmpctblock of size %lu",
              cmpctblock.header.GetHash().ToString(), GetSerializeSize(cmpctblock, SER_NETWORK, PROTOCOL_VERSION));
 
     return READ_STATUS_OK;
@@ -254,14 +256,14 @@ ReadStatus PartiallyDownloadedBlock::FillBlock(CBlock &block, const std::vector<
         return READ_STATUS_CHECKBLOCK_FAILED;
     }
 
-    LogPrint(BCLog::CMPCTBLOCK,
-             "Successfully reconstructed block %s with %lu txn prefilled, %lu txn from mempool (incl at least %lu from extra pool) and %lu txn requested\n",
+    NLogFormat(
+             "Successfully reconstructed block %s with %lu txn prefilled, %lu txn from mempool (incl at least %lu from extra pool) and %lu txn requested",
              hash.ToString(), prefilled_count, mempool_count, extra_count, vtx_missing.size());
     if (vtx_missing.size() < 5)
     {
         for (const auto &tx : vtx_missing)
         {
-            LogPrint(BCLog::CMPCTBLOCK, "Reconstructed block %s required tx %s\n", hash.ToString(),
+            NLogFormat("Reconstructed block %s required tx %s", hash.ToString(),
                      tx->GetHash().ToString());
         }
     }

@@ -10,6 +10,8 @@
 #include "config/argmanager.h"
 #include "sbtccore/block/undo.h"
 
+REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+
 CViewManager &CViewManager::Instance()
 {
     static CViewManager viewManager;
@@ -28,7 +30,7 @@ CViewManager::~CViewManager()
 
 int CViewManager::InitCoinsDB(int64_t iCoinDBCacheSize, bool bReset)
 {
-    mlog_notice("initialize view manager");
+    NLogFormat("initialize view manager");
 
     delete pCoinsTip;
     delete pCoinsViewDB;
@@ -66,18 +68,18 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
     CDiskBlockPos pos = pindex->GetUndoPos();
     if (pos.IsNull())
     {
-        mlog_error("DisconnectBlock(): no undo data available");
+        ELogFormat("DisconnectBlock(): no undo data available");
         return DISCONNECT_FAILED;
     }
     if (!UndoReadFromDisk(blockUndo, pos, pindex->pprev->GetBlockHash()))
     {
-        mlog_error("DisconnectBlock(): failure reading undo data");
+        ELogFormat("DisconnectBlock(): failure reading undo data");
         return DISCONNECT_FAILED;
     }
 
     if (blockUndo.vtxundo.size() + 1 != block.vtx.size())
     {
-        mlog_error("DisconnectBlock(): block and undo data inconsistent");
+        ELogFormat("DisconnectBlock(): block and undo data inconsistent");
         return DISCONNECT_FAILED;
     }
 
@@ -111,7 +113,7 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
             CTxUndo &txundo = blockUndo.vtxundo[i - 1];
             if (txundo.vprevout.size() != tx.vin.size())
             {
-                mlog_error("DisconnectBlock(): transaction and undo data inconsistent");
+                ELogFormat("DisconnectBlock(): transaction and undo data inconsistent");
                 return DISCONNECT_FAILED;
             }
             for (unsigned int j = tx.vin.size(); j-- > 0;)
@@ -135,7 +137,6 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
 /** Apply the effects of a block on the utxo cache, ignoring that it may already have been applied. */
 bool CViewManager::ConnectBlock(const CBlock &block, const CBlockIndex *pIndex, CCoinsViewCache &viewCache)
 {
-    // TODO: merge with ConnectBlock
     for (const CTransactionRef &tx : block.vtx)
     {
         if (!tx->IsCoinBase())

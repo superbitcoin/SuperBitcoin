@@ -37,6 +37,8 @@
 #include <mutex>
 #include <condition_variable>
 
+REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+
 struct CUpdatedBlock
 {
     uint256 hash;
@@ -928,7 +930,7 @@ static bool GetUTXOStats(CCoinsView *view, CCoinsStats &stats)
             outputs[key.n] = std::move(coin);
         } else
         {
-            mlog_error("%s: unable to read value", __func__);
+            ELogFormat("%s: unable to read value", __func__);
             return false;
         }
         pcursor->Next();
@@ -988,7 +990,7 @@ UniValue pruneblockchain(const JSONRPCRequest &request)
         throw JSONRPCError(RPC_INVALID_PARAMETER, "Blockchain is shorter than the attempted prune height.");
     else if (height > chainHeight - MIN_BLOCKS_TO_KEEP)
     {
-        LogPrint(BCLog::RPC, "Attempt to prune blocks close to the tip.  Retaining the minimum number of blocks.");
+        NLogFormat("Attempt to prune blocks close to the tip.  Retaining the minimum number of blocks.");
         height = chainHeight - MIN_BLOCKS_TO_KEEP;
     }
 

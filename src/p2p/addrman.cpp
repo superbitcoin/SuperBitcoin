@@ -9,6 +9,8 @@
 #include "sbtccore/serialize.h"
 #include "sbtccore/streams.h"
 
+REDIRECT_SBTC_LOGGER(CID_P2P_NET);
+
 int CAddrInfo::GetTriedBucket(const uint256 &nKey) const
 {
     uint64_t hash1 = (CHashWriter(SER_GETHASH, 0) << nKey << GetKey()).GetHash().GetCheapHash();
@@ -240,11 +242,11 @@ void CAddrMan::Good_(const CService &addr, int64_t nTime)
     }
 
     // if no bucket is found, something bad happened;
-    // TODO: maybe re-add the node, but for now, just bail out
+    // maybe re-add the node, but for now, just bail out
     if (nUBucket == -1)
         return;
 
-    LogPrint(BCLog::ADDRMAN, "Moving %s to tried", addr.ToString());
+    NLogFormat("Moving %s to tried", addr.ToString());
 
     // move nId to the tried tables
     MakeTried(info, nId);

@@ -25,6 +25,8 @@
 #include <memory> // for unique_ptr
 #include <unordered_map>
 
+REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+
 static bool fRPCRunning = false;
 static bool fRPCInWarmup = true;
 static std::string rpcWarmupStatus("RPC server started");
@@ -322,7 +324,7 @@ bool CRPCTable::appendCommand(const std::string &name, const CRPCCommand *pcmd)
 
 bool StartRPC()
 {
-    LogPrint(BCLog::RPC, "Starting RPC\n");
+    NLogFormat("Starting RPC");
     fRPCRunning = true;
     g_rpcSignals.Started();
     return true;
@@ -330,14 +332,14 @@ bool StartRPC()
 
 void InterruptRPC()
 {
-    LogPrint(BCLog::RPC, "Interrupting RPC\n");
+    NLogFormat("Interrupting RPC");
     // Interrupt e.g. running longpolls
     fRPCRunning = false;
 }
 
 void StopRPC()
 {
-    LogPrint(BCLog::RPC, "Stopping RPC\n");
+    NLogFormat("Stopping RPC");
     deadlineTimers.clear();
     DeleteAuthCookie();
     g_rpcSignals.Stopped();
@@ -386,7 +388,7 @@ void JSONRPCRequest::parse(const UniValue &valRequest)
     if (!valMethod.isStr())
         throw JSONRPCError(RPC_INVALID_REQUEST, "Method must be a string");
     strMethod = valMethod.get_str();
-    LogPrint(BCLog::RPC, "ThreadRPCServer method=%s\n", SanitizeString(strMethod));
+    NLogFormat("ThreadRPCServer method=%s", SanitizeString(strMethod));
 
     // Parse params
     UniValue valParams = find_value(request, "params");
@@ -568,7 +570,7 @@ void RPCRunLater(const std::string &name, std::function<void(void)> func, int64_
     if (!timerInterface)
         throw JSONRPCError(RPC_INTERNAL_ERROR, "No timer handler registered for RPC");
     deadlineTimers.erase(name);
-    LogPrint(BCLog::RPC, "queue run of timer %s in %i seconds (using %s)\n", name, nSeconds, timerInterface->Name());
+    NLogFormat("queue run of timer %s in %i seconds (using %s)", name, nSeconds, timerInterface->Name());
     deadlineTimers.emplace(name, std::unique_ptr<RPCTimerBase>(timerInterface->NewTimer(func, nSeconds * 1000)));
 }
 

@@ -105,18 +105,8 @@ const int64_t nStartupTime = GetTime();
 const char *const BITCOIN_CONF_FILENAME = "sbtc.conf";
 const char *const BITCOIN_PID_FILENAME = "sbtc.pid";
 
-//bool fPrintToConsole = false;
-//bool fPrintToDebugLog = true;
-//
-//bool fLogTimestamps = DEFAULT_LOGTIMESTAMPS;
-//bool fLogTimeMicros = DEFAULT_LOGTIMEMICROS;
-//bool fLogIPs = DEFAULT_LOGIPS;
-//std::atomic<bool> fReopenDebugLog(false);
-
 CTranslationInterface translationInterface;
 
-///** Log categories bitfield. */
-//std::atomic<uint32_t> logCategories(0);
 
 /** Init OpenSSL library multithreading support */
 static std::unique_ptr<CCriticalSection[]> ppmutexOpenSSL;
@@ -167,235 +157,7 @@ public:
         // Clear the set of locks now to maintain symmetry with the constructor.
         ppmutexOpenSSL.reset();
     }
-}
-        instance_of_cinit;
-
-/**
- * LogPrintf() has been broken a couple of times now
- * by well-meaning people adding mutexes in the most straightforward way.
- * It breaks because it may be called by global destructors during shutdown.
- * Since the order of destruction of static/global objects is undefined,
- * defining a mutex as a global object doesn't work (the mutex gets
- * destroyed, and then some later destructor calls OutputDebugStringF,
- * maybe indirectly, and you get a core dump at shutdown trying to lock
- * the mutex).
- */
-
-//static boost::once_flag debugPrintInitFlag = BOOST_ONCE_INIT;
-
-/**
- * We use boost::call_once() to make sure mutexDebugLog and
- * vMsgsBeforeOpenLog are initialized in a thread-safe manner.
- *
- * NOTE: fileout, mutexDebugLog and sometimes vMsgsBeforeOpenLog
- * are leaked on exit. This is ugly, but will be cleaned up by
- * the OS/libc. When the shutdown sequence is fully audited and
- * tested, explicit destruction of these objects can be implemented.
- */
-//static FILE *fileout = nullptr;
-//static boost::mutex *mutexDebugLog = nullptr;
-//static std::list<std::string> *vMsgsBeforeOpenLog;
-//
-//static int FileWriteStr(const std::string &str, FILE *fp)
-//{
-//    return fwrite(str.data(), 1, str.size(), fp);
-//}
-//
-//static void DebugPrintInit()
-//{
-//    assert(mutexDebugLog == nullptr);
-//    mutexDebugLog = new boost::mutex();
-//    vMsgsBeforeOpenLog = new std::list<std::string>;
-//}
-
-//void OpenDebugLog()
-//{
-//    boost::call_once(&DebugPrintInit, debugPrintInitFlag);
-//    boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
-//
-//    assert(fileout == nullptr);
-//    assert(vMsgsBeforeOpenLog);
-//    fs::path pathDebug = GetDataDir() / "debug.log";
-//    fileout = fsbridge::fopen(pathDebug, "a");
-//    if (fileout)
-//    {
-//        setbuf(fileout, nullptr); // unbuffered
-//        // dump buffered messages from before we opened the log
-//        while (!vMsgsBeforeOpenLog->empty())
-//        {
-//            FileWriteStr(vMsgsBeforeOpenLog->front(), fileout);
-//            vMsgsBeforeOpenLog->pop_front();
-//        }
-//    }
-//
-//    delete vMsgsBeforeOpenLog;
-//    vMsgsBeforeOpenLog = nullptr;
-//}
-//
-//struct CLogCategoryDesc
-//{
-//    uint32_t flag;
-//    std::string category;
-//};
-//
-//const CLogCategoryDesc LogCategories[] =
-//        {
-//                {BCLog::NONE,        "0"},
-//                {BCLog::NET,         "net"},
-//                {BCLog::TOR,         "tor"},
-//                {BCLog::MEMPOOL,     "mempool"},
-//                {BCLog::HTTP,        "http"},
-//                {BCLog::BENCH,       "bench"},
-//                {BCLog::ZMQ,         "zmq"},
-//                {BCLog::DB,          "db"},
-//                {BCLog::RPC,         "rpc"},
-//                {BCLog::ESTIMATEFEE, "estimatefee"},
-//                {BCLog::ADDRMAN,     "addrman"},
-//                {BCLog::SELECTCOINS, "selectcoins"},
-//                {BCLog::REINDEX,     "reindex"},
-//                {BCLog::CMPCTBLOCK,  "cmpctblock"},
-//                {BCLog::RAND,        "rand"},
-//                {BCLog::PRUNE,       "prune"},
-//                {BCLog::PROXY,       "proxy"},
-//                {BCLog::MEMPOOLREJ,  "mempoolrej"},
-//                {BCLog::LIBEVENT,    "libevent"},
-//                {BCLog::COINDB,      "coindb"},
-//                {BCLog::QT,          "qt"},
-//                {BCLog::LEVELDB,     "leveldb"},
-//                {BCLog::ALL,         "1"},
-//                {BCLog::ALL,         "all"},
-//        };
-//
-//bool GetLogCategory(uint32_t *f, const std::string *str)
-//{
-//    if (f && str)
-//    {
-//        if (*str == "")
-//        {
-//            *f = BCLog::ALL;
-//            return true;
-//        }
-//        for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++)
-//        {
-//            if (LogCategories[i].category == *str)
-//            {
-//                *f = LogCategories[i].flag;
-//                return true;
-//            }
-//        }
-//    }
-//    return false;
-//}
-//
-//std::string ListLogCategories()
-//{
-//    std::string ret;
-//    int outcount = 0;
-//    for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++)
-//    {
-//        // Omit the special cases.
-//        if (LogCategories[i].flag != BCLog::NONE && LogCategories[i].flag != BCLog::ALL)
-//        {
-//            if (outcount != 0)
-//                ret += ", ";
-//            ret += LogCategories[i].category;
-//            outcount++;
-//        }
-//    }
-//    return ret;
-//}
-//
-//std::vector<CLogCategoryActive> ListActiveLogCategories()
-//{
-//    std::vector<CLogCategoryActive> ret;
-//    for (unsigned int i = 0; i < ARRAYLEN(LogCategories); i++)
-//    {
-//        // Omit the special cases.
-//        if (LogCategories[i].flag != BCLog::NONE && LogCategories[i].flag != BCLog::ALL)
-//        {
-//            CLogCategoryActive catActive;
-//            catActive.category = LogCategories[i].category;
-//            catActive.active = LogAcceptCategory(LogCategories[i].flag);
-//            ret.push_back(catActive);
-//        }
-//    }
-//    return ret;
-//}
-
-/**
- * fStartedNewLine is a state variable held by the calling context that will
- * suppress printing of the timestamp when multiple calls are made that don't
- * end in a newline. Initialize it to true, and hold it, in the calling context.
- */
-//static std::string LogTimestampStr(const std::string &str, std::atomic_bool *fStartedNewLine)
-//{
-//    std::string strStamped;
-//
-//    if (!fLogTimestamps)
-//        return str;
-//
-//    if (*fStartedNewLine)
-//    {
-//        int64_t nTimeMicros = GetTimeMicros();
-//        strStamped = DateTimeStrFormat("%Y-%m-%d %H:%M:%S", nTimeMicros / 1000000);
-//        if (fLogTimeMicros)
-//            strStamped += strprintf(".%06d", nTimeMicros % 1000000);
-//        int64_t mocktime = GetMockTime();
-//        if (mocktime)
-//        {
-//            strStamped += " (mocktime: " + DateTimeStrFormat("%Y-%m-%d %H:%M:%S", mocktime) + ")";
-//        }
-//        strStamped += ' ' + str;
-//    } else
-//        strStamped = str;
-//
-//    if (!str.empty() && str[str.size() - 1] == '\n')
-//        *fStartedNewLine = true;
-//    else
-//        *fStartedNewLine = false;
-//
-//    return strStamped;
-//}
-//
-//int LogPrintStr(const std::string &str)
-//{
-//    int ret = 0; // Returns total number of characters written
-//    static std::atomic_bool fStartedNewLine(true);
-//
-//    std::string strTimestamped = LogTimestampStr(str, &fStartedNewLine);
-//
-//    if (fPrintToConsole)
-//    {
-//        // print to console
-//        ret = fwrite(strTimestamped.data(), 1, strTimestamped.size(), stdout);
-//        fflush(stdout);
-//    } else if (fPrintToDebugLog)
-//    {
-//        boost::call_once(&DebugPrintInit, debugPrintInitFlag);
-//        boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
-//
-//        // buffer if we haven't opened the log yet
-//        if (fileout == nullptr)
-//        {
-//            assert(vMsgsBeforeOpenLog);
-//            ret = strTimestamped.length();
-//            vMsgsBeforeOpenLog->push_back(strTimestamped);
-//        } else
-//        {
-//            // reopen the log file, if requested
-//            if (fReopenDebugLog)
-//            {
-//                fReopenDebugLog = false;
-//                fs::path pathDebug = GetDataDir() / "debug.log";
-//                if (fsbridge::freopen(pathDebug, "a", fileout) != nullptr)
-//                    setbuf(fileout, nullptr); // unbuffered
-//            }
-//
-//            ret = FileWriteStr(strTimestamped, fileout);
-//        }
-//    }
-//    return ret;
-//}
+} instance_of_cinit;
 
 static const int screenWidth = 79;
 static const int optIndent = 2;
@@ -434,8 +196,8 @@ static std::string FormatException(const std::exception *pex, const char *pszThr
 void PrintExceptionContinue(const std::exception *pex, const char *pszThread)
 {
     std::string message = FormatException(pex, pszThread);
-    mlog_error("************************%s", message);
-    mlog_error("************************%s", message.c_str());
+    ELogFormat("************************%s", message);
+    ELogFormat("************************%s", message.c_str());
 }
 
 fs::path GetDefaultDataDir()
@@ -467,11 +229,6 @@ fs::path GetDefaultDataDir()
 const fs::path &GetDataDir(bool fNetSpecific)
 {
     return Args().GetDataDir(fNetSpecific);
-}
-
-void ClearDatadirCache()
-{
-    Args().ClearDatadirCache();
 }
 
 fs::path GetConfigFile(const std::string &confPath)
@@ -651,7 +408,7 @@ void runCommand(const std::string &strCommand)
 {
     int nErr = ::system(strCommand.c_str());
     if (nErr)
-        mlog_error("runCommand error: system(%s) returned %d\n", strCommand, nErr);
+        ELogFormat("runCommand error: system(%s) returned %d", strCommand, nErr);
 }
 
 void RenameThread(const char *name)
@@ -740,56 +497,3 @@ int64_t GetStartupTime()
 {
     return nStartupTime;
 }
-
-
-void GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char *> &argv_arr)
-{
-    for (int i = 0; i != argc; i++)
-    {
-        if (strlen(argv[i]) > 2 && argv[i][0] == '-' && argv[i][1] != '-')
-        {
-            argv_arr_tmp.push_back("-" + string(argv[i]));
-            continue;
-        }
-
-        argv_arr_tmp.push_back(string(argv[i]));
-    }
-    for (string &s : argv_arr_tmp)
-    {
-        argv_arr.push_back(s.c_str());
-    }
-}
-
-log4cpp::Category &LogFlag2Log4CppObj(int logFlag)
-{
-    switch (logFlag)
-    {
-        case BCLog::NET:
-        case BCLog::TOR:
-        case BCLog::ZMQ:
-        case BCLog::ADDRMAN:
-        case BCLog::PROXY:
-            return log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET));
-        case BCLog::MEMPOOL:
-        case BCLog::ESTIMATEFEE:
-        case BCLog::SELECTCOINS:
-        case BCLog::MEMPOOLREJ:
-            return log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
-        case BCLog::HTTP:
-        case BCLog::RPC:
-        case BCLog::LIBEVENT:
-            return log4cpp::Category::getInstance(EMTOSTR(CID_HTTP_RPC));
-        case BCLog::DB:
-        case BCLog::REINDEX:
-        case BCLog::CMPCTBLOCK:
-        case BCLog::PRUNE:
-        case BCLog::COINDB:
-        case BCLog::LEVELDB:
-        case BCLog::CKECKPOINT:
-        case BCLog::BENCH:
-            return log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
-        default:
-            return log4cpp::Category::getInstance(EMTOSTR(CID_APP));
-    }
-}
-

@@ -22,6 +22,8 @@
 #include "utils/net/netmessagehelper.h"
 #include "chaincontrol/utils.h"
 
+REDIRECT_SBTC_LOGGER(CID_TX_MEMPOOL);
+
 namespace
 {
     /**
@@ -126,7 +128,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
         (!IsFlagsBitOn(xnode->flags, NF_WHITELIST) ||
          !Args().GetArg<bool>("-whitelistrelay", DEFAULT_WHITELISTRELAY)))
     {
-        mlog_notice("transaction sent in violation of protocol peer=%d", xnode->nodeID);
+        NLogFormat("transaction sent in violation of protocol peer=%d", xnode->nodeID);
         return true;
     }
 
@@ -164,7 +166,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
 
         SetFlagsBit(xnode->retFlags, NF_NEWTRANSACTION);
 
-        mlog_notice("AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)",
+        NLogFormat("AcceptToMemoryPool: peer=%d: accepted %s (poolsz %u txn, %u kB)",
                     xnode->nodeID,
                     tx.GetHash().ToString(),
                     GetMemPool().size(), GetMemPool().DynamicMemoryUsage() / 1000);
@@ -197,7 +199,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
                     continue;
                 if (GetMemPool().AcceptToMemoryPool(stateDummy, porphanTx, true, &fMissingInputs2, &lRemovedTxn))
                 {
-                    mlog_notice("accepted orphan tx %s", orphanHash.ToString());
+                    NLogFormat("accepted orphan tx %s", orphanHash.ToString());
 
                     ifNetObj->BroadcastTransaction(orphanTx.GetHash());
 
@@ -215,11 +217,11 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
                         // Punish peer that gave us an invalid orphan tx
                         ifNetObj->MisbehaveNode(fromPeer, nDos);
                         setMisbehaving.insert(fromPeer);
-                        mlog_notice("invalid orphan tx %s\n", orphanHash.ToString());
+                        NLogFormat("invalid orphan tx %s", orphanHash.ToString());
                     }
                     // Has inputs but not accepted to mempool
                     // Probably non-standard or insufficient fee
-                    mlog_notice("removed orphan tx %s", orphanHash.ToString());
+                    NLogFormat("removed orphan tx %s", orphanHash.ToString());
                     vEraseQueue.push_back(orphanHash);
                     if (!orphanTx.HasWitness() && !stateDummy.CorruptionPossible())
                     {
@@ -272,11 +274,11 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
             unsigned int nEvicted = orphanTxMgr.LimitOrphanTxSize(nMaxOrphanTx);
             if (nEvicted > 0)
             {
-                mlog_notice("mapOrphan overflow, removed %u tx\n", nEvicted);
+                NLogFormat("mapOrphan overflow, removed %u tx", nEvicted);
             }
         } else
         {
-            mlog_notice("not keeping orphan with rejected parents %s\n", tx.GetHash().ToString());
+            NLogFormat("not keeping orphan with rejected parents %s", tx.GetHash().ToString());
             // We will continue to reject this tx since it has rejected
             // parents so avoid re-requesting it from other peers.
             recentRejects->insert(tx.GetHash());
@@ -313,13 +315,13 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
             int nDoS = 0;
             if (!state.IsInvalid(nDoS) || nDoS == 0)
             {
-                mlog_notice("Force relaying tx %s from whitelisted peer=%d\n", tx.GetHash().ToString(),
+                NLogFormat("Force relaying tx %s from whitelisted peer=%d", tx.GetHash().ToString(),
                             xnode->nodeID);
 
                 ifNetObj->BroadcastTransaction(tx.GetHash());
             } else
             {
-                mlog_notice("Not relaying invalid transaction %s from whitelisted peer=%d (%s)\n",
+                NLogFormat("Not relaying invalid transaction %s from whitelisted peer=%d (%s)",
                             tx.GetHash().ToString(), xnode->nodeID, FormatStateMessage(state));
             }
         }
@@ -331,7 +333,7 @@ bool CMempoolComponent::NetReceiveTxData(ExNode *xnode, CDataStream &stream, uin
     int nDoS = 0;
     if (state.IsInvalid(nDoS))
     {
-        mlog_error("%s from peer=%d was not accepted: %s", tx.GetHash().ToString(),
+        ELogFormat("%s from peer=%d was not accepted: %s", tx.GetHash().ToString(),
                    xnode->nodeID,
                    FormatStateMessage(state));
         if (state.GetRejectCode() > 0 &&
@@ -498,7 +500,7 @@ bool CMempoolComponent::RemoveOrphanTxForBlock(const CBlock* pblock)
         {
             nErased += orphanTxMgr.EraseOrphanTx(orphanHash);
         }
-        mlog_info("Erased %d orphan tx included or conflicted by block", nErased);
+        NLogFormat("Erased %d orphan tx included or conflicted by block", nErased);
         return true;
     }
 
