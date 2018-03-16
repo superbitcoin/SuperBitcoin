@@ -424,13 +424,13 @@ bool CBlockIndexManager::LoadBlockIndexDB(const Consensus::Params &consensus)
     pBlcokTreee->ReadFlag("prunedblockfiles", bHavePruned);
     if (bHavePruned)
     {
-        mlog.info("LoadBlockIndexDB(): Block files have previously been pruned\n");
+        mlog_info("LoadBlockIndexDB(): Block files have previously been pruned\n");
     }
 
     pBlcokTreee->ReadReindexing(bReIndexing);
 
     pBlcokTreee->ReadFlag("txindex", bTxIndex);
-    mlog.info("transaction index %s\n", bTxIndex ? "enabled" : "disabled");
+    mlog_info("transaction index %s\n", bTxIndex ? "enabled" : "disabled");
 
     return true;
 }
@@ -1022,7 +1022,6 @@ bool CBlockIndexManager::CheckBlockHeader(const CBlockHeader &block, CValidation
     return true;
 }
 
-log4cpp::Category &CBlockIndexManager::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
 
 /** Context-dependent validity checks.
  *  By "context", we mean only the previous block headers, but not the UTXO
@@ -1110,7 +1109,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
     {
         if (!fKnown)
         {
-            mlog.info("Leaving block file %i: %s\n", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
+            mlog_info("Leaving block file %i: %s\n", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
         }
         FlushBlockFile(!fKnown, vecBlockFileInfo[iLastBlockFile].nSize, vecBlockFileInfo[iLastBlockFile].nUndoSize);
         iLastBlockFile = nFile;
@@ -1135,7 +1134,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
                 FILE *file = OpenBlockFile(pos);
                 if (file)
                 {
-                    mlog.info("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE,
+                    mlog_info("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE,
                               pos.nFile);
                     AllocateFileRange(file, pos.nPos, nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos);
                     fclose(file);

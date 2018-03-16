@@ -434,8 +434,8 @@ static std::string FormatException(const std::exception *pex, const char *pszThr
 void PrintExceptionContinue(const std::exception *pex, const char *pszThread)
 {
     std::string message = FormatException(pex, pszThread);
-    mlog().error("************************%s", message);
-    mlog().error("************************%s", message.c_str());
+    mlog_error("************************%s", message);
+    mlog_error("************************%s", message.c_str());
 }
 
 fs::path GetDefaultDataDir()

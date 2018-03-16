@@ -294,7 +294,6 @@ public:
     bool WriteVersion(int nVersion);
 
 public:
-    static log4cpp::Category & mlog;
 private:
     CDB batch;
     CWalletDBWrapper &m_dbw;

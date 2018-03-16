@@ -220,7 +220,6 @@ public:
 
     bool ProcessNewBlock(const std::shared_ptr<const CBlock> pblock, bool fForceProcessing, bool *fNewBlock) override;
 
-    log4cpp::Category &getLog() override;
 
     bool VerifyDB(const CChainParams &chainparams, CCoinsView *coinsview, int nCheckLevel, int nCheckDepth) override;
 
@@ -355,7 +354,7 @@ private:
     bool IsSBTCForkHeight(const Consensus::Params &params, const int &height);
 
 public:
-    static log4cpp::Category &mlog;
+
 
 
 };

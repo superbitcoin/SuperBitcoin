@@ -37,7 +37,7 @@ typedef std::map<COutPoint, std::set<std::map<uint256, OrphanTx>::iterator, Iter
 
 class COrphanTxMgr
 {
-    static log4cpp::Category &mlog;
+
 
 public:
     COrphanTxMgr();

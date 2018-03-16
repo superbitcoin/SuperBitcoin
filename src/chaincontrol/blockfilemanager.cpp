@@ -4,10 +4,10 @@
 //  Created on:      5-2-2018 16:40:57
 //  Original author: marco
 ///////////////////////////////////////////////////////////
-
+#include "utils/util.h"
 #include "blockfilemanager.h"
 #include "utils/tinyformat.h"
-#include "utils/util.h"
+
 #include "utils/utilstrencodings.h"
 #include "sbtccore/streams.h"
 #include "sbtccore/clientversion.h"
@@ -63,7 +63,10 @@ bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus:
     // Open history file to read
     CAutoFile filein(OpenBlockFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
-        return error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+    {
+        mlog_error("ReadBlockFromDisk: OpenBlockFile failed for %s", pos.ToString());
+        return false;
+    }
 
     // Read block
     try

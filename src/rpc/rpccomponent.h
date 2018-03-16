@@ -18,9 +18,8 @@ public:
 
     const char *whoru() const override;
 
-    log4cpp::Category &getLog() override { return mlog; }
 
-    static log4cpp::Category &mlog;
+
 
 private:
 

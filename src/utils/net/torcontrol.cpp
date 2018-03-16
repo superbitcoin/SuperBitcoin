@@ -452,6 +452,7 @@ static bool WriteBinaryFile(const fs::path &filename, const std::string &data)
  */
 class TorController
 {
+
 public:
     TorController(struct event_base *base, const std::string &target);
 
@@ -788,7 +789,7 @@ void TorController::connected_cb(TorControlConnection &_conn)
     reconnect_timeout = RECONNECT_TIMEOUT_START;
     // First send a PROTOCOLINFO command to figure out what authentication is expected
     if (!_conn.Command("PROTOCOLINFO 1", boost::bind(&TorController::protocolinfo_cb, this, _1, _2)))
-        mlog().notice("tor: Error sending initial protocolinfo command\n");
+        mlog_notice("tor: Error sending initial protocolinfo command\n");
 }
 
 void TorController::disconnected_cb(TorControlConnection &_conn)
@@ -817,7 +818,7 @@ void TorController::Reconnect()
     if (!conn.Connect(target, boost::bind(&TorController::connected_cb, this, _1),
                       boost::bind(&TorController::disconnected_cb, this, _1)))
     {
-        mlog().notice("tor: Re-initiating connection to Tor control port %s failed", target);
+        mlog_notice("tor: Re-initiating connection to Tor control port %s failed", target);
     }
 }
 
@@ -859,7 +860,7 @@ void StartTorControl()
     gBase = event_base_new();
     if (!gBase)
     {
-        mlog().notice("tor: Unable to create event_base\n");
+        mlog_notice("tor: Unable to create event_base\n");
         return;
     }
 
@@ -870,7 +871,7 @@ void InterruptTorControl()
 {
     if (gBase)
     {
-        mlog().notice("tor: Thread interrupt");
+        mlog_notice("tor: Thread interrupt");
         event_base_loopbreak(gBase);
     }
 }

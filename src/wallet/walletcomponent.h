@@ -20,7 +20,6 @@ public:
 
     ~CWalletComponent();
 
-    static log4cpp::Category &mlog;
 
     bool ComponentInitialize() override;
 
@@ -34,7 +33,6 @@ public:
 
     CWallet* GetWallet(int index) override;
 
-    log4cpp::Category &getLog() override;
 
     template<typename F>
     void ForEachWallet(F&& func)

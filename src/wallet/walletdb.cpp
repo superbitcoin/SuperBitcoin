@@ -2,16 +2,16 @@
 // Copyright (c) 2009-2016 The Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
 #include "wallet/walletdb.h"
-
 #include "utils/base58.h"
+
 #include "chaincontrol/validation.h"
 #include "fs.h"
 #include "p2p/protocol.h"
 #include "sbtccore/serialize.h"
+#include "util.h"
 #include "framework/sync.h"
-#include "utils/util.h"
+
 #include "utils/utiltime.h"
 #include "wallet/wallet.h"
 #include "argmanager.h"
@@ -20,12 +20,31 @@
 
 #include <boost/thread.hpp>
 
+//#ifdef mlog
+//#undef mlog
+////DECLEAR_CATEOGRY("sdfdsf");
+//static log4cpp::Category *mlog = & log4cpp::Category::getInstance("123");
+//#endif
+
+//
+//class  tem {
+//public:
+//    tem( void (*te)(void) )
+//    {
+//        te();
+//    }
+//};
+//static tem  tem1([&]() -> void { mlog = & log4cpp::Category::getInstance("123");  });
+
+//mlog = nullptr;
+//DECLEAR_CATEOGRY("sdfdsf");
 //
 // CWalletDB
 //
 
 bool CWalletDB::WriteName(const std::string &strAddress, const std::string &strName)
 {
+
     return WriteIC(std::make_pair(std::string("name"), strAddress), strName);
 }
 
@@ -601,9 +620,9 @@ DBErrors CWalletDB::LoadWallet(CWallet *pwallet)
     if (result != DB_LOAD_OK)
         return result;
 
-    mlog.info("nFileVersion = %d\n", wss.nFileVersion);
+    mlog_info("nFileVersion = %d\n", wss.nFileVersion);
 
-    mlog.info("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total\n",
+    mlog_info("Keys: %u plaintext, %u encrypted, %u w/ metadata, %u total\n",
               wss.nKeys, wss.nCKeys, wss.nKeyMeta, wss.nKeys + wss.nCKeys);
 
     // nTimeFirstKey is only reliable if all keys have metadata
@@ -871,7 +890,6 @@ bool CWalletDB::TxnBegin()
     return batch.TxnBegin();
 }
 
-log4cpp::Category &CWalletDB::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
 
 bool CWalletDB::TxnCommit()
 {

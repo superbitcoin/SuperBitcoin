@@ -8,7 +8,6 @@
 #include "sbtcd/baseimpl.hpp"
 #include "config/argmanager.h"
 
-log4cpp::Category &CHttpRpcComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_HTTP_RPC));
 
 CHttpRpcComponent::CHttpRpcComponent()
 {

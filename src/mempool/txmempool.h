@@ -89,7 +89,7 @@ using namespace appbase;
 class CTxMemPool
 {
 private:
-    static log4cpp::Category &mlog;
+
     uint32_t nCheckFrequency; //!< Value n means that n times in 2^32 we check.
     unsigned int nTransactionsUpdated; //!< Used by getblocktemplate to trigger CreateNewBlock() invocation
     CBlockPolicyEstimator *minerPolicyEstimator;

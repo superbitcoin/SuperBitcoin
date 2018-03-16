@@ -238,7 +238,7 @@ private:
     bool IsAgainstCheckPoint(const CChainParams &chainparams, const int &nHeight, const uint256 &hash);
 
 public:
-    static log4cpp::Category &mlog;
+
 };
 
 #endif // !defined(__SBTC_BLOCKINDEXMANAGER_H__)

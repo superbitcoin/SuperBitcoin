@@ -70,7 +70,7 @@ private:
     int ApplyTxInUndo(Coin &&undo, CCoinsViewCache &view, const COutPoint &out);
 
 public:
-    static log4cpp::Category &mlog;
+
 
 };
 

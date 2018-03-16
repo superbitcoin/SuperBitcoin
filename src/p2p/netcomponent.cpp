@@ -15,7 +15,6 @@
 std::unique_ptr<CConnman, NoopDeleter<CConnman>> g_connman;
 
 CNetComponent::CNetComponent()
-        : mlog(log4cpp::Category::getInstance(EMTOSTR(CID_P2P_NET)))
 {
 }
 
@@ -25,7 +24,7 @@ CNetComponent::~CNetComponent()
 
 bool CNetComponent::ComponentInitialize()
 {
-    mlog.info("initialize p2p net component.");
+    mlog_info("initialize p2p net component.");
 
     if (!SetupNetworking())
     {
@@ -222,7 +221,7 @@ bool CNetComponent::ComponentInitialize()
                   nMaxConnections);
     }
 
-    mlog.info("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
+    mlog_info("Using at most %i automatic connections (%i file descriptors available)\n", nMaxConnections, nFD);
 
     netConnOptions.nLocalServices = nLocalServices;
     netConnOptions.nRelevantServices = nRelevantServices;
@@ -288,7 +287,7 @@ bool CNetComponent::ComponentInitialize()
 
 bool CNetComponent::ComponentStartup()
 {
-    mlog.info("startup p2p net component.");
+    mlog_info("startup p2p net component.");
 
     if (!netConnMgr || !peerLogic)
     {
@@ -310,7 +309,7 @@ bool CNetComponent::ComponentStartup()
 
 bool CNetComponent::ComponentShutdown()
 {
-    mlog.info("shutdown p2p net component.");
+    mlog_info("shutdown p2p net component.");
 
     InterruptTorControl();
 
@@ -340,10 +339,7 @@ bool CNetComponent::ComponentShutdown()
     return true;
 }
 
-log4cpp::Category &CNetComponent::getLog()
-{
-    return mlog;
-}
+
 
 bool CNetComponent::SendNetMessage(int64_t nodeID, const std::string &command, const std::vector<unsigned char> &data)
 {

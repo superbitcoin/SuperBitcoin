@@ -2,12 +2,12 @@
 // Copyright (c) 2009-2016 The Super Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-
+#include "util.h"
 #include "noui.h"
 
 #include "base/base.hpp"
 #include "ui_interface.h"
-#include "utils/util.h"
+
 
 #include <cstdio>
 #include <stdint.h>

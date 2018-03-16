@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 #include <log4cpp/Category.hh>
-#include "utils/util.h"
+#include "util.h"
 #include "interface/imempoolcomponent.h"
 #include "orphantx.h"
 #include "txmempool.h"
@@ -42,7 +42,7 @@ public:
     bool RemoveOrphanTxForBlock(const CBlock* pblock) override;
 
 public:
-    static log4cpp::Category &mlog;
+//
 
 private:
 

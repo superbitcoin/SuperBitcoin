@@ -106,8 +106,4 @@ CWallet* CWalletComponent::GetWallet(int index)
     return nullptr;
 }
 
-log4cpp::Category &CWalletComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
-log4cpp::Category &CWalletComponent::getLog()
-{
-    return mlog;
-}
+

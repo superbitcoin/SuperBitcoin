@@ -4,14 +4,13 @@
 //  Created on:      7-3-2018 16:40:57
 //  Original author: marco
 ///////////////////////////////////////////////////////////
-
+#include "util.h"
 #include "mempoolcomponent.h"
 #include "config/argmanager.h"
 #include "sbtccore/clientversion.h"
 #include "p2p/net_processing.h"
 #include "wallet/fees.h"
 
-log4cpp::Category &CMempoolComponent::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
 
 static const char *FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
 

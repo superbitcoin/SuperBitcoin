@@ -518,7 +518,6 @@ private:
 
     friend struct CConnmanTest;
 public:
-    static log4cpp::Category &mlog ;
 };
 
 template<typename T>
@@ -984,8 +983,6 @@ public:
 
     //! Sets the addrName only if it was not previously set
     void MaybeSetAddrName(const std::string &addrNameIn);
-public:
-    static log4cpp::Category &mlog ;
 };
 
 

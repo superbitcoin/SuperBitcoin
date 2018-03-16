@@ -15,7 +15,7 @@
 #include "config/sbtc-config.h"
 
 #endif
-
+#include <log4cpp/Category.hh>
 #include "base/base.hpp"
 #include "compat/compat.h"
 #include "fs.h"
@@ -158,6 +158,9 @@ inline std::string ListLogCategories() { return std::string(); }
 //    MarkUsed(args...);
 //}
 
+
+
+
 #ifdef USE_LOG4CPP
 
 log4cpp::Category &LogFlag2Log4CppObj(int logFlag);
@@ -168,19 +171,33 @@ inline std::string int2string(int line)
     return oss.str();
 }
 
+
+
+
+
 #define  LogPrintf_(logger, fmt, a...) logger.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #define  LogPrintf(fmt, a...) LogPrintf_(LogFlag2Log4CppObj(0), fmt, ##a)
 #define  LogPrint(category, a...) LogPrintf_(LogFlag2Log4CppObj(category), ##a)
 #define _TXT__(x) #x
 #define EMTOSTR(EM) _TXT__(EM)
 #define __FILENAME__ (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1):__FILE__)
-#define  mlog_notice(fmt, a...) mlog.notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
-#define  mlog_error(fmt, a...) mlog.error(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
-#define  mlog_info(fmt, a...) mlog.info(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
-#define  mlog_warn(fmt, a...) mlog.warn(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
-#define  mlog_fatal(fmt, a...) mlog.fatal(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
-#define  mlog_debug(fmt, a...) mlog.debug(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+static log4cpp::Category *mlog = & log4cpp::Category::getInstance("CID_APP");
 
+#define DECLEAR_CATEOGRY(CATE)  mlog = & log4cpp::Category::getInstance(#CATE);
+#define  mlog_notice(fmt, a...) mlog->notice(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_error(fmt, a...) mlog->error(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_info(fmt, a...) mlog->info(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_warn(fmt, a...) mlog->warn(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_fatal(fmt, a...) mlog->fatal(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+#define  mlog_debug(fmt, a...) mlog->debug(tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+//#define  error(fmt, a...)   asdfasdf("%s",tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
+
+template<typename... Args>
+bool error(const char *fmt, const Args &... args)
+{
+    mlog->error(tinyformat::format(fmt, args...).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str());
+    return false;
+}
 #else
 
 #define  LogPrintf_(logger, fmt, a...)
@@ -192,15 +209,15 @@ inline std::string int2string(int line)
 #define  mlog_warn(fmt, a...)
 #define  mlog_fatal(fmt, a...)
 #define  mlog_debug(fmt, a...)
+#define  error(fmt, a...)   error2("%s",tinyformat::format(fmt, ##a).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str())
 #endif
 
 
-template<typename... Args>
-bool error(const char *fmt, const Args &... args)
-{
-    mlog().error(tinyformat::format(fmt, args...).append(" ").append(__FILENAME__).append(int2string(__LINE__)).c_str());
-    return false;
-}
+
+//static  char const * category = "blockchain";
+
+
+
 
 
 
@@ -289,13 +306,13 @@ void TraceThread(const char *name, Callable func)
     RenameThread(s.c_str());
     try
     {
-        mlog().info("%s thread start\n", name);
+        mlog_info("%s thread start\n", name);
         func();
-        mlog().info("%s thread exit\n", name);
+        mlog_info("%s thread exit\n", name);
     }
     catch (const boost::thread_interrupted &)
     {
-        mlog().info("%s thread interrupt\n", name);
+        mlog_info("%s thread interrupt\n", name);
         throw;
     }
     catch (const std::exception &e)

@@ -29,7 +29,6 @@
 
 using namespace appbase;
 
-log4cpp::Category &CTxMemPool::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
 
 bool CTxMemPool::AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
                                     bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,

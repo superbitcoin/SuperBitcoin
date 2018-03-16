@@ -172,7 +172,6 @@ bool CViewManager::Flush()
     pCoinsTip->Flush();
     return true;
 }
-log4cpp::Category &CViewManager::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
 void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
 {
     // mark inputs spent

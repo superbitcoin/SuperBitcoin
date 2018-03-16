@@ -48,10 +48,6 @@ namespace appbase
             return *pChainParams.get();
         }
 
-        log4cpp::Category &getLog()
-        {
-            return mlog;
-        }
 
         uint64_t Version() const
         {
@@ -118,7 +114,7 @@ namespace appbase
         }
 
     public:
-        static log4cpp::Category &mlog;
+
         uint64_t nVersion;
         volatile bool bShutdown;
     protected:
@@ -145,11 +141,5 @@ const CArgsManager &Args();
 
 const CChainParams &Params();
 
-const CChainParams &BaseParams();
-
 appbase::IBaseApp *GetApp();
 
-inline log4cpp::Category &mlog()
-{
-    return appbase::IBaseApp::mlog;
-}

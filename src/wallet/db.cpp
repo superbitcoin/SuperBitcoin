@@ -3,8 +3,8 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include "util.h"
 #include "db.h"
-
 #include "p2p/addrman.h"
 #include "fs.h"
 #include "hash.h"
@@ -206,7 +206,6 @@ CDBEnv::Verify(const std::string &strFile, recoverFunc_type recoverFunc, std::st
     return (fRecovered ? RECOVER_OK : RECOVER_FAIL);
 }
 
-log4cpp::Category &CDB::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
 
 bool CDB::Recover(const std::string &filename, void *callbackDataIn,
                   bool (*recoverKVcallback)(void *callbackData, CDataStream ssKey, CDataStream ssValue),
@@ -225,7 +224,7 @@ bool CDB::Recover(const std::string &filename, void *callbackDataIn,
     int result = bitdb.dbenv->dbrename(nullptr, filename.c_str(), nullptr,
                                        newFilename.c_str(), DB_AUTO_COMMIT);
     if (result == 0)
-        mlog.info("Renamed %s to %s", filename, newFilename);
+        mlog_info("Renamed %s to %s", filename, newFilename);
     else
     {
         mlog_error("Failed to rename %s to %s", filename, newFilename);
@@ -344,7 +343,6 @@ static const char *HEADER_END = "HEADER=END";
 /* End of key/value data */
 static const char *DATA_END = "DATA=END";
 
-log4cpp::Category &CDBEnv::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
 
 bool CDBEnv::Salvage(const std::string &strFile, bool fAggressive, std::vector<CDBEnv::KeyValPair> &vResult)
 {
@@ -741,7 +739,6 @@ bool CWalletDBWrapper::Rewrite(const char *pszSkip)
     return CDB::Rewrite(*this, pszSkip);
 }
 
-log4cpp::Category &CWalletDBWrapper::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
 
 bool CWalletDBWrapper::Backup(const std::string &strDest)
 {

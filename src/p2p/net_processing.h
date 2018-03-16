@@ -136,7 +136,6 @@ private:
 
     const CArgsManager &appArgs;
 
-    log4cpp::Category &mlog;
 };
 
 

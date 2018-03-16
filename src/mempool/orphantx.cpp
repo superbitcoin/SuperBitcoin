@@ -14,7 +14,6 @@ COrphanTxMgr::~COrphanTxMgr()
 
 }
 
-log4cpp::Category &COrphanTxMgr::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_TX_MEMPOOL));
 
 bool COrphanTxMgr::AddOrphanTx(const CTransactionRef &tx, int64_t peer)
 {

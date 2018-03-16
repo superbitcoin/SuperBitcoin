@@ -27,6 +27,5 @@ namespace appbase
 
         virtual bool Shutdown() = 0;
 
-        virtual log4cpp::Category &getLog() = 0;
     };
 }

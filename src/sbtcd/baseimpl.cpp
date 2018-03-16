@@ -854,7 +854,7 @@ static bool InitSanityCheck(void)
 {
     if (!ECC_InitSanityCheck())
     {
-        CApp::mlog.error("Elliptic curve cryptography sanity check failure. Aborting.");
+        mlog_error("Elliptic curve cryptography sanity check failure. Aborting.");
         return false;
     }
 
@@ -863,7 +863,7 @@ static bool InitSanityCheck(void)
 
     if (!Random_SanityCheck())
     {
-        CApp::mlog.error("OS cryptographic RNG sanity check failure. Aborting.");
+        mlog_error("OS cryptographic RNG sanity check failure. Aborting.");
         return false;
     }
 
@@ -885,8 +885,8 @@ static bool LockDataDirectory(bool probeOnly)
         static boost::interprocess::file_lock lock(pathLockFile.string().c_str());
         if (!lock.try_lock())
         {
-            CApp::mlog.error("Cannot obtain a lock on data directory %s. %s is probably already running.",
-                             strDataDir, PACKAGE_NAME);
+            mlog_error("Cannot obtain a lock on data directory %s. %s is probably already running.",
+                             strDataDir.c_str(), PACKAGE_NAME);
             return false;
         }
         if (probeOnly)
@@ -895,7 +895,7 @@ static bool LockDataDirectory(bool probeOnly)
         }
     } catch (const boost::interprocess::interprocess_exception &e)
     {
-        CApp::mlog.error(
+        mlog_error(
                 "Cannot obtain a lock on data directory %s. %s is probably already running. %s.",
                 strDataDir, _(PACKAGE_NAME), e.what());
         return false;

@@ -2026,7 +2026,6 @@ bool CWalletTx::InMempool() const
     return mempool.exists(GetHash());
 }
 
-log4cpp::Category &CWalletTx::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_BLOCK_CHAIN));
 
 bool CWalletTx::IsTrusted() const
 {
@@ -2721,7 +2720,6 @@ bool CWallet::SelectCoins(const std::vector<COutput> &vAvailableCoins, const CAm
     return res;
 }
 
-log4cpp::Category &CWallet::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_WALLET));
 
 bool CWallet::SignTransaction(CMutableTransaction &tx)
 {

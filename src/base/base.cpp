@@ -3,6 +3,7 @@
 #include <functional>
 #include <signal.h>
 #include <boost/interprocess/sync/file_lock.hpp>
+#include "utils/util.h"
 #include <log4cpp/PropertyConfigurator.hh>
 #include <log4cpp/PatternLayout.hh>
 #include <log4cpp/RollingFileAppender.hh>
@@ -13,7 +14,7 @@
 #include "compat/sanity.h"
 #include "config/sbtc-config.h"
 #include "sbtccore/clientversion.h"
-#include "utils/util.h"
+
 #include "utils/utilstrencodings.h"
 #include "rpc/server.h"
 #include "p2p/net.h"
@@ -30,7 +31,6 @@
 
 using namespace appbase;
 
-log4cpp::Category &IBaseApp::mlog = log4cpp::Category::getInstance(EMTOSTR(CID_APP));
 std::unique_ptr<CArgsManager> appbase::IBaseApp::pArgs = std::make_unique<CArgsManager>();
 std::unique_ptr<CChainParams> appbase::IBaseApp::pChainParams = std::make_unique<CChainParams>();
 
@@ -82,7 +82,7 @@ bool IBaseApp::InitializeLogging(fs::path path)
             mlog.addAppender(rollfileAppender);
             mlog.setPriority(log4cpp::Priority::NOTICE);//设置Category的优先级;
             mlog.addAppender(osAppender);
-            mlog_notice("CID_APP log conf is using defalt !");
+            mlog.notice("CID_APP log conf is using defalt !");
 
         } catch (...)
         {

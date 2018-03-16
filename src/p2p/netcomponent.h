@@ -16,7 +16,6 @@ public:
     bool ComponentShutdown() override;
     const char* whoru() const override { return "I am CNetComponent\n";}
 
-    log4cpp::Category &getLog() override;
 
     bool SendNetMessage(int64_t nodeID, const std::string& command, const std::vector<unsigned char>& data) override;
 
@@ -44,7 +43,6 @@ public:
 
 
 private:
-    log4cpp::Category &mlog;
 
     std::unique_ptr<CConnman>   netConnMgr;
     std::unique_ptr<PeerLogicValidation> peerLogic;

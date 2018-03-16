@@ -498,7 +498,7 @@ bool CMempoolComponent::RemoveOrphanTxForBlock(const CBlock* pblock)
         {
             nErased += orphanTxMgr.EraseOrphanTx(orphanHash);
         }
-        mlog.info("Erased %d orphan tx included or conflicted by block", nErased);
+        mlog_info("Erased %d orphan tx included or conflicted by block", nErased);
         return true;
     }
 

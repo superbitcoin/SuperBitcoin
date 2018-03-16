@@ -27,7 +27,7 @@ static const bool DEFAULT_WALLET_PRIVDB = true;
 class CDBEnv
 {
 public:
-    static log4cpp::Category &mlog;
+
 private:
     bool fDbEnvInit;
     bool fMockDb;
@@ -114,7 +114,7 @@ class CWalletDBWrapper
 
     friend class CDB;
 public:
-    static log4cpp::Category &mlog;
+
 public:
     /** Create dummy DB handle */
     CWalletDBWrapper() : nUpdateCounter(0), nLastSeen(0), nLastFlushed(0), nLastWalletUpdate(0), env(nullptr)
@@ -208,7 +208,7 @@ public:
                                    std::string &errorStr, CDBEnv::recoverFunc_type recoverFunc);
 
 public:
-    static log4cpp::Category &mlog;
+//
 
 private:
     CDB(const CDB &);
