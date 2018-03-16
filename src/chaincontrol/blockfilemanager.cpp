@@ -75,13 +75,16 @@ bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus:
     }
     catch (const std::exception &e)
     {
-        return error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
+        mlog_error("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
+        return false;
     }
 
     // Check the header
     if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
-        return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
-
+    {
+        mlog_error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
+        return false;
+    }
     return true;
 }
 
@@ -90,8 +93,11 @@ bool ReadBlockFromDisk(CBlock &block, const CBlockIndex *pindex, const Consensus
     if (!ReadBlockFromDisk(block, pindex->GetBlockPos(), consensusParams))
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
-        return error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
-                     pindex->ToString(), pindex->GetBlockPos().ToString());
+    {
+        mlog_error("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
+                   pindex->ToString(), pindex->GetBlockPos().ToString());
+        return false;
+    }
     return true;
 }
 
@@ -100,7 +106,10 @@ bool UndoReadFromDisk(CBlockUndo &blockundo, const CDiskBlockPos &pos, const uin
     // Open history file to read
     CAutoFile filein(OpenUndoFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
-        return error("%s: OpenUndoFile failed", __func__);
+    {
+        mlog_error("%s: OpenUndoFile failed", __func__);
+        return false;
+    }
 
     // Read block
     uint256 hashChecksum;
@@ -113,12 +122,16 @@ bool UndoReadFromDisk(CBlockUndo &blockundo, const CDiskBlockPos &pos, const uin
     }
     catch (const std::exception &e)
     {
-        return error("%s: Deserialize or I/O error - %s", __func__, e.what());
+        mlog_error("%s: Deserialize or I/O error - %s", __func__, e.what());
+        return false;
     }
 
     // Verify checksum
     if (hashChecksum != verifier.GetHash())
-        return error("%s: Checksum mismatch", __func__);
+    {
+        mlog_error("%s: Checksum mismatch", __func__);
+        return false;
+    }
 
     return true;
 }
@@ -128,7 +141,10 @@ bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHea
     // Open history file to append
     CAutoFile fileout(OpenBlockFile(pos), SER_DISK, CLIENT_VERSION);
     if (fileout.IsNull())
-        return error("WriteBlockToDisk: OpenBlockFile failed");
+    {
+        mlog_error("WriteBlockToDisk: OpenBlockFile failed");
+        return false;
+    }
 
     // Write index header
     unsigned int nSize = GetSerializeSize(fileout, block);
@@ -137,7 +153,10 @@ bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHea
     // Write block
     long fileOutPos = ftell(fileout.Get());
     if (fileOutPos < 0)
-        return error("WriteBlockToDisk: ftell failed");
+    {
+        mlog_error("WriteBlockToDisk: ftell failed");
+        return false;
+    }
     pos.nPos = (unsigned int)fileOutPos;
     fileout << block;
 
@@ -150,7 +169,10 @@ bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint
     // Open history file to append
     CAutoFile fileout(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
     if (fileout.IsNull())
-        return error("%s: OpenUndoFile failed", __func__);
+    {
+        mlog_error("%s: OpenUndoFile failed", __func__);
+        return false;
+    }
 
     // Write index header
     unsigned int nSize = GetSerializeSize(fileout, blockundo);
@@ -159,7 +181,10 @@ bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint
     // Write undo data
     long fileOutPos = ftell(fileout.Get());
     if (fileOutPos < 0)
-        return error("%s: ftell failed", __func__);
+    {
+        mlog_error("%s: ftell failed", __func__);
+        return false;
+    }
     pos.nPos = (unsigned int)fileOutPos;
     fileout << blockundo;
 

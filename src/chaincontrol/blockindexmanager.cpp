@@ -961,27 +961,39 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
             if (ppindex)
                 *ppindex = pindex;
             if (pindex->nStatus & BLOCK_FAILED_MASK)
-                return state.Invalid(error("%s: block %s is marked invalid", __func__, hash.ToString()), 0,
-                                     "duplicate");
+            {
+                mlog_error("%s: block %s is marked invalid", __func__, hash.ToString());
+                return state.Invalid(false, 0, "duplicate");
+            }
             return true;
         }
 
         if (!CheckBlockHeader(block, state, chainparams.GetConsensus()))
-            return error("%s: Consensus::CheckBlockHeader: %s, %s", __func__, hash.ToString(),
-                         FormatStateMessage(state));
+        {
+            mlog_error("%s: Consensus::CheckBlockHeader: %s, %s", __func__, hash.ToString(), FormatStateMessage(state));
+            return false;
+        }
 
         // Get prev block index
         CBlockIndex *pindexPrev = nullptr;
         BlockMap::iterator mi = mBlockIndex.find(block.hashPrevBlock);
         if (mi == mBlockIndex.end())
-            return state.DoS(10, error("%s: prev block not found", __func__), 0, "prev-blk-not-found");
+        {
+            mlog_error("%s: prev block not found", __func__);
+            return state.DoS(10, false, 0, "prev-blk-not-found");
+        }
         pindexPrev = (*mi).second;
         if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
-            return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+        {
+            mlog_error("%s: prev block invalid", __func__);
+            return state.DoS(100, false, REJECT_INVALID, "bad-prevblk");
+        }
         if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, GetAdjustedTime()))
-            return error("%s: Consensus::ContextualCheckBlockHeader: %s, %s", __func__, hash.ToString(),
-                         FormatStateMessage(state));
-
+        {
+            mlog_error("%s: Consensus::ContextualCheckBlockHeader: %s, %s", __func__, hash.ToString(),
+                       FormatStateMessage(state));
+            return false;
+        }
         if (!pindexPrev->IsValid(BLOCK_VALID_SCRIPTS))
         {
             for (const CBlockIndex *failedit : setFailedBlocks)
@@ -996,7 +1008,8 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
                         setDirtyBlockIndex.insert(invalid_walk);
                         invalid_walk = invalid_walk->pprev;
                     }
-                    return state.DoS(100, error("%s: prev block invalid", __func__), REJECT_INVALID, "bad-prevblk");
+                    mlog_error("%s: prev block invalid", __func__);
+                    return state.DoS(100, false, REJECT_INVALID, "bad-prevblk");
                 }
             }
         }
@@ -1045,8 +1058,10 @@ bool CBlockIndexManager::ContextualCheckBlockHeader(const CBlockHeader &block, C
         // GetLastCheckpoint finds the last checkpoint in MapCheckpoints that's in our
         // MapBlockIndex.
         if (IsAgainstCheckPoint(params, pindexPrev) || IsAgainstCheckPoint(params, nHeight, block.GetHash()))
-            return state.DoS(100, error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight),
-                             REJECT_CHECKPOINT, "bad-fork-prior-to-checkpoint");
+        {
+            mlog_error("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight);
+            return state.DoS(100, false, REJECT_CHECKPOINT, "bad-fork-prior-to-checkpoint");
+        }
     }
 
     // Check timestamp against prev
