@@ -319,7 +319,7 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
         //therefore, this can only be triggered by using raw transactions on the staker itself
         return false;
     }
-    LogPrintf("AttemptToAddContractToBlock0=====\n"); //sbtc debug
+    LogPrintf("AttemptToAddContractToBlock0=====\n");
     std::vector<SbtcTransaction> sbtcTransactions = resultConverter.first;
     dev::u256 txGas = 0;
     for(SbtcTransaction sbtcTransaction : sbtcTransactions){
@@ -338,7 +338,7 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
             return false;
         }
     }
-    LogPrintf("AttemptToAddContractToBlock1=====\n"); //sbtc debug
+    LogPrintf("AttemptToAddContractToBlock1=====\n");
     // We need to pass the DGP's block gas limit (not the soft limit) since it is consensus critical.
     ByteCodeExec exec(*pblock, sbtcTransactions, hardBlockGasLimit);
     if(!exec.performByteCode()){
@@ -347,7 +347,7 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
         globalState->setRootUTXO(oldHashUTXORoot);
         return false;
     }
-    LogPrintf("AttemptToAddContractToBlock2=====\n"); //sbtc debug
+    LogPrintf("AttemptToAddContractToBlock2=====\n");
 
     ByteCodeExecResult testExecResult;
     if(!exec.processingResults(testExecResult)){
@@ -355,14 +355,14 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
         globalState->setRootUTXO(oldHashUTXORoot);
         return false;
     }
-    LogPrintf("AttemptToAddContractToBlock3=====\n"); //sbtc debug
+    LogPrintf("AttemptToAddContractToBlock3=====\n");
     if(bceResult.usedGas + testExecResult.usedGas > softBlockGasLimit){
         //if this transaction could cause block gas limit to be exceeded, then don't add it
         globalState->setRoot(oldHashStateRoot);
         globalState->setRootUTXO(oldHashUTXORoot);
         return false;
     }
-    LogPrintf("AttemptToAddContractToBlock4=====\n"); //sbtc debug
+    LogPrintf("AttemptToAddContractToBlock4=====\n");
     //apply contractTx costs to local state
 //    if (fNeedSizeAccounting) {
 //        nBlockSize += ::GetSerializeSize(iter->GetTx(), SER_NETWORK, PROTOCOL_VERSION);
@@ -399,9 +399,8 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     //all contract costs now applied to local state
 
     //Check if block will be too big or too expensive with this contract execution
-      if(nBlockSigOpsCost * WITNESS_SCALE_FACTOR > (uint64_t)MAX_BLOCK_SIGOPS_COST ){  //sbtc-vm
-//    if (nBlockSigOpsCost * WITNESS_SCALE_FACTOR > (uint64_t)dgpMaxBlockSigOps ||
-//        nBlockSize > dgpMaxBlockSerSize) {
+    if (nBlockSigOpsCost * WITNESS_SCALE_FACTOR > (uint64_t)MAX_BLOCK_SIGOPS_COST ||
+            nBlockWeight > MAX_BLOCK_WEIGHT) {//sbtc-vm
         //contract will not be added to block, so revert state to before we tried
         globalState->setRoot(oldHashStateRoot);
         globalState->setRootUTXO(oldHashUTXORoot);
