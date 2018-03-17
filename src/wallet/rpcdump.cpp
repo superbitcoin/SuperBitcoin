@@ -28,7 +28,7 @@
 
 #include <univalue.h>
 
-REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_HTTP_RPC);
 
 std::string static EncodeDumpTime(int64_t nTime)
 {

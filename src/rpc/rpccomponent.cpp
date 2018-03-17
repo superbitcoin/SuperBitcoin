@@ -8,7 +8,7 @@
 #include "sbtcd/baseimpl.hpp"
 #include "config/argmanager.h"
 
-REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_HTTP_RPC);
 
 CHttpRpcComponent::CHttpRpcComponent()
 {

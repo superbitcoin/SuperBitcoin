@@ -80,7 +80,7 @@ enum BindFlags
     BF_WHITELIST = (1U << 2),
 };
 
-REDIRECT_SBTC_LOGGER(CID_P2P_NET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_P2P_NET);
 
 const static std::string NET_MESSAGE_COMMAND_OTHER = "*other*";
 

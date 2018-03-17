@@ -19,7 +19,7 @@
 
 #include <boost/thread.hpp>
 
-REDIRECT_SBTC_LOGGER(CID_TX_CORE);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_TX_CORE);
 
 static const char DB_COIN = 'C';
 static const char DB_COINS = 'c';

@@ -9,7 +9,7 @@
 #include "pubkey.h"
 #include "utils/util.h"
 
-REDIRECT_SBTC_LOGGER(CID_WALLET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_WALLET);
 
 bool CKeyStore::AddKey(const CKey &key)
 {

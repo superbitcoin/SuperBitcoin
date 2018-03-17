@@ -12,7 +12,7 @@
 #include "sbtccore/clientversion.h"
 #include "interface/ichaincomponent.h"
 
-REDIRECT_SBTC_LOGGER(CID_P2P_NET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_P2P_NET);
 
 std::unique_ptr<CConnman, NoopDeleter<CConnman>> g_connman;
 

@@ -33,7 +33,7 @@
 #include <queue>
 #include <utility>
 
-REDIRECT_SBTC_LOGGER(CID_MINER);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_MINER);
 
 //////////////////////////////////////////////////////////////////////////////
 //

@@ -42,7 +42,7 @@
 
 #include "chainparams.h"
 
-REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_HTTP_RPC);
 
 /** Maximum size of http request (request line + headers) */
 static const size_t MAX_HEADERS_SIZE = 8192;

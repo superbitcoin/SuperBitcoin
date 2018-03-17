@@ -9,7 +9,7 @@
 #include "sbtccore/serialize.h"
 #include "sbtccore/streams.h"
 
-REDIRECT_SBTC_LOGGER(CID_P2P_NET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_P2P_NET);
 
 int CAddrInfo::GetTriedBucket(const uint256 &nKey) const
 {

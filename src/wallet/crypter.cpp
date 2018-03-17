@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-REDIRECT_SBTC_LOGGER(CID_WALLET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_WALLET);
 
 int CCrypter::BytesToKeySHA512AES(const std::vector<unsigned char> &chSalt, const SecureString &strKeyData, int count,
                                   unsigned char *key, unsigned char *iv) const

@@ -4,7 +4,7 @@
 #include "server.h"
 #include "scheduler.h"
 
-REDIRECT_SBTC_LOGGER(CID_WALLET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_WALLET);
 
 CWalletComponent::CWalletComponent()
 {

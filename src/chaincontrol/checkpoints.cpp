@@ -20,7 +20,7 @@
 #include <stdint.h>
 #include <univalue/include/univalue.h>
 
-REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
 namespace Checkpoints
 {

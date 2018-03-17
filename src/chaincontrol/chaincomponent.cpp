@@ -35,7 +35,7 @@ static int64_t nTimeChainState = 0;
 static int64_t nTimePostConnect = 0;
 static int64_t nTimeTotal = 0;
 
-REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
 void CChainComponent::ThreadScriptCheck()
 {

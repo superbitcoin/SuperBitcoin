@@ -21,7 +21,7 @@
 #include "eventmanager/eventmanager.h"
 #include "utils.h"
 
-REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
 // All of the following cache a recent block, and are protected by cs_most_recent_block
 static CCriticalSection cs_most_recent_block;

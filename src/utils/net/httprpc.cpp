@@ -20,7 +20,7 @@
 
 #include <boost/algorithm/string.hpp> // boost::trim
 
-REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_HTTP_RPC);
 
 /** WWW-Authenticate to present with 401 Unauthorized response */
 static const char *WWW_AUTH_HEADER_DATA = "Basic realm=\"jsonrpc\"";

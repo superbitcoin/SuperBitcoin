@@ -33,7 +33,7 @@
 #define MSG_NOSIGNAL 0
 #endif
 
-REDIRECT_SBTC_LOGGER(CID_P2P_NET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_P2P_NET);
 
 // Settings
 static proxyType proxyInfo[NET_MAX];

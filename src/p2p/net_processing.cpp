@@ -43,12 +43,9 @@
 
 #define UNUSED(x) ((void)(x))
 
+SET_CPP_SCOPED_LOG_CATEGORY(CID_P2P_NET);
+
 std::atomic<int64_t> nTimeBestReceived(0); // Used only to inform the wallet of when we last received a block
-
-REDIRECT_SBTC_LOGGER(CID_P2P_NET);
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 static const uint64_t RANDOMIZER_ID_ADDRESS_RELAY = 0x3cac0035b5866b90ULL; // SHA256("main address relay")[0:8]
 

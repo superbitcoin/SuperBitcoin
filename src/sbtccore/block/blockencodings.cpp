@@ -16,7 +16,7 @@
 #include <vector>
 #include <unordered_map>
 
-REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
 /** Default number of orphan+recently-replaced txn to keep around for block reconstruction */
 static const unsigned int DEFAULT_BLOCK_RECONSTRUCTION_EXTRA_TXN = 100;

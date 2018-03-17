@@ -20,7 +20,7 @@
 
 #include <boost/thread.hpp>
 
-REDIRECT_SBTC_LOGGER(CID_WALLET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_WALLET);
 
 bool CWalletDB::WriteName(const std::string &strAddress, const std::string &strName)
 {

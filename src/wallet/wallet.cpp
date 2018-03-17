@@ -40,7 +40,7 @@
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/thread.hpp>
 
-REDIRECT_SBTC_LOGGER(CID_WALLET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_WALLET);
 
 /** Transaction fee set by the user */
 CFeeRate payTxFee(DEFAULT_TRANSACTION_FEE);

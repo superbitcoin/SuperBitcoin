@@ -4,7 +4,7 @@
 #include "sbtccore/block/blockencodings.h"
 #include "mempoolcomponent.h"
 
-REDIRECT_SBTC_LOGGER(CID_TX_MEMPOOL);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_TX_MEMPOOL);
 
 COrphanTxMgr::COrphanTxMgr()
 {

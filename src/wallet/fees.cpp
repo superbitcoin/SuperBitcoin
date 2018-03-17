@@ -14,6 +14,8 @@
 #include "mempool/txmempool.h"
 #include "utils/util.h"
 
+SET_CPP_SCOPED_LOG_CATEGORY(CID_TX_CORE);
+
 static constexpr double INF_FEERATE = 1e99;
 
 std::string StringForFeeEstimateHorizon(FeeEstimateHorizon horizon)

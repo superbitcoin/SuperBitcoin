@@ -11,7 +11,7 @@
 #include "p2p/net_processing.h"
 #include "wallet/fees.h"
 
-REDIRECT_SBTC_LOGGER(CID_TX_MEMPOOL);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_TX_MEMPOOL);
 
 static const char *FEE_ESTIMATES_FILENAME = "fee_estimates.dat";
 

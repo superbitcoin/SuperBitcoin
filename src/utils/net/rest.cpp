@@ -25,7 +25,7 @@
 
 #include <univalue.h>
 
-REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_HTTP_RPC);
 
 static const size_t MAX_GETUTXOS_OUTPOINTS = 15; //allow a max of 15 outpoints to be queried at once
 

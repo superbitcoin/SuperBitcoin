@@ -55,7 +55,7 @@
 # error "Bitcoin cannot be compiled without assertions."
 #endif
 
-REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
 /**
  * Global state

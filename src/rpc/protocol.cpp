@@ -24,7 +24,7 @@
  * 1.2 spec: http://jsonrpc.org/historical/json-rpc-over-http.html
  */
 
-REDIRECT_SBTC_LOGGER(CID_HTTP_RPC);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_HTTP_RPC);
 
 UniValue JSONRPCRequestObj(const std::string &strMethod, const UniValue &params, const UniValue &id)
 {

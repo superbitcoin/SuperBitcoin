@@ -29,7 +29,7 @@
 #include <event2/event.h>
 #include <event2/thread.h>
 
-REDIRECT_SBTC_LOGGER(CID_P2P_NET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_P2P_NET);
 
 /** Default control port */
 const std::string DEFAULT_TOR_CONTROL = "127.0.0.1:9051";

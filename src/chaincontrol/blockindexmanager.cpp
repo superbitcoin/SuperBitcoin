@@ -12,7 +12,7 @@
 #include "chain.h"
 #include "utils/timedata.h"
 
-REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
 CBlockIndexManager &CBlockIndexManager::Instance()
 {
@@ -240,7 +240,7 @@ void CBlockIndexManager::SortBlockIndex()
 
 bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex)
 {
-    NLogFormat("initialize index manager \n");
+    NLogFormat("initialize index manager");
 
     UnLoadBlockIndex();
 

@@ -15,7 +15,7 @@
 #include <leveldb/filter_policy.h>
 #include <leveldb/helpers/memenv.h>
 
-REDIRECT_SBTC_LOGGER(CID_DB);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_DB);
 
 class CBitcoinLevelDBLogger : public leveldb::Logger
 {
@@ -64,9 +64,13 @@ public:
             }
 
             // Add newline if necessary
-            if (p == base || p[-1] != '\n')
+            //if (p == base || p[-1] != '\n')
+            //{
+            //    *p++ = '\n';
+            //}
+            if (p > base && p[-1] == '\n')
             {
-                *p++ = '\n';
+                p--;
             }
 
             assert(p <= limit);

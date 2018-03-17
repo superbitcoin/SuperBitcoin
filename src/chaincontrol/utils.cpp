@@ -9,7 +9,7 @@
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
 
-REDIRECT_SBTC_LOGGER(CID_BLOCK_CHAIN);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
 bool CheckDiskSpace(uint64_t nAdditionalBytes)
 {

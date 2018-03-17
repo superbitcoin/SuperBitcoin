@@ -16,7 +16,7 @@
 #include "utils/util.h"
 #include "p2p/net.h"
 
-REDIRECT_SBTC_LOGGER(CID_WALLET);
+SET_CPP_SCOPED_LOG_CATEGORY(CID_WALLET);
 
 // Calculate the size of the transaction assuming all signatures are max size
 // Use DummySignatureCreator, which inserts 72 byte signatures everywhere.
