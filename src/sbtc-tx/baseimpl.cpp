@@ -942,7 +942,7 @@ bool CApp::Initialize(int argc, char **argv)
     }
     catch (const std::exception &e)
     {
-        mlog_error("Error: %s.", e.what());
+        ELogFormat("Error: %s.", e.what());
         return false;
     }
 
