@@ -2596,7 +2596,6 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
         // * p2sh (when P2SH enabled in flags and excludes coinbase)
         // * witness (when witness enabled in flags and excludes coinbase)
         nSigOpsCost += GetTransactionSigOpCost(tx, view, flags);
-//        if (nSigOpsCost > dgpMaxBlockSigOps) //sbtc-vm dgpMaxBlockSigOps暂时不用
         if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
             return state.DoS(100, error("ConnectBlock(): too many sigops"),
                              REJECT_INVALID, "bad-blk-sigops");

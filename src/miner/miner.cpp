@@ -207,7 +207,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     softBlockGasLimit = std::min(softBlockGasLimit, hardBlockGasLimit);
     txGasLimit = gArgs.GetArg("-staker-max-tx-gas-limit", softBlockGasLimit);
 
-    // nBlockMaxWeight与nBlockMaxSize 可以转换,暂不用
 //    nBlockMaxSize = blockSizeDGP ? blockSizeDGP : nBlockMaxSize;
 
     dev::h256 oldHashStateRoot(globalState->rootHash());

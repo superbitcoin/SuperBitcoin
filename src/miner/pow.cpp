@@ -100,7 +100,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params 
 
     // Check proof of work matches claimed amount
 //    if (UintToArith256(hash) > bnTarget)
-//        return false;   //sbtc-vm 暂时屏蔽
+//        return false;   //sbtc-vm TODO
 
     return true;
 }
