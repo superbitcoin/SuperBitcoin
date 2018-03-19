@@ -95,7 +95,7 @@ bool CChainComponent::ComponentInitialize()
     nPruneTarget = (uint64_t)iPruneArg * 1024 * 1024;
     if (iPruneArg == 1)
     {  // manual pruning: -prune=1
-        ELogFormat(
+        NLogFormat(
                 "Block pruning enabled.  Use RPC call pruneblockchain(height) to manually prune block and undo files.");
         nPruneTarget = std::numeric_limits<uint64_t>::max();
         fPruneMode = true;
@@ -106,7 +106,7 @@ bool CChainComponent::ComponentInitialize()
             return rLogError("Prune configured below the minimum of %d MiB.  Please use a higher number.",
                                        MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024);
         }
-        ELogFormat("Prune configured to target %uMiB on disk for block and undo files.", nPruneTarget / 1024 / 1024);
+        NLogFormat("Prune configured to target %uMiB on disk for block and undo files.", nPruneTarget / 1024 / 1024);
         fPruneMode = true;
     }
 
@@ -329,7 +329,7 @@ bool CChainComponent::ComponentInitialize()
 
 bool CChainComponent::ComponentStartup()
 {
-    NLogStream() << "startup chain component \n";
+    NLogStream() << "startup chain component";
     bRequestShutdown = false;
 
     ThreadImport();
@@ -340,7 +340,7 @@ bool CChainComponent::ComponentStartup()
 
 bool CChainComponent::ComponentShutdown()
 {
-    NLogStream() << "shutdown chain component \n";
+    NLogStream() << "shutdown chain component";
 
     threadGroup.interrupt_all();
     threadGroup.join_all();
@@ -402,24 +402,20 @@ bool CChainComponent::LoadGenesisBlock(const CChainParams &chainparams)
         CValidationState state;
         if (!cIndexManager.FindBlockPos(state, blockPos, nBlockSize + 8, 0, block.GetBlockTime()))
         {
-            ELogFormat("%s: FindBlockPos failed", __func__);
-            return false;
+            return rLogError("FindBlockPos failed");
         }
         if (!WriteBlockToDisk(block, blockPos, chainparams.MessageStart()))
         {
-            ELogFormat("%s: writing genesis block to disk failed", __func__);
-            return false;
+            return rLogError("writing genesis block to disk failed");
         }
         CBlockIndex *pindex = cIndexManager.AddToBlockIndex(block);
         if (!cIndexManager.ReceivedBlockTransactions(block, state, pindex, blockPos, chainparams.GetConsensus()))
         {
-            ELogFormat("%s: genesis block not accepted", __func__);
-            return false;
+            return rLogError("genesis block not accepted");
         }
     } catch (const std::runtime_error &e)
     {
-        ELogFormat("%s: failed to write genesis block: %s", __func__, e.what());
-        return false;
+        return rLogError("failed to write genesis block: %s", e.what());
     }
 
     return true;
@@ -471,8 +467,7 @@ bool CChainComponent::ReplayBlocks()
         return true; // We're already in a consistent state.
     if (vecHashHeads.size() != 2)
     {
-        ELogFormat("ReplayBlocks(): unknown inconsistent state");
-        return false;
+        return rLogError("Unknown inconsistent state");
     }
 
     ILogFormat("Replaying blocks");
@@ -506,9 +501,8 @@ bool CChainComponent::ReplayBlocks()
             CBlock block;
             if (!ReadBlockFromDisk(block, pIndexOld, Params().GetConsensus()))
             {
-                ELogFormat("RollbackBlock(): ReadBlockFromDisk() failed at %d, hash=%s", pIndexOld->nHeight,
+                return rLogError("ReadBlockFromDisk() failed at %d, hash=%s", pIndexOld->nHeight,
                            pIndexOld->GetBlockHash().ToString());
-                return false;
             }
 
             ILogFormat("Rolling back %s (%i)", pIndexOld->GetBlockHash().ToString(), pIndexOld->nHeight);
@@ -516,9 +510,8 @@ bool CChainComponent::ReplayBlocks()
             DisconnectResult res = cViewManager.DisconnectBlock(block, pIndexOld, cache);
             if (res == DISCONNECT_FAILED)
             {
-                ELogFormat("RollbackBlock(): DisconnectBlock failed at %d, hash=%s", pIndexOld->nHeight,
+                return rLogError("DisconnectBlock failed at %d, hash=%s", pIndexOld->nHeight,
                            pIndexOld->GetBlockHash().ToString());
-                return false;
             }
             // If DISCONNECT_UNCLEAN is returned, it means a non-existing UTXO was deleted, or an existing UTXO was
             // overwritten. It corresponds to cases where the block-to-be-disconnect never had all its operations
@@ -537,9 +530,8 @@ bool CChainComponent::ReplayBlocks()
         CBlock block;
         if (!ReadBlockFromDisk(block, pIndex, Params().GetConsensus()))
         {
-            ELogFormat("ReplayBlock(): ReadBlockFromDisk failed at %d, hash=%s", pIndex->nHeight,
+            return rLogError("ReadBlockFromDisk failed at %d, hash=%s", pIndex->nHeight,
                        pIndex->GetBlockHash().ToString());
-            return false;
         }
         if (!cViewManager.ConnectBlock(block, pIndex, cache))
             return false;
@@ -787,8 +779,7 @@ bool CChainComponent::DisconnectTip(CValidationState &state, const CChainParams 
         assert(view.GetBestBlock() == pIndexDelete->GetBlockHash());
         if (cViewManager.DisconnectBlock(block, pIndexDelete, view))
         {
-            ELogFormat("DisconnectTip(): DisconnectBlock %s failed", pIndexDelete->GetBlockHash().ToString());
-            return  false;
+            return rLogError("DisconnectBlock %s failed", pIndexDelete->GetBlockHash().ToString());
         }
 
         bool bFlush = view.Flush();
@@ -1158,7 +1149,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             {
                 if (view.HaveCoin(COutPoint(tx->GetHash(), o)))
                 {
-                    ELogFormat("ConnectBlock(): tried to overwrite transaction");
+                    ELogFormat("tried to overwrite transaction, bad-txns-BIP30");
                     return state.DoS(100, false, REJECT_INVALID, "bad-txns-BIP30");
                 }
             }
@@ -1205,7 +1196,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         {
             if (!view.HaveInputs(tx))
             {
-                ELogFormat("ConnectBlock(): inputs missing/spent");
+                ELogFormat("bad-txns-inputs-missingorspent");
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-missingorspent");
             }
             // Check that transaction is BIP68 final
@@ -1219,7 +1210,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
             if (!tx.SequenceLocks(nLockTimeFlags, &prevheights, *pindex))
             {
-                ELogFormat("%s: contains a non-BIP68-final transaction", __func__);
+                ELogFormat("contains a non-BIP68-final transaction");
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-nonfinal");
             }
         }
@@ -1231,7 +1222,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         nSigOpsCost += tx.GetTransactionSigOpCost(view, flags);
         if (nSigOpsCost > MAX_BLOCK_SIGOPS_COST)
         {
-            ELogFormat("ConnectBlock(): too many sigops");
+            ELogFormat("too many sigops, bad-blk-sigops");
             return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops");
         }
         txdata.emplace_back(tx);
@@ -1244,7 +1235,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             if (!tx.CheckInputs(state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
                                 nScriptCheckThreads ? &vChecks : nullptr))
             {
-                return rLogError("ConnectBlock(): CheckInputs on %s failed with %s",
+                return rLogError("CheckInputs on %s failed with %s",
                            tx.GetHash().ToString(), FormatStateMessage(state));
             }
             control.Add(vChecks);
@@ -1262,7 +1253,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     }
     int64_t nTime3 = GetTimeMicros();
     nTimeConnect += nTime3 - nTime2;
-    ELogFormat("Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]",
+    NLogFormat("Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]",
                (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(),
                nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
 
@@ -1270,20 +1261,20 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     blockReward = nFees + GetBlockSubsidy(pindex->nHeight);
     if (block.vtx[0]->GetValueOut() > blockReward)
     {
-        ELogFormat("ConnectBlock(): coinbase pays too much (actual=%d vs limit=%d)",
+        ELogFormat("coinbase pays too much (actual=%d vs limit=%d)",
                    block.vtx[0]->GetValueOut(), blockReward);
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-amount");
     }
 
     if (!control.Wait())
     {
-        ELogFormat("%s: CheckQueue failed", __func__);
+        ELogFormat("CheckQueue failed");
         return state.DoS(100, false, REJECT_INVALID, "block-validation-failed");
 
     }
     int64_t nTime4 = GetTimeMicros();
     nTimeVerify += nTime4 - nTime2;
-    ELogFormat("Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]", nInputs - 1,
+    NLogFormat("Verify %u txins: %.2fms (%.3fms/txin) [%.2fs]", nInputs - 1,
                0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs - 1),
                nTimeVerify * 0.000001);
 
@@ -1359,7 +1350,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
     int64_t nTime2 = GetTimeMicros();
     nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
-    ELogFormat("Load block from disk: %.2fms [%.2fs]", (nTime2 - nTime1) * 0.001,
+    NLogFormat("Load block from disk: %.2fms [%.2fs]", (nTime2 - nTime1) * 0.001,
                nTimeReadFromDisk * 0.000001);
     {
         CCoinsViewCache view(cViewManager.GetCoinsTip());
@@ -1380,7 +1371,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
     }
     int64_t nTime4 = GetTimeMicros();
     nTimeFlush += nTime4 - nTime3;
-    ELogFormat("Flush: %.2fms [%.2fs]", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
+    NLogFormat("Flush: %.2fms [%.2fs]", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED, chainparams))
         return false;
@@ -2098,7 +2089,7 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 }
             } catch (const std::exception &e)
             {
-                ELogFormat("%s: Deserialize or I/O error - %s", __func__, e.what());
+                ELogFormat("Deserialize or I/O error - %s", e.what());
             }
         }
     } catch (const std::runtime_error &e)

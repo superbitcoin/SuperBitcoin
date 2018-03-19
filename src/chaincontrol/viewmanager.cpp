@@ -68,18 +68,18 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
     CDiskBlockPos pos = pindex->GetUndoPos();
     if (pos.IsNull())
     {
-        ELogFormat("DisconnectBlock(): no undo data available");
+        ELogFormat("no undo data available");
         return DISCONNECT_FAILED;
     }
     if (!UndoReadFromDisk(blockUndo, pos, pindex->pprev->GetBlockHash()))
     {
-        ELogFormat("DisconnectBlock(): failure reading undo data");
+        ELogFormat("failure reading undo data");
         return DISCONNECT_FAILED;
     }
 
     if (blockUndo.vtxundo.size() + 1 != block.vtx.size())
     {
-        ELogFormat("DisconnectBlock(): block and undo data inconsistent");
+        ELogFormat("block and undo data inconsistent");
         return DISCONNECT_FAILED;
     }
 
@@ -113,7 +113,7 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
             CTxUndo &txundo = blockUndo.vtxundo[i - 1];
             if (txundo.vprevout.size() != tx.vin.size())
             {
-                ELogFormat("DisconnectBlock(): transaction and undo data inconsistent");
+                ELogFormat("transaction and undo data inconsistent");
                 return DISCONNECT_FAILED;
             }
             for (unsigned int j = tx.vin.size(); j-- > 0;)

@@ -77,7 +77,7 @@ bool ReadBlockFromDisk(CBlock &block, const CDiskBlockPos &pos, const Consensus:
     }
     catch (const std::exception &e)
     {
-        ELogFormat("%s: Deserialize or I/O error - %s at %s", __func__, e.what(), pos.ToString());
+        ELogFormat("Deserialize or I/O error - %s at %s", e.what(), pos.ToString());
         return false;
     }
 
@@ -96,7 +96,7 @@ bool ReadBlockFromDisk(CBlock &block, const CBlockIndex *pindex, const Consensus
         return false;
     if (block.GetHash() != pindex->GetBlockHash())
     {
-        ELogFormat("ReadBlockFromDisk(CBlock&, CBlockIndex*): GetHash() doesn't match index for %s at %s",
+        ELogFormat("GetHash() doesn't match index for %s at %s",
                    pindex->ToString(), pindex->GetBlockPos().ToString());
         return false;
     }
@@ -109,7 +109,7 @@ bool UndoReadFromDisk(CBlockUndo &blockundo, const CDiskBlockPos &pos, const uin
     CAutoFile filein(OpenUndoFile(pos, true), SER_DISK, CLIENT_VERSION);
     if (filein.IsNull())
     {
-        ELogFormat("%s: OpenUndoFile failed", __func__);
+        ELogFormat("OpenUndoFile failed");
         return false;
     }
 
@@ -124,14 +124,14 @@ bool UndoReadFromDisk(CBlockUndo &blockundo, const CDiskBlockPos &pos, const uin
     }
     catch (const std::exception &e)
     {
-        ELogFormat("%s: Deserialize or I/O error - %s", __func__, e.what());
+        ELogFormat("Deserialize or I/O error - %s", e.what());
         return false;
     }
 
     // Verify checksum
     if (hashChecksum != verifier.GetHash())
     {
-        ELogFormat("%s: Checksum mismatch", __func__);
+        ELogFormat("Checksum mismatch");
         return false;
     }
 
@@ -155,8 +155,7 @@ bool WriteBlockToDisk(const CBlock &block, CDiskBlockPos &pos, const CMessageHea
     long fileOutPos = ftell(fileout.Get());
     if (fileOutPos < 0)
     {
-        ELogFormat("WriteBlockToDisk: ftell failed");
-        return false;
+        return rLogError("ftell failed");
     }
     pos.nPos = (unsigned int)fileOutPos;
     fileout << block;
@@ -171,8 +170,7 @@ bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint
     CAutoFile fileout(OpenUndoFile(pos), SER_DISK, CLIENT_VERSION);
     if (fileout.IsNull())
     {
-        ELogFormat("%s: OpenUndoFile failed", __func__);
-        return false;
+        return rLogError("OpenUndoFile failed");
     }
 
     // Write index header
@@ -183,8 +181,7 @@ bool UndoWriteToDisk(const CBlockUndo &blockundo, CDiskBlockPos &pos, const uint
     long fileOutPos = ftell(fileout.Get());
     if (fileOutPos < 0)
     {
-        ELogFormat("%s: ftell failed", __func__);
-        return false;
+        return rLogError("ftell failed");
     }
     pos.nPos = (unsigned int)fileOutPos;
     fileout << blockundo;

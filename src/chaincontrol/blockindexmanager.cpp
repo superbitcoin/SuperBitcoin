@@ -964,7 +964,7 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
                 *ppindex = pindex;
             if (pindex->nStatus & BLOCK_FAILED_MASK)
             {
-                ELogFormat("%s: block %s is marked invalid", __func__, hash.ToString());
+                ELogFormat("block %s is marked invalid", hash.ToString());
                 return state.Invalid(false, 0, "duplicate");
             }
             return true;
@@ -972,7 +972,7 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
 
         if (!CheckBlockHeader(block, state, chainparams.GetConsensus()))
         {
-            ELogFormat("%s: Consensus::CheckBlockHeader: %s, %s", __func__, hash.ToString(), FormatStateMessage(state));
+            ELogFormat("Consensus::CheckBlockHeader: %s, %s", hash.ToString(), FormatStateMessage(state));
             return false;
         }
 
@@ -981,18 +981,18 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
         BlockMap::iterator mi = mBlockIndex.find(block.hashPrevBlock);
         if (mi == mBlockIndex.end())
         {
-            ELogFormat("%s: prev block not found", __func__);
+            ELogFormat("prev block not found");
             return state.DoS(10, false, 0, "prev-blk-not-found");
         }
         pindexPrev = (*mi).second;
         if (pindexPrev->nStatus & BLOCK_FAILED_MASK)
         {
-            ELogFormat("%s: prev block invalid", __func__);
+            ELogFormat("prev block invalid");
             return state.DoS(100, false, REJECT_INVALID, "bad-prevblk");
         }
         if (!ContextualCheckBlockHeader(block, state, chainparams, pindexPrev, GetAdjustedTime()))
         {
-            ELogFormat("%s: Consensus::ContextualCheckBlockHeader: %s, %s", __func__, hash.ToString(),
+            ELogFormat("Consensus::ContextualCheckBlockHeader: %s, %s", hash.ToString(),
                        FormatStateMessage(state));
             return false;
         }
@@ -1010,7 +1010,7 @@ bool CBlockIndexManager::AcceptBlockHeader(const CBlockHeader &block, CValidatio
                         setDirtyBlockIndex.insert(invalid_walk);
                         invalid_walk = invalid_walk->pprev;
                     }
-                    ELogFormat("%s: prev block invalid", __func__);
+                    ELogFormat("prev block invalid");
                     return state.DoS(100, false, REJECT_INVALID, "bad-prevblk");
                 }
             }
@@ -1061,7 +1061,7 @@ bool CBlockIndexManager::ContextualCheckBlockHeader(const CBlockHeader &block, C
         // MapBlockIndex.
         if (IsAgainstCheckPoint(params, pindexPrev) || IsAgainstCheckPoint(params, nHeight, block.GetHash()))
         {
-            ELogFormat("%s: forked chain older than last checkpoint (height %d)", __func__, nHeight);
+            ELogFormat("forked chain older than last checkpoint (height %d)", nHeight);
             return state.DoS(100, false, REJECT_CHECKPOINT, "bad-fork-prior-to-checkpoint");
         }
     }
@@ -1126,7 +1126,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
     {
         if (!fKnown)
         {
-            NLogFormat("Leaving block file %i: %s\n", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
+            NLogFormat("Leaving block file %i: %s", iLastBlockFile, vecBlockFileInfo[iLastBlockFile].ToString());
         }
         FlushBlockFile(!fKnown, vecBlockFileInfo[iLastBlockFile].nSize, vecBlockFileInfo[iLastBlockFile].nUndoSize);
         iLastBlockFile = nFile;
@@ -1151,7 +1151,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
                 FILE *file = OpenBlockFile(pos);
                 if (file)
                 {
-                    NLogFormat("Pre-allocating up to position 0x%x in blk%05u.dat\n", nNewChunks * BLOCKFILE_CHUNK_SIZE,
+                    NLogFormat("Pre-allocating up to position 0x%x in blk%05u.dat", nNewChunks * BLOCKFILE_CHUNK_SIZE,
                               pos.nFile);
                     AllocateFileRange(file, pos.nPos, nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos);
                     fclose(file);

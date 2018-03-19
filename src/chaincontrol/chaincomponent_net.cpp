@@ -94,8 +94,8 @@ bool CChainComponent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
 {
     assert(xnode != nullptr);
 
-    ELogFormat("enter checkpoint");
-    ELogFormat("receive check block list====");
+    NLogFormat("enter checkpoint");
+    NLogFormat("receive check block list====");
 
     std::vector<Checkpoints::CCheckData> vdata;
     stream >> vdata;
@@ -122,7 +122,7 @@ bool CChainComponent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
             ELogFormat("check point signature check failed");
             break;
         }
-        ELogFormat("block height=%d, block hash=%s", point.getHeight(), point.getHash().ToString());
+        NLogFormat("block height=%d, block hash=%s", point.getHeight(), point.getHash().ToString());
     }
 
     if (!toInsertCheckpoints.empty())
@@ -137,7 +137,7 @@ bool CChainComponent::NetReceiveCheckPoint(ExNode *xnode, CDataStream &stream)
         CValidationState state;
         if (!CheckActiveChain(state, Params()))
         {
-            return rLogError("CheckActiveChain error when receive  checkpoint");
+            return rLogError("CheckActiveChain error when receive checkpoint");
         }
     }
 
@@ -185,14 +185,14 @@ bool CChainComponent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
         pindex = cIndexManager.GetChain().Next(pindex);
 
     int nLimit = 500;
-    ELogFormat("getblocks %d to %s limit %d from peer=%d", (pindex ? pindex->nHeight : -1),
+    NLogFormat("getblocks %d to %s limit %d from peer=%d", (pindex ? pindex->nHeight : -1),
                hashStop.IsNull() ? "end" : hashStop.ToString(), nLimit, xnode->nodeID);
 
     for (; pindex; pindex = cIndexManager.GetChain().Next(pindex))
     {
         if (pindex->GetBlockHash() == hashStop)
         {
-            ELogFormat("  getblocks stopping at %d %s", pindex->nHeight, pindex->GetBlockHash().ToString());
+            NLogFormat("getblocks stopping at %d %s", pindex->nHeight, pindex->GetBlockHash().ToString());
             break;
         }
         // If pruning, don't inv blocks unless we have on disk and are likely to still have
@@ -201,7 +201,7 @@ bool CChainComponent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
         if (fPruneMode && (!(pindex->nStatus & BLOCK_HAVE_DATA) ||
                            pindex->nHeight <= Tip()->nHeight - nPrunedBlocksLikelyToHave))
         {
-            ELogFormat("getblocks stopping, pruned or too old block at %d %s", pindex->nHeight,
+            NLogFormat("getblocks stopping, pruned or too old block at %d %s", pindex->nHeight,
                        pindex->GetBlockHash().ToString());
             break;
         }
@@ -210,7 +210,7 @@ bool CChainComponent::NetRequestBlocks(ExNode *xnode, CDataStream &stream, std::
         {
             // When this block is requested, we'll send an inv that'll
             // trigger the peer to getblocks the next batch of inventory.
-            ELogFormat("getblocks stopping at limit %d %s", pindex->nHeight,
+            NLogFormat("getblocks stopping at limit %d %s", pindex->nHeight,
                        pindex->GetBlockHash().ToString());
             break;
         }
@@ -445,7 +445,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
             // Headers message had its maximum size; the peer may have more headers.
             // optimize: if pindexLast is an ancestor of chainActive.Tip or pindexBestHeader, continue
             // from there instead.
-            ELogFormat("more getheaders (%d) to end to peer=%d (startheight:%d)", pindexLast->nHeight,
+            NLogFormat("more getheaders (%d) to end to peer=%d (startheight:%d)", pindexLast->nHeight,
                        xnode->nodeID, xnode->startHeight);
 
             SendNetMessage(xnode->nodeID, NetMsgType::GETHEADERS, xnode->sendVersion, 0,
@@ -482,7 +482,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
             // direct fetch and rely on parallel download instead.
             if (!cIndexManager.GetChain().Contains(pindexWalk))
             {
-                ELogFormat("Large reorg, won't direct fetch to %s (%d)",
+                WLogFormat("Large reorg, won't direct fetch to %s (%d)",
                            pindexLast->GetBlockHash().ToString(),
                            pindexLast->nHeight);
             } else
@@ -580,8 +580,7 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
                                                 consensusParams) < nOneMonth);
             if (!isOK)
             {
-                ELogFormat("%s: ignoring request from peer=%i for old block that isn't in the main chain",
-                           __func__, xnode->nodeID);
+                WLogFormat("ignoring request from peer=%i for old block that isn't in the main chain", xnode->nodeID);
             }
         }
     }
@@ -594,8 +593,7 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
                                                           blockType == MSG_FILTERED_BLOCK) &&
         !IsFlagsBitOn(xnode->flags, NF_WHITELIST))
     {
-        ELogFormat("historical block serving limit reached, disconnect peer=%d",
-                   xnode->nodeID);
+        WLogFormat("historical block serving limit reached, disconnect peer=%d", xnode->nodeID);
 
         //disconnect node
         SetFlagsBit(xnode->retFlags, NF_DISCONNECT);
