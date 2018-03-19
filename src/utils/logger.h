@@ -30,13 +30,14 @@ typedef log4cpp::Priority LogPriority;
         static struct _CppScopedLogCateogorySetter                                    \
         {                                                                             \
             _CppScopedLogCateogorySetter(LogCategory*& logger, const char* category)  \
+            noexcept                                                                  \
             {                                                                         \
                 logger = &LogCategory::getInstance(category);                         \
             }                                                                         \
-        } _cslc_obj_##c(s_logger, #c)
+        } _cslc_obj_for_##c(s_logger, #c)
 
     #define SET_TEMP_LOG_CATEGORY(c)                                                  \
-        _TempLogCategorySetter _tmp_lcs_obj_##c(s_logger, #c)
+        _TempLogCategorySetter _tmp_lcs_obj_for_##c(s_logger, #c)
 
     #ifdef LOG_SRC_LOC_INFO
     # define __FILENAME__ (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__)
