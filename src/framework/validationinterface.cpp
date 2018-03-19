@@ -52,7 +52,8 @@ void CMainSignals::UnregisterBackgroundSignalScheduler()
 
 void CMainSignals::FlushBackgroundCallbacks()
 {
-    m_internals->m_schedulerClient.EmptyQueue();
+    if (m_internals)
+        m_internals->m_schedulerClient.EmptyQueue();
 }
 
 CMainSignals &GetMainSignals()
@@ -100,15 +101,18 @@ void UnregisterValidationInterface(CValidationInterface *pwalletIn)
 
 void UnregisterAllValidationInterfaces()
 {
-    g_signals.m_internals->BlockChecked.disconnect_all_slots();
-    g_signals.m_internals->Broadcast.disconnect_all_slots();
-    g_signals.m_internals->Inventory.disconnect_all_slots();
-    g_signals.m_internals->SetBestChain.disconnect_all_slots();
-    g_signals.m_internals->TransactionAddedToMempool.disconnect_all_slots();
-    g_signals.m_internals->BlockConnected.disconnect_all_slots();
-    g_signals.m_internals->BlockDisconnected.disconnect_all_slots();
-    g_signals.m_internals->UpdatedBlockTip.disconnect_all_slots();
-    g_signals.m_internals->NewPoWValidBlock.disconnect_all_slots();
+    if (g_signals.m_internals)
+    {
+        g_signals.m_internals->BlockChecked.disconnect_all_slots();
+        g_signals.m_internals->Broadcast.disconnect_all_slots();
+        g_signals.m_internals->Inventory.disconnect_all_slots();
+        g_signals.m_internals->SetBestChain.disconnect_all_slots();
+        g_signals.m_internals->TransactionAddedToMempool.disconnect_all_slots();
+        g_signals.m_internals->BlockConnected.disconnect_all_slots();
+        g_signals.m_internals->BlockDisconnected.disconnect_all_slots();
+        g_signals.m_internals->UpdatedBlockTip.disconnect_all_slots();
+        g_signals.m_internals->NewPoWValidBlock.disconnect_all_slots();
+    }
 }
 
 void CMainSignals::UpdatedBlockTip(const CBlockIndex *pindexNew, const CBlockIndex *pindexFork, bool fInitialDownload)
