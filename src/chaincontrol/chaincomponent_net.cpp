@@ -657,7 +657,7 @@ bool CChainComponent::NetRequestBlockData(ExNode *xnode, uint256 blockHash, int 
                     a_recent_compact_block &&
                     a_recent_compact_block->header.GetHash() == bi->GetBlockHash())
                 {
-                    SendNetMessage(xnode->nodeID, NetMsgType::MERKLEBLOCK, xnode->sendVersion, nSendFlags,
+                    SendNetMessage(xnode->nodeID, NetMsgType::CMPCTBLOCK, xnode->sendVersion, nSendFlags,
                                    *a_recent_compact_block);
                 } else
                 {
