@@ -173,4 +173,6 @@ void TraceThread(const char *name, Callable func)
 
 std::string CopyrightHolders(const std::string &strPrefix);
 
+std::vector<std::string> SplitString(const std::string& str, char sep, bool keepEmptyField = false);
+
 #endif // BITCOIN_UTIL_H

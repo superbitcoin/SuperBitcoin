@@ -170,12 +170,6 @@ bool IBaseApp::Initialize(int argc, char **argv)
         return false;
     }
 
-    if (!SetupNetworking())
-    {
-        ELogFormat("Initializing networking failed");
-        return false;
-    }
-
     return true;
 }
 

@@ -9,10 +9,9 @@ class CApp : public appbase::IBaseApp
 {
 public:
 
-    bool Run() override;
+    void RelayoutArgs(int& argc, char**& argv);
 
-    bool Run(int argc, char *argv[]);
-
-protected:
     void InitOptionMap() override;
+
+    bool Run() override;
 };

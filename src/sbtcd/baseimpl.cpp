@@ -1,3 +1,5 @@
+#include <list>
+#include <vector>
 #include <thread>
 #include <chrono>
 #include <functional>
@@ -420,6 +422,27 @@ void CApp::InitOptionMap()
     pArgs->SetOptionTable(optionMap);
 }
 
+void CApp::RelayoutArgs(int& argc, char**& argv)
+{
+    static std::list<std::string> _argx;
+    static std::vector<const char*> _argv;
+
+    for (int i = 0; i < argc; i++)
+    {
+        if (strlen(argv[i]) > 2 && argv[i][0] == '-' && argv[i][1] != '-')
+        {
+            _argx.emplace_back('-' + std::string(argv[i]));
+            _argv.emplace_back(_argx.back().c_str());
+        }
+        else
+        {
+            _argv.emplace_back(argv[i]);
+        }
+    }
+
+    argv = (char**)&_argv[0];
+}
+
 void CApp::PrintAppStartupInfo()
 {
     []{
@@ -545,10 +568,10 @@ bool CApp::AppInitBasicSetup()
     if (setProcDEPPol != nullptr) setProcDEPPol(PROCESS_DEP_ENABLE);
 #endif
 
-    //if (!SetupNetworking())
-    //{
-    //    return rLogError("Initializing networking failed");
-    //}
+    if (!SetupNetworking())
+    {
+        return rLogError("Initializing networking failed");
+    }
 
 #ifndef WIN32
     //    const CArgsManager &appArgs = app().GetArgsManager();

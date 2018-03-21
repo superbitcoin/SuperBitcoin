@@ -497,3 +497,32 @@ int64_t GetStartupTime()
 {
     return nStartupTime;
 }
+
+std::vector<std::string> SplitString(const std::string& str, char sep, bool keepEmptyField)
+{
+    if (str.empty())
+        return {};
+
+    std::vector<std::string> vs;
+
+    std::string::size_type ppos = 0;
+    std::string::size_type pos = str.find(sep, ppos);
+    while (pos != std::string::npos)
+    {
+        if (pos > ppos || keepEmptyField)
+        {
+            vs.emplace_back(str.substr(ppos, pos - ppos));
+        }
+
+        ppos = pos + 1;
+        pos = str.find(sep, ppos);
+    }
+
+    if (ppos < str.size() || keepEmptyField)
+    {
+        vs.emplace_back(str.substr(ppos));
+    }
+
+    return vs;
+}
+

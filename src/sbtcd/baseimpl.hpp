@@ -16,6 +16,8 @@ class CApp : public IBaseApp
 {
 public:
 
+    void RelayoutArgs(int& argc, char**& argv);
+
     bool Initialize(int argc, char **argv) override;
 
     bool Startup() override;

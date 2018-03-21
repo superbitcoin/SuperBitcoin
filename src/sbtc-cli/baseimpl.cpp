@@ -2,7 +2,8 @@
 #include <event2/keyvalq_struct.h>
 #include <univalue.h>
 #include <thread>
-
+#include <vector>
+#include <list>
 #include "baseimpl.hpp"
 #include "utils/util.h"
 #include "config/chainparams.h"
@@ -245,6 +246,12 @@ void CApp::InitOptionMap()
     };
     optionMap.emplace("rpc options:", item);
 
+    item = {
+            {"commandname",      bpo::value<string>(), "Command Name"},
+            {"commandargs",      bpo::value<string>(), "Command arguments"}
+    };
+    optionMap.emplace("command options:", item);
+
     std::string strHead =
             strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n" + "\n" +
             _("Usage:") + "\n" +
@@ -258,6 +265,50 @@ void CApp::InitOptionMap()
     pArgs->SetOptionTable(optionMap);
 }
 
+#define COMMAND_ARG_SEP '`'
+void CApp::RelayoutArgs(int& argc, char**& argv)
+{
+    static std::list<std::string> _argx;
+    static std::vector<const char*> _argv;
+
+    _argv.emplace_back(argv[0]); // assert(argc >= 1)
+
+    int i = 1;
+    for (; i < argc && argv[i][0] == '-'; i++)
+    {
+        if (strlen(argv[i]) > 2 && argv[i][1] != '-')
+        {
+            _argx.emplace_back('-' + std::string(argv[i]));
+            _argv.emplace_back(_argx.back().c_str());
+        }
+        else
+        {
+            _argv.emplace_back(argv[i]);
+        }
+    }
+
+    if (i < argc)
+    {
+        _argx.emplace_back(std::string("--commandname=") + argv[i++]);
+        _argv.emplace_back(_argx.back().c_str());
+    }
+
+    if (i < argc)
+    {
+        std::string commandargs(argv[i++]);
+        for (; i < argc; i++)
+        {
+            commandargs += COMMAND_ARG_SEP;
+            commandargs += argv[i];
+        }
+        _argx.emplace_back(std::string("--commandargs=") + commandargs);
+        _argv.emplace_back(_argx.back().c_str());
+    }
+
+    argc = (int)_argv.size();
+    argv = (char**)&_argv[0];
+}
+
 bool CApp::Run()
 {
     if (pArgs->GetArg<bool>("-rpcssl", false))
@@ -266,39 +317,36 @@ bool CApp::Run()
         return false;
     }
 
-    //TODO:
+    if (!pArgs->IsArgSet("-commandname"))
+    {
+        fprintf(stderr, "too few parameters (need at least command).\n");
+        return false;
+    }
 
-    return true;
-}
-
-bool CApp::Run(int argc, char *argv[])
-{
+    bool nRet = 0;
     std::string strPrint;
-    int nRet = 0;
+    std::string strMethod = pArgs->GetArg<std::string>("-commandname", "");
+    std::string strArgs = pArgs->GetArg<std::string>("-commandargs", "");
+    std::vector<std::string> args = SplitString(strArgs, COMMAND_ARG_SEP);
 
     try
     {
-        // Skip switches
-        while (argc > 1 && IsSwitchChar(argv[1][0]))
+        if (!SetupNetworking())
         {
-            argc--;
-            argv++;
+            strPrint = "Initializing networking failed.";
+            throw "Bad SetupNetworking";
         }
-        std::vector<std::string> args = std::vector<std::string>(&argv[1], &argv[argc]);
-        if (Args().GetArg<bool>("-stdin", false))
+
+        if (pArgs->GetArg<bool>("-stdin", false))
         {
             // Read one arg per line from stdin and append
             std::string line;
             while (std::getline(std::cin, line))
                 args.push_back(line);
         }
-        if (args.size() < 1)
-            throw std::runtime_error("too few parameters (need at least command)");
-        std::string strMethod = args[0];
-        args.erase(args.begin()); // Remove trailing method name from arguments vector
 
         UniValue params;
-        if (Args().GetArg<bool>("-named", DEFAULT_NAMED))
+        if (pArgs->GetArg<bool>("-named", DEFAULT_NAMED))
         {
             params = RPCConvertNamedValues(strMethod, args);
         } else
@@ -307,14 +355,12 @@ bool CApp::Run(int argc, char *argv[])
         }
 
         // Execute and handle connection failures with -rpcwait
-        const bool fWait = Args().GetArg<bool>("-rpcwait", false);
+        const bool fWait = pArgs->GetArg<bool>("-rpcwait", false);
         do
         {
             try
             {
                 const UniValue reply = CallRPC(strMethod, params);
-
-                // Parse reply
                 const UniValue &result = find_value(reply, "result");
                 const UniValue &error = find_value(reply, "error");
 
@@ -364,7 +410,7 @@ bool CApp::Run(int argc, char *argv[])
     }
     catch (const boost::thread_interrupted &)
     {
-        throw;
+        nRet = EXIT_FAILURE;
     }
     catch (const std::exception &e)
     {
@@ -374,12 +420,12 @@ bool CApp::Run(int argc, char *argv[])
     catch (...)
     {
         PrintExceptionContinue(nullptr, "CommandLineRPC()");
-        throw;
+        nRet = EXIT_FAILURE;
     }
 
     if (strPrint != "")
     {
         fprintf((nRet == 0 ? stdout : stderr), "%s\n", strPrint.c_str());
     }
-    return nRet;
+    return nRet == EXIT_SUCCESS;
 }

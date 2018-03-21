@@ -99,32 +99,10 @@ const std::vector<std::string> CArgsManager::GetArgs(const std::string &strArg) 
     return {};
 }
 
-void CArgsManager::GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp,
-                                     vector<const char *> &argv_arr)
-{
-    for (int i = 0; i != argc; i++)
-    {
-        if (strlen(argv[i]) > 2 && argv[i][0] == '-' && argv[i][1] != '-')
-        {
-            argv_arr_tmp.push_back("-" + string(argv[i]));
-            continue;
-        }
-
-        argv_arr_tmp.push_back(string(argv[i]));
-    }
-    for (string &s : argv_arr_tmp)
-    {
-        argv_arr.push_back(s.c_str());
-    }
-}
-
 bool CArgsManager::Init(int argc, char *argv[])
 {
     LOCK(cs_args);
     vm.clear();
-    vector<string> argv_arr_tmp;
-    vector<const char *> argv_arr;
-    GenerateOptFormat(argc, (const char **)argv, argv_arr_tmp, argv_arr);
     app_bpo = new bpo::options_description(optionName);
 
     for (auto &groupItem : optionTable)
@@ -153,7 +131,7 @@ bool CArgsManager::Init(int argc, char *argv[])
     vector<string> unrecognisedOptions;
     try
     {
-        bpo::parsed_options parsed = bpo::command_line_parser(argv_arr.size(), &argv_arr[0]).options(*app_bpo).allow_unregistered().run();
+        bpo::parsed_options parsed = bpo::command_line_parser(argc, (const char**)argv).options(*app_bpo).allow_unregistered().run();
         unrecognisedOptions = collect_unrecognized(parsed.options, bpo::include_positional);
         bpo::store(parsed, vm);
         bpo::notify(vm);

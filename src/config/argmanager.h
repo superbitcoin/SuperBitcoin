@@ -97,9 +97,6 @@ public:
 
     const std::vector<std::string> GetArgs(const std::string &strArg) const;
 
-    void
-    GenerateOptFormat(const int &argc, const char **argv, vector<string> &argv_arr_tmp, vector<const char *> &argv_arr);
-
     static bool InterpretBool(const std::string &strValue);
 
     bool IsArgSet(const std::string &strArg) const;

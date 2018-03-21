@@ -14,6 +14,7 @@ appbase::IBaseApp *GetApp()
 
 int main(int argc, char **argv)
 {
+    gApp.RelayoutArgs(argc, argv);
     gApp.RegisterComponent(new CChainComponent);
     gApp.RegisterComponent(new CMempoolComponent);
     gApp.RegisterComponent(new CHttpRpcComponent);
