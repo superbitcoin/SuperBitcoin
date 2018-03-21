@@ -41,11 +41,11 @@ typedef log4cpp::Priority LogPriority;
 
     #ifdef LOG_SRC_LOC_INFO
     # define __FILENAME__ (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__)
-    # define SrcLocInfo(file, line, func) tinyformat::format("%s(%d) %s:  ", file, line, func)
-    # define Logging(prior, fmt, a...) s_logger->log(prior, SrcLocInfo(__FILENAME__, __LINE__, __FUNCTION__) + tinyformat::format(fmt, ##a))
-    # define LoggingLevel(level, fmt, a...) s_logger->level(SrcLocInfo(__FILENAME__, __LINE__, __FUNCTION__) + tinyformat::format(fmt, ##a))
-    # define LogStream(prior) _LogStream(prior, __FILENAME__, __LINE__, __FUNCTION__)
-    # define LogRetV(prior, fmt, a...) _LogFormatRetV<prior>(__FILENAME__, __LINE__, __FUNCTION__, fmt, ##a)
+    # define SrcLocInfo(file, line) tinyformat::format("%s(%d):  ", file, line)
+    # define Logging(prior, fmt, a...) s_logger->log(prior, SrcLocInfo(__FILENAME__, __LINE__) + tinyformat::format(fmt, ##a))
+    # define LoggingLevel(level, fmt, a...) s_logger->level(SrcLocInfo(__FILENAME__, __LINE__) + tinyformat::format(fmt, ##a))
+    # define LogStream(prior) _LogStream(prior, __FILENAME__, __LINE__)
+    # define LogRetV(prior, fmt, a...) _LogFormatRetV<prior>(__FILENAME__, __LINE__, fmt, ##a)
     #else
     # define Logging(prior, fmt, a...) s_logger->log(prior, tinyformat::format(fmt, ##a))
     # define LoggingLevel(level, fmt, a...) s_logger->level(tinyformat::format(fmt, ##a))
@@ -103,14 +103,14 @@ public:
     _LogStream(int) {}
 #else
     _LogStream(int prior, const char* filename = nullptr, int line = 0, const char* func = nullptr)
-        : _prior(prior), _line(line), _filename(filename), _funcname(func) {}
+        : _prior(prior), _line(line), _filename(filename) {}
     ~_LogStream()
     {
         if (!str().empty())
         {
             s_logger->log(_prior,
 # ifdef LOG_SRC_LOC_INFO
-                          SrcLocInfo(_filename, _line, _funcname) +
+                          SrcLocInfo(_filename, _line) +
 # endif
                           str());
         }
@@ -119,18 +119,17 @@ private:
     int _prior;
     int _line;
     const char* _filename;
-    const char* _funcname;
 #endif
 };
 
 
 template<int prior, typename... TArgs>
-inline bool _LogFormatRetV(const char* filename, int line, const char* func, const char* fmt, TArgs&&... args)
+inline bool _LogFormatRetV(const char* filename, int line, const char* fmt, TArgs&&... args)
 {
 #ifdef ENABLE_LOGGING
     s_logger->log(prior,
 # ifdef LOG_SRC_LOC_INFO
-                  SrcLocInfo(filename, line, func) +
+                  SrcLocInfo(filename, line) +
 # endif
                   tinyformat::format(fmt, args...));
 #endif
@@ -138,9 +137,9 @@ inline bool _LogFormatRetV(const char* filename, int line, const char* func, con
 }
 
 template<int prior, typename... TArgs>
-inline bool _LogFormatRetV(const char* filename, int line, const char* func, const std::string& fmt, TArgs&&... args)
+inline bool _LogFormatRetV(const char* filename, int line,  const std::string& fmt, TArgs&&... args)
 {
-    return _LogFormatRetV<prior>(filename, line, func, fmt.c_str(), args...);
+    return _LogFormatRetV<prior>(filename, line, fmt.c_str(), args...);
 }
 
 

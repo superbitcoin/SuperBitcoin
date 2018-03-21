@@ -9,6 +9,8 @@
 #include <log4cpp/PatternLayout.hh>
 #include <log4cpp/RollingFileAppender.hh>
 #include <log4cpp/OstreamAppender.hh>
+#include <openssl/crypto.h>
+#include <leveldb/db.h>
 #include "baseimpl.hpp"
 #include "noui.h"
 #include "config/chainparams.h"
@@ -445,13 +447,14 @@ void CApp::RelayoutArgs(int& argc, char**& argv)
 
 void CApp::PrintAppStartupInfo()
 {
-    []{
-    NLogStream() << ' ';
-    NLogStream() << "=============================================================";
-    NLogStream() << "===================== SBTCD Startup ... =====================";
-    NLogStream() << "=============================================================";
-    NLogStream() << ' ';
-    }();
+    NLogFormat("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+    NLogFormat("Using boost_version :%s",BOOST_LIB_VERSION);
+    NLogFormat("Using OpenSSL version %s", SSLeay_version(SSLEAY_VERSION));
+    NLogFormat("Using levedb version :%s",strprintf("%d.%d", leveldb::kMajorVersion, leveldb::kMinorVersion));
+    NLogFormat("Using Berkeley DB version %s", DB_VERSION_STRING);
+    NLogFormat("sbtcd Core version : %s", CLIENT_VERSION);
+    NLogFormat("protocolversion : %s", PROTOCOL_VERSION);
+    NLogFormat("full version: %s ",FormatFullVersion());
 }
 
 // Parameter interaction based on rules
@@ -1060,7 +1063,7 @@ bool CApp::Shutdown()
     globalVerifyHandle.reset();
     ECC_Stop();
 
-    NLogFormat("sbtcd shutdown!");
+    NLogFormat("sbtcd shutdown!\n\n\n\n\n\n\n");
     return fRet;
 }
 

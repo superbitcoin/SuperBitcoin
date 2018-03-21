@@ -745,7 +745,7 @@ void CChainComponent::UpdateTip(CBlockIndex *pindexNew, const CChainParams &chai
             DoWarning(strWarning);
         }
     }
-    ILogFormat(
+    NLogFormat(
             "new best=%s height=%d version=0x%08x log2_work=%.8g tx=%lu date='%s' progress=%f cache=%.1fMiB(%utxo)", \
             chainActive.Tip()->GetBlockHash().ToString(), chainActive.Height(), chainActive.Tip()->nVersion, \
             log(chainActive.Tip()->nChainWork.getdouble()) / log(2.0), (unsigned long)chainActive.Tip()->nChainTx, \
@@ -1253,7 +1253,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     }
     int64_t nTime3 = GetTimeMicros();
     nTimeConnect += nTime3 - nTime2;
-    NLogFormat("Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]",
+    ILogFormat("Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]",
                (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(),
                nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
 
@@ -1350,7 +1350,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
     int64_t nTime2 = GetTimeMicros();
     nTimeReadFromDisk += nTime2 - nTime1;
     int64_t nTime3;
-    NLogFormat("Load block from disk: %.2fms [%.2fs]", (nTime2 - nTime1) * 0.001,
+    ILogFormat("Load block from disk: %.2fms [%.2fs]", (nTime2 - nTime1) * 0.001,
                nTimeReadFromDisk * 0.000001);
     {
         CCoinsViewCache view(cViewManager.GetCoinsTip());
@@ -1371,7 +1371,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
     }
     int64_t nTime4 = GetTimeMicros();
     nTimeFlush += nTime4 - nTime3;
-    NLogFormat("Flush: %.2fms [%.2fs]", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
+    ILogFormat("Flush: %.2fms [%.2fs]", (nTime4 - nTime3) * 0.001, nTimeFlush * 0.000001);
     // Write the chain state to disk, if necessary.
     if (!FlushStateToDisk(state, FLUSH_STATE_IF_NEEDED, chainparams))
         return false;

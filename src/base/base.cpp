@@ -42,6 +42,15 @@ const CChainParams &Params()
 
 static bool InitializeLogging(fs::path path)
 {
+
+    fs::path logPath = path / "log";
+    if (!fs::is_directory(logPath))
+    {
+        fs::create_directories(logPath);
+    }
+    // set logpath for the log4cpp to get the log directories
+    setenv("logpath", logPath.string().c_str(), 1);
+
     bool bOk = true;
     try
     {
@@ -193,7 +202,7 @@ void IBaseApp::PrintAppStartupInfo()
     //NOOP
 }
 
-IComponent* IBaseApp::FindComponent(int id) const
+IComponent *IBaseApp::FindComponent(int id) const
 {
     return nullptr;
 }
@@ -201,18 +210,18 @@ IComponent* IBaseApp::FindComponent(int id) const
 CScheduler &IBaseApp::GetScheduler()
 {
     assert(false); // This method should never be called.
-    return *reinterpret_cast<CScheduler*>(0x1);
+    return *reinterpret_cast<CScheduler *>(0x1);
 }
 
 CEventManager &IBaseApp::GetEventManager()
 {
     assert(false); // This method should never be called.
-    return *reinterpret_cast<CEventManager*>(0x1);
+    return *reinterpret_cast<CEventManager *>(0x1);
 }
 
 CClientUIInterface &IBaseApp::GetUIInterface()
 {
     assert(false); // This method should never be called.
-    return *reinterpret_cast<CClientUIInterface*>(0x1);
+    return *reinterpret_cast<CClientUIInterface *>(0x1);
 }
 
