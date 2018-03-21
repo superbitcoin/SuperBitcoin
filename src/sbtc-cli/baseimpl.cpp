@@ -144,10 +144,10 @@ void CApp::InitOptionMap()
     optionMap.emplace("rpc options:", item);
 
     item = {
-            {"commandname",      bpo::value<string>(), "Command Name, internal option, INVALID FOR COMMANDLINE!"},
-            {"commandargs",      bpo::value<string>(), "Command arguments, internal option, INVALID FOR COMMANDLINE!"}
+            {"commandname",      bpo::value<string>(), "Internal Command Name"},
+            {"commandargs",      bpo::value<string>(), "Internal Command arguments"}
     };
-    optionMap.emplace("command options:", item);
+    optionMap.emplace("internal options(unavailable for command line):", item);
 
     std::string strHead =
             strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n" + "\n" +

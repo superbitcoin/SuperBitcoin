@@ -808,10 +808,10 @@ void CApp::InitOptionMap()
     optionMap.emplace("Register Commands:", item);
 
     item = {
-            {"hexsbtctx",        bpo::value<string>(), "Hex-encoded sbtc transaction, internal option, INVALID FOR COMMANDLINE!"},
-            {"commandargs",      bpo::value<string>(), "Command arguments, internal option, INVALID FOR COMMANDLINE!"}
+            {"hexsbtctx",        bpo::value<string>(), "Internal hex-encoded sbtc transaction"},
+            {"commandargs",      bpo::value<string>(), "Internal Command arguments"}
     };
-    optionMap.emplace("xcommand options:", item);
+    optionMap.emplace("internal options(unavailable for command line):", item);
 
     std::string strHead =
             strprintf(_("%s sbtc-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
