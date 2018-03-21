@@ -1,6 +1,5 @@
 #include <event2/buffer.h>
 #include <event2/keyvalq_struct.h>
-#include <univalue.h>
 #include <thread>
 #include <vector>
 #include <list>
@@ -13,11 +12,16 @@
 #include "utils/utilstrencodings.h"
 #include "utils/net/events.h"
 
+#define  COMMAND_ARG_SEP '`'
+
+static const char DEFAULT_RPCCONNECT[] = "127.0.0.1";
+static const bool DEFAULT_NAMED = false;
+static const int  DEFAULT_HTTP_CLIENT_TIMEOUT = 900;
+
 class CConnectionFailed : public std::runtime_error
 {
 public:
-    explicit inline CConnectionFailed(const std::string &msg) :
-            std::runtime_error(msg)
+    explicit inline CConnectionFailed(const std::string &msg) : std::runtime_error(msg)
     {
     }
 };
@@ -84,119 +88,12 @@ static void http_request_done(struct evhttp_request *req, void *ctx)
 }
 
 #if LIBEVENT_VERSION_NUMBER >= 0x02010300
-
 static void http_error_cb(enum evhttp_request_error err, void *ctx)
 {
     HTTPReply *reply = static_cast<HTTPReply *>(ctx);
     reply->error = err;
 }
-
 #endif
-
-UniValue CallRPC(const std::string &strMethod, const UniValue &params)
-{
-    std::string host;
-    // In preference order, we choose the following for the port:
-    //     1. -rpcport
-    //     2. port in -rpcconnect (ie following : in ipv4 or ]: in ipv6)
-    //     3. default port for chain
-    int port = Params().RPCPort();
-    SplitHostPort(Args().GetArg<std::string>("-rpcconnect", DEFAULT_RPCCONNECT), port, host);
-    port = Args().GetArg<int>("-rpcport", port);
-
-    // Obtain event base
-    raii_event_base base = obtain_event_base();
-
-    // Synchronously look up hostname
-    raii_evhttp_connection evcon = obtain_evhttp_connection_base(base.get(), host, port);
-    evhttp_connection_set_timeout(evcon.get(), Args().GetArg<int>("-rpcclienttimeout", DEFAULT_HTTP_CLIENT_TIMEOUT));
-
-    HTTPReply response;
-    raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void *)&response);
-    if (req == nullptr)
-        throw std::runtime_error("create http request failed");
-#if LIBEVENT_VERSION_NUMBER >= 0x02010300
-    evhttp_request_set_error_cb(req.get(), http_error_cb);
-#endif
-
-    // Get credentials
-    std::string strRPCUserColonPass;
-    if (Args().GetArg<std::string>("-rpcpassword", "") == "")
-    {
-        // Try fall back to cookie-based authentication if no password is provided
-        if (!GetAuthCookie(&strRPCUserColonPass))
-        {
-            throw std::runtime_error(strprintf(
-                    _("Could not locate RPC credentials. No authentication cookie could be found, and no rpcpassword is set in the configuration file (%s)"),
-                    GetConfigFile(
-                            Args().GetArg<std::string>("-conf", std::string(BITCOIN_CONF_FILENAME))).string().c_str()));
-
-        }
-    } else
-    {
-        strRPCUserColonPass =
-                Args().GetArg<std::string>("-rpcuser", "") + ":" + Args().GetArg<std::string>("-rpcpassword", "");
-    }
-
-    struct evkeyvalq *output_headers = evhttp_request_get_output_headers(req.get());
-    assert(output_headers);
-    evhttp_add_header(output_headers, "Host", host.c_str());
-    evhttp_add_header(output_headers, "Connection", "close");
-    evhttp_add_header(output_headers, "Authorization",
-                      (std::string("Basic ") + EncodeBase64(strRPCUserColonPass)).c_str());
-
-    // Attach request data
-    std::string strRequest = JSONRPCRequestObj(strMethod, params, 1).write() + "\n";
-    struct evbuffer *output_buffer = evhttp_request_get_output_buffer(req.get());
-    assert(output_buffer);
-    evbuffer_add(output_buffer, strRequest.data(), strRequest.size());
-
-    // check if we should use a special wallet endpoint
-    std::string endpoint = "/";
-    std::string walletName = Args().GetArg<std::string>("-rpcwallet", "");
-    if (!walletName.empty())
-    {
-        char *encodedURI = evhttp_uriencode(walletName.c_str(), walletName.size(), false);
-        if (encodedURI)
-        {
-            endpoint = "/wallet/" + std::string(encodedURI);
-            free(encodedURI);
-        } else
-        {
-            throw CConnectionFailed("uri-encode failed");
-        }
-    }
-    int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST, endpoint.c_str());
-    req.release(); // ownership moved to evcon in above call
-    if (r != 0)
-    {
-        throw CConnectionFailed("send http request failed");
-    }
-
-    event_base_dispatch(base.get());
-
-    if (response.status == 0)
-        throw CConnectionFailed(strprintf(
-                "couldn't connect to server: %s (code %d)\n(make sure server is running and you are connecting to the correct RPC port)",
-                http_errorstring(response.error), response.error));
-    else if (response.status == HTTP_UNAUTHORIZED)
-        throw std::runtime_error("incorrect rpcuser or rpcpassword (authorization failed)");
-    else if (response.status >= 400 && response.status != HTTP_BAD_REQUEST && response.status != HTTP_NOT_FOUND &&
-             response.status != HTTP_INTERNAL_SERVER_ERROR)
-        throw std::runtime_error(strprintf("server returned HTTP error %d", response.status));
-    else if (response.body.empty())
-        throw std::runtime_error("no response from server");
-
-    // Parse reply
-    UniValue valReply(UniValue::VSTR);
-    if (!valReply.read(response.body))
-        throw std::runtime_error("couldn't parse reply from server");
-    const UniValue &reply = valReply.get_obj();
-    if (reply.empty())
-        throw std::runtime_error("expected reply to have result, error and id properties");
-
-    return reply;
-}
 
 void CApp::InitOptionMap()
 {
@@ -247,10 +144,10 @@ void CApp::InitOptionMap()
     optionMap.emplace("rpc options:", item);
 
     item = {
-            {"commandname",      bpo::value<string>(), "Command Name"},
-            {"commandargs",      bpo::value<string>(), "Command arguments"}
+            {"commandname",      bpo::value<string>(), "Internal Command Name"},
+            {"commandargs",      bpo::value<string>(), "Internal Command arguments"}
     };
-    optionMap.emplace("command options:", item);
+    optionMap.emplace("internal options(unavailable for command line):", item);
 
     std::string strHead =
             strprintf(_("%s RPC client version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n" + "\n" +
@@ -258,14 +155,11 @@ void CApp::InitOptionMap()
             "  bitcoin-cli [options] <command> [params]  " + strprintf(_("Send command to %s"), _(PACKAGE_NAME)) +
             "\n" +
             "  bitcoin-cli [options] -named <command> [name=value] ... " +
-            strprintf(_("Send command to %s (with named arguments)"), _(PACKAGE_NAME)) + "\n" +
-            "  bitcoin-cli [options] help                " + _("List commands") + "\n" +
-            "  bitcoin-cli [options] help <command>      " + _("Get help for a command") + "\n";
+            strprintf(_("Send command to %s (with named arguments)"), _(PACKAGE_NAME)) + "\n";
     pArgs->SetOptionName(strHead);
     pArgs->SetOptionTable(optionMap);
 }
 
-#define COMMAND_ARG_SEP '`'
 void CApp::RelayoutArgs(int& argc, char**& argv)
 {
     static std::list<std::string> _argx;
@@ -331,12 +225,6 @@ bool CApp::Run()
 
     try
     {
-        if (!SetupNetworking())
-        {
-            strPrint = "Initializing networking failed.";
-            throw "Bad SetupNetworking";
-        }
-
         if (pArgs->GetArg<bool>("-stdin", false))
         {
             // Read one arg per line from stdin and append
@@ -410,6 +298,7 @@ bool CApp::Run()
     }
     catch (const boost::thread_interrupted &)
     {
+        strPrint = "thread interrupted!";
         nRet = EXIT_FAILURE;
     }
     catch (const std::exception &e)
@@ -423,9 +312,115 @@ bool CApp::Run()
         nRet = EXIT_FAILURE;
     }
 
-    if (strPrint != "")
+    if (!strPrint.empty())
     {
-        fprintf((nRet == 0 ? stdout : stderr), "%s\n", strPrint.c_str());
+        fprintf((nRet == EXIT_SUCCESS ? stdout : stderr), "%s\n", strPrint.c_str());
     }
     return nRet == EXIT_SUCCESS;
 }
+
+UniValue CApp::CallRPC(const std::string &strMethod, const UniValue &params)
+{
+    std::string host;
+    // In preference order, we choose the following for the port:
+    //     1. -rpcport
+    //     2. port in -rpcconnect (ie following : in ipv4 or ]: in ipv6)
+    //     3. default port for chain
+    int port = pChainParams->RPCPort();
+    SplitHostPort(pArgs->GetArg<std::string>("-rpcconnect", DEFAULT_RPCCONNECT), port, host);
+    port = pArgs->GetArg<int>("-rpcport", port);
+
+    // Obtain event base
+    raii_event_base base = obtain_event_base();
+
+    // Synchronously look up hostname
+    raii_evhttp_connection evcon = obtain_evhttp_connection_base(base.get(), host, port);
+    evhttp_connection_set_timeout(evcon.get(), pArgs->GetArg<int>("-rpcclienttimeout", DEFAULT_HTTP_CLIENT_TIMEOUT));
+
+    HTTPReply response;
+    raii_evhttp_request req = obtain_evhttp_request(http_request_done, (void *)&response);
+    if (req == nullptr)
+        throw std::runtime_error("create http request failed");
+#if LIBEVENT_VERSION_NUMBER >= 0x02010300
+    evhttp_request_set_error_cb(req.get(), http_error_cb);
+#endif
+
+    // Get credentials
+    std::string strRPCUserColonPass;
+    if (pArgs->GetArg<std::string>("-rpcpassword", "") == "")
+    {
+        // Try fall back to cookie-based authentication if no password is provided
+        if (!GetAuthCookie(&strRPCUserColonPass))
+        {
+            throw std::runtime_error(strprintf(
+                    _("Could not locate RPC credentials. No authentication cookie could be found, and no rpcpassword is set in the configuration file (%s)"),
+                    GetConfigFile(
+                            pArgs->GetArg<std::string>("-conf", std::string(BITCOIN_CONF_FILENAME))).string().c_str()));
+
+        }
+    } else
+    {
+        strRPCUserColonPass =
+                pArgs->GetArg<std::string>("-rpcuser", "") + ":" + pArgs->GetArg<std::string>("-rpcpassword", "");
+    }
+
+    struct evkeyvalq *output_headers = evhttp_request_get_output_headers(req.get());
+    assert(output_headers);
+    evhttp_add_header(output_headers, "Host", host.c_str());
+    evhttp_add_header(output_headers, "Connection", "close");
+    evhttp_add_header(output_headers, "Authorization",
+                      (std::string("Basic ") + EncodeBase64(strRPCUserColonPass)).c_str());
+
+    // Attach request data
+    std::string strRequest = JSONRPCRequestObj(strMethod, params, 1).write() + "\n";
+    struct evbuffer *output_buffer = evhttp_request_get_output_buffer(req.get());
+    assert(output_buffer);
+    evbuffer_add(output_buffer, strRequest.data(), strRequest.size());
+
+    // check if we should use a special wallet endpoint
+    std::string endpoint = "/";
+    std::string walletName = pArgs->GetArg<std::string>("-rpcwallet", "");
+    if (!walletName.empty())
+    {
+        char *encodedURI = evhttp_uriencode(walletName.c_str(), walletName.size(), false);
+        if (encodedURI)
+        {
+            endpoint = "/wallet/" + std::string(encodedURI);
+            free(encodedURI);
+        } else
+        {
+            throw CConnectionFailed("uri-encode failed");
+        }
+    }
+    int r = evhttp_make_request(evcon.get(), req.get(), EVHTTP_REQ_POST, endpoint.c_str());
+    req.release(); // ownership moved to evcon in above call
+    if (r != 0)
+    {
+        throw CConnectionFailed("send http request failed");
+    }
+
+    event_base_dispatch(base.get());
+
+    if (response.status == 0)
+        throw CConnectionFailed(strprintf(
+                "couldn't connect to server: %s (code %d)\n(make sure server is running and you are connecting to the correct RPC port)",
+                http_errorstring(response.error), response.error));
+    else if (response.status == HTTP_UNAUTHORIZED)
+        throw std::runtime_error("incorrect rpcuser or rpcpassword (authorization failed)");
+    else if (response.status >= 400 && response.status != HTTP_BAD_REQUEST && response.status != HTTP_NOT_FOUND &&
+             response.status != HTTP_INTERNAL_SERVER_ERROR)
+        throw std::runtime_error(strprintf("server returned HTTP error %d", response.status));
+    else if (response.body.empty())
+        throw std::runtime_error("no response from server");
+
+    // Parse reply
+    UniValue valReply(UniValue::VSTR);
+    if (!valReply.read(response.body))
+        throw std::runtime_error("couldn't parse reply from server");
+    const UniValue &reply = valReply.get_obj();
+    if (reply.empty())
+        throw std::runtime_error("expected reply to have result, error and id properties");
+
+    return reply;
+}
+
