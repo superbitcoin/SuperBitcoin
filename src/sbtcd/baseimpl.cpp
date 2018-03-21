@@ -422,11 +422,13 @@ void CApp::InitOptionMap()
 
 void CApp::PrintAppStartupInfo()
 {
+    []{
     NLogStream() << ' ';
     NLogStream() << "=============================================================";
     NLogStream() << "===================== SBTCD Startup ... =====================";
     NLogStream() << "=============================================================";
     NLogStream() << ' ';
+    }();
 }
 
 // Parameter interaction based on rules
