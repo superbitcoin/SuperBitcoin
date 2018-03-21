@@ -34,17 +34,6 @@ static bool fCreateBlank;
 static std::map<std::string, UniValue> registers;
 static const int CONTINUE_EXECUTION = -1;
 
-CApp::CApp()
-{
-    nVersion = 1;
-    bShutdown = false;
-}
-
-bool CApp::AppInitialize()
-{
-    return true;
-}
-
 void CApp::InitOptionMap()
 {
     const auto defaultChainParams = CreateChainParams(CChainParams::MAIN);
@@ -922,29 +911,24 @@ bool CApp::Run(int argc, char *argv[])
     return true;
 }
 
-bool CApp::Startup()
-{
-    return true;
-}
-
-bool CApp::Initialize(int argc, char **argv)
-{
-    SetupEnvironment();
-    if (!ParseCommandline(argc, argv))
-    {
-        return false;
-    }
-
-    //    InitializeLogging(pArgs->GetDataDir(false));
-    try
-    {
-        pChainParams = CreateChainParams(ChainNameFromCommandLine());
-    }
-    catch (const std::exception &e)
-    {
-        ELogFormat("Error: %s.", e.what());
-        return false;
-    }
-
-    return true;
-}
+//bool CApp::Initialize(int argc, char **argv)
+//{
+//    SetupEnvironment();
+//    if (!ParseCommandline(argc, argv))
+//    {
+//        return false;
+//    }
+//
+//    //    InitializeLogging(pArgs->GetDataDir(false));
+//    try
+//    {
+//        pChainParams = CreateChainParams(ChainNameFromCommandLine());
+//    }
+//    catch (const std::exception &e)
+//    {
+//        ELogFormat("Error: %s.", e.what());
+//        return false;
+//    }
+//
+//    return true;
+//}

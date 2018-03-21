@@ -29,14 +29,6 @@
 #include "framework/validationinterface.h"
 #include "wallet/wallet.h"
 
-using namespace appbase;
-
-CApp::CApp()
-{
-    nVersion = 1;
-    bShutdown = false;
-}
-
 void CApp::InitOptionMap()
 {
     const auto defaultChainParams = CreateChainParams(CChainParams::MAIN);
@@ -64,12 +56,10 @@ void CApp::InitOptionMap()
             },
             {"conf", bpo::value<string>(), "Specify configuration file"},
 
-            //if mode == HMM_BITCOIND
-            //#if HAVE_DECL_DAEMON
-            //            {"daemon", bpo::value<string>(),
-            //             "Run in the background as a daemon and accept commands(parameters: n, no, y, yes)"} // dependence : mode, HAVE_DECL_DAEMON
-            //#endif
-            //#endif
+#if HAVE_DECL_DAEMON
+            {"daemon", bpo::value<string>(),
+             "Run in the background as a daemon and accept commands(parameters: n, no, y, yes)"}, // dependence : mode, HAVE_DECL_DAEMON
+#endif
 
             {"datadir", bpo::value<string>(), "Specify data directory"},
             {"dbbatchsize", bpo::value<int64_t>(), "Maximum database write batch size in bytes"},  // -help-debug
@@ -544,10 +534,10 @@ bool CApp::AppInitBasicSetup()
     if (setProcDEPPol != nullptr) setProcDEPPol(PROCESS_DEP_ENABLE);
 #endif
 
-    if (!SetupNetworking())
-    {
-        return rLogError("Initializing networking failed");
-    }
+    //if (!SetupNetworking())
+    //{
+    //    return rLogError("Initializing networking failed");
+    //}
 
 #ifndef WIN32
     //    const CArgsManager &appArgs = app().GetArgsManager();
@@ -573,8 +563,6 @@ bool CApp::AppInitBasicSetup()
 
 bool CApp::AppInitParameterInteraction()
 {
-    const CChainParams &chainparams = GetChainParams();
-
     // also see: InitParameterInteraction()
 
     // if using block pruning, then disallow txindex
@@ -645,13 +633,13 @@ bool CApp::AppInitParameterInteraction()
         nMinimumChainWork = UintToArith256(uint256S(minChainWorkStr));
     } else
     {
-        nMinimumChainWork = UintToArith256(chainparams.GetConsensus().nMinimumChainWork);
+        nMinimumChainWork = UintToArith256(pChainParams->GetConsensus().nMinimumChainWork);
     }
     NLogFormat("Setting nMinimumChainWork=%s.", nMinimumChainWork.GetHex());
-    if (nMinimumChainWork < UintToArith256(chainparams.GetConsensus().nMinimumChainWork))
+    if (nMinimumChainWork < UintToArith256(pChainParams->GetConsensus().nMinimumChainWork))
     {
         WLogFormat("Warning: nMinimumChainWork set below default value of %s.",
-                  chainparams.GetConsensus().nMinimumChainWork.GetHex());
+                   pChainParams->GetConsensus().nMinimumChainWork.GetHex());
     }
 
     // mempool limits
@@ -695,7 +683,7 @@ bool CApp::AppInitParameterInteraction()
         if (nPruneTarget < MIN_DISK_SPACE_FOR_BLOCK_FILES)
         {
             return rLogError("Prune configured below the minimum of %d MiB.  Please use a higher number.",
-                       MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024);
+                             MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024);
         }
         NLogFormat("Prune configured to target %uMiB on disk for block and undo files.", nPruneTarget / 1024 / 1024);
         fPruneMode = true;
@@ -744,11 +732,11 @@ bool CApp::AppInitParameterInteraction()
         dustRelayFee = CFeeRate(n);
     }
 
-    fRequireStandard = !pArgs->GetArg<bool>("-acceptnonstdtxn", !chainparams.RequireStandard());
-    if (chainparams.RequireStandard() && !fRequireStandard)
+    fRequireStandard = !pArgs->GetArg<bool>("-acceptnonstdtxn", !pChainParams->RequireStandard());
+    if (pChainParams->RequireStandard() && !fRequireStandard)
     {
         return rLogError(
-                "acceptnonstdtxn is not currently supported for %s chain", chainparams.NetworkIDString());
+                "acceptnonstdtxn is not currently supported for %s chain", pChainParams->NetworkIDString());
     }
 
     nBytesPerSigOp = pArgs->GetArg<uint32_t>("-bytespersigop", nBytesPerSigOp);
@@ -785,7 +773,7 @@ bool CApp::AppInitParameterInteraction()
     if (pArgs->IsArgSet("-vbparams"))
     {
         // Allow overriding version bits parameters for testing
-        if (!chainparams.MineBlocksOnDemand())
+        if (!pChainParams->MineBlocksOnDemand())
         {
             return rLogError("Version bits parameters may only be overridden on regtest.");
         }
@@ -814,7 +802,7 @@ bool CApp::AppInitParameterInteraction()
                     pChainParams->UpdateVersionBitsParameters(Consensus::DeploymentPos(j), nStartTime, nTimeout);
                     found = true;
                     NLogFormat("Setting version bits activation parameters for %s to start=%ld, timeout=%ld",
-                                vDeploymentParams[0], nStartTime, nTimeout);
+                               vDeploymentParams[0], nStartTime, nTimeout);
                     break;
                 }
             }
@@ -910,16 +898,21 @@ bool CApp::AppInitLockDataDirectory()
     return true;
 }
 
-bool CApp::AppInitialize()
+bool CApp::Initialize(int argc, char **argv)
 {
+    if (!IBaseApp::Initialize(argc, argv))
+    {
+        exit(EXIT_FAILURE);
+    }
+
     noui_connect();
 
     // -server defaults to true for bitcoind but not for the GUI so do this here
     pArgs->SoftSetArg("-server", true);
 
     // Set this early so that parameter interactions go to console
-    // InitLogging();
     InitParameterInteraction();
+
     if (!AppInitBasicSetup())
     {
         // InitError will have been called with detailed error, which ends up on console
@@ -946,7 +939,7 @@ bool CApp::AppInitialize()
             return rLogError("Error: daemon() failed: %s.", strerror(errno));
         }
 #else
-        mlog_error("Error: -daemon is not supported on this operating system.");
+        ELogFormat("daemon is not supported on this operating system.");
         return false;
 #endif // HAVE_DECL_DAEMON
     }
@@ -957,28 +950,43 @@ bool CApp::AppInitialize()
         exit(EXIT_FAILURE);
     }
 
-    //avoid mutity call
-    assert(scheduler == nullptr);
-    assert(eventManager == nullptr);
-    assert(uiInterface == nullptr);
-    scheduler = std::make_unique<CScheduler>();
-    eventManager = std::make_unique<CEventManager>();
-    uiInterface = std::make_unique<CClientUIInterface>();
-
-    schedulerThread = std::thread(&CScheduler::serviceQueue, scheduler.get());
-
-    GetMainSignals().RegisterBackgroundSignalScheduler(GetScheduler());
-
 #ifndef WIN32
-
     CreatePidFile(GetPidFile(), getpid());
 #endif
 
     NLogFormat("Default data directory %s.", GetDefaultDataDir().string());
     NLogFormat("Using data directory %s.", GetDataDir().string());
     NLogFormat("Using config file %s.",
-                GetConfigFile(pArgs->GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
+               GetConfigFile(pArgs->GetArg<std::string>("conf", std::string(BITCOIN_CONF_FILENAME))).string());
 
+    scheduler = std::make_unique<CScheduler>();
+    eventManager = std::make_unique<CEventManager>();
+    uiInterface = std::make_unique<CClientUIInterface>();
+    schedulerThread = std::thread(&CScheduler::serviceQueue, scheduler.get());
+
+    GetMainSignals().RegisterBackgroundSignalScheduler(GetScheduler());
+
+    // Components initialized.
+    return ForEachComponent(true, [](IComponent *component)
+    {
+        return component->Initialize();
+    });
+}
+
+bool CApp::Startup()
+{
+    return ForEachComponent(true, [](IComponent *component)
+    {
+        return component->Startup();
+    });
+}
+
+bool CApp::Run()
+{
+    while (!bShutdown)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    }
     return true;
 }
 
@@ -998,7 +1006,9 @@ bool CApp::Shutdown()
         eventManager->Uninit(true);
     }
 
-    bool fRet = IBaseApp::Shutdown();
+    bool fRet = ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false,
+                                                                                              [](IComponent *component)
+                                                                                              { return component->Shutdown(); });
 
 #ifndef WIN32
     try
@@ -1006,16 +1016,56 @@ bool CApp::Shutdown()
         fs::remove(GetPidFile());
     } catch (const fs::filesystem_error &e)
     {
-        WLogFormat("%s: Unable to remove pidfile: %s.", __func__, e.what());
+        WLogFormat("Unable to remove pidfile: %s.", e.what());
     }
 #endif
+
     UnregisterAllValidationInterfaces();
     GetMainSignals().UnregisterBackgroundSignalScheduler();
     m_mapComponents.clear();
     globalVerifyHandle.reset();
     ECC_Stop();
-    NLogFormat("%s: done.", __func__);
+
+    NLogFormat("sbtcd shutdown!");
     return fRet;
 }
 
+CScheduler &CApp::GetScheduler()
+{
+    return *scheduler.get();
+}
 
+CEventManager &CApp::GetEventManager()
+{
+    return *eventManager.get();
+}
+
+CClientUIInterface &CApp::GetUIInterface()
+{
+    return *uiInterface.get();
+}
+
+bool CApp::RegisterComponent(IComponent *component)
+{
+    if (component)
+    {
+        int id = component->GetID();
+        if (m_mapComponents.find(id) == m_mapComponents.end())
+        {
+            m_mapComponents.emplace(id, component);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+IComponent *CApp::FindComponent(int id) const
+{
+    auto it = m_mapComponents.find(id);
+    if (it != m_mapComponents.end())
+    {
+        return it->second.get();
+    }
+    return nullptr;
+}

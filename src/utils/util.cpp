@@ -221,7 +221,7 @@ fs::path GetDefaultDataDir()
     return pathRet / "Library/Application Support/SuperBitcoin";
 #else
     // Unix
-    return pathRet / ".bitcoin";
+    return pathRet / ".sbtc";
 #endif
 #endif
 }

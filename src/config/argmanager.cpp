@@ -148,7 +148,30 @@ bool CArgsManager::Init(int argc, char *argv[])
         app_bpo->add(group);
     }
 
-    bpo::store(bpo::parse_command_line(argv_arr.size(), &argv_arr[0], *app_bpo), vm);
+    // bpo::store(bpo::parse_command_line(argv_arr.size(), &argv_arr[0], *app_bpo), vm);
+
+    vector<string> unrecognisedOptions;
+    try
+    {
+        bpo::parsed_options parsed = bpo::command_line_parser(argv_arr.size(), &argv_arr[0]).options(*app_bpo).allow_unregistered().run();
+        unrecognisedOptions = collect_unrecognized(parsed.options, bpo::include_positional);
+        bpo::store(parsed, vm);
+        bpo::notify(vm);
+    }
+    catch (bpo::error const& e)
+    {
+        std::cerr << e.what() << std::endl;
+        return false;
+    }
+
+    if (!unrecognisedOptions.empty())
+    {
+        for (size_t i = 0; i < unrecognisedOptions.size(); ++i)
+        {
+            std::cerr << "Invalid argument: " << unrecognisedOptions[i] << std::endl;
+        }
+        return false;
+    }
 
     return true;
 }

@@ -3,11 +3,12 @@
 //  Created on:      28-2-2018 11:02:57
 //  Original author: marco
 ///////////////////////////////////////////////////////////
-
+#include <boost/thread.hpp>
 #include "utils.h"
 #include "framework/warnings.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
+#include "framework/ui_interface.h"
 
 SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 

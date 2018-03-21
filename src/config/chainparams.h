@@ -199,6 +199,8 @@ protected:
  */
 std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain);
 
+std::string ChainNameFromCommandLine();
+
 /**
  * Return the currently selected parameters. This won't change after app
  * startup, except for unit tests.

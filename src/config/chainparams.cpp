@@ -6,6 +6,7 @@
 #include <log4cpp/Category.hh>
 
 #include "base/base.hpp"
+#include "argmanager.h"
 #include "chainparams.h"
 #include "sbtccore/block/merkle.h"
 
@@ -409,6 +410,20 @@ std::unique_ptr<CChainParams> CreateChainParams(const std::string &chain)
     else if (chain == CChainParams::REGTEST)
         return std::unique_ptr<CChainParams>(new CRegTestParams());
     throw std::runtime_error(strprintf("%s: Unknown chain %s.", __func__, chain));
+}
+
+std::string ChainNameFromCommandLine()
+{
+    bool fRegTest = Args().IsArgSet("-regtest");
+    bool fTestNet = Args().IsArgSet("-testnet");
+
+    if (fTestNet && fRegTest)
+        throw std::runtime_error("Invalid combination of -regtest and -testnet.");
+    if (fRegTest)
+        return CChainParams::REGTEST;
+    if (fTestNet)
+        return CChainParams::TESTNET;
+    return CChainParams::MAIN;
 }
 
 const std::string CChainParams::MAIN = "main";

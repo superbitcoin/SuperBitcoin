@@ -20,13 +20,9 @@
 #include "p2p/net.h"
 #include "p2p/netbase.h"
 #include "utils/arith_uint256.h"
-#include "utils/utilmoneystr.h"
 #include "utils/net/torcontrol.h"
-#include "wallet/key.h"
-#include "wallet/feerate.h"
 #include "sbtccore/block/validation.h"
 #include "sbtccore/transaction/policy.h"
-#include "config/consensus.h"
 #include "framework/validationinterface.h"
 
 using namespace appbase;
@@ -36,15 +32,15 @@ std::unique_ptr<CChainParams> appbase::IBaseApp::pChainParams = std::make_unique
 
 const CArgsManager &Args()
 {
-    return appbase::IBaseApp::GetArgsManager();
+    return *IBaseApp::pArgs.get();
 }
 
 const CChainParams &Params()
 {
-    return appbase::IBaseApp::GetChainParams();
+    return *IBaseApp::pChainParams.get();
 }
 
-bool IBaseApp::InitializeLogging(fs::path path)
+static bool InitializeLogging(fs::path path)
 {
     bool bOk = true;
     try
@@ -120,12 +116,14 @@ static void PrintVersion()
 
 IBaseApp::IBaseApp() : nVersion(1), bShutdown(false)
 {
-
 }
 
-bool IBaseApp::ParseCommandline(int argc, char **argv)
+bool IBaseApp::Initialize(int argc, char **argv)
 {
+    SetupEnvironment();
+
     InitOptionMap();
+
     if (!pArgs->Init(argc, argv))
     {
         return false;
@@ -140,16 +138,6 @@ bool IBaseApp::ParseCommandline(int argc, char **argv)
     if (pArgs->IsArgSet("version"))
     {
         PrintVersion();
-        return false;
-    }
-
-    return true;
-}
-
-bool IBaseApp::ParamsInitialize(int argc, char **argv)
-{
-    if (!ParseCommandline(argc, argv))
-    {
         return false;
     }
 
@@ -171,78 +159,59 @@ bool IBaseApp::ParamsInitialize(int argc, char **argv)
     }
     catch (const std::exception &e)
     {
-        ELogFormat("Error: %s.", e.what());
+        ELogFormat("Read config file exception: %s.", e.what());
         return false;
     }
     catch (...)
     {
-        ELogFormat("Error: initParams!");
+        ELogFormat("Read config file exception!");
         return false;
     }
+
+    if (!SetupNetworking())
+    {
+        ELogFormat("Initializing networking failed");
+        return false;
+    }
+
     return true;
-}
-
-bool IBaseApp::Initialize(int argc, char **argv)
-{
-    SetupEnvironment();
-    return ParamsInitialize(argc, argv) && AppInitialize() && ComponentInitialize();
-}
-
-bool IBaseApp::ComponentInitialize()
-{
-    return ForEachComponent(true, [](IComponent *component)
-    { return component->Initialize(); });
 }
 
 bool IBaseApp::Startup()
 {
-    return ForEachComponent(true, [](IComponent *component)
-    { return component->Startup(); });
-}
-
-bool IBaseApp::Shutdown()
-{
-    bool fRet = ForEachComponent<std::function<bool(IComponent *)>, ReverseContainerIterator>(false,
-                                                                                              [](IComponent *component)
-                                                                                              { return component->Shutdown(); });
-
-    return fRet;
+    return true;
 }
 
 bool IBaseApp::Run()
 {
-    while (!bShutdown)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    }
     return true;
 }
 
-bool IBaseApp::RegisterComponent(IComponent *component)
+bool IBaseApp::Shutdown()
 {
-    if (component)
-    {
-        int id = component->GetID();
-        if (m_mapComponents.find(id) == m_mapComponents.end())
-        {
-            m_mapComponents.emplace(id, component);
-            return true;
-        }
-    }
-
-    return false;
+    return true;
 }
 
-std::string IBaseApp::ChainNameFromCommandLine()
+IComponent* IBaseApp::FindComponent(int id) const
 {
-    bool fRegTest = Args().IsArgSet("-regtest");
-    bool fTestNet = Args().IsArgSet("-testnet");
-
-    if (fTestNet && fRegTest)
-        throw std::runtime_error("Invalid combination of -regtest and -testnet.");
-    if (fRegTest)
-        return CChainParams::REGTEST;
-    if (fTestNet)
-        return CChainParams::TESTNET;
-    return CChainParams::MAIN;
+    return nullptr;
 }
+
+CScheduler &IBaseApp::GetScheduler()
+{
+    assert(false); // This method should never be called.
+    return *reinterpret_cast<CScheduler*>(0x1);
+}
+
+CEventManager &IBaseApp::GetEventManager()
+{
+    assert(false); // This method should never be called.
+    return *reinterpret_cast<CEventManager*>(0x1);
+}
+
+CClientUIInterface &IBaseApp::GetUIInterface()
+{
+    assert(false); // This method should never be called.
+    return *reinterpret_cast<CClientUIInterface*>(0x1);
+}
+

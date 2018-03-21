@@ -146,7 +146,6 @@ void RenameThread(const char *name);
 template<typename Callable>
 void TraceThread(const char *name, Callable func)
 {
-    SET_TEMP_LOG_CATEGORY(CID_APP);
     std::string s = strprintf("sbtc-%s", name);
     RenameThread(s.c_str());
     try
