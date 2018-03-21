@@ -4,10 +4,12 @@
 class CApp : public appbase::IBaseApp
 {
 public:
-    bool Run(int argc, char *argv[]);
 
-    //bool Initialize(int argc, char **argv) override;
+    void RelayoutArgs(int& argc, char**& argv);
 
-protected:
+    bool Initialize(int argc, char **argv) override;
+
     void InitOptionMap() override;
+
+    bool Run() override;
 };

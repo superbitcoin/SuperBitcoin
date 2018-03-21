@@ -9,7 +9,8 @@ appbase::IBaseApp *GetApp()
 
 int main(int argc, char *argv[])
 {
-    gApp.Initialize(argc, argv) && gApp.Startup(); // && gApp.Run(argc, argv); TODO
+    gApp.RelayoutArgs(argc, argv);
+    gApp.Initialize(argc, argv) && gApp.Startup() && gApp.Run();
     gApp.Shutdown();
 
     return 0;

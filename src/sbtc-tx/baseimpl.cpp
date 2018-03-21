@@ -30,82 +30,11 @@
 #include "script/script.h"
 #include "script/sign.h"
 
-static bool fCreateBlank;
+#define  COMMAND_ARG_SEP '`'
+
+static bool fCreateBlank = false;
 static std::map<std::string, UniValue> registers;
 static const int CONTINUE_EXECUTION = -1;
-
-void CApp::InitOptionMap()
-{
-    const auto defaultChainParams = CreateChainParams(CChainParams::MAIN);
-    const auto testnetChainParams = CreateChainParams(CChainParams::TESTNET);
-
-    std::map<string, vector<option_item>> optionMap;
-
-    vector<option_item> item = {
-            {"help,h", "Print this message and exit."},
-            {"create", "Create new, empty TX."},
-            {"json",   "Select JSON output"},
-            {"txid",   "Output only the hex-encoded transaction id of the resultant transaction."}
-    };
-    optionMap.emplace("Options:", item);
-
-    item = {
-            {"testnet", bpo::value<string>(), "Use the test chain"},
-            {"regtest", bpo::value<string>(), "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
-                                                      "This is intended for regression testing tools and app development."}
-
-    };
-    optionMap.emplace("Chain selection options:", item);
-
-    item = {
-            {"delin=N",                                                         "Delete input N from TX"},
-            {"delout=N",                                                        "Delete output N from TX"},
-            {"in=TXID:VOUT(:SEQUENCE_NUMBER)",                                  "Add input to TX"},
-            {"locktime=N",                                                      "Set TX lock time to N"},
-            {"nversion=N",                                                      "Set TX version to N"},
-            {"replaceable(=N)",                                                 "Set RBF opt-in sequence number for input N (if not provided, opt-in all available inputs)"},
-            {"outaddr=VALUE:ADDRESS",                                           "Add address-based output to TX"},
-            {"outpubkey=VALUE:PUBKEY[:FLAGS]",                                  _("Add pay-to-pubkey output to TX") +
-                                                                                ". " +
-                                                                                _("Optionally add the \"W\" flag to produce a pay-to-witness-pubkey-hash output") +
-                                                                                ". " +
-                                                                                _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash.")},
-            {"outdata=[VALUE:]DATA",                                            "Add data-based output to TX"},
-            {"outscript=VALUE:SCRIPT[:FLAGS]",                                  _("Add raw script output to TX") +
-                                                                                ". " +
-                                                                                _("Optionally add the \"W\" flag to produce a pay-to-witness-script-hash output") +
-                                                                                ". " +
-                                                                                _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash.")},
-            {"outmultisig=VALUE:REQUIRED:PUBKEYS:PUBKEY1:PUBKEY2:....[:FLAGS]", _(
-                    "Add Pay To n-of-m Multi-sig output to TX. n = REQUIRED, m = PUBKEYS") + ". " +
-                                                                                _("Optionally add the \"W\" flag to produce a pay-to-witness-script-hash output") +
-                                                                                ". " +
-                                                                                _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash.")},
-            {"sign=SIGHASH-FLAGS",                                              _(
-                    "Add zero or more signatures to transaction") + ". " +
-                                                                                _("This command requires JSON registers:") +
-                                                                                _("prevtxs=JSON object") + ", " +
-                                                                                _("privatekeys=JSON object") + ". " +
-                                                                                _("See signrawtransaction docs for format of sighash flags, JSON objects.")},
-    };
-    optionMap.emplace("Commands:", item);
-
-    item = {
-            {"load=NAME:FILENAME",   _("Load JSON file FILENAME into register NAME")},
-            {"set=NAME:JSON-STRING", _("Set register NAME to given JSON-STRING")}
-    };
-    optionMap.emplace("Register Commands:", item);
-
-    std::string strHead =
-            strprintf(_("%s sbtc-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
-            _("Usage:") + "\n" +
-            "  bitcoin-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded bitcoin transaction") + "\n" +
-            "  bitcoin-tx [options] -create [commands]   " + _("Create hex-encoded bitcoin transaction") + "\n" +
-            "\n";
-
-    pArgs->SetOptionName(strHead);
-    pArgs->SetOptionTable(optionMap);
-}
 
 static void RegisterSetJson(const std::string &key, const std::string &rawJson)
 {
@@ -806,7 +735,7 @@ static void OutputTx(const CTransaction &tx)
         OutputTxHex(tx);
 }
 
-static std::string readStdin()
+std::string readStdin()
 {
     char buf[4096];
     std::string ret;
@@ -827,51 +756,183 @@ static std::string readStdin()
     return ret;
 }
 
-bool CApp::Run(int argc, char *argv[])
+void CApp::InitOptionMap()
 {
-    fCreateBlank = Args().GetArg<bool>("-create", false);
-    if (argc < 2)
+    std::map<string, vector<option_item>> optionMap;
+
+    vector<option_item> item = {
+            {"help,h", "Print this message and exit."},
+            {"create", "Create new, empty TX."},
+            {"json",   "Select JSON output"},
+            {"txid",   "Output only the hex-encoded transaction id of the resultant transaction."}
+    };
+    optionMap.emplace("Options:", item);
+
+    item = {
+            {"delin=N",                                                         "Delete input N from TX"},
+            {"delout=N",                                                        "Delete output N from TX"},
+            {"in=TXID:VOUT(:SEQUENCE_NUMBER)",                                  "Add input to TX"},
+            {"locktime=N",                                                      "Set TX lock time to N"},
+            {"nversion=N",                                                      "Set TX version to N"},
+            {"replaceable(=N)",                                                 "Set RBF opt-in sequence number for input N (if not provided, opt-in all available inputs)"},
+            {"outaddr=VALUE:ADDRESS",                                           "Add address-based output to TX"},
+            {"outpubkey=VALUE:PUBKEY[:FLAGS]",                                  _("Add pay-to-pubkey output to TX") +
+                                                                                ". " +
+                                                                                _("Optionally add the \"W\" flag to produce a pay-to-witness-pubkey-hash output") +
+                                                                                ". " +
+                                                                                _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash.")},
+            {"outdata=[VALUE:]DATA",                                            "Add data-based output to TX"},
+            {"outscript=VALUE:SCRIPT[:FLAGS]",                                  _("Add raw script output to TX") +
+                                                                                ". " +
+                                                                                _("Optionally add the \"W\" flag to produce a pay-to-witness-script-hash output") +
+                                                                                ". " +
+                                                                                _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash.")},
+            {"outmultisig=VALUE:REQUIRED:PUBKEYS:PUBKEY1:PUBKEY2:....[:FLAGS]", _(
+                    "Add Pay To n-of-m Multi-sig output to TX. n = REQUIRED, m = PUBKEYS") + ". " +
+                                                                                _("Optionally add the \"W\" flag to produce a pay-to-witness-script-hash output") +
+                                                                                ". " +
+                                                                                _("Optionally add the \"S\" flag to wrap the output in a pay-to-script-hash.")},
+            {"sign=SIGHASH-FLAGS",                                              _(
+                    "Add zero or more signatures to transaction") + ". " +
+                                                                                _("This command requires JSON registers:") +
+                                                                                _("prevtxs=JSON object") + ", " +
+                                                                                _("privatekeys=JSON object") + ". " +
+                                                                                _("See signrawtransaction docs for format of sighash flags, JSON objects.")},
+    };
+    optionMap.emplace("Commands:", item);
+
+    item = {
+            {"load=NAME:FILENAME",   _("Load JSON file FILENAME into register NAME")},
+            {"set=NAME:JSON-STRING", _("Set register NAME to given JSON-STRING")}
+    };
+    optionMap.emplace("Register Commands:", item);
+
+    item = {
+            {"hexsbtctx",        bpo::value<string>(), "Hex-encoded sbtc transaction, internal option, INVALID FOR COMMANDLINE!"},
+            {"commandargs",      bpo::value<string>(), "Command arguments, internal option, INVALID FOR COMMANDLINE!"}
+    };
+    optionMap.emplace("xcommand options:", item);
+
+    std::string strHead =
+            strprintf(_("%s sbtc-tx utility version"), _(PACKAGE_NAME)) + " " + FormatFullVersion() + "\n\n" +
+            _("Usage:") + "\n" +
+            "  bitcoin-tx [options] <hex-tx> [commands]  " + _("Update hex-encoded bitcoin transaction") + "\n" +
+            "  bitcoin-tx [options] -create [commands]   " + _("Create hex-encoded bitcoin transaction") + "\n" +
+            "\n";
+
+    pArgs->SetOptionName(strHead);
+    pArgs->SetOptionTable(optionMap);
+}
+
+void CApp::RelayoutArgs(int& argc, char**& argv)
+{
+    static std::list<std::string> _argx;
+    static std::vector<const char*> _argv;
+
+    _argv.emplace_back(argv[0]); // assert(argc >= 1)
+
+    int i = 1;
+    for (; i < argc && argv[i][0] == '-'; i++)
     {
-        fprintf(stderr, "Error: too few parameters\n");
+        if (strlen(argv[i]) > 2 && argv[i][1] != '-')
+        {
+            _argx.emplace_back('-' + std::string(argv[i]));
+            _argv.emplace_back(_argx.back().c_str());
+        }
+        else
+        {
+            _argv.emplace_back(argv[i]);
+        }
+    }
+
+    for (auto opt : _argv)
+    {
+        if (strncmp(opt, "--create", 8) == 0)
+        {
+            fCreateBlank = true;
+            break;
+        }
+    }
+
+    if (i < argc)
+    {
+        if (!fCreateBlank)
+        {
+            _argx.emplace_back(std::string("--hexsbtctx=") + argv[i++]);
+            _argv.emplace_back(_argx.back().c_str());
+        }
+    }
+
+    if (i < argc)
+    {
+        std::string commandargs(argv[i++]);
+        for (; i < argc; i++)
+        {
+            commandargs += COMMAND_ARG_SEP;
+            commandargs += argv[i];
+        }
+        _argx.emplace_back(std::string("--commandargs=") + commandargs);
+        _argv.emplace_back(_argx.back().c_str());
+    }
+
+    argc = (int)_argv.size();
+    argv = (char**)&_argv[0];
+}
+
+bool CApp::Initialize(int argc, char **argv)
+{
+    SetupEnvironment();
+
+    InitOptionMap();
+
+    if (!pArgs->Init(argc, argv))
+    {
         return false;
     }
 
-    std::string strPrint;
+    if (pArgs->IsArgSet("help") || pArgs->IsArgSet("usage"))
+    {
+        std::cout << pArgs->GetHelpMessage();
+        return false;
+    }
+
+    //InitializeLogging(pArgs->GetDataDir(false));
+    return true;
+}
+
+bool CApp::Run()
+{
+    bool fUpdateTx = pArgs->IsArgSet("-hexsbtctx");
+
+    if (fUpdateTx == fCreateBlank)
+    {
+        fprintf(stderr, "Error: Invalid command line arguments.\n");
+        return false;
+    }
+
     int nRet = 0;
+    std::string strPrint;
+
     try
     {
-        // Skip switches; Permit common stdin convention "-"
-        while (argc > 1 && IsSwitchChar(argv[1][0]) &&
-               (argv[1][1] != 0))
-        {
-            argc--;
-            argv++;
-        }
-
         CMutableTransaction tx;
-        int startArg;
-
-        if (!fCreateBlank)
+        if (fUpdateTx)
         {
-            // require at least one param
-            if (argc < 2)
-                throw std::runtime_error("too few parameters");
-
             // param: hex-encoded bitcoin transaction
-            std::string strHexTx(argv[1]);
-            if (strHexTx == "-")                 // "-" implies standard input
-                strHexTx = readStdin();
+            std::string strHexTx = pArgs->GetArg<std::string>("-hexsbtctx", "");
+
+            //if (strHexTx == "-")                 // "-" implies standard input
+            //    strHexTx = readStdin();
 
             if (!DecodeHexTx(tx, strHexTx, true))
                 throw std::runtime_error("invalid transaction encoding");
+        }
 
-            startArg = 2;
-        } else
-            startArg = 1;
+        std::string strArgs = pArgs->GetArg<std::string>("-commandargs", "");
+        std::vector<std::string> args = SplitString(strArgs, COMMAND_ARG_SEP);
 
-        for (int i = startArg; i < argc; i++)
+        for (const auto& arg : args)
         {
-            std::string arg = argv[i];
             std::string key, value;
             size_t eqpos = arg.find('=');
             if (eqpos == std::string::npos)
@@ -887,48 +948,27 @@ bool CApp::Run(int argc, char *argv[])
 
         OutputTx(tx);
     }
-
     catch (const boost::thread_interrupted &)
     {
-        throw;
+        strPrint = "thread interrupted!";
+        nRet = EXIT_FAILURE;
     }
     catch (const std::exception &e)
     {
         strPrint = std::string("error: ") + e.what();
-        return false;
+        nRet = EXIT_FAILURE;
     }
     catch (...)
     {
         PrintExceptionContinue(nullptr, "CommandLineRawTx()");
-        throw;
+        nRet = EXIT_FAILURE;
     }
 
-    if (strPrint != "")
+    if (!strPrint.empty())
     {
-        fprintf((nRet == 0 ? stdout : stderr), "%s\n", strPrint.c_str());
+        fprintf((nRet == EXIT_SUCCESS ? stdout : stderr), "%s\n", strPrint.c_str());
     }
 
-    return true;
+    return nRet == EXIT_SUCCESS;
 }
 
-//bool CApp::Initialize(int argc, char **argv)
-//{
-//    SetupEnvironment();
-//    if (!ParseCommandline(argc, argv))
-//    {
-//        return false;
-//    }
-//
-//    //    InitializeLogging(pArgs->GetDataDir(false));
-//    try
-//    {
-//        pChainParams = CreateChainParams(ChainNameFromCommandLine());
-//    }
-//    catch (const std::exception &e)
-//    {
-//        ELogFormat("Error: %s.", e.what());
-//        return false;
-//    }
-//
-//    return true;
-//}

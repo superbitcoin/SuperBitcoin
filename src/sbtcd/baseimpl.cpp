@@ -568,10 +568,10 @@ bool CApp::AppInitBasicSetup()
     if (setProcDEPPol != nullptr) setProcDEPPol(PROCESS_DEP_ENABLE);
 #endif
 
-    if (!SetupNetworking())
-    {
-        return rLogError("Initializing networking failed");
-    }
+    //if (!SetupNetworking())
+    //{
+    //    return rLogError("Initializing networking failed");
+    //}
 
 #ifndef WIN32
     //    const CArgsManager &appArgs = app().GetArgsManager();
