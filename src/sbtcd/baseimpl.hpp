@@ -39,6 +39,8 @@ private:
 
     void InitOptionMap() override;
 
+    void PrintAppStartupInfo() override;
+
     void InitParameterInteraction();
 
     bool AppInitBasicSetup();

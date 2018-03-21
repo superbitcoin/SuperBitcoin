@@ -143,6 +143,8 @@ bool IBaseApp::Initialize(int argc, char **argv)
 
     InitializeLogging(pArgs->GetDataDir(false));
 
+    PrintAppStartupInfo();
+
     try
     {
         if (!fs::is_directory(pArgs->GetDataDir(false)))
@@ -190,6 +192,11 @@ bool IBaseApp::Run()
 bool IBaseApp::Shutdown()
 {
     return true;
+}
+
+void IBaseApp::PrintAppStartupInfo()
+{
+    //NOOP
 }
 
 IComponent* IBaseApp::FindComponent(int id) const

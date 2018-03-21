@@ -59,6 +59,8 @@ namespace appbase
     protected:
         virtual void InitOptionMap() = 0;
 
+        virtual void PrintAppStartupInfo();
+
         virtual IComponent *FindComponent(int id) const;
 
         volatile bool bShutdown;

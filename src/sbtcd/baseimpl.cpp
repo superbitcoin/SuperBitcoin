@@ -420,6 +420,15 @@ void CApp::InitOptionMap()
     pArgs->SetOptionTable(optionMap);
 }
 
+void CApp::PrintAppStartupInfo()
+{
+    NLogStream() << ' ';
+    NLogStream() << "=============================================================";
+    NLogStream() << "===================== SBTCD Startup ... =====================";
+    NLogStream() << "=============================================================";
+    NLogStream() << ' ';
+}
+
 // Parameter interaction based on rules
 void CApp::InitParameterInteraction()
 {
