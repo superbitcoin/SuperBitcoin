@@ -769,8 +769,8 @@ void CApp::InitOptionMap()
     optionMap.emplace("Options:", item);
 
     item = {
-            {"testnet", bpo::value<string>(), "Use the test chain"},
-            {"regtest", bpo::value<string>(), "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
+            {"testnet", "Use the test chain"},
+            {"regtest", "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
                                                       "This is intended for regression testing tools and app_bpo development."}
 
     };
