@@ -769,6 +769,14 @@ void CApp::InitOptionMap()
     optionMap.emplace("Options:", item);
 
     item = {
+            {"testnet", bpo::value<string>(), "Use the test chain"},
+            {"regtest", bpo::value<string>(), "Enter regression test mode, which uses a special chain in which blocks can be solved instantly. "
+                                                      "This is intended for regression testing tools and app_bpo development."}
+
+    };
+    optionMap.emplace("Chain selection options:", item);
+
+    item = {
             {"delin=N",                                                         "Delete input N from TX"},
             {"delout=N",                                                        "Delete output N from TX"},
             {"in=TXID:VOUT(:SEQUENCE_NUMBER)",                                  "Add input to TX"},
@@ -895,6 +903,16 @@ bool CApp::Initialize(int argc, char **argv)
         std::cout << pArgs->GetHelpMessage();
         return false;
     }
+
+    try
+    {
+        pChainParams = CreateChainParams(ChainNameFromCommandLine());
+    } catch(const std::exception& e)
+    {
+        fprintf(stderr, "Error: %s.\n", e.what());
+        return false;
+    }
+    
 
     //InitializeLogging(pArgs->GetDataDir(false));
     return true;
