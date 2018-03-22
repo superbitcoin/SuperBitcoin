@@ -123,7 +123,7 @@ static void PrintVersion()
                  FormatParagraph(LicenseInfo()) << std::endl;
 }
 
-IBaseApp::IBaseApp() : nVersion(1), bShutdown(false)
+IBaseApp::IBaseApp() noexcept : nVersion(1), bShutdown(false)
 {
 }
 

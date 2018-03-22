@@ -14,7 +14,7 @@ namespace appbase
     class IBaseApp
     {
     public:
-        IBaseApp();
+        IBaseApp() noexcept;
 
 
         virtual bool Initialize(int argc, char **argv);
