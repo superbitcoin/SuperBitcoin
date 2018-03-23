@@ -85,6 +85,7 @@ enum ResultBlockIndex
     ERR_LOAD_GENESIS,
     ERR_INIT_GENESIS,
     ERR_TXINDEX_STATE,
+    ERR_LOGEVENTS_STATE,
     ERR_PRUNE_STATE,
 };
 
@@ -104,7 +105,7 @@ public:
 
     CBlockIndex *FindMostWorkIndex();
 
-    int LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset, bool txIndex);
+    int LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset, bool txIndex,bool logEvents);
 
     void PruneBlockIndexCandidates();
 
@@ -139,6 +140,8 @@ public:
     bool IsReIndexing();
 
     bool IsTxIndex();
+
+    bool IsLogEvents();
 
     bool NeedInitGenesisBlock(const CChainParams &chainparams);
 
@@ -176,6 +179,7 @@ public:
 private:
     bool bReIndexing = false;
     bool bTxIndex = false;
+    bool bLogEvents = false;//sbtc-vm
     bool bHavePruned = false;
     int iLastBlockFile = 0;
     std::vector<CBlockFileInfo> vecBlockFileInfo;

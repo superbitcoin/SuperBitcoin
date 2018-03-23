@@ -116,6 +116,10 @@ enum
 
     // Do we accept signature using SIGHASH_SBTC_FORK
             SCRIPT_ENABLE_SIGHASH_SBTC_FORK = (1U << 16),
+
+    // Performs the compiled byte code
+    // sbtc-vm
+            SCRIPT_EXEC_BYTE_CODE = (1U << 30),
 };
 
 bool CheckSignatureEncoding(const std::vector<unsigned char> &vchSig, unsigned int flags, ScriptError *serror);

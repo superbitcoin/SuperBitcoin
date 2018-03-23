@@ -130,7 +130,9 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
 
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
-
+    //sbtc-vm
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    ifContractObj->UpdateState(pindex->pprev->hashStateRoot,pindex->pprev->hashUTXORoot);
     return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
 }
 

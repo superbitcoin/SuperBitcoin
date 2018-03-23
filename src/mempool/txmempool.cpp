@@ -227,6 +227,28 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
 
         CAmount nValueOut = tx.GetValueOut();
         CAmount nFees = nValueIn - nValueOut;
+
+        //////////////////////////////////////////////////////////// //sbtc-vm
+        // check contract tx
+        CAmount nMinGasPrice = 0;
+        if (tx.HasCreateOrCall())
+        {
+            if (!tx.CheckSenderScript(view))
+            {
+                return state.DoS(1, false, REJECT_INVALID, "bad-txns-invalid-sender-script");
+            }
+
+            int level = 0;
+            string errinfo;
+
+            GET_CONTRACT_INTERFACE(ifContractObj);
+            if (!ifContractObj->ChecckContractTx(tx, nFees, nMinGasPrice, level, errinfo))
+            {
+                return state.DoS(level, false, REJECT_INVALID, errinfo);
+            }
+        }
+        ////////////////////////////////////////////////////////////
+
         // nModifiedFees includes any fee deltas from PrioritiseTransaction
         CAmount nModifiedFees = nFees;
         this->ApplyDelta(hash, nModifiedFees);
@@ -246,7 +268,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
 
         GET_CHAIN_INTERFACE(ifChainObj);
         CTxMemPoolEntry entry(ptx, nFees, nAcceptTime, ifChainObj->GetActiveChain().Height(),
-                              fSpendsCoinbase, nSigOpsCost, lp);
+                              fSpendsCoinbase, nSigOpsCost, lp, nMinGasPrice);
         unsigned int nSize = entry.GetTxSize();
 
         // Check that the transaction doesn't have an excessive number of
@@ -271,8 +293,8 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         {
             return state.DoS(0, false, REJECT_INSUFFICIENTFEE, "min relay fee not met");
         }
-
-        if (nAbsurdFee && nFees > nAbsurdFee)
+        //sbtc-vm
+        if (!tx.HasCreateOrCall() && nAbsurdFee && nFees > nAbsurdFee)
             return state.Invalid(false,
                                  REJECT_HIGHFEE, "absurdly-high-fee",
                                  strprintf("%d > %d", nFees, nAbsurdFee));

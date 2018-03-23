@@ -61,6 +61,8 @@ enum txnouttype
     TX_NULL_DATA,
     TX_WITNESS_V0_SCRIPTHASH,
     TX_WITNESS_V0_KEYHASH,
+    TX_CREATE,   // sbtc-vm
+    TX_CALL,
 };
 
 class CNoDestination
@@ -88,9 +90,11 @@ typedef boost::variant<CNoDestination, CKeyID, CScriptID> CTxDestination;
 
 const char *GetTxnOutputType(txnouttype t);
 
-bool Solver(const CScript &scriptPubKey, txnouttype &typeRet, std::vector<std::vector<unsigned char> > &vSolutionsRet);
+//sbtc-vm
+bool Solver(const CScript &scriptPubKey, txnouttype &typeRet, std::vector<std::vector<unsigned char> > &vSolutionsRet,
+            bool contractConsensus = false);
 
-bool ExtractDestination(const CScript &scriptPubKey, CTxDestination &addressRet);
+bool ExtractDestination(const CScript &scriptPubKey, CTxDestination &addressRet, txnouttype *typeRet = NULL);//sbtc-vm
 
 bool ExtractDestinations(const CScript &scriptPubKey, txnouttype &typeRet, std::vector<CTxDestination> &addressRet,
                          int &nRequiredRet);

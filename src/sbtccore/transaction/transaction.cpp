@@ -176,8 +176,8 @@ bool CTransaction::PreCheck(CHECK_TYPE type, CValidationState &state) const
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     std::string reason;
-    if (!IsStandardTx(*this, reason, true))
-        return state.DoS(0, false, REJECT_NONSTANDARD, reason);
+    if (Params().RequireStandard() && !IsStandardTx(*this, reason, true))
+            return state.DoS(0, false, REJECT_NONSTANDARD, reason);
 
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
@@ -227,6 +227,18 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
         nValueOut += txout.nValue;
         if (!MoneyRange(nValueOut))
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-txouttotal-toolarge");
+
+        /////////////////////////////////////////////////////////// // sbtc-vm
+        if (txout.scriptPubKey.HasOpCall() || txout.scriptPubKey.HasOpCreate())
+        {
+            std::vector<std::vector<unsigned char>> vSolutions;
+            txnouttype whichType;
+            if (!Solver(txout.scriptPubKey, whichType, vSolutions, true))
+            {
+                return state.DoS(100, false, REJECT_INVALID, "bad-txns-contract-nonstandard");
+            }
+        }
+        ///////////////////////////////////////////////////////////
     }
 
     // Check for duplicate inputs - note that this check is slow so we skip it in CheckBlock
@@ -557,3 +569,38 @@ bool CTransaction::SequenceLocks(int flags, std::vector<int> *prevHeights, const
     return EvaluateSequenceLocks(block, CalculateSequenceLocks(flags, prevHeights, block));
 }
 
+
+///////////////////////////////////////////////////////////// //sbtc-vm
+bool CTransaction::HasCreateOrCall() const
+{
+    for (const CTxOut &v : vout)
+    {
+        if (v.scriptPubKey.HasOpCreate() || v.scriptPubKey.HasOpCall())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CTransaction::HasOpSpend() const
+{
+    for (const CTxIn &i : vin)
+    {
+        if (i.scriptSig.HasOpSpend())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool CTransaction::CheckSenderScript(const CCoinsViewCache& view) const
+{
+    CScript script = view.AccessCoin(vin[0].prevout).out.scriptPubKey;
+    if(!script.IsPayToPubkeyHash() && !script.IsPayToPubkey()){
+        return false;
+    }
+    return true;
+}
+/////////////////////////////////////////////////////////////

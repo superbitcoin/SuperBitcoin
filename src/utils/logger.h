@@ -23,10 +23,10 @@ typedef log4cpp::Priority LogPriority;
 
 #ifdef  ENABLE_LOGGING
 
-    #define DECLARE_DEFAULT_LOGGER(c)                                                 \
+#define DECLARE_DEFAULT_LOGGER(c)                                                 \
         static LogCategory* s_logger = &LogCategory::getInstance(#c)
 
-    #define SET_CPP_SCOPED_LOG_CATEGORY(c)                                            \
+#define SET_CPP_SCOPED_LOG_CATEGORY(c)                                            \
         static struct _CppScopedLogCateogorySetter                                    \
         {                                                                             \
             _CppScopedLogCateogorySetter(LogCategory*& logger, const char* category)  \
@@ -36,34 +36,34 @@ typedef log4cpp::Priority LogPriority;
             }                                                                         \
         } _cslc_obj_for_##c(s_logger, #c)
 
-    #define SET_TEMP_LOG_CATEGORY(c)                                                  \
+#define SET_TEMP_LOG_CATEGORY(c)                                                  \
         _TempLogCategorySetter _tmp_lcs_obj_for_##c(s_logger, #c)
 
-    #ifdef LOG_SRC_LOC_INFO
-    # define __FILENAME__ (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__)
-    # define SrcLocInfo(file, line) tinyformat::format("%s(%d):  ", file, line)
-    # define Logging(prior, fmt, a...) s_logger->log(prior, SrcLocInfo(__FILENAME__, __LINE__) + tinyformat::format(fmt, ##a))
-    # define LoggingLevel(level, fmt, a...) s_logger->level(SrcLocInfo(__FILENAME__, __LINE__) + tinyformat::format(fmt, ##a))
-    # define LogStream(prior) _LogStream(prior, __FILENAME__, __LINE__)
-    # define LogRetV(prior, fmt, a...) _LogFormatRetV<prior>(__FILENAME__, __LINE__, fmt, ##a)
-    #else
-    # define Logging(prior, fmt, a...) s_logger->log(prior, tinyformat::format(fmt, ##a))
-    # define LoggingLevel(level, fmt, a...) s_logger->level(tinyformat::format(fmt, ##a))
-    # define LogStream(prior) _LogStream(prior)
-    # define LogRetV(prior, fmt, a...) _LogFormatRetV<prior>(nullptr, 0, nullptr, fmt, ##a)
-    #endif
+#ifdef LOG_SRC_LOC_INFO
+# define __FILENAME__ (strrchr(__FILE__, '/') ? (strrchr(__FILE__, '/') + 1) : __FILE__)
+# define SrcLocInfo(file, line) tinyformat::format("%s(%d):  ", file, line)
+# define Logging(prior, fmt, a...) s_logger->log(prior, SrcLocInfo(__FILENAME__, __LINE__) + tinyformat::format(fmt, ##a))
+# define LoggingLevel(level, fmt, a...) s_logger->level(SrcLocInfo(__FILENAME__, __LINE__) + tinyformat::format(fmt, ##a))
+# define LogStream(prior) _LogStream(prior, __FILENAME__, __LINE__)
+# define LogRetV(prior, fmt, a...) _LogFormatRetV<prior>(__FILENAME__, __LINE__, fmt, ##a)
+#else
+# define Logging(prior, fmt, a...) s_logger->log(prior, tinyformat::format(fmt, ##a))
+# define LoggingLevel(level, fmt, a...) s_logger->level(tinyformat::format(fmt, ##a))
+# define LogStream(prior) _LogStream(prior)
+# define LogRetV(prior, fmt, a...) _LogFormatRetV<prior>(nullptr, 0, nullptr, fmt, ##a)
+#endif
 
-    DECLARE_DEFAULT_LOGGER(CID_APP);
+DECLARE_DEFAULT_LOGGER(CID_APP);
 
 #else
 
-    #define DECLARE_SBTC_LOGGER(c)
-    #define SET_CPP_SCOPED_LOG_CATEGORY(c)
-    #define SET_TEMP_LOG_CATEGORY(c)
-    #define Logging(level, fmt, a...)
-    #define LoggingLevel(level, fmt, a...)
-    #define LogStream(prior) _LogStream(prior)
-    #define LogRetV(prior, fmt, a...) (prior > LogPriority::ERROR)
+#define DECLARE_SBTC_LOGGER(c)
+#define SET_CPP_SCOPED_LOG_CATEGORY(c)
+#define SET_TEMP_LOG_CATEGORY(c)
+#define Logging(level, fmt, a...)
+#define LoggingLevel(level, fmt, a...)
+#define LogStream(prior) _LogStream(prior)
+#define LogRetV(prior, fmt, a...) (prior > LogPriority::ERROR)
 
 #endif
 
@@ -77,6 +77,7 @@ typedef log4cpp::Priority LogPriority;
 #define FLogFormat(fmt, a...) LoggingLevel(fatal,  fmt, ##a)
 #define DLogFormat(fmt, a...) LoggingLevel(debug,  fmt, ##a)
 #define LogFormat(prior, fmt, a...) Logging(prior, fmt, ##a)
+#define VMLog(fmt, a...) s_logger->log(LogPriority::NOTICE, tinyformat::format(fmt, ##a))
 
 
 // TODO: stream logging defines
@@ -102,8 +103,12 @@ public:
 #ifndef  ENABLE_LOGGING
     _LogStream(int) {}
 #else
-    _LogStream(int prior, const char* filename = nullptr, int line = 0, const char* func = nullptr)
-        : _prior(prior), _line(line), _filename(filename) {}
+
+    _LogStream(int prior, const char *filename = nullptr, int line = 0, const char *func = nullptr)
+            : _prior(prior), _line(line), _filename(filename)
+    {
+    }
+
     ~_LogStream()
     {
         if (!str().empty())
@@ -111,33 +116,34 @@ public:
             s_logger->log(_prior,
 # ifdef LOG_SRC_LOC_INFO
                           SrcLocInfo(_filename, _line) +
-# endif
+                          # endif
                           str());
         }
     }
+
 private:
     int _prior;
     int _line;
-    const char* _filename;
+    const char *_filename;
 #endif
 };
 
 
 template<int prior, typename... TArgs>
-inline bool _LogFormatRetV(const char* filename, int line, const char* fmt, TArgs&&... args)
+inline bool _LogFormatRetV(const char *filename, int line, const char *fmt, TArgs &&... args)
 {
 #ifdef ENABLE_LOGGING
     s_logger->log(prior,
 # ifdef LOG_SRC_LOC_INFO
                   SrcLocInfo(filename, line) +
-# endif
+                  # endif
                   tinyformat::format(fmt, args...));
 #endif
     return prior > LogPriority::ERROR;
 }
 
 template<int prior, typename... TArgs>
-inline bool _LogFormatRetV(const char* filename, int line,  const std::string& fmt, TArgs&&... args)
+inline bool _LogFormatRetV(const char *filename, int line, const std::string &fmt, TArgs &&... args)
 {
     return _LogFormatRetV<prior>(filename, line, fmt.c_str(), args...);
 }
@@ -146,8 +152,8 @@ inline bool _LogFormatRetV(const char* filename, int line,  const std::string& f
 class _TempLogCategorySetter
 {
 public:
-    _TempLogCategorySetter(LogCategory*& logger, const char* category)
-        : _s_logger(logger), _old_logger(logger)
+    _TempLogCategorySetter(LogCategory *&logger, const char *category)
+            : _s_logger(logger), _old_logger(logger)
     {
         _s_logger = &LogCategory::getInstance(category);
     }
@@ -158,6 +164,6 @@ public:
     }
 
 private:
-    LogCategory*& _s_logger;
-    LogCategory* _old_logger;
+    LogCategory *&_s_logger;
+    LogCategory *_old_logger;
 };

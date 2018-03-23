@@ -135,6 +135,13 @@ public:
                             boost::multi_index::tag<ancestor_score>,
                             boost::multi_index::identity<CTxMemPoolEntry>,
                             CompareTxMemPoolEntryByAncestorFee
+                    >,
+                    //sbtc-vm
+                    // sorted by fee rate with gas price (if contract tx) or ancestors otherwise
+                    boost::multi_index::ordered_non_unique<
+                            boost::multi_index::tag<ancestor_score_or_gas_price>,
+                            boost::multi_index::identity<CTxMemPoolEntry>,
+                            CompareTxMemPoolEntryByAncestorFeeOrGasPrice
                     >
             >
     > indexed_transaction_set;

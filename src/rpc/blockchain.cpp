@@ -36,6 +36,7 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <utils/base58.h>
 
 SET_CPP_SCOPED_LOG_CATEGORY(CID_HTTP_RPC);
 
@@ -863,6 +864,589 @@ UniValue getblock(const JSONRPCRequest &request)
     return blockToJSON(block, pblockindex, verbosity >= 2);
 }
 
+/////////////////////////////////////////////////////sbtc-vm
+UniValue getstorage(const JSONRPCRequest &request)
+{
+    if (request.fHelp || request.params.size() < 1)
+        throw std::runtime_error(
+                "getstorage \"address\"\n"
+                        "\nArgument:\n"
+                        "1. \"address\"          (string, required) The address to get the storage from\n"
+                        "2. \"blockNum\"         (string, optional) Number of block to get state from, \"latest\" keyword supported. Latest if not passed.\n"
+                        "3. \"index\"            (number, optional) Zero-based index position of the storage\n"
+        );
+
+    LOCK(cs_main);
+
+    std::string strAddr = request.params[0].get_str();
+    if (strAddr.size() != 40 || !IsHex(strAddr))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect address");
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CChain chainActive = ifChainObj->GetActiveChain();
+
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    if (request.params.size() > 1)
+    {
+        if (request.params[1].isNum())
+        {
+            auto blockNum = request.params[1].get_int();
+            if ((blockNum < 0 && blockNum != -1) || blockNum > chainActive.Height())
+                throw JSONRPCError(RPC_INVALID_PARAMS, "Incorrect block number");
+
+            if (blockNum != -1)
+            {
+                ifContractObj->SetTemporaryState(chainActive[blockNum]->hashStateRoot,
+                                                 chainActive[blockNum]->hashUTXORoot);
+            }
+        } else
+        {
+            throw JSONRPCError(RPC_INVALID_PARAMS, "Incorrect block number");
+        }
+    }
+
+    if (!ifContractObj->IsContractAddressInUse(strAddr))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Address does not exist");
+
+    UniValue result(UniValue::VOBJ);
+
+    bool onlyIndex = request.params.size() > 2;
+    unsigned index = 0;
+    if (onlyIndex)
+        index = request.params[2].get_int();
+
+    std::map<dev::h256, std::pair<dev::u256, dev::u256>> storage = ifContractObj->GetStorageByAddress(strAddr);
+    if (onlyIndex)
+    {
+        if (index >= storage.size())
+        {
+            std::ostringstream stringStream;
+            stringStream << "Storage size: " << storage.size() << " got index: " << index;
+            throw JSONRPCError(RPC_INVALID_PARAMS, stringStream.str());
+        }
+        auto elem = std::next(storage.begin(), index);
+        UniValue e(UniValue::VOBJ);
+
+        storage = {{elem->first, {elem->second.first, elem->second.second}}};
+    }
+    for (const auto &j: storage)
+    {
+        UniValue e(UniValue::VOBJ);
+        e.push_back(Pair(dev::toHex(j.second.first), dev::toHex(j.second.second)));
+        result.push_back(Pair(j.first.hex(), e));
+    }
+    return result;
+}
+
+UniValue callcontract(const JSONRPCRequest &request)
+{
+    if (request.fHelp || request.params.size() < 2)
+        throw std::runtime_error(
+                "callcontract \"address\" \"data\" ( address )\n"
+                        "\nArgument:\n"
+                        "1. \"address\"          (string, required) The account address\n"
+                        "2. \"data\"             (string, required) The data hex string\n"
+                        "3. address              (string, optional) The sender address hex string\n"
+                        "4. gasLimit  (numeric or string, optional) gasLimit, default: " +
+                i64tostr(DEFAULT_GAS_LIMIT_OP_SEND) + "\n"
+                //                        "4. gasLimit             (string, optional) The gas limit for executing the contract\n"
+        );
+
+    LOCK(cs_main);
+
+    std::string strAddr = request.params[0].get_str();
+    std::string data = request.params[1].get_str();
+
+    if (!IsHex(data))
+        throw JSONRPCError(RPC_TYPE_ERROR, "Invalid data (data not hex)");
+
+    if (strAddr.size() != 40 || !IsHex(strAddr))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect address");
+
+    GET_CONTRACT_INTERFACE(ifContractObj);
+
+    if (!ifContractObj->IsContractAddressInUse(strAddr))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Address does not exist");
+
+    string sender = "";
+    if (request.params.size() == 3)
+    {
+        CBitcoinAddress btcSenderAddress(request.params[2].get_str());
+        if (btcSenderAddress.IsValid())
+        {
+            CKeyID keyid;
+            btcSenderAddress.GetKeyID(keyid);
+
+            sender = HexStr(valtype(keyid.begin(), keyid.end()));
+        } else
+        {
+            sender = request.params[2].get_str();
+        }
+    }
+    uint64_t gasLimit = 0;
+    if (request.params.size() == 4)
+    {
+        //        gasLimit = request.params[3].get_int();
+        if (request.params[3].isNum())
+        {
+            gasLimit = request.params[3].get_int64();
+        } else if (request.params[3].isStr())
+        {
+            gasLimit = atoi64(request.params[3].get_str());
+        } else
+        {
+            throw JSONRPCError(RPC_TYPE_ERROR, "JSON value for gasLimit is not (numeric or string)");
+        }
+
+//        if (gasLimit > blockGasLimit)
+//            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit (Maximum is: "+i64tostr(blockGasLimit)+")");
+//        if (gasLimit < MINIMUM_GAS_LIMIT)
+//            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit (Minimum is: "+i64tostr(MINIMUM_GAS_LIMIT)+")");
+//        if (gasLimit <= 0)
+//            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit");
+    }
+
+    UniValue result(UniValue::VOBJ);
+    result.push_back(Pair("address", strAddr));
+    ifContractObj->RPCCallContract(result,strAddr, ParseHex(data), sender, gasLimit);
+
+    return result;
+}
+
+void assignJSON(UniValue &entry, const TransactionReceiptInfo &resExec)
+{
+    entry.push_back(Pair("blockHash", resExec.blockHash.GetHex()));
+    entry.push_back(Pair("blockNumber", uint64_t(resExec.blockNumber)));
+    entry.push_back(Pair("transactionHash", resExec.transactionHash.GetHex()));
+    entry.push_back(
+            Pair("transactionIndex", uint64_t(resExec.transactionIndex)));
+    entry.push_back(Pair("from", resExec.from.hex()));
+    entry.push_back(Pair("to", resExec.to.hex()));
+    entry.push_back(
+            Pair("cumulativeGasUsed", CAmount(resExec.cumulativeGasUsed)));
+    entry.push_back(Pair("gasUsed", CAmount(resExec.gasUsed)));
+    entry.push_back(Pair("contractAddress", resExec.contractAddress.hex()));
+}
+
+void assignJSON(UniValue &logEntry, const dev::eth::LogEntry &log,
+                bool includeAddress)
+{
+    if (includeAddress)
+    {
+        logEntry.push_back(Pair("address", log.address.hex()));
+    }
+
+    UniValue topics(UniValue::VARR);
+    for (dev::h256 hash : log.topics)
+    {
+        topics.push_back(hash.hex());
+    }
+    logEntry.push_back(Pair("topics", topics));
+    logEntry.push_back(Pair("data", HexStr(log.data)));
+}
+
+void transactionReceiptInfoToJSON(const TransactionReceiptInfo &resExec, UniValue &entry)
+{
+    assignJSON(entry, resExec);
+
+    const auto &logs = resExec.logs;
+    UniValue logEntries(UniValue::VARR);
+    for (const auto &log : logs)
+    {
+        UniValue logEntry(UniValue::VOBJ);
+        assignJSON(logEntry, log, true);
+        logEntries.push_back(logEntry);
+    }
+    entry.push_back(Pair("log", logEntries));
+}
+
+size_t parseUInt(const UniValue &val, size_t defaultVal)
+{
+    if (val.isNull())
+    {
+        return defaultVal;
+    } else
+    {
+        int n = val.get_int();
+        if (n < 0)
+        {
+            throw JSONRPCError(RPC_INVALID_PARAMS, "Expects unsigned integer");
+        }
+
+        return n;
+    }
+}
+
+int parseBlockHeight(const UniValue &val)
+{
+    if (val.isStr())
+    {
+        auto blockKey = val.get_str();
+
+        if (blockKey == "latest")
+        {
+            return latestblock.height;
+        } else
+        {
+            throw JSONRPCError(RPC_INVALID_PARAMS, "invalid block number");
+        }
+    }
+
+    if (val.isNum())
+    {
+        int blockHeight = val.get_int();
+
+        if (blockHeight < 0)
+        {
+            return latestblock.height;
+        }
+
+        return blockHeight;
+    }
+
+    throw JSONRPCError(RPC_INVALID_PARAMS, "invalid block number");
+}
+
+int parseBlockHeight(const UniValue &val, int defaultVal)
+{
+    if (val.isNull())
+    {
+        return defaultVal;
+    } else
+    {
+        return parseBlockHeight(val);
+    }
+}
+
+dev::h160 parseParamH160(const UniValue &val)
+{
+    if (!val.isStr())
+    {
+        throw JSONRPCError(RPC_INVALID_PARAMS, "Invalid hex 160");
+    }
+
+    auto addrStr = val.get_str();
+
+    if (addrStr.length() != 40 || !IsHex(addrStr))
+    {
+        throw JSONRPCError(RPC_INVALID_PARAMS, "Invalid hex 160 string");
+    }
+    return dev::h160(addrStr);
+}
+
+void parseParam(const UniValue &val, std::vector<dev::h160> &h160s)
+{
+    if (val.isNull())
+    {
+        return;
+    }
+
+    // Treat a string as an array of length 1
+    if (val.isStr())
+    {
+        h160s.push_back(parseParamH160(val.get_str()));
+        return;
+    }
+
+    if (!val.isArray())
+    {
+        throw JSONRPCError(RPC_INVALID_PARAMS, "Expect an array of hex 160 strings");
+    }
+
+    auto vals = val.getValues();
+    h160s.resize(vals.size());
+
+    std::transform(vals.begin(), vals.end(), h160s.begin(), [](UniValue val) -> dev::h160
+    {
+        return parseParamH160(val);
+    });
+}
+
+void parseParam(const UniValue &val, std::set<dev::h160> &h160s)
+{
+    std::vector<dev::h160> v;
+    parseParam(val, v);
+    h160s.insert(v.begin(), v.end());
+}
+
+void parseParam(const UniValue &val, std::vector<boost::optional<dev::h256>> &h256s)
+{
+    if (val.isNull())
+    {
+        return;
+    }
+
+    if (!val.isArray())
+    {
+        throw JSONRPCError(RPC_INVALID_PARAMS, "Expect an array of hex 256 strings");
+    }
+
+    auto vals = val.getValues();
+    h256s.resize(vals.size());
+
+    std::transform(vals.begin(), vals.end(), h256s.begin(), [](UniValue val) -> boost::optional<dev::h256>
+    {
+        if (val.isNull())
+        {
+            return boost::optional<dev::h256>();
+        }
+
+        if (!val.isStr())
+        {
+            throw JSONRPCError(RPC_INVALID_PARAMS, "Invalid hex 256 string");
+        }
+
+        auto addrStr = val.get_str();
+
+        if (addrStr.length() != 64 || !IsHex(addrStr))
+        {
+            throw JSONRPCError(RPC_INVALID_PARAMS, "Invalid hex 256 string");
+        }
+
+        return boost::optional<dev::h256>(dev::h256(addrStr));
+    });
+}
+
+class SearchLogsParams
+{
+public:
+    size_t fromBlock;
+    size_t toBlock;
+    size_t minconf;
+
+    std::set<dev::h160> addresses;
+    std::vector<boost::optional<dev::h256>> topics;
+
+    SearchLogsParams(const UniValue &params)
+    {
+        std::unique_lock<std::mutex> lock(cs_blockchange);
+
+        setFromBlock(params[0]);
+        setToBlock(params[1]);
+
+        parseParam(params[2]["addresses"], addresses);
+        parseParam(params[3]["topics"], topics);
+
+        minconf = parseUInt(params[4], 0);
+    }
+
+private:
+    void setFromBlock(const UniValue &val)
+    {
+        if (!val.isNull())
+        {
+            fromBlock = parseBlockHeight(val);
+        } else
+        {
+            fromBlock = latestblock.height;
+        }
+    }
+
+    void setToBlock(const UniValue &val)
+    {
+        if (!val.isNull())
+        {
+            toBlock = parseBlockHeight(val);
+        } else
+        {
+            toBlock = latestblock.height;
+        }
+    }
+
+};
+
+UniValue searchlogs(const JSONRPCRequest &request)
+{
+    if (request.fHelp || request.params.size() < 2)
+        throw std::runtime_error(
+                "searchlogs <fromBlock> <toBlock> (address) (topics)\n"
+                        "requires -logevents to be enabled"
+                        "\nArgument:\n"
+                        "1. \"fromBlock\"        (numeric, required) The number of the earliest block (latest may be given to mean the most recent block).\n"
+                        "2. \"toBlock\"          (string, required) The number of the latest block (-1 may be given to mean the most recent block).\n"
+                        "3. \"address\"          (string, optional) An address or a list of addresses to only get logs from particular account(s).\n"
+                        "4. \"topics\"           (string, optional) An array of values from which at least one must appear in the log entries. The order is important, if you want to leave topics out use null, e.g. [\"null\", \"0x00...\"]. \n"
+                        "5. \"minconf\"          (uint, optional, default=0) Minimal number of confirmations before a log is returned\n"
+                        "\nExamples:\n"
+                + HelpExampleCli("searchlogs",
+                                 "0 100 '{\"addresses\": [\"12ae42729af478ca92c8c66773a3e32115717be4\"]}' '{\"topics\": [\"null\",\"b436c2bf863ccd7b8f63171201efd4792066b4ce8e543dde9c3e9e9ab98e216c\"]}'")
+                + HelpExampleRpc("searchlogs",
+                                 "0 100 {\"addresses\": [\"12ae42729af478ca92c8c66773a3e32115717be4\"]} {\"topics\": [\"null\",\"b436c2bf863ccd7b8f63171201efd4792066b4ce8e543dde9c3e9e9ab98e216c\"]}")
+        );
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsLogEvents())
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Events indexing disabled");
+
+    int curheight = 0;
+
+    LOCK(cs_main);
+
+    SearchLogsParams params(request.params);
+
+    std::vector<std::vector<uint256>> hashesToBlock;
+
+    curheight = ifChainObj->GetBlockTreeDB()->ReadHeightIndex(params.fromBlock, params.toBlock, params.minconf, hashesToBlock,
+                                            params.addresses);
+
+    if (curheight == -1)
+    {
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Incorrect params");
+    }
+
+    UniValue result(UniValue::VARR);
+    boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
+    StorageResults storageRes(stateDir.string());
+
+    auto topics = params.topics;
+
+    for (const auto &hashesTx : hashesToBlock)
+    {
+        for (const auto &e : hashesTx)
+        {
+            std::vector<TransactionReceiptInfo> receipts = storageRes.getResult(uintToh256(e));
+
+            for (const auto &receipt : receipts)
+            {
+                if (receipt.logs.empty())
+                {
+                    continue;
+                }
+
+                if (!topics.empty())
+                {
+                    for (size_t i = 0; i < topics.size(); i++)
+                    {
+                        const auto &tc = topics[i];
+
+                        if (!tc)
+                        {
+                            continue;
+                        }
+
+                        for (const auto &log: receipt.logs)
+                        {
+                            auto filterTopicContent = tc.get();
+
+                            if (i >= log.topics.size())
+                            {
+                                continue;
+                            }
+
+                            if (filterTopicContent == log.topics[i])
+                            {
+                                goto push;
+                            }
+                        }
+                    }
+
+                    // Skip the log if none of the topics are matched
+                    continue;
+                }
+
+                push:
+
+                UniValue tri(UniValue::VOBJ);
+                transactionReceiptInfoToJSON(receipt, tri);
+                result.push_back(tri);
+            }
+        }
+    }
+
+    return result;
+}
+
+UniValue gettransactionreceipt(const JSONRPCRequest &request)
+{
+    if (request.fHelp || request.params.size() < 1)
+        throw std::runtime_error(
+                "gettransactionreceipt \"hash\"\n"
+                        "requires -logevents to be enabled"
+                        "\nArgument:\n"
+                        "1. \"hash\"          (string, required) The transaction hash\n"
+        );
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsLogEvents())
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "Events indexing disabled");
+
+    LOCK(cs_main);
+
+    std::string hashTemp = request.params[0].get_str();
+    if (hashTemp.size() != 64)
+    {
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect hash");
+    }
+
+    uint256 hash(uint256S(hashTemp));
+
+    boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
+    StorageResults storageRes(stateDir.string());
+
+    std::vector<TransactionReceiptInfo> transactionReceiptInfo = storageRes.getResult(uintToh256(hash));
+
+    UniValue result(UniValue::VARR);
+    for (TransactionReceiptInfo &t : transactionReceiptInfo)
+    {
+        UniValue tri(UniValue::VOBJ);
+        transactionReceiptInfoToJSON(t, tri);
+        result.push_back(tri);
+    }
+    return result;
+}
+
+UniValue listcontracts(const JSONRPCRequest &request)
+{
+    if (request.fHelp)
+        throw std::runtime_error(
+                "listcontracts (start maxDisplay)\n"
+                        "\nArgument:\n"
+                        "1. start     (numeric or string, optional) The starting account index, default 1\n"
+                        "2. maxDisplay       (numeric or string, optional) Max accounts to list, default 20\n"
+        );
+
+    LOCK(cs_main);
+
+    int start = 1;
+    if (request.params.size() > 0)
+    {
+        start = request.params[0].get_int();
+        if (start <= 0)
+            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid start, min=1");
+    }
+
+    int maxDisplay = 20;
+    if (request.params.size() > 1)
+    {
+        maxDisplay = request.params[1].get_int();
+        if (maxDisplay <= 0)
+            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid maxDisplay");
+    }
+
+    UniValue result(UniValue::VOBJ);
+
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    std::unordered_map<dev::h160, dev::u256> map = ifContractObj->GetContractList();
+    int contractsCount = (int)map.size();
+
+    if (contractsCount > 0 && start > contractsCount)
+        throw JSONRPCError(RPC_TYPE_ERROR, "start greater than max index " + itostr(contractsCount));
+
+    int itStartPos = std::min(start - 1, contractsCount);
+    int i = 0;
+
+    for (auto it = std::next(map.begin(), itStartPos); it != map.end(); it++)
+    {
+        CAmount balance = ifContractObj->GetContractBalance(it->first);
+        result.push_back(Pair(it->first.hex(), ValueFromAmount(balance)));
+        i++;
+        if (i == maxDisplay)
+            break;
+    }
+
+    return result;
+}
+
+///////////////////////////////////////////////////////
 struct CCoinsStats
 {
     int nHeight;
@@ -1700,6 +2284,13 @@ static const CRPCCommand commands[] =
                 {"hidden",     "waitfornewblock",       &waitfornewblock,       true, {"timeout"}},
                 {"hidden",     "waitforblock",          &waitforblock,          true, {"blockhash",  "timeout"}},
                 {"hidden",     "waitforblockheight",    &waitforblockheight,    true, {"height",     "timeout"}},
+                //sbtc-vm
+                {"blockchain", "getstorage",            &getstorage,            true, {"address, index, blockNum"}},
+                {"blockchain", "callcontract",          &callcontract,          true, {"address",    "data"}},
+                {"blockchain", "listcontracts",         &listcontracts,         true, {"start",      "maxDisplay"}},
+                {"blockchain", "gettransactionreceipt", &gettransactionreceipt, true, {"hash"}},
+                {"blockchain", "searchlogs",            &searchlogs,            true, {"fromBlock",  "toBlock", "address", "topics"}},
+
         };
 
 void RegisterBlockchainRPCCommands(CRPCTable &t)

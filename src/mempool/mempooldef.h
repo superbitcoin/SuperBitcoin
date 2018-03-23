@@ -136,7 +136,10 @@ struct mining_score
 struct ancestor_score
 {
 };
-
+//sbtc-vm
+struct ancestor_score_or_gas_price
+{
+};
 class CBlockPolicyEstimator;
 
 /**

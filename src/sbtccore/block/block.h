@@ -27,6 +27,8 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
+    uint256 hashStateRoot; // sbtc-vm
+    uint256 hashUTXORoot; // sbtc-vm
 
     CBlockHeader()
     {
@@ -44,6 +46,8 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+        READWRITE(hashStateRoot); // sbtc-vm
+        READWRITE(hashUTXORoot); // sbtc-vm
     }
 
     void SetNull()
@@ -54,6 +58,8 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
+        hashStateRoot.SetNull(); // sbtc-vm
+        hashUTXORoot.SetNull(); // sbtc-vm
     }
 
     bool IsNull() const
@@ -115,6 +121,8 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
+        block.hashStateRoot  = hashStateRoot; // sbtc-vm
+        block.hashUTXORoot   = hashUTXORoot; // sbtc-vm
         return block;
     }
 

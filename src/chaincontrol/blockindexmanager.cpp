@@ -54,6 +54,11 @@ bool CBlockIndexManager::IsTxIndex()
     return bTxIndex;
 }
 
+bool CBlockIndexManager::IsLogEvents()
+{
+    return bLogEvents;
+}
+
 CBlockIndex *CBlockIndexManager::FindForkInGlobalIndex(const CChain &chain, const CBlockLocator &locator)
 {
     // Find the first block the caller has in the main chain
@@ -275,7 +280,7 @@ CBlockIndex *CBlockIndexManager::InsertBlockIndex(uint256 hash)
 }
 
 int CBlockIndexManager::LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset,
-                                       bool txIndex)
+                                       bool txIndex, bool logEvents)
 {
     Init(iBlockTreeDBCache, bReset);
 
@@ -292,6 +297,9 @@ int CBlockIndexManager::LoadBlockIndex(const Consensus::Params &consensus, int64
     {
         bTxIndex = txIndex;
         pBlcokTreee->WriteFlag("txindex", bTxIndex);
+
+        bLogEvents = logEvents;  //sbtc-vm
+        pBlcokTreee->WriteFlag("logevents", bLogEvents);
     }
 
 
@@ -335,6 +343,18 @@ int CBlockIndexManager::Check(const uint256 hashGenesisBlock)
     if (bTxIndex != Args().GetArg<bool>("-txindex", DEFAULT_TXINDEX))
     {
         return ERR_TXINDEX_STATE;
+    }
+
+    // Check for changed -logevents state
+    if ((bLogEvents != Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS)) && !bLogEvents)
+    {
+        return ERR_LOGEVENTS_STATE;
+    }
+    if (!Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS))
+    {
+        pBlcokTreee->WipeHeightIndex();
+        bLogEvents = false;
+        pBlcokTreee->WriteFlag("logevents", bLogEvents);
     }
 
     // Check for changed -prune state.  What we are concerned about is a user who has pruned blocks
@@ -434,6 +454,8 @@ bool CBlockIndexManager::LoadBlockIndexDB(const Consensus::Params &consensus)
     pBlcokTreee->ReadFlag("txindex", bTxIndex);
     NLogFormat("transaction index %s", bTxIndex ? "enabled" : "disabled");
 
+    pBlcokTreee->ReadFlag("logevents", bLogEvents);//sbtc-vm
+    NLogFormat("transaction index %s", bLogEvents ? "enabled" : "disabled");
     return true;
 }
 

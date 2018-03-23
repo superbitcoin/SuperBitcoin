@@ -53,7 +53,8 @@ CAmount GetDustThreshold(const CTxOut &txout, const CFeeRate &dustRelayFeeIn)
 
 bool IsDust(const CTxOut &txout, const CFeeRate &dustRelayFeeIn)
 {
-    return (txout.nValue < GetDustThreshold(txout, dustRelayFeeIn));
+    return (txout.nValue < GetDustThreshold(txout, dustRelayFeeIn)) && !txout.scriptPubKey.HasOpCreate() &&
+           !txout.scriptPubKey.HasOpCall(); // sbtc-vm
 }
 
 /**
@@ -274,8 +275,6 @@ int64_t GetVirtualTransactionSize(const CTransaction &tx, int64_t nSigOpCost)
 {
     return GetVirtualTransactionSize(GetTransactionWeight(tx), nSigOpCost);
 }
-
-
 
 
 CAmount CPolicy::GetDustThreshold(const CTxOut &txout, const CFeeRate &dustRelayFeeIn)

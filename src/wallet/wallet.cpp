@@ -2824,11 +2824,18 @@ static CFeeRate GetDiscardRate(const CBlockPolicyEstimator &estimator)
 bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletTx &wtxNew, CReserveKey &reservekey,
                                 CAmount &nFeeRet,
                                 int &nChangePosInOut, std::string &strFailReason, const CCoinControl &coin_control,
-                                bool sign)
+                                bool sign, CAmount nGasFee, bool hasSender)  //sbtc-vm
 {
     CAmount nValue = 0;
     int nChangePosRequest = nChangePosInOut;
     unsigned int nSubtractFeeFromAmount = 0;
+    //sbtc-vm
+	COutPoint senderInput;
+    if(hasSender && coin_control.HasSelected()){
+    	std::vector<COutPoint> vSenderInputs;
+        coin_control.ListSelected(vSenderInputs);
+    	senderInput=vSenderInputs[0];
+    }
     for (const auto &recipient : vecSend)
     {
         if (nValue < 0 || recipient.nAmount < 0)
@@ -2889,6 +2896,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
     unsigned int nBytes;
     {
         std::set<CInputCoin> setCoins;
+        std::vector<CInputCoin> vCoins; //sbtc-vm
         LOCK2(cs_main, cs_wallet);
         {
             std::vector<COutput> vAvailableCoins;
@@ -2960,7 +2968,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                         }
                     }
 
-                    if (IsDust(txout, ::dustRelayFee))
+                    if(IsDust(txout, ::dustRelayFee))
                     {
                         if (recipient.fSubtractFeeFromAmount && nFeeRet > 0)
                         {
@@ -3020,6 +3028,19 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                 {
                     nChangePosInOut = -1;
                 }
+                // sbtc-vm
+                // Move sender input to position 0
+                vCoins.clear();
+                std::copy(setCoins.begin(), setCoins.end(), std::back_inserter(vCoins));
+                if(hasSender && coin_control.HasSelected()){
+                       for (std::vector<CInputCoin>::size_type i = 0 ; i != vCoins.size(); i++){
+                        if(vCoins[i].outpoint == senderInput){
+                            if(i == 0)break;
+                            iter_swap(vCoins.begin(),vCoins.begin()+i);
+                            break;
+                        }
+                    }
+                }
 
                 // Fill vin
                 //
@@ -3033,12 +3054,14 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                 // behavior."
                 const uint32_t nSequence = coin_control.signalRbf ? MAX_BIP125_RBF_SEQUENCE : (CTxIn::SEQUENCE_FINAL -
                                                                                                1);
-                for (const auto &coin : setCoins)
+//                for (const auto &coin : setCoins)
+                for (const auto &coin : vCoins)  //sbtc-vm
                     txNew.vin.push_back(CTxIn(coin.outpoint, CScript(),
                                               nSequence));
 
                 // Fill in dummy signatures for fee calculation.
-                if (!DummySignTx(txNew, setCoins))
+//                if (!DummySignTx(txNew, setCoins))
+                if (!DummySignTx(txNew, vCoins)) //sbtc-vm
                 {
                     strFailReason = _("Signing transaction failed");
                     return false;
@@ -3056,7 +3079,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                 GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
                 CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
                 nFeeNeeded = GetMinimumFee(nBytes, coin_control, mempool, ::feeEstimator, &feeCalc);
-
+                nFeeNeeded += nGasFee; //need to pay for evm gas  //sbtc-vm
                 // If we made it here and we aren't even able to meet the relay fee on the next pass, give up
                 // because we must be at the maximum allowed fee.
                 if (nFeeNeeded < ::minRelayTxFee.GetFee(nBytes))
@@ -3083,6 +3106,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                                                            2; // Add 2 as a buffer in case increasing # of outputs changes compact size
                         CAmount fee_needed_with_change = GetMinimumFee(tx_size_with_change, coin_control, mempool,
                                                                        ::feeEstimator, nullptr);
+                        fee_needed_with_change += nGasFee; //need to pay for evm gas //sbtc-vm
                         CAmount minimum_value_for_change = GetDustThreshold(change_prototype_txout, discard_rate);
                         if (nFeeRet >= fee_needed_with_change + minimum_value_for_change)
                         {
@@ -3145,7 +3169,8 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
         {
             CTransaction txNewConst(txNew);
             int nIn = 0;
-            for (const auto &coin : setCoins)
+//            for (const auto &coin : setCoins)
+            for (const auto &coin : vCoins)
             {
                 const CScript &scriptPubKey = coin.txout.scriptPubKey;
                 SignatureData sigdata;

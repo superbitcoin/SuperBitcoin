@@ -21,6 +21,7 @@
 #include "framework/validationinterface.h"
 #include "eventmanager/eventmanager.h"
 #include "utils.h"
+#include "interface/icontractcomponent.h"
 
 static int64_t nTimeCheck = 0;
 static int64_t nTimeForks = 0;
@@ -104,7 +105,7 @@ bool CChainComponent::ComponentInitialize()
         if (nPruneTarget < MIN_DISK_SPACE_FOR_BLOCK_FILES)
         {
             return rLogError("Prune configured below the minimum of %d MiB.  Please use a higher number.",
-                                       MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024);
+                             MIN_DISK_SPACE_FOR_BLOCK_FILES / 1024 / 1024);
         }
         NLogFormat("Prune configured to target %uMiB on disk for block and undo files.", nPruneTarget / 1024 / 1024);
         fPruneMode = true;
@@ -113,6 +114,7 @@ bool CChainComponent::ComponentInitialize()
     bool bReIndex = Args().GetArg<bool>("-reindex", false);
     bool bReindexChainState = Args().GetArg<bool>("-reindex-chainstate", false);
     bool bTxIndex = Args().GetArg<bool>("-txindex", DEFAULT_TXINDEX);
+    bool bLogEvents = Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS);//sbtc-vm
 
     // cache size calculations
     int64_t iTotalCache = (Args().GetArg<int64_t>("-dbcache", nDefaultDbCache) << 20);
@@ -159,7 +161,8 @@ bool CChainComponent::ComponentInitialize()
                 break;
             }
 
-            int ret = cIndexManager.LoadBlockIndex(Params().GetConsensus(), iBlockTreeDBCache, bReset, bTxIndex);
+            int ret = cIndexManager.LoadBlockIndex(Params().GetConsensus(), iBlockTreeDBCache, bReset, bTxIndex,
+                                                   bLogEvents);
             if (ret == ERR_LOAD_INDEX_DB)
             {
                 strLoadError = _("Error loading block database");
@@ -171,12 +174,17 @@ bool CChainComponent::ComponentInitialize()
             {
                 strLoadError = _("You need to rebuild the database using -reindex to change -txindex");
                 break;
+            } else if (ret == ERR_LOGEVENTS_STATE)
+            {
+                strLoadError = _("You need to rebuild the database using -reindex to change -logevents");
+                break;
             } else if (ret == ERR_PRUNE_STATE)
             {
                 strLoadError = _(
                         "You need to rebuild the database using -reindex to go back to unpruned mode.  This will redownload the entire blockchain");
                 break;
             }
+
 
             bReIndex |= cIndexManager.IsReIndexing();
             if (!bReIndex && cIndexManager.NeedInitGenesisBlock(Params()))
@@ -196,16 +204,22 @@ bool CChainComponent::ComponentInitialize()
                 break;
             }
 
-            // ReplayBlocks is a no-op if we cleared the coinsviewdb with -reindex or -reindex-chainstate
-            if (!ReplayBlocks())
-            {
-                strLoadError = _(
-                        "Unable to replay blocks. You will need to rebuild the database using -reindex-chainstate.");
-                break;
-            }
+            //            // ReplayBlocks is a no-op if we cleared the coinsviewdb with -reindex or -reindex-chainstate
+            //            if (!ReplayBlocks())
+            //            {
+            //                strLoadError = _(
+            //                        "Unable to replay blocks. You will need to rebuild the database using -reindex-chainstate.");
+            //                break;
+            //            }
 
             // The on-disk coinsdb is now in a good state, create the cache
             cViewManager.InitCoinsCache();
+
+            SetTip(cIndexManager.GetBlockIndex(cViewManager.GetCoinsTip()->GetBestBlock()));
+
+            //sbtc-vm
+            GET_CONTRACT_INTERFACE(ifContractObj);
+            ifContractObj->ContractInit();
 
             bool bCoinsViewEmpty =
                     bReset || bReindexChainState || cViewManager.GetCoinsTip()->GetBestBlock().IsNull();
@@ -379,6 +393,11 @@ bool CChainComponent::IsTxIndex() const
     return cIndexManager.IsTxIndex();
 }
 
+bool CChainComponent::IsLogEvents() const
+{
+    return cIndexManager.IsLogEvents();
+}
+
 bool CChainComponent::DoesBlockExist(uint256 hash)
 {
     return (cIndexManager.GetBlockIndex(hash) != nullptr);
@@ -502,7 +521,7 @@ bool CChainComponent::ReplayBlocks()
             if (!ReadBlockFromDisk(block, pIndexOld, Params().GetConsensus()))
             {
                 return rLogError("ReadBlockFromDisk() failed at %d, hash=%s", pIndexOld->nHeight,
-                           pIndexOld->GetBlockHash().ToString());
+                                 pIndexOld->GetBlockHash().ToString());
             }
 
             ILogFormat("Rolling back %s (%i)", pIndexOld->GetBlockHash().ToString(), pIndexOld->nHeight);
@@ -511,7 +530,7 @@ bool CChainComponent::ReplayBlocks()
             if (res == DISCONNECT_FAILED)
             {
                 return rLogError("DisconnectBlock failed at %d, hash=%s", pIndexOld->nHeight,
-                           pIndexOld->GetBlockHash().ToString());
+                                 pIndexOld->GetBlockHash().ToString());
             }
             // If DISCONNECT_UNCLEAN is returned, it means a non-existing UTXO was deleted, or an existing UTXO was
             // overwritten. It corresponds to cases where the block-to-be-disconnect never had all its operations
@@ -531,7 +550,7 @@ bool CChainComponent::ReplayBlocks()
         if (!ReadBlockFromDisk(block, pIndex, Params().GetConsensus()))
         {
             return rLogError("ReadBlockFromDisk failed at %d, hash=%s", pIndex->nHeight,
-                       pIndex->GetBlockHash().ToString());
+                             pIndex->GetBlockHash().ToString());
         }
         if (!cViewManager.ConnectBlock(block, pIndex, cache))
             return false;
@@ -880,6 +899,14 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
         if (block.vtx[i]->IsCoinBase())
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
 
+    //Don't allow contract opcodes in coinbase   //sbtc-vm
+    if (block.vtx[0]->HasOpSpend() || block.vtx[0]->HasCreateOrCall())
+    {
+        return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
+                         "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
+    }
+
+    bool lastWasContract = false; //sbtc-vm
     // Check transactions
     for (const auto &tx : block.vtx)
     {
@@ -889,7 +916,18 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
                                  strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(),
                                            state.GetDebugMessage()));
         }
-
+        //sbtc-vm
+        //OP_SPEND can only exist immediately after a contract tx in a block, or after another OP_SPEND
+        //So, if the previous tx was not a contract tx, fail it.
+        if (tx->HasOpSpend())
+        {
+            if (!lastWasContract)
+            {
+                return state.DoS(100, false, REJECT_INVALID, "bad-opspend-tx", false,
+                                 "OP_SPEND transaction without corresponding contract transaction");
+            }
+        }
+        lastWasContract = tx->HasCreateOrCall() || tx->HasOpSpend();
     }
 
     unsigned int nSigOps = 0;
@@ -1082,6 +1120,14 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     assert((pindex->phashBlock == nullptr) || (*pindex->phashBlock == block.GetHash()));
     int64_t nTimeStart = GetTimeMicros();
 
+    //sbtc-vm
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    CBlock checkBlock(block.GetBlockHeader());
+    std::vector<CTxOut> checkVouts;
+
+    boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
+    StorageResults storageRes(stateDir.string());
+
     // Check it again in case a previous version let a bad block in
     if (!CheckBlock(block, state, chainparams.GetConsensus(), !fJustCheck, !fJustCheck))
     {
@@ -1186,6 +1232,14 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     std::vector<PrecomputedTransactionData> txdata;
     // Required so that pointers to individual PrecomputedTransactionData don't get invalidated
     txdata.reserve(block.vtx.size());
+
+    ///////////////////////////////////////////////////////// // sbtc-vm
+    std::map<dev::Address, std::pair<CHeightTxIndexKey, std::vector<uint256>>> heightIndexes;
+    CAmount gasRefunds = 0;
+
+    uint64_t nValueOut = 0;
+    uint64_t nValueIn = 0;
+    /////////////////////////////////////////////////////////
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
         const CTransaction &tx = *(block.vtx[i]);
@@ -1226,6 +1280,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             return state.DoS(100, false, REJECT_INVALID, "bad-blk-sigops");
         }
         txdata.emplace_back(tx);
+        bool hasOpSpend = tx.HasOpSpend(); //sbtc-vm
         if (!tx.IsCoinBase())
         {
             nFees += view.GetValueIn(tx) - tx.GetValueOut();
@@ -1233,13 +1288,80 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
             if (!tx.CheckInputs(state, view, fScriptChecks, flags, fCacheResults, fCacheResults, txdata[i],
-                                nScriptCheckThreads ? &vChecks : nullptr))
+                    //                                nScriptCheckThreads ? &vChecks : nullptr))
+                                (hasOpSpend || tx.HasCreateOrCall()) ? nullptr : (nScriptCheckThreads ? &vChecks
+                                                                                                      : nullptr)))
             {
                 return rLogError("CheckInputs on %s failed with %s",
-                           tx.GetHash().ToString(), FormatStateMessage(state));
+                                 tx.GetHash().ToString(), FormatStateMessage(state));
             }
             control.Add(vChecks);
+
+            //sbtc-vm
+            for (const CTxIn &j : tx.vin)
+            {
+                if (!j.scriptSig.HasOpSpend())
+                {
+                    const CTxOut &prevout = view.AccessCoin(j.prevout).out;
+                    if ((prevout.scriptPubKey.HasOpCreate() || prevout.scriptPubKey.HasOpCall()))
+                    {
+                        return state.DoS(100, false, REJECT_INVALID, "bad-txns-invalid-contract-spend");
+                    }
+                }
+            }
         }
+        //sbtc-vm
+        if (tx.IsCoinBase())
+        {
+            nValueOut += tx.GetValueOut();
+        } else
+        {
+            int64_t nTxValueIn = view.GetValueIn(tx);
+            int64_t nTxValueOut = tx.GetValueOut();
+            nValueIn += nTxValueIn;
+            nValueOut += nTxValueOut;
+        }
+
+        ///////////////////////////////////////////////////////////////////////////////////////// sbtc-vm
+        if (!tx.HasOpSpend())
+        {
+            checkBlock.vtx.push_back(block.vtx[i]);
+        }
+        if (tx.HasCreateOrCall() && !hasOpSpend)
+        {
+
+            if (!tx.CheckSenderScript(view))
+            {
+                return state.DoS(100, false, REJECT_INVALID, "bad-txns-invalid-sender-script");
+            }
+
+            int level = 0;
+            string errinfo;
+
+            StorageResults *pStorageRes = nullptr;
+            if (IsLogEvents())
+            {
+                pStorageRes = &storageRes;
+            }
+
+            ByteCodeExecResult bcer;
+            if (!ifContractObj->ContractTxConnectBlock(tx, i, &view, block, pindex->nHeight,
+                                                      bcer, pStorageRes, fJustCheck, heightIndexes,
+                                                      level, errinfo))
+            {
+                return state.DoS(level, false, REJECT_INVALID, errinfo);
+            }
+            for (CTxOut refundVout : bcer.refundOutputs)
+            {
+                gasRefunds += refundVout.nValue;
+            }
+            checkVouts.insert(checkVouts.end(), bcer.refundOutputs.begin(), bcer.refundOutputs.end());
+            for (CTransaction &t : bcer.valueTransfers)
+            {
+                checkBlock.vtx.push_back(MakeTransactionRef(std::move(t)));
+            }
+        }
+        /////////////////////////////////////////////////////////////////////////////////////////
 
         CTxUndo undoDummy;
         if (i > 0)
@@ -1256,6 +1378,12 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     ILogFormat("Connect %u transactions: %.2fms (%.3fms/tx, %.3fms/txin) [%.2fs]",
                (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(),
                nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
+
+    //sbtc-vm
+    if (nFees < gasRefunds)
+    { //make sure it won't overflow
+        return state.DoS(1000, false, REJECT_INVALID, "bad-blk-fees-greater-gasrefund");
+    }
 
     CAmount blockReward = 0;
     blockReward = nFees + GetBlockSubsidy(pindex->nHeight);
@@ -1278,8 +1406,96 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
                0.001 * (nTime4 - nTime2), nInputs <= 1 ? 0 : 0.001 * (nTime4 - nTime2) / (nInputs - 1),
                nTimeVerify * 0.000001);
 
-    if (fJustCheck)
+    ////////////////////////////////////////////////////////////////// // sbtc-vm
+    checkBlock.hashMerkleRoot = BlockMerkleRoot(checkBlock);
+    ifContractObj->GetState(checkBlock.hashStateRoot, checkBlock.hashUTXORoot);
+
+    //If this error happens, it probably means that something with AAL created transactions didn't match up to what is expected
+    if ((checkBlock.GetHash() != block.GetHash()) && !fJustCheck)
+    {
+        NLogFormat("Actual block data does not match block expected by AAL");
+        //Something went wrong with AAL, compare different elements and determine what the problem is
+        if (checkBlock.hashMerkleRoot != block.hashMerkleRoot)
+        {
+            //there is a mismatched tx, so go through and determine which txs
+            if (block.vtx.size() > checkBlock.vtx.size())
+            {
+                NLogFormat("Unexpected AAL transactions in block. Actual txs: %i, expected txs: %i", block.vtx.size(),
+                           checkBlock.vtx.size());
+                for (size_t i = 0; i < block.vtx.size(); i++)
+                {
+                    if (i > checkBlock.vtx.size())
+                    {
+                        NLogFormat("Unexpected transaction: %s", block.vtx[i]->ToString());
+                    } else
+                    {
+                        if (block.vtx[i]->GetHash() != block.vtx[i]->GetHash())
+                        {
+                            NLogFormat("Mismatched transaction at entry %i", i);
+                            NLogFormat("Actual: %s", block.vtx[i]->ToString());
+                            NLogFormat("Expected: %s", checkBlock.vtx[i]->ToString());
+                        }
+                    }
+                }
+            } else if (block.vtx.size() < checkBlock.vtx.size())
+            {
+                NLogFormat("Actual block is missing AAL transactions. Actual txs: %i, expected txs: %i",
+                           block.vtx.size(), checkBlock.vtx.size());
+                for (size_t i = 0; i < checkBlock.vtx.size(); i++)
+                {
+                    if (i > block.vtx.size())
+                    {
+                        NLogFormat("Missing transaction: %s", checkBlock.vtx[i]->ToString());
+                    } else
+                    {
+                        if (block.vtx[i]->GetHash() != block.vtx[i]->GetHash())
+                        {
+                            NLogFormat("Mismatched transaction at entry %i", i);
+                            NLogFormat("Actual: %s", block.vtx[i]->ToString());
+                            NLogFormat("Expected: %s", checkBlock.vtx[i]->ToString());
+                        }
+                    }
+                }
+            } else
+            {
+                //count is correct, but a tx is wrong
+                for (size_t i = 0; i < checkBlock.vtx.size(); i++)
+                {
+                    if (block.vtx[i]->GetHash() != block.vtx[i]->GetHash())
+                    {
+                        NLogFormat("Mismatched transaction at entry %i", i);
+                        NLogFormat("Actual: %s", block.vtx[i]->ToString());
+                        NLogFormat("Expected: %s", checkBlock.vtx[i]->ToString());
+                    }
+                }
+            }
+        }
+        if (checkBlock.hashUTXORoot != block.hashUTXORoot)
+        {
+            NLogFormat("Actual block data does not match hashUTXORoot expected by AAL block");
+        }
+        if (checkBlock.hashStateRoot != block.hashStateRoot)
+        {
+            NLogFormat("Actual block data does not match hashStateRoot expected by AAL block");
+        }
+
+        return state.DoS(100, false, REJECT_INVALID, "incorrect-transactions-or-hashes-block");
+    }
+
+    if (fJustCheck)  //sbtc-vm
+    {
+        uint256 prevHashStateRoot = uint256S("0x21b463e3b52f6201c0ad6c991be0485b6ef8c092e64583ffa655cc1b171fe856");
+        uint256 prevHashUTXORoot = uint256S("0x21b463e3b52f6201c0ad6c991be0485b6ef8c092e64583ffa655cc1b171fe856");
+        if (pindex->pprev->hashStateRoot != uint256() && pindex->pprev->hashUTXORoot != uint256())
+        {
+            prevHashStateRoot = pindex->pprev->hashStateRoot;
+            prevHashUTXORoot = pindex->pprev->hashUTXORoot;
+        }
+        ifContractObj->UpdateState(prevHashStateRoot, prevHashUTXORoot);
         return true;
+    }
+    //    if (fJustCheck)
+    //        return true;
 
     // Write undo information to disk
     if (pindex->GetUndoPos().IsNull() || !pindex->IsValid(BLOCK_VALID_SCRIPTS))
@@ -1303,6 +1519,15 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         pindex->RaiseValidity(BLOCK_VALID_SCRIPTS);
         cIndexManager.SetDirtyIndex(pindex);
     }
+    //sbtc-vm
+    if (IsLogEvents())
+    {
+        for (const auto &e: heightIndexes)
+        {
+            if (!GetBlockTreeDB()->WriteHeightIndex(e.second.first, e.second.second))
+                return AbortNode(state, "Failed to write height index");
+        }
+    }
 
     if (IsTxIndex())
         if (!GetBlockTreeDB()->WriteTxIndex(vPos))
@@ -1318,6 +1543,12 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     int64_t nTime6 = GetTimeMicros();
     nTimeCallbacks += nTime6 - nTime5;
     ILogFormat("Callbacks: %.2fms [%.2fs]", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
+    //sbtc-vm
+    if (IsLogEvents())
+    {
+        storageRes.commitResults();
+    }
+
     return true;
 }
 
@@ -1354,18 +1585,27 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
                nTimeReadFromDisk * 0.000001);
     {
         CCoinsViewCache view(cViewManager.GetCoinsTip());
+
+        //sbtc-vm
+        uint256 oldHashStateRoot,oldHashUTXORoot;
+        GET_CONTRACT_INTERFACE(ifContratcObj);
+        ifContratcObj->GetState(oldHashStateRoot, oldHashUTXORoot);
+
         bool rv = ConnectBlock(blockConnecting, state, pIndexNew, view, chainparams);
         GetMainSignals().BlockChecked(blockConnecting, state);
         if (!rv)
         {
             if (state.IsInvalid())
                 cIndexManager.InvalidBlockFound(pIndexNew, state);
+
+            ifContratcObj->UpdateState(oldHashStateRoot, oldHashUTXORoot);//sbtc-vm
+
             return rLogError("ConnectTip(): ConnectBlock %s failed", pIndexNew->GetBlockHash().ToString());
         }
         nTime3 = GetTimeMicros();
         nTimeConnectTotal += nTime3 - nTime2;
         ILogFormat("Connect total: %.2fms [%.2fs]", (nTime3 - nTime2) * 0.001,
-                  nTimeConnectTotal * 0.000001);
+                   nTimeConnectTotal * 0.000001);
         bool flushed = view.Flush();
         assert(flushed);
     }
@@ -1378,7 +1618,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
     int64_t nTime5 = GetTimeMicros();
     nTimeChainState += nTime5 - nTime4;
     ILogFormat("Writing chainstate: %.2fms [%.2fs]", (nTime5 - nTime4) * 0.001,
-              nTimeChainState * 0.000001);
+               nTimeChainState * 0.000001);
 
     // Remove conflicting transactions from the mempool.;
     GET_TXMEMPOOL_INTERFACE(ifMemPoolObj);
@@ -1391,7 +1631,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
     nTimePostConnect += nTime6 - nTime5;
     nTimeTotal += nTime6 - nTime1;
     ILogFormat("Connect postprocess: %.2fms [%.2fs]", (nTime6 - nTime5) * 0.001,
-              nTimePostConnect * 0.000001);
+               nTimePostConnect * 0.000001);
     ILogFormat("Connect block: %.2fms [%.2fs]", (nTime6 - nTime1) * 0.001, nTimeTotal * 0.000001);
 
     connectTrace.BlockConnected(pIndexNew, std::move(pthisBlock));
@@ -1835,9 +2075,9 @@ bool CChainComponent::LoadChainTip(const CChainParams &chainparams)
     cIndexManager.PruneBlockIndexCandidates();
 
     ILogFormat("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f",
-              chainActive.Tip()->GetBlockHash().ToString().c_str(), chainActive.Height(),
-              DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()).c_str(),
-              GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
+               chainActive.Tip()->GetBlockHash().ToString().c_str(), chainActive.Height(),
+               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()).c_str(),
+               GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
     return true;
 }
 
@@ -2020,8 +2260,8 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 if (hash != chainParams.GetConsensus().hashGenesisBlock && bParentNotFound)
                 {
                     ILogFormat("%s: Out of order block %s, parent %s not known", __func__,
-                              hash.ToString(),
-                              block.hashPrevBlock.ToString());
+                               hash.ToString(),
+                               block.hashPrevBlock.ToString());
                     if (dbp)
                         mapBlocksUnknownParent.insert(std::make_pair(block.hashPrevBlock, *dbp));
                     continue;
@@ -2041,7 +2281,7 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                            cIndexManager.GetBlockIndex(hash)->nHeight % 1000 == 0)
                 {
                     ILogFormat("Block Import: already had block %s at height %d", hash.ToString(),
-                              cIndexManager.GetBlockIndex(hash)->nHeight);
+                               cIndexManager.GetBlockIndex(hash)->nHeight);
                 }
 
                 // Activate the genesis block so normal node progress can continue
@@ -2072,8 +2312,8 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                         if (ReadBlockFromDisk(*pblockrecursive, it->second, chainParams.GetConsensus()))
                         {
                             ILogFormat("%s: Processing out of order child %s of %s", __func__,
-                                      pblockrecursive->GetHash().ToString(),
-                                      head.ToString());
+                                       pblockrecursive->GetHash().ToString(),
+                                       head.ToString());
                             LOCK(cs);
                             CValidationState dummy;
                             if (AcceptBlock(pblockrecursive, dummy, chainParams, nullptr, true, &it->second, nullptr))
@@ -2249,6 +2489,11 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
     int nGoodTransactions = 0;
     CValidationState state;
     int reportDone = 0;
+
+    uint256 oldHashStateRoot, oldHashUTXORoot;
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot);//sbtc-vm
+
     ILogFormat("[0%%]...");
     for (CBlockIndex *pindex = chainActive.Tip(); pindex && pindex->pprev; pindex = pindex->pprev)
     {
@@ -2275,13 +2520,13 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
         if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
         {
             return rLogError("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight,
-                       pindex->GetBlockHash().ToString());
+                             pindex->GetBlockHash().ToString());
         }
         // check level 1: verify block validity
         if (nCheckLevel >= 1 && !CheckBlock(block, state, chainparams.GetConsensus(), false, false))
         {
             return rLogError("%s: *** found bad block at %d, hash=%s (%s)", __func__,
-                       pindex->nHeight, pindex->GetBlockHash().ToString(), FormatStateMessage(state));
+                             pindex->nHeight, pindex->GetBlockHash().ToString(), FormatStateMessage(state));
         }
         // check level 2: verify undo validity
         if (nCheckLevel >= 2 && pindex)
@@ -2293,7 +2538,7 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
                 if (!UndoReadFromDisk(undo, pos, pindex->pprev->GetBlockHash()))
                 {
                     return rLogError("VerifyDB(): *** found bad undo data at %d, hash=%s", pindex->nHeight,
-                               pindex->GetBlockHash().ToString());
+                                     pindex->GetBlockHash().ToString());
                 }
             }
         }
@@ -2306,7 +2551,7 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
             if (res == DISCONNECT_FAILED)
             {
                 return rLogError("VerifyDB(): *** irrecoverable inconsistency in block data at %d, hash=%s",
-                           pindex->nHeight, pindex->GetBlockHash().ToString());
+                                 pindex->nHeight, pindex->GetBlockHash().ToString());
             }
             pindexState = pindex->pprev;
             if (res == DISCONNECT_UNCLEAN)
@@ -2342,19 +2587,25 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
             if (!ReadBlockFromDisk(block, pindex, chainparams.GetConsensus()))
             {
                 return rLogError("VerifyDB(): *** ReadBlockFromDisk failed at %d, hash=%s", pindex->nHeight,
-                           pindex->GetBlockHash().ToString());
+                                 pindex->GetBlockHash().ToString());
             }
+            uint256 oldHashStateRoot, oldHashUTXORoot;
+            ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot); //sbtc-vm
             if (!ConnectBlock(block, state, pindex, coins, chainparams))
             {
+                ifContractObj->UpdateState(oldHashStateRoot, oldHashUTXORoot); //sbtc-vm
                 return rLogError("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight,
-                           pindex->GetBlockHash().ToString());
+                                 pindex->GetBlockHash().ToString());
             }
         }
+    } else
+    {
+        ifContractObj->UpdateState(oldHashStateRoot, oldHashUTXORoot); //sbtc-vm
     }
 
     ILogFormat("[DONE].");
     ILogFormat("No coin database inconsistencies in last %i blocks (%i transactions)",
-              chainActive.Height() - pindexState->nHeight, nGoodTransactions);
+               chainActive.Height() - pindexState->nHeight, nGoodTransactions);
 
     uiInterface.ShowProgress("", 100);
     return true;
@@ -2450,9 +2701,14 @@ bool CChainComponent::TestBlockValidity(CValidationState &state, const CChainPar
     {
         return rLogError("%s: Consensus::ContextualCheckBlock: %s", __func__, FormatStateMessage(state));
     }
+    uint256 oldHashStateRoot,oldHashUTXORoot;
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot); //sbtc-vm
     if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true))
+    {
+        ifContractObj->UpdateState(oldHashStateRoot, oldHashUTXORoot);//sbtc-vm
         return false;
-
+    }
     assert(state.IsValid());
     return true;
 }

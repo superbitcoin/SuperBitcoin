@@ -420,6 +420,9 @@ void CApp::InitOptionMap()
     };
     optionMap.emplace("RPC server options:", item);
 
+    item = {{"logevents", bpo::value<string>(), "contract logevents"}};
+    optionMap.emplace("Contract options:", item);
+
     pArgs->SetOptionName("sbtcd");
     pArgs->SetOptionTable(optionMap);
 }

@@ -49,6 +49,8 @@ private:
     int64_t sigOpCost;         //!< Total sigop cost
     int64_t feeDelta;          //!< Used for determining the priority of the transaction for mining in a block
     LockPoints lockPoints;     //!< Track the height and time at which tx was final
+    //sbtc-vm
+    CAmount nMinGasPrice;      //!< The minimum gas price among the contract outputs of the tx
 
     // Information about descendants of this transaction that are in the
     // mempool; if we remove this transaction we must remove all of these
@@ -67,7 +69,7 @@ public:
     CTxMemPoolEntry(const CTransactionRef &_tx, const CAmount &_nFee,
                     int64_t _nTime, unsigned int _entryHeight,
                     bool spendsCoinbase,
-                    int64_t nSigOpsCost, LockPoints lp);
+                    int64_t nSigOpsCost, LockPoints lp, CAmount _nMinGasPrice = 0);//sbtc-vm
 
     CTxMemPoolEntry(const CTxMemPoolEntry &other);
 
@@ -122,7 +124,11 @@ public:
     {
         return lockPoints;
     }
-
+    //sbtc-vm
+    const CAmount& GetMinGasPrice() const
+    {
+        return nMinGasPrice;
+    }
     // Adjusts the descendant state.
     void UpdateDescendantState(int64_t modifySize, CAmount modifyFee, int64_t modifyCount);
 
