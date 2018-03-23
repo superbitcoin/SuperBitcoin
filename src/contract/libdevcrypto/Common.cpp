@@ -359,6 +359,7 @@ void dev::crypto::ecdh::agree(Secret const &_s, Public const &_r, Secret &o_s)
     assert(r == 1);
     std::array<byte, 33> compressedPoint;
     //#ifdef QTUM_BUILD  //sbtc-vm
+    // TODO:sbtc-vm
 #if 1
 //        r = secp256k1_ecdh(ctx, compressedPoint.data(), &rawPubkey, _s.data());
 #else

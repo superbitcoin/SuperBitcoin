@@ -440,7 +440,7 @@ CWallet::ChangeWalletPassphrase(const SecureString &strOldWalletPassphrase, cons
                     pMasterKey.second.nDeriveIterations = 25000;
 
                 NLogFormat("Wallet passphrase changed to an nDeriveIterations of %i",
-                            pMasterKey.second.nDeriveIterations);
+                           pMasterKey.second.nDeriveIterations);
 
                 if (!crypter.SetKeyFromPassphrase(strNewWalletPassphrase, pMasterKey.second.vchSalt,
                                                   pMasterKey.second.nDeriveIterations,
@@ -1055,7 +1055,7 @@ bool CWallet::AddToWallet(const CWalletTx &wtxIn, bool fFlushOnClose)
 
     //// debug print
     NLogFormat("AddToWallet %s  %s%s", wtxIn.GetHash().ToString(), (fInsertedNew ? "new" : ""),
-                (fUpdated ? "update" : ""));
+               (fUpdated ? "update" : ""));
 
     // Write to disk
     if (fInsertedNew || fUpdated)
@@ -1169,7 +1169,7 @@ CWallet::AddToWalletIfInvolvingMe(const CTransactionRef &ptx, const CBlockIndex 
                     if (mi != m_pool_key_to_index.end())
                     {
                         NLogFormat("%s: Detected a used keypool key, mark all keypool key up to this key as used",
-                                    __func__);
+                                   __func__);
                         MarkReserveKeysAsUsed(mi->second);
 
                         if (!TopUpKeyPool())
@@ -1672,7 +1672,7 @@ void CWalletTx::GetAmounts(std::list<COutputEntry> &listReceived,
         if (!ExtractDestination(txout.scriptPubKey, address) && !txout.scriptPubKey.IsUnspendable())
         {
             NLogFormat("CWalletTx::GetAmounts: Unknown transaction type found, txid %s",
-                        this->GetHash().ToString());
+                       this->GetHash().ToString());
             address = CNoDestination();
         }
 
@@ -1710,7 +1710,7 @@ int64_t CWallet::RescanFromTime(int64_t startTime, bool update)
     // to be scanned.
     CBlockIndex *const startBlock = chainActive.FindEarliestAtLeast(startTime - TIMESTAMP_WINDOW);
     NLogFormat("%s: Rescanning last %i blocks", __func__,
-                startBlock ? chainActive.Height() - startBlock->nHeight + 1 : 0);
+               startBlock ? chainActive.Height() - startBlock->nHeight + 1 : 0);
 
     if (startBlock)
     {
@@ -1760,7 +1760,7 @@ CBlockIndex *CWallet::ScanForWalletTransactions(CBlockIndex *pindexStart, bool f
             {
                 nNow = GetTime();
                 NLogFormat("Still rescanning. At block %d. Progress=%f", pindex->nHeight,
-                            GuessVerificationProgress(chainParams.TxData(), pindex));
+                           GuessVerificationProgress(chainParams.TxData(), pindex));
             }
 
             CBlock block;
@@ -1779,7 +1779,7 @@ CBlockIndex *CWallet::ScanForWalletTransactions(CBlockIndex *pindexStart, bool f
         if (pindex && fAbortRescan)
         {
             NLogFormat("Rescan aborted at block %d. Progress=%f", pindex->nHeight,
-                        GuessVerificationProgress(chainParams.TxData(), pindex));
+                       GuessVerificationProgress(chainParams.TxData(), pindex));
         }
         ShowProgress(_("Rescanning..."), 100); // hide progress dialog in GUI
 
@@ -2830,11 +2830,12 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
     int nChangePosRequest = nChangePosInOut;
     unsigned int nSubtractFeeFromAmount = 0;
     //sbtc-vm
-	COutPoint senderInput;
-    if(hasSender && coin_control.HasSelected()){
-    	std::vector<COutPoint> vSenderInputs;
+    COutPoint senderInput;
+    if (hasSender && coin_control.HasSelected())
+    {
+        std::vector<COutPoint> vSenderInputs;
         coin_control.ListSelected(vSenderInputs);
-    	senderInput=vSenderInputs[0];
+        senderInput = vSenderInputs[0];
     }
     for (const auto &recipient : vecSend)
     {
@@ -2968,7 +2969,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                         }
                     }
 
-                    if(IsDust(txout, ::dustRelayFee))
+                    if (IsDust(txout, ::dustRelayFee))
                     {
                         if (recipient.fSubtractFeeFromAmount && nFeeRet > 0)
                         {
@@ -3032,11 +3033,15 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                 // Move sender input to position 0
                 vCoins.clear();
                 std::copy(setCoins.begin(), setCoins.end(), std::back_inserter(vCoins));
-                if(hasSender && coin_control.HasSelected()){
-                       for (std::vector<CInputCoin>::size_type i = 0 ; i != vCoins.size(); i++){
-                        if(vCoins[i].outpoint == senderInput){
-                            if(i == 0)break;
-                            iter_swap(vCoins.begin(),vCoins.begin()+i);
+                if (hasSender && coin_control.HasSelected())
+                {
+                    for (std::vector<CInputCoin>::size_type i = 0; i != vCoins.size(); i++)
+                    {
+                        if (vCoins[i].outpoint == senderInput)
+                        {
+                            if (i == 0)
+                                break;
+                            iter_swap(vCoins.begin(), vCoins.begin() + i);
                             break;
                         }
                     }
@@ -3054,13 +3059,13 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                 // behavior."
                 const uint32_t nSequence = coin_control.signalRbf ? MAX_BIP125_RBF_SEQUENCE : (CTxIn::SEQUENCE_FINAL -
                                                                                                1);
-//                for (const auto &coin : setCoins)
+                //                for (const auto &coin : setCoins)
                 for (const auto &coin : vCoins)  //sbtc-vm
                     txNew.vin.push_back(CTxIn(coin.outpoint, CScript(),
                                               nSequence));
 
                 // Fill in dummy signatures for fee calculation.
-//                if (!DummySignTx(txNew, setCoins))
+                //                if (!DummySignTx(txNew, setCoins))
                 if (!DummySignTx(txNew, vCoins)) //sbtc-vm
                 {
                     strFailReason = _("Signing transaction failed");
@@ -3169,7 +3174,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
         {
             CTransaction txNewConst(txNew);
             int nIn = 0;
-//            for (const auto &coin : setCoins)
+            //            for (const auto &coin : setCoins)
             for (const auto &coin : vCoins)
             {
                 const CScript &scriptPubKey = coin.txout.scriptPubKey;
@@ -3274,7 +3279,7 @@ bool CWallet::CommitTransaction(CWalletTx &wtxNew, CReserveKey &reservekey, CCon
             if (!wtxNew.AcceptToMemoryPool(maxTxFee, state))
             {
                 NLogFormat("CommitTransaction(): Transaction cannot be broadcast immediately, %s",
-                            state.GetRejectReason());
+                           state.GetRejectReason());
                 // TODO: if we expect the failure to be long term or permanent, instead delete wtx from the wallet and return failure.
             } else
             {
@@ -3655,8 +3660,8 @@ bool CWallet::TopUpKeyPool(unsigned int kpSize)
         if (missingInternal + missingExternal > 0)
         {
             NLogFormat("keypool added %d keys (%d internal), size=%u (%u internal)", missingInternal + missingExternal,
-                        missingInternal, setInternalKeyPool.size() + setExternalKeyPool.size(),
-                        setInternalKeyPool.size());
+                       missingInternal, setInternalKeyPool.size() + setExternalKeyPool.size(),
+                       setInternalKeyPool.size());
         }
     }
     return true;
@@ -4466,7 +4471,7 @@ CWallet *CWallet::CreateWalletFromFile(const std::string walletFile)
 
         uiInterface.InitMessage(_("Rescanning..."));
         NLogFormat("Rescanning last %i blocks (from block %i)...", chainActive.Height() - pindexRescan->nHeight,
-                    pindexRescan->nHeight);
+                   pindexRescan->nHeight);
 
         // No need to read and scan block if block was created before
         // our wallet birthday (as adjusted for block time variability)
@@ -4582,7 +4587,7 @@ bool CWallet::ParameterInteraction()
         return true;
 
     NLogFormat("%s: parameter interaction: -blocksonly=%d", __func__,
-                Args().GetArg<bool>("-blocksonly", DEFAULT_BLOCKSONLY) ? 1 : 0);
+               Args().GetArg<bool>("-blocksonly", DEFAULT_BLOCKSONLY) ? 1 : 0);
     NLogFormat("%s: parameter interaction: walletbroadcast=%d", __func__, IsWalletbroadcast() ? 1 : 0);
 
     int zapwallettxes = Args().GetArg<int>("-zapwallettxes", 0);

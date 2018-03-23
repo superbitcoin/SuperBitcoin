@@ -223,7 +223,8 @@ bool CContractComponent::ComponentInitialize()
 bool CContractComponent::ContractInit()
 {
     ////////////////////////////////////////////////////////////////////// //sbtc-vm
-    dev::g_logPost = [&](std::string const& s, char const* c){ VMLog("%s : %s", s.c_str(), c); };
+    dev::g_logPost = [&](std::string const &s, char const *c)
+    { VMLog("%s : %s", s.c_str(), c); };
     dev::g_logPost(std::string("\n\n\n\n\n\n\n\n\n\n"), NULL);
     //////////////////////////////////////////////////////////////////////
 
