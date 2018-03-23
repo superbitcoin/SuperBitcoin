@@ -706,11 +706,11 @@ UniValue gencheckpoint(const JSONRPCRequest &request)
                         "\n generate checkpoint by Private key and block hash \n"
                         "\nArguments:\n"
                         "1. \"private_key\"  (string, required) the private key \n"
-                        "2. \"checkpoint_file\"  (string, required) the checkpoint file path\n"
+                        "2. \"checkpoint_file\"  (string, required) the checkpoint file name (note: not the path) \n"
                         "3. \"height\" (string ,required) block height\n"
                         "\nResult:\n"
                         "\nExamples:\n"
-                + HelpExampleCli("gencheckpoint", "\"privatekey\" \"checkpointfile\" \"hash\" \"height\""));
+                + HelpExampleCli("gencheckpoint", "\"privatekey\" \"checkpointfile\" \"height\""));
     }
     std::ofstream file;
     UniValue obj(UniValue::VOBJ);
