@@ -2384,6 +2384,7 @@ SbtcTransaction SbtcTxConverter::createEthTX(const EthTransactionParams& etp, ui
 
     return txEth;
 }
+
 ///////////////////////////////////////////////////////////////////////
 
 /** Apply the effects of this block (with given index) on the UTXO set represented by coins.
@@ -2784,8 +2785,9 @@ static bool ConnectBlock(const CBlock &block, CValidationState &state, CBlockInd
     if(nFees < gasRefunds) { //make sure it won't overflow
         return state.DoS(1000, error("ConnectBlock(): Less total fees than gas refund fees"), REJECT_INVALID, "bad-blk-fees-greater-gasrefund");
     }
-//    if(!CheckReward(block, state, pindex->nHeight, chainparams.GetConsensus(), nFees, gasRefunds, nActualStakeReward, checkVouts))
-//        return state.DoS(100,error("ConnectBlock(): Reward check failed"));
+    CAmount nActualStakeReward;
+    if(!CheckReward(block, state, pindex->nHeight, chainparams.GetConsensus(), nFees, gasRefunds, nActualStakeReward, checkVouts))
+        return state.DoS(100,error("ConnectBlock(): Reward check failed"));
 
     CAmount blockReward = 0;
     blockReward = nFees + GetBlockSubsidy(pindex->nHeight, chainparams.GetConsensus());

@@ -399,7 +399,7 @@ int LogPrintStr(const std::string &str, bool useVMLog)
         boost::mutex::scoped_lock scoped_lock(*mutexDebugLog);
 
         // buffer if we haven't opened the log yet
-        if (fileout == nullptr)
+        if (file == nullptr)
         {
             assert(vMsgsBeforeOpenLog);
             ret = strTimestamped.length();
@@ -411,11 +411,11 @@ int LogPrintStr(const std::string &str, bool useVMLog)
             {
                 fReopenDebugLog = false;
                 fs::path pathDebug = GetDataDir() / "debug.log";
-                if (fsbridge::freopen(pathDebug, "a", fileout) != nullptr)
-                    setbuf(fileout, nullptr); // unbuffered
+                if (fsbridge::freopen(pathDebug, "a", file) != nullptr)
+                    setbuf(file, nullptr); // unbuffered
             }
 
-            ret = FileWriteStr(strTimestamped, fileout);
+            ret = FileWriteStr(strTimestamped, file);
         }
     }
     return ret;

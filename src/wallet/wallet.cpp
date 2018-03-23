@@ -2944,9 +2944,7 @@ bool CWallet::CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletT
                         }
                     }
 
-//                    if(IsDust(txout, ::dustRelayFee)
-                    //sbtc-vm
-                    if (IsDust(txout, ::dustRelayFee) && !recipient.scriptPubKey.HasOpCreate() && !recipient.scriptPubKey.HasOpCall())
+                    if(IsDust(txout, ::dustRelayFee))
                     {
                         if (recipient.fSubtractFeeFromAmount && nFeeRet > 0)
                         {
