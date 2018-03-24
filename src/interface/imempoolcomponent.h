@@ -10,6 +10,7 @@
 #include "mempool/txmempool.h"
 
 class CBlock;
+
 class ITxMempoolComponent : public appbase::TComponent<ITxMempoolComponent>
 {
 public:
@@ -47,7 +48,7 @@ public:
 
     virtual bool RemoveOrphanTxForNode(int64_t nodeId) = 0;
 
-    virtual bool RemoveOrphanTxForBlock(const CBlock* pblock) = 0;
+    virtual bool RemoveOrphanTxForBlock(const CBlock *pblock) = 0;
 
     //add other interface methods here ...
 

@@ -92,7 +92,7 @@ public:
                                         CBlockHeader *first_invalid) = 0;
 
     virtual bool ProcessNewBlock(const CChainParams &chainparams, const std::shared_ptr<const CBlock> pblock,
-                         bool fForceProcessing, bool *fNewBlock) = 0;
+                                 bool fForceProcessing, bool *fNewBlock) = 0;
 
     virtual bool NetRequestCheckPoint(ExNode *xnode, int height) = 0;
 
@@ -104,7 +104,7 @@ public:
 
     virtual bool NetReceiveHeaders(ExNode *xnode, CDataStream &stream) = 0;
 
-    virtual bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void* filter) = 0;
+    virtual bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void *filter) = 0;
 
     virtual bool NetReceiveBlockData(ExNode *xnode, CDataStream &stream, uint256 &blockHash) = 0;
 

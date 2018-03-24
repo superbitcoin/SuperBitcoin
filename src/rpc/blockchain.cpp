@@ -998,17 +998,17 @@ UniValue callcontract(const JSONRPCRequest &request)
             throw JSONRPCError(RPC_TYPE_ERROR, "JSON value for gasLimit is not (numeric or string)");
         }
 
-//        if (gasLimit > blockGasLimit)
-//            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit (Maximum is: "+i64tostr(blockGasLimit)+")");
-//        if (gasLimit < MINIMUM_GAS_LIMIT)
-//            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit (Minimum is: "+i64tostr(MINIMUM_GAS_LIMIT)+")");
-//        if (gasLimit <= 0)
-//            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit");
+        //        if (gasLimit > blockGasLimit)
+        //            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit (Maximum is: "+i64tostr(blockGasLimit)+")");
+        //        if (gasLimit < MINIMUM_GAS_LIMIT)
+        //            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit (Minimum is: "+i64tostr(MINIMUM_GAS_LIMIT)+")");
+        //        if (gasLimit <= 0)
+        //            throw JSONRPCError(RPC_TYPE_ERROR, "Invalid value for gasLimit");
     }
 
     UniValue result(UniValue::VOBJ);
     result.push_back(Pair("address", strAddr));
-    ifContractObj->RPCCallContract(result,strAddr, ParseHex(data), sender, gasLimit);
+    ifContractObj->RPCCallContract(result, strAddr, ParseHex(data), sender, gasLimit);
 
     return result;
 }
@@ -1285,8 +1285,9 @@ UniValue searchlogs(const JSONRPCRequest &request)
 
     std::vector<std::vector<uint256>> hashesToBlock;
 
-    curheight = ifChainObj->GetBlockTreeDB()->ReadHeightIndex(params.fromBlock, params.toBlock, params.minconf, hashesToBlock,
-                                            params.addresses);
+    curheight = ifChainObj->GetBlockTreeDB()->ReadHeightIndex(params.fromBlock, params.toBlock, params.minconf,
+                                                              hashesToBlock,
+                                                              params.addresses);
 
     if (curheight == -1)
     {
@@ -2271,7 +2272,7 @@ static const CRPCCommand commands[] =
                 {"blockchain", "getmempoolentry",       &getmempoolentry,       true, {"txid"}},
                 {"blockchain", "getmempoolinfo",        &getmempoolinfo,        true, {}},
                 {"blockchain", "getrawmempool",         &getrawmempool,         true, {"verbose"}},
-                {"blockchain", "gettxout",              &gettxout,              true, {"txid",       "n", "include_mempool"}},
+                {"blockchain", "gettxout",              &gettxout,              true, {"txid",       "n",       "include_mempool"}},
                 {"blockchain", "gettxoutsetinfo",       &gettxoutsetinfo,       true, {}},
                 {"blockchain", "pruneblockchain",       &pruneblockchain,       true, {"height"}},
                 {"blockchain", "verifychain",           &verifychain,           true, {"checklevel", "nblocks"}},
