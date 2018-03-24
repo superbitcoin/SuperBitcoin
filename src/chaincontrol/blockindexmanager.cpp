@@ -455,7 +455,7 @@ bool CBlockIndexManager::LoadBlockIndexDB(const Consensus::Params &consensus)
     NLogFormat("transaction index %s", bTxIndex ? "enabled" : "disabled");
 
     pBlcokTreee->ReadFlag("logevents", bLogEvents);//sbtc-vm
-    NLogFormat("transaction index %s", bLogEvents ? "enabled" : "disabled");
+    NLogFormat("logevents %s", bLogEvents ? "enabled" : "disabled");
     return true;
 }
 
