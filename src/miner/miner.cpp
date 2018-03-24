@@ -150,10 +150,7 @@ void BlockAssembler::resetBlock()
 //sbtc-vm
 void BlockAssembler::RebuildRefundTransaction()
 {
-    int refundtx = 0; //0 for coinbase in PoW
-    //    if(pblock->IsProofOfStake()){
-    //        refundtx=1; //1 for coinstake in PoS
-    //    }
+    int refundtx = 0;
     GET_CHAIN_INTERFACE(ifChainObj);
 
     CMutableTransaction contrTx(originalRewardTx);

@@ -420,7 +420,12 @@ void CApp::InitOptionMap()
     };
     optionMap.emplace("RPC server options:", item);
 
-    item = {{"logevents", bpo::value<string>(), "contract logevents"}};
+    item = {
+            {"logevents", bpo::value<string>(), "Maintain a full EVM log index, used by searchlogs and gettransactionreceipt rpc calls"},
+            {"record-log-opcodes", bpo::value<string>(), "Logs all EVM LOG opcode operations to the file vmExecLogs.json"},
+            {"dgpstorage", bpo::value<string>(), "Receiving data from DGP via storage (default: -dgpstorage)"},
+            {"dgpevm", bpo::value<string>(), "Receiving data from DGP via a contract call (default: -dgpevm)"},
+    };
     optionMap.emplace("Contract options:", item);
 
     pArgs->SetOptionName("sbtcd");

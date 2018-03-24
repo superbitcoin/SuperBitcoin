@@ -228,6 +228,7 @@ bool CContractComponent::ContractInit()
     dev::g_logPost(std::string("\n\n\n\n\n\n\n\n\n\n"), NULL);
     //////////////////////////////////////////////////////////////////////
 
+
     if ((Args().IsArgSet("-dgpstorage") && Args().IsArgSet("-dgpevm")) ||
         (!Args().IsArgSet("-dgpstorage") && Args().IsArgSet("-dgpevm")) ||
         (!Args().IsArgSet("-dgpstorage") && !Args().IsArgSet("-dgpevm")))
