@@ -28,8 +28,7 @@
 #include <libdevcore/Assertions.h>
 
 
-//#ifndef QTUM_BUILD   //sbtc-vm
-#if 0
+#if 0 //sbtc-vm
 #include <libdevcore/TrieHash.h>
 #endif
 

@@ -24,8 +24,7 @@
 #include "Log.h"
 
 
-//#ifndef QTUM_BUILD  //sbtc-vm
-#if 0
+#if 0  //sbtc-vm
 #include "BuildInfo.h"
 #endif
 using namespace std;
@@ -33,8 +32,7 @@ using namespace dev;
 
 namespace dev
 {
-    //#ifdef QTUM_BUILD  //sbtc-vm
-#if 1
+#if 1  //sbtc-vm
 #define ETH_PROJECT_VERSION "1.3.0"
 #endif
     char const *Version = ETH_PROJECT_VERSION;

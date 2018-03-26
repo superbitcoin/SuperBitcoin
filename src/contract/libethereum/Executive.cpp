@@ -20,8 +20,7 @@
 
 #include <boost/timer.hpp>
 
-//#ifndef QTUM_BUILD   //sbtc-vm
-#if 0
+#if 0  //sbtc-vm
 #include <json/json.h>
 #endif
 
@@ -49,8 +48,7 @@ const char *ExecutiveWarnChannel::name()
     return WarnChannel::name();
 }
 
-//#ifdef QTUM_BUILD  //sbtc-vm
-#if 1
+#if 1  //sbtc-vm
 
 StandardTrace::StandardTrace()
 {
@@ -87,8 +85,7 @@ void
 StandardTrace::operator()(uint64_t _steps, uint64_t PC, Instruction inst, bigint newMemSize, bigint gasCost, bigint gas,
                           VM *voidVM, ExtVMFace const *voidExt)
 {
-    //#ifdef QTUM_BUILD  //sbtc-vm
-#if 1
+#if 1  //sbtc-vm
     return;
 #else
     (void)_steps;
@@ -167,8 +164,7 @@ StandardTrace::operator()(uint64_t _steps, uint64_t PC, Instruction inst, bigint
 
 string StandardTrace::json(bool _styled) const
 {
-    //#ifdef QTUM_BUILD //sbtc-vm
-#if 1
+#if 1  //sbtc-vm
     return "";
 #else
     return _styled ? Json::StyledWriter().write(m_trace) : Json::FastWriter().write(m_trace);

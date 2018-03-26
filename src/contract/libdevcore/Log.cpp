@@ -207,8 +207,7 @@ extern "C" __declspec(dllimport) void __stdcall OutputDebugStringA(const char* l
 
 string dev::getThreadName()
 {
-    //#ifdef QTUM_BUILD  //sbtc-vm
-#if 1
+#if 1  //sbtc-vm
     return "";
 #else
 #if defined(__GLIBC__) || defined(__APPLE__)
@@ -224,8 +223,7 @@ string dev::getThreadName()
 
 void dev::setThreadName(string const &_n)
 {
-    //#ifndef QTUM_BUILD  //sbtc-vm
-#if 0
+#if 0  //sbtc-vm
 #if defined(__GLIBC__)
     pthread_setname_np(pthread_self(), _n.c_str());
 #elif defined(__APPLE__)
