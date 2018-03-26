@@ -133,14 +133,14 @@ UniValue vmLogToJSON(const ResultExecute &execRes, const CTransaction &tx, const
 void writeVMlog(const std::vector<ResultExecute> &res, const CTransaction &tx = CTransaction(),
                 const CBlock &block = CBlock())
 {
-    boost::filesystem::path qtumDir = GetDataDir() / "vmExecLogs.json";
+    boost::filesystem::path sbtcDir = GetDataDir() / "vmExecLogs.json";
     std::stringstream ss;
     if (fIsVMlogFile)
     {
         ss << ",";
     } else
     {
-        std::ofstream file(qtumDir.string(), std::ios::out | std::ios::app);
+        std::ofstream file(sbtcDir.string(), std::ios::out | std::ios::app);
         file << "{\"logs\":[]}";
         file.close();
     }
@@ -157,7 +157,7 @@ void writeVMlog(const std::vector<ResultExecute> &res, const CTransaction &tx = 
         }
     }
 
-    std::ofstream file(qtumDir.string(), std::ios::in | std::ios::out);
+    std::ofstream file(sbtcDir.string(), std::ios::in | std::ios::out);
     file.seekp(-2, std::ios::end);
     file << ss.str();
     file.close();
@@ -813,7 +813,6 @@ void CContractComponent::RPCCallContract(UniValue &result, const string addrCont
     result.push_back(Pair("executionResult", executionResultToJSON(execResults[0].execRes)));
     result.push_back(Pair("transactionReceipt", transactionReceiptToJSON(execResults[0].txRec)));
 }
-
 
 bool ByteCodeExec::performByteCode(dev::eth::Permanence type)
 {

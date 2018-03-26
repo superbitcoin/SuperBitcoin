@@ -1346,8 +1346,8 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
             ByteCodeExecResult bcer;
             if (!ifContractObj->ContractTxConnectBlock(tx, i, &view, block, pindex->nHeight,
-                                                      bcer, pStorageRes, fJustCheck, heightIndexes,
-                                                      level, errinfo))
+                                                       bcer, pStorageRes, fJustCheck, heightIndexes,
+                                                       level, errinfo))
             {
                 return state.DoS(level, false, REJECT_INVALID, errinfo);
             }
@@ -1379,11 +1379,25 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
                (unsigned)block.vtx.size(), 0.001 * (nTime3 - nTime2), 0.001 * (nTime3 - nTime2) / block.vtx.size(),
                nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
 
-    //sbtc-vm
+    ////////////////////////////////////////////////////////////////// // sbtc-vm
     if (nFees < gasRefunds)
     { //make sure it won't overflow
         return state.DoS(1000, false, REJECT_INVALID, "bad-blk-fees-greater-gasrefund");
     }
+    std::vector<CTxOut> vTempVouts = block.vtx[0]->vout;
+    std::vector<CTxOut>::iterator it;
+    for (size_t i = 0; i < checkVouts.size(); i++)
+    {
+        it = std::find(vTempVouts.begin(), vTempVouts.end(), checkVouts[i]);
+        if (it == vTempVouts.end())
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Gas refund missing");
+        } else
+        {
+            vTempVouts.erase(it);
+        }
+    }
+    //////////////////////////////////////////////////////////////////
 
     CAmount blockReward = 0;
     blockReward = nFees + GetBlockSubsidy(pindex->nHeight);
@@ -1587,7 +1601,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
         CCoinsViewCache view(cViewManager.GetCoinsTip());
 
         //sbtc-vm
-        uint256 oldHashStateRoot,oldHashUTXORoot;
+        uint256 oldHashStateRoot, oldHashUTXORoot;
         GET_CONTRACT_INTERFACE(ifContratcObj);
         ifContratcObj->GetState(oldHashStateRoot, oldHashUTXORoot);
 
@@ -2701,7 +2715,7 @@ bool CChainComponent::TestBlockValidity(CValidationState &state, const CChainPar
     {
         return rLogError("%s: Consensus::ContextualCheckBlock: %s", __func__, FormatStateMessage(state));
     }
-    uint256 oldHashStateRoot,oldHashUTXORoot;
+    uint256 oldHashStateRoot, oldHashUTXORoot;
     GET_CONTRACT_INTERFACE(ifContractObj);
     ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot); //sbtc-vm
     if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true))
