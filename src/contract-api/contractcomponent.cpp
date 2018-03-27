@@ -294,19 +294,6 @@ bool CContractComponent::ComponentShutdown()
     return true;
 }
 
-
-uint256 CContractComponent::GetGenesisHashStateRoot()
-{
-    //uint256 = 0x9514771014c9ae803d8cea2731b2063e83de44802b40dce2d06acd02d0ff65e9
-    return h256Touint(dev::h256("e965ffd002cd6ad0e2dc402b8044de833e06b23127ea8c3d80aec91410771495"));
-}
-
-uint256 CContractComponent::GetGenesisHashUTXORoot()
-{
-    //uint256 = 0x21b463e3b52f6201c0ad6c991be0485b6ef8c092e64583ffa655cc1b171fe856
-    return h256Touint(dev::sha3(dev::rlp("")));
-}
-
 uint64_t CContractComponent::GetMinGasPrice(int height)
 {
     uint64_t minGasPrice = 1;
@@ -329,7 +316,7 @@ uint64_t CContractComponent::GetBlockGasLimit(int height)
     return blockGasLimit;
 }
 
-bool CContractComponent::IsContractAddressInUse(string contractaddress)
+bool CContractComponent::AddressInUse(string contractaddress)
 {
     dev::Address addrAccount(contractaddress);
     return globalState->addressInUse(addrAccount);
@@ -751,11 +738,32 @@ std::unordered_map<dev::h160, dev::u256> CContractComponent::GetContractList()
     return map;
 };
 
+
 CAmount CContractComponent::GetContractBalance(dev::h160 address)
 {
     return CAmount(globalState->balance(address));
 }
 
+std::vector<uint8_t> CContractComponent::GetContractCode(dev::Address address)
+{
+    return globalState->code(address);
+}
+
+bool CContractComponent::GetContractVin(dev::Address address, dev::h256 &hash, uint32_t &nVout, dev::u256 &value,
+                                        uint8_t &alive)
+{
+    bool ret = false;
+    std::unordered_map<dev::Address, Vin> vins = globalState->vins();
+    if (vins.count(address))
+    {
+        hash = vins[address].hash;
+        nVout = vins[address].nVout;
+        value = vins[address].value;
+        alive = vins[address].alive;
+        ret = true;
+    }
+    return ret;
+}
 
 UniValue executionResultToJSON(const dev::eth::ExecutionResult &exRes)
 {

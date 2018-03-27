@@ -156,15 +156,11 @@ public:
 
     bool ComponentShutdown() override;
 
-    uint256 GetGenesisHashStateRoot() override;
-
-    uint256 GetGenesisHashUTXORoot() override;
-
     uint64_t GetMinGasPrice(int height) override;
 
     uint64_t GetBlockGasLimit(int height) override;
 
-    bool IsContractAddressInUse(string contractaddress) override;
+    bool AddressInUse(string contractaddress) override;
 
     bool ChecckContractTx(const CTransaction tx, const CAmount nFees, CAmount &nMinGasPrice, int &level,
                           string &errinfo) override;
@@ -196,6 +192,11 @@ public:
     std::unordered_map<dev::h160, dev::u256> GetContractList() override;
 
     CAmount GetContractBalance(dev::h160 address) override;
+
+    std::vector<uint8_t> GetContractCode(dev::Address address) override;
+
+    bool
+    GetContractVin(dev::Address address, dev::h256 &hash, uint32_t &nVout, dev::u256 &value, uint8_t &alive) override;
 
     void
     RPCCallContract(UniValue &result, const string addrContract, std::vector<unsigned char> opcode, string sender = "",

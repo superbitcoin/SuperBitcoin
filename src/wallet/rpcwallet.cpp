@@ -3747,7 +3747,7 @@ UniValue sendtocontract(const JSONRPCRequest &request)
     if (contractaddress.size() != 40 || !IsHex(contractaddress))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect contract address");
 
-    if (!ifContractObj->IsContractAddressInUse(contractaddress))
+    if (!ifContractObj->AddressInUse(contractaddress))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "contract address does not exist");
 
     string datahex = request.params[1].get_str();
