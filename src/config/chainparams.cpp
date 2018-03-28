@@ -162,10 +162,10 @@ public:
         nDefaultPort = 8334;
         nPruneAfterHeight = 100000;
 
-        genesis = CreateGenesisBlock(1231006505, 2083236893, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1231006505, 3751357305, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock ==
-               uint256S("0x5b6d54ba638d77f7967cf58828b76e9b804a8075b5733c0d2ccfda12e2ad900e"));
+               uint256S("00000000011cef935ff097277b82cbfbb77e97dc6e6df12e682d7667a2e49540"));
         assert(genesis.hashMerkleRoot ==
                uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
@@ -275,10 +275,10 @@ public:
         nDefaultPort = 18334;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1296688602, 414098458, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1296688602, 409410123, 0x1d00ffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock ==
-               uint256S("0xaaff57130b7d7d82a47cdae79f0c6de5fa8c555c685c1c4918a8277a9ebd52a5"));
+               uint256S("0x000000004d7c36b6f308bf49669d86e578f3aa044ad34ca4a7e805b40774253d"));
         assert(genesis.hashMerkleRoot ==
                uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
@@ -368,10 +368,10 @@ public:
         nDefaultPort = 18445;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1296688602, 2, 0x207fffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1296688602, 7, 0x207fffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock ==
-               uint256S("0xbd264036919fe705ee55b985ce77f583991630cc17565851af9a070a0a1df461"));
+               uint256S("0x1a46ae24b0cc4498888c3c298b9012dd5e17faa3b7e7b3b5488239bc8e36c90a"));
         assert(genesis.hashMerkleRoot ==
                uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 

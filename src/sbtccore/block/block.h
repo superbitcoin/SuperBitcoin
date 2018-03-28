@@ -121,8 +121,8 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-        block.hashStateRoot  = hashStateRoot; // sbtc-vm
-        block.hashUTXORoot   = hashUTXORoot; // sbtc-vm
+        block.hashStateRoot = hashStateRoot; // sbtc-vm
+        block.hashUTXORoot = hashUTXORoot; // sbtc-vm
         return block;
     }
 
