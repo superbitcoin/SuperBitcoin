@@ -340,22 +340,16 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries &packa
 //sbtc-vm
 bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64_t minGasPrice)
 {
-
-    //    if (nTimeLimit != 0 && GetAdjustedTime() >= nTimeLimit - BYTECODE_TIME_BUFFER) {
-    //        return false;
-    //    }
     if (Args().GetArg("-disablecontractstaking", false))
     {
         return false;
     }
 
-    uint256 oldHashStateRoot;
-    uint256 oldHashUTXORoot;
+    uint256 oldHashStateRoot,oldHashUTXORoot;
     GET_CONTRACT_INTERFACE(ifContractObj);
     ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot);
     // operate on local vars first, then later apply to `this`
     uint64_t nBlockWeight = this->nBlockWeight;
-    //    uint64_t nBlockSize = this->nBlockSize;
     uint64_t nBlockSigOpsCost = this->nBlockSigOpsCost;
 
     ByteCodeExecResult testExecResult;
@@ -375,22 +369,15 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     }
     NLogFormat("AttemptToAddContractToBlock4=====");
     //apply contractTx costs to local state
-    //    if (fNeedSizeAccounting) {
-    //        nBlockSize += ::GetSerializeSize(iter->GetTx(), SER_NETWORK, PROTOCOL_VERSION);
-    //    }
     nBlockWeight += iter->GetTxWeight();
     nBlockSigOpsCost += iter->GetSigOpCost();
     //apply value-transfer txs to local state
     for (CTransaction &t : testExecResult.valueTransfers)
     {
-        //        if (fNeedSizeAccounting) {
-        //            nBlockSize += ::GetSerializeSize(t, SER_NETWORK, PROTOCOL_VERSION);
-        //        }
         nBlockWeight += GetTransactionWeight(t);
         nBlockSigOpsCost += t.GetLegacySigOpCount();
     }
 
-    //    int proofTx = pblock->IsProofOfStake() ? 1 : 0;
     int proofTx = 0;
 
     //calculate sigops from new refund/proof tx
@@ -433,9 +420,6 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     pblock->vtx.emplace_back(iter->GetSharedTx());
     pblocktemplate->vTxFees.push_back(iter->GetFee());
     pblocktemplate->vTxSigOpsCost.push_back(iter->GetSigOpCost());
-    //    if (fNeedSizeAccounting) {
-    //        this->nBlockSize += ::GetSerializeSize(iter->GetTx(), SER_NETWORK, PROTOCOL_VERSION);
-    //    }
     this->nBlockWeight += iter->GetTxWeight();
     ++nBlockTx;
     this->nBlockSigOpsCost += iter->GetSigOpCost();
@@ -444,9 +428,6 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     for (CTransaction &t : bceResult.valueTransfers)
     {
         pblock->vtx.emplace_back(MakeTransactionRef(std::move(t)));
-        //        if (fNeedSizeAccounting) {
-        //            this->nBlockSize += ::GetSerializeSize(t, SER_NETWORK, PROTOCOL_VERSION);
-        //        }
         this->nBlockWeight += GetTransactionWeight(t);
         this->nBlockSigOpsCost += t.GetLegacySigOpCount();
         ++nBlockTx;

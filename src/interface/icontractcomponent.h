@@ -36,15 +36,11 @@ public:
 
     virtual bool ComponentShutdown() = 0;
 
-    virtual uint256 GetGenesisHashStateRoot() = 0;
-
-    virtual uint256 GetGenesisHashUTXORoot() = 0;
-
     virtual uint64_t GetMinGasPrice(int height) = 0;
 
     virtual uint64_t GetBlockGasLimit(int height) = 0;
 
-    virtual bool IsContractAddressInUse(string contractaddress) = 0;
+    virtual bool AddressInUse(string contractaddress) = 0;
 
     virtual bool ChecckContractTx(const CTransaction tx, const CAmount nFees, CAmount &nMinGasPrice, int &level,
                                   string &errinfo) = 0;
@@ -77,6 +73,11 @@ public:
     virtual std::unordered_map<dev::h160, dev::u256> GetContractList() = 0;
 
     virtual CAmount GetContractBalance(dev::h160 address) = 0;
+
+    virtual std::vector<uint8_t> GetContractCode(dev::Address address) = 0;
+
+    virtual bool
+    GetContractVin(dev::Address address, dev::h256 &hash, uint32_t &nVout, dev::u256 &value, uint8_t &alive) = 0;
 
     virtual void
     RPCCallContract(UniValue &result, const string addrContract, std::vector<unsigned char> opcode, string sender,

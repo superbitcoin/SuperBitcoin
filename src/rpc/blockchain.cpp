@@ -869,6 +869,64 @@ UniValue getblock(const JSONRPCRequest &request)
 }
 
 /////////////////////////////////////////////////////sbtc-vm
+UniValue getaccountinfo(const JSONRPCRequest &request)
+{
+    if (request.fHelp || request.params.size() < 1)
+        throw std::runtime_error(
+                "getaccountinfo \"address\"\n"
+                        "\nArgument:\n"
+                        "1. \"address\"          (string, required) The account address\n"
+        );
+
+    LOCK(cs_main);
+
+    std::string strAddr = request.params[0].get_str();
+    if (strAddr.size() != 40 || !IsHex(strAddr))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect address");
+
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    if (!ifContractObj->AddressInUse(strAddr))
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Address does not exist");
+
+    dev::Address addrAccount(strAddr);
+
+    UniValue result(UniValue::VOBJ);
+
+    result.push_back(Pair("address", strAddr));
+    result.push_back(Pair("balance", ifContractObj->GetContractBalance(addrAccount)));
+    std::vector<uint8_t> code = ifContractObj->GetContractCode(addrAccount);
+
+    std::map<dev::h256, std::pair<dev::u256, dev::u256>> storage = ifContractObj->GetStorageByAddress(strAddr);
+
+    UniValue storageUV(UniValue::VOBJ);
+    for (auto j: storage)
+    {
+        UniValue e(UniValue::VOBJ);
+        e.push_back(Pair(dev::toHex(j.second.first), dev::toHex(j.second.second)));
+        storageUV.push_back(Pair(j.first.hex(), e));
+    }
+
+    result.push_back(Pair("storage", storageUV));
+
+    result.push_back(Pair("code", HexStr(code.begin(), code.end())));
+
+    dev::h256 hash;
+    uint32_t nVout;
+    dev::u256 value;
+    uint8_t alive;
+    if (ifContractObj->GetContractVin(addrAccount, hash, nVout, value, alive))
+    {
+        UniValue vin(UniValue::VOBJ);
+        valtype vchHash(hash.asBytes());
+        vin.push_back(Pair("hash", HexStr(vchHash.rbegin(), vchHash.rend())));
+        vin.push_back(Pair("nVout", uint64_t(nVout)));
+        vin.push_back(Pair("value", uint64_t(value)));
+        vin.push_back(Pair("alive", uint8_t(alive)));
+        result.push_back(Pair("vin", vin));
+    }
+    return result;
+}
+
 UniValue getstorage(const JSONRPCRequest &request)
 {
     if (request.fHelp || request.params.size() < 1)
@@ -909,7 +967,7 @@ UniValue getstorage(const JSONRPCRequest &request)
         }
     }
 
-    if (!ifContractObj->IsContractAddressInUse(strAddr))
+    if (!ifContractObj->AddressInUse(strAddr))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Address does not exist");
 
     UniValue result(UniValue::VOBJ);
@@ -969,7 +1027,7 @@ UniValue callcontract(const JSONRPCRequest &request)
 
     GET_CONTRACT_INTERFACE(ifContractObj);
 
-    if (!ifContractObj->IsContractAddressInUse(strAddr))
+    if (!ifContractObj->AddressInUse(strAddr))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Address does not exist");
 
     string sender = "";
@@ -1188,7 +1246,7 @@ void parseParam(const UniValue &val, std::vector<boost::optional<dev::h256>> &h2
     auto vals = val.getValues();
     h256s.resize(vals.size());
 
-    std::transform(vals.begin(), vals.end(), h256s.begin(), [](UniValue val) -> boost::optional<dev::h256>
+    std::transform(vals.begin(), vals.end(), h256s.begin(), [](UniValue val) -> boost::optional <dev::h256>
     {
         if (val.isNull())
         {
@@ -2290,6 +2348,7 @@ static const CRPCCommand commands[] =
                 {"hidden",     "waitforblock",          &waitforblock,          true, {"blockhash",  "timeout"}},
                 {"hidden",     "waitforblockheight",    &waitforblockheight,    true, {"height",     "timeout"}},
                 //sbtc-vm
+                {"blockchain", "getaccountinfo",        &getaccountinfo,        true, {"contract_address"}},
                 {"blockchain", "getstorage",            &getstorage,            true, {"address, index, blockNum"}},
                 {"blockchain", "callcontract",          &callcontract,          true, {"address",    "data"}},
                 {"blockchain", "listcontracts",         &listcontracts,         true, {"start",      "maxDisplay"}},
