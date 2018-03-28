@@ -5,6 +5,7 @@
 //  Original author: ranger
 ///////////////////////////////////////////////////////////
 
+#include <interface/ichaincomponent.h>
 #include "sbtcd/baseimpl.hpp"
 #include "viewmanager.h"
 #include "config/argmanager.h"
@@ -130,9 +131,19 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
 
     // move best block pointer to prevout block
     view.SetBestBlock(pindex->pprev->GetBlockHash());
+
     //sbtc-vm
     GET_CONTRACT_INTERFACE(ifContractObj);
-    ifContractObj->UpdateState(pindex->pprev->hashStateRoot,pindex->pprev->hashUTXORoot);
+    ifContractObj->UpdateState(pindex->pprev->hashStateRoot, pindex->pprev->hashUTXORoot);
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (ifChainObj->IsLogEvents())
+    {
+        boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
+        StorageResults storageRes(stateDir.string());
+        storageRes.deleteResults(block.vtx);
+        ifChainObj->GetBlockTreeDB()->EraseHeightIndex(pindex->nHeight);
+    }
     return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;
 }
 
@@ -175,6 +186,7 @@ bool CViewManager::Flush()
     pCoinsTip->Flush();
     return true;
 }
+
 void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
 {
     // mark inputs spent
