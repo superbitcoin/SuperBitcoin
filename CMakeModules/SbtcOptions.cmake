@@ -6,6 +6,7 @@ macro(configure_project)
 	ADD_DEFINITIONS(-DTESTS)
 	ADD_DEFINITIONS(-DENABLE_ZMQ_FLAG)
 
+
 	option(ENABLE_WALLET  "ENABLE WALLET FLAG" ON)
     option(HAVE_CONFIG_H "Build with tests" ON)
     option(HAVE_SYS_SELECT_H "Build with tests" ON)
@@ -38,6 +39,15 @@ macro(configure_project)
     endif()
 
 
+#	set( Boost_INCLUDE_DIR /usr/include)
+#	set( OPENSSL_INCLUDE_DIR /usr/local/include)
+#	set( MINIUPNPC_INCLUDE_DIR /usr/include)
+#	set( Secp256k1_INCLUDE_DIR  /usr/local/include)
+#	set( LOG4CPP_INCLUDE_DIR /usr/local/include)
+#	set( LEVELDB_INCLUDE_DIR /usr//include)
+
+
+
     print_config()
 
 endmacro()
@@ -57,6 +67,22 @@ macro(print_config)
 	message("-- HAVE_SYS_SELECT_H   Have sys function select              ${HAVE_SYS_SELECT_H}")
     message("-- TESTS               Build tests                           ${TESTS}")
     message("-- ENABLE_ZMQ          enable ZMQ flag                       ${ENABLE_ZMQ}")
+
+	message("-- OPENSSL_INCLUDE_DIR  path:                      ${OPENSSL_INCLUDE_DIR}")
+	message("-- _OPENSSL_LIBDIR  path:                      ${_OPENSSL_LIBDIR}")
+
+	message("-- Boost_INCLUDE_DIR  path:                      ${Boost_INCLUDE_DIR}")
+	message("-- Boost_LIBRARY_DIR  path:                      ${Boost_LIBRARY_DIR}")
+
+	message("-- MINIUPNPC_INCLUDE_DIR  path:                      ${MINIUPNPC_INCLUDE_DIR}")
+
+	message("-- Secp256k1_INCLUDE_DIR  path:                      ${Secp256k1_INCLUDE_DIR}")
+
+	message("-- LOG4CPP_INCLUDE_DIR  path:                      ${LOG4CPP_INCLUDE_DIR}")
+
+	message("-- LEVELDB_INCLUDE_DIR  path:                      ${LEVELDB_INCLUDE_DIR}")
+
+
 	message("------------------------------------------------------------------------")
 	message("")
 endmacro()

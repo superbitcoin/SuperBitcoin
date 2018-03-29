@@ -5,6 +5,13 @@
 /* Define if building universal (internal helper macro) */
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
+
+/* Version Build */
+#define HAVE_BUILD_INFO @HAVE_BUILD_INFO@
+
+/* Version Build */
+#define GIT_ARCHIVE @GIT_ARCHIVE@
+
 /* Version Build */
 #define CLIENT_VERSION_BUILD @CLIENT_VERSION_BUILD@
 

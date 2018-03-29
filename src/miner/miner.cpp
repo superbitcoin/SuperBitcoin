@@ -340,11 +340,6 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries &packa
 //sbtc-vm
 bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64_t minGasPrice)
 {
-    if (Args().GetArg("-disablecontractstaking", false))
-    {
-        return false;
-    }
-
     uint256 oldHashStateRoot,oldHashUTXORoot;
     GET_CONTRACT_INTERFACE(ifContractObj);
     ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot);
