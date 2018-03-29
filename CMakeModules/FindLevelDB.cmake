@@ -16,11 +16,24 @@ find_path(
 	DOC "leveldb include dir"
 )
 
+#find_library(
+#	LEVELDB_LIBRARY
+#	NAMES  leveldb
+#	DOC "leveldb library"
+#)
+
+IF (ENABLE_STATIC_FLAG)
+	set(LIB_FILE libleveldb.a)
+ELSE ()
+	set(LIB_FILE leveldb)
+ENDIF ()
+
 find_library(
-	LEVELDB_LIBRARY
-	NAMES  leveldb
-	DOC "leveldb library"
+		LEVELDB_LIBRARY
+		NAMES ${LIB_FILE}
+		DOC "leveldb library"
 )
+
 
 set(LEVELDB_INCLUDE_DIRS ${LEVELDB_INCLUDE_DIR})
 set(LEVELDB_LIBRARIES ${LEVELDB_LIBRARY})

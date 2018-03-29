@@ -16,11 +16,21 @@ find_path(
 	DOC "log4cpp include dir"
 )
 
+IF (ENABLE_STATIC_FLAG)
+	set(LIB_FILE liblog4cpp.a)
+ELSE ()
+	set(LIB_FILE log4cpp)
+ENDIF ()
+
 find_library(
 	LOG4CPP_LIBRARY
-	NAMES log4cpp
+	NAMES ${LIB_FILE}
 	DOC "log4cpp library"
 )
+
+
+
+
 
 set(LOG4CPP_INCLUDE_DIRS ${LOG4CPP_INCLUDE_DIR})
 set(LOG4CPP_LIBRARYS ${LOG4CPP_LIBRARY})

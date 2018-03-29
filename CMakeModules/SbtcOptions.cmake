@@ -5,6 +5,9 @@ macro(configure_project)
 	ADD_DEFINITIONS(-DHAVE_SYS_SELECT_H)
 	ADD_DEFINITIONS(-DTESTS)
 	ADD_DEFINITIONS(-DENABLE_ZMQ_FLAG)
+	ADD_DEFINITIONS(-DENABLE_STATIC_FLAG)
+
+
 
 
 	option(ENABLE_WALLET  "ENABLE WALLET FLAG" ON)
@@ -12,6 +15,7 @@ macro(configure_project)
     option(HAVE_SYS_SELECT_H "Build with tests" ON)
     option(TESTS "Build with tests" OFF)
     option(ENABLE_ZMQ_FLAG "Build with tests" OFF)
+	option(ENABLE_STATIC_FLAG "enable static falg" ON)
 
 	if (ENABLE_WALLET)
 		SET( ENABLE_WALLET 1 )
@@ -67,6 +71,7 @@ macro(print_config)
 	message("-- HAVE_SYS_SELECT_H   Have sys function select              ${HAVE_SYS_SELECT_H}")
     message("-- TESTS               Build tests                           ${TESTS}")
     message("-- ENABLE_ZMQ          enable ZMQ flag                       ${ENABLE_ZMQ}")
+	message("-- ENABLE_STATIC_FLAG  enable static falg                    ${ENABLE_STATIC_FLAG}")
 
 	message("-- OPENSSL_INCLUDE_DIR  path:                      ${OPENSSL_INCLUDE_DIR}")
 	message("-- _OPENSSL_LIBDIR  path:                      ${_OPENSSL_LIBDIR}")

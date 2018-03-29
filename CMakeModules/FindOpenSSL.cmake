@@ -269,30 +269,38 @@ if(WIN32 AND NOT CYGWIN)
     set(OPENSSL_CRYPTO_LIBRARY ${LIB_EAY} )
   endif()
 else()
+  IF (ENABLE_STATIC_FLAG)
+    set(LIB_FILE_SSL libssl.a)
+    set(LIB_FILE_CRY libcrypto.a)
+  ELSE ()
+    set(LIB_FILE_SSL ssl)
+    set(LIB_FILE_CRY crypto)
+  ENDIF ()
+
 
   find_library(OPENSSL_SSL_LIBRARY
-    NAMES
-      ssl
-      ssleay32
-      ssleay32MD
-    NAMES_PER_DIR
-    ${_OPENSSL_ROOT_HINTS_AND_PATHS}
-    HINTS
-      ${_OPENSSL_LIBDIR}
-    PATH_SUFFIXES
-      lib
-  )
+          NAMES
+          ${LIB_FILE_SSL}
+          ssleay32
+          ssleay32MD
+          NAMES_PER_DIR
+          ${_OPENSSL_ROOT_HINTS_AND_PATHS}
+          HINTS
+          ${_OPENSSL_LIBDIR}
+          PATH_SUFFIXES
+          lib
+          )
 
   find_library(OPENSSL_CRYPTO_LIBRARY
-    NAMES
-      crypto
-    NAMES_PER_DIR
-    ${_OPENSSL_ROOT_HINTS_AND_PATHS}
-    HINTS
-      ${_OPENSSL_LIBDIR}
-    PATH_SUFFIXES
-      lib
-  )
+          NAMES
+          ${LIB_FILE_CRY}
+          NAMES_PER_DIR
+          ${_OPENSSL_ROOT_HINTS_AND_PATHS}
+          HINTS
+          ${_OPENSSL_LIBDIR}
+          PATH_SUFFIXES
+          lib
+          )
 
   mark_as_advanced(OPENSSL_CRYPTO_LIBRARY OPENSSL_SSL_LIBRARY)
 

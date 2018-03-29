@@ -16,11 +16,18 @@ find_path(
 	DOC "event include dir"
 )
 
+IF (ENABLE_STATIC_FLAG)
+	set(LIB_FILE libevent.a)
+ELSE ()
+	set(LIB_FILE event)
+ENDIF ()
+
 find_library(
 	EVENT_LIBRARY
-	NAMES event
+	NAMES ${LIB_FILE}
 	DOC "event library"
 )
+
 
 set(EVENT_INCLUDE_DIRS ${EVENT_INCLUDE_DIR})
 set(EVENT_LIBRARIES ${EVENT_LIBRARY})

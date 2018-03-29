@@ -16,14 +16,28 @@ target_include_directories(sbtcd PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${Secp256k1_
 #        ${LIBDB_CXX_LIBRARIES} ${LEVELDB_LIBRARIES} libmemenv.a ${Secp256k1_LIBRARY}
 #        )
 
+IF (ENABLE_STATIC_FLAG)
+    set(LIB_FILE -ldl libsnappy.a)
+ELSE ()
+    set(LIB_FILE )
+ENDIF ()
+
+
 target_link_libraries(sbtcd
-        libboost_random.a ${Secp256k1_LIBRARY} ${Secp256k1_LIBRARY} contract-api eventmanager ${Secp256k1_LIBRARY} libboost_random.a contract libboost_random.a ${Secp256k1_LIBRARY} base chaincontrol
+        libboost_random.a ${Secp256k1_LIBRARY}  contract-api eventmanager  libboost_random.a contract libboost_random.a ${Secp256k1_LIBRARY} base chaincontrol
          compat config  libboost_random.a contract libboost_random.a p2p framework  ${Secp256k1_LIBRARY} contract-api ${Boost_LIBRARIES} contract ${Boost_LIBRARIES} mempool miner  rpc sbtccore univalue utils wallet
-        ${EVENT_LIBRARIES} ${LOG4CPP_LIBRARYS} libevent_pthreads.so ${Boost_LIBRARIES} miniupnpc ${OPENSSL_LIBRARIES}
-        ${LIBDB_CXX_LIBRARIES} ${LEVELDB_LIBRARIES} libmemenv.a ${Secp256k1_LIBRARY}
+        ${EVENT_LIBRARIES} ${LOG4CPP_LIBRARYS} libevent_pthreads.a ${Boost_LIBRARIES} miniupnpc ${OPENSSL_LIBRARIES}
+        ${LIBDB_CXX_LIBRARIES} ${LEVELDB_LIBRARIES} libmemenv.a ${Secp256k1_LIBRARY}  ${LIB_FILE}
         )
 
 
 
 message( ${LEVELDB_LIBRARIES})
-message( ${LOG4CPP_LIBRARYS})
+message(-----------Boost_LIBRARIES-------- ${Boost_LIBRARIES})
+message(-----------Secp256k1_LIBRARY-------- ${Secp256k1_LIBRARY})
+message(-----------EVENT_LIBRARIES-------- ${EVENT_LIBRARIES})
+message(-----------OPENSSL_LIBRARIES-------- ${OPENSSL_LIBRARIES})
+message(-----------LIBDB_CXX_LIBRARIES-------- ${LIBDB_CXX_LIBRARIES})
+message(-----------LEVELDB_LIBRARIES-------- ${LEVELDB_LIBRARIES})
+message(-----------LOG4CPP_LIBRARYS-------- ${LOG4CPP_LIBRARYS})
+message(-----------－－－－＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝)

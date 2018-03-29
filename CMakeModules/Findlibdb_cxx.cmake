@@ -11,8 +11,15 @@ find_path(
 		/usr/local/include/
 )
 
+
+IF (ENABLE_STATIC_FLAG)
+	set(LIB_FILE libdb_cxx.a)
+ELSE ()
+	set(LIB_FILE db_cxx)
+ENDIF ()
 find_library(
-		LIBDB_CXX_LIBRARIES NAMES db_cxx
+		LIBDB_CXX_LIBRARIES
+		NAMES ${LIB_FILE}
 		PATHS /usr/lib/ /usr/local/lib/
 )
 
