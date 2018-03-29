@@ -3,6 +3,7 @@ project(SuperBitcoin)
 
 execute_process(COMMAND  sh -x ${PROJECT_SOURCE_DIR}/src/test/data/testshell.sh )
 
+execute_process(COMMAND  sh -x ${PROJECT_SOURCE_DIR}/share/genbuild.sh ${PROJECT_SOURCE_DIR}/src/sbtccore/build.h ${PROJECT_SOURCE_DIR} )
 
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_ROOT}/Modules")
@@ -17,10 +18,13 @@ SET(VERSION_MAJOR 2)
 SET(VERSION_MINOR 0)
 SET(VERSION_PATCH 1)
 
-SET(CLIENT_VERSION_BUILD 2)
-SET(CLIENT_VERSION_IS_RELEASE true)
+
+SET(HAVE_BUILD_INFO 1)
+SET(GIT_ARCHIVE 1)
+SET(CLIENT_VERSION_BUILD 1)
+SET(CLIENT_VERSION_IS_RELEASE false)
 SET(CLIENT_VERSION_MAJOR 0)
-SET(CLIENT_VERSION_MINOR 16)
+SET(CLIENT_VERSION_MINOR 17)
 SET(CLIENT_VERSION_REVISION 0)
 
 configure_project()
@@ -59,8 +63,8 @@ LIST(APPEND BOOST_COMPONENTS thread
         unit_test_framework
         context
         locale)
-SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
-
+#SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
+SET( Boost_USE_STATIC_LIBS ON)
 
 FIND_PACKAGE(Boost 1.54 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
 # For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
