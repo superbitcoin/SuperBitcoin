@@ -1102,7 +1102,8 @@ public:
     //sbtc-vm
     bool CreateTransaction(const std::vector<CRecipient> &vecSend, CWalletTx &wtxNew, CReserveKey &reservekey,
                            CAmount &nFeeRet, int &nChangePosInOut,
-                           std::string &strFailReason, const CCoinControl &coin_control, bool sign = true, CAmount nGasFee=0, bool hasSender=false);
+                           std::string &strFailReason, const CCoinControl &coin_control, bool sign = true,
+                           CAmount nGasFee = 0, bool hasSender = false);
 
     bool CommitTransaction(CWalletTx &wtxNew, CReserveKey &reservekey, CConnman *connman, CValidationState &state);
 
@@ -1218,7 +1219,13 @@ public:
         }
     }
 
-    void GetScriptForMining(std::shared_ptr<CReserveScript> &script);
+    void GetScriptForMining(std::shared_ptr<CReserveScript> &script) override;
+
+    void ResetRequestCount(const uint256 &hash)
+    {
+        LOCK(cs_wallet);
+        mapRequestCount[hash] = 0;
+    };
 
     unsigned int GetKeyPoolSize()
     {

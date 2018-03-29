@@ -4,6 +4,7 @@
 #include "chaincontrol/chaincomponent.h"
 #include "mempool/mempoolcomponent.h"
 #include "wallet/walletcomponent.h"
+#include "miner/minercomponent.h"
 #include "contract-api/contractcomponent.h"
 
 CApp gApp;
@@ -22,6 +23,7 @@ int main(int argc, char **argv)
     gApp.RegisterComponent(new CHttpRpcComponent);
     gApp.RegisterComponent(new CNetComponent);
     gApp.RegisterComponent(new CWalletComponent);
+    gApp.RegisterComponent(new CMinerComponent);
     gApp.Initialize(argc, argv) && gApp.Startup() && gApp.Run();
     gApp.Shutdown();
 

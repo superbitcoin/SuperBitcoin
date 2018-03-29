@@ -185,6 +185,7 @@ public:
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_main, pnSeed6_main + ARRAYLEN(pnSeed6_main));
 
+        fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = true;
         fMineBlocksOnDemand = false;
@@ -238,7 +239,8 @@ public:
         consensus.BIP34Hash = uint256S("0x0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8");
         consensus.BIP65Height = 581885; // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
         consensus.BIP66Height = 330776; // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
-        consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        //        consensus.powLimit = uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+        consensus.powLimit = uint256S("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
         consensus.nPowTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nPowTargetSpacing = 10 * 60;
         consensus.fPowAllowMinDifficultyBlocks = true;
@@ -260,13 +262,13 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1493596800; // May 1st 2017
 
         // The best chain should have at least this much work.
-        consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000002830dab7f76dbb7d63");
+        consensus.nMinimumChainWork = uint256S("0x00");
 
         // By default assume that the signatures in ancestors of this block are valid.
         consensus.defaultAssumeValid = uint256S(
                 "0x0000000002e9e7b00e1f6dc5123a04aad68dd0f0968d8c7aa45f6640795c37b1"); //1135275
 
-        consensus.SBTCForkHeight = 0;
+        consensus.SBTCForkHeight = 300;
         consensus.SBTCdifDec = 10;
         pchMessageStart[0] = 0x0b;
         pchMessageStart[1] = 0x11;
@@ -275,12 +277,18 @@ public:
         nDefaultPort = 18334;
         nPruneAfterHeight = 1000;
 
-        genesis = CreateGenesisBlock(1296688602, 409410123, 0x1d00ffff, 1, 50 * COIN);
+        genesis = CreateGenesisBlock(1296688602, 7, 0x207fffff, 1, 50 * COIN);
         consensus.hashGenesisBlock = genesis.GetHash();
         assert(consensus.hashGenesisBlock ==
-               uint256S("0x000000004d7c36b6f308bf49669d86e578f3aa044ad34ca4a7e805b40774253d"));
+               uint256S("0x1a46ae24b0cc4498888c3c298b9012dd5e17faa3b7e7b3b5488239bc8e36c90a"));
         assert(genesis.hashMerkleRoot ==
                uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
+        //        genesis = CreateGenesisBlock(1296688602, 409410123, 0x1d00ffff, 1, 50 * COIN);
+        //        consensus.hashGenesisBlock = genesis.GetHash();
+        //        assert(consensus.hashGenesisBlock ==
+        //               uint256S("0x000000004d7c36b6f308bf49669d86e578f3aa044ad34ca4a7e805b40774253d"));
+        //        assert(genesis.hashMerkleRoot ==
+        //               uint256S("0x4a5e1e4baab89f3a32518a88c31bc87f618f76673e2cc77ab2127b7afdeda33b"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -295,6 +303,7 @@ public:
 
         vFixedSeeds = std::vector<SeedSpec6>(pnSeed6_test, pnSeed6_test + ARRAYLEN(pnSeed6_test));
 
+        fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
         fRequireStandard = false;
         fMineBlocksOnDemand = false;
@@ -302,18 +311,18 @@ public:
         //      private key:................
         cCheckPointPubKey = CPubKey(ParseHex("02eac9199fe6f2db8ddf159c3e88739471077f14fe6c0981fb7fe1f2fc7903f0d7"));
 
-        checkpointData = (CCheckpointData){
-                {
-                        {546, uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")},
-                }
-        };
+//        checkpointData = (CCheckpointData){
+//                {
+//                        {546, uint256S("000000002a936ca763904c3c35fce2f3556c559c0214345d31b1bcebf76acb70")},
+//                }
+//        };
 
-        chainTxData = ChainTxData{
-                // Data as of block 00000000000001c200b9790dc637d3bb141fe77d155b966ed775b17e109f7c6c (height 1156179)
-                1501802953,
-                14706531,
-                0.15
-        };
+//        chainTxData = ChainTxData{
+//                // Data as of block 00000000000001c200b9790dc637d3bb141fe77d155b966ed775b17e109f7c6c (height 1156179)
+//                1501802953,
+//                14706531,
+//                0.15
+//        };
 
     }
 
@@ -378,6 +387,7 @@ public:
         vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
         vSeeds.clear();      //!< Regtest mode doesn't have any DNS seeds.
 
+        fMiningRequiresPeers = false;
         fDefaultConsistencyChecks = true;
         fRequireStandard = false;
         fMineBlocksOnDemand = true;

@@ -428,6 +428,12 @@ void CApp::InitOptionMap()
     };
     optionMap.emplace("Contract options:", item);
 
+    item = {
+            {"gen", bpo::value<string>(), "start sbtc miner"},
+            {"genproclimit", bpo::value<int>(), "sbtc miner thread count"},
+    };
+    optionMap.emplace("Miner options:", item);
+
     pArgs->SetOptionName("sbtcd");
     pArgs->SetOptionTable(optionMap);
 }

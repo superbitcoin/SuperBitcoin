@@ -410,7 +410,7 @@ CBlockIndex *CChainComponent::GetBlockIndex(uint256 hash)
 
 bool CChainComponent::LoadGenesisBlock(const CChainParams &chainparams)
 {
-    LOCK(cs);
+    LOCK(cs_main);
 
     try
     {
@@ -684,7 +684,7 @@ bool CChainComponent::IsInitialBlockDownload()
     if (latchToFalse.load(std::memory_order_relaxed))
         return false;
 
-    LOCK(cs);
+    LOCK(cs_main);
     if (latchToFalse.load(std::memory_order_relaxed))
         return false;
     if (fImporting || IsReindexing())
@@ -1114,7 +1114,7 @@ bool
 CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlockIndex *pindex, CCoinsViewCache &view,
                               const CChainParams &chainparams, bool fJustCheck)
 {
-    AssertLockHeld(cs);
+    AssertLockHeld(cs_main);
     assert(pindex);
     // pindex->phashBlock can be null if called by CreateNewBlock/TestBlockValidity
     assert((pindex->phashBlock == nullptr) || (*pindex->phashBlock == block.GetHash()));
@@ -1654,7 +1654,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
 
 void CChainComponent::CheckForkWarningConditions()
 {
-    AssertLockHeld(cs);
+    AssertLockHeld(cs_main);
     // Before we get past initial download, we cannot reliably alert about forks
     // (we assume we don't get stuck on a fork before finishing our initial sync)
     if (IsInitialBlockDownload())
@@ -1668,7 +1668,7 @@ bool CChainComponent::ActivateBestChainStep(CValidationState &state, const CChai
                                             const std::shared_ptr<const CBlock> &pblock, bool &bInvalidFound,
                                             ConnectTrace &connectTrace)
 {
-    AssertLockHeld(cs);
+    AssertLockHeld(cs_main);
     const CBlockIndex *pIndexOldTip = Tip();
     const CBlockIndex *pIndexFork = cIndexManager.GetChain().FindFork(pIndexMostWork);
 
@@ -1797,7 +1797,7 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
         const CBlockIndex *pIndexFork;
         bool bInitialDownload;
         {
-            LOCK(cs);
+            LOCK(cs_main);
             ConnectTrace connectTrace(ifMemPoolObj->GetMemPool());
 
             CBlockIndex *pIndexOldTip = Tip();
@@ -1869,7 +1869,7 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
 
 bool CChainComponent::InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex)
 {
-    AssertLockHeld(cs);
+    AssertLockHeld(cs_main);
 
     // We first disconnect backwards and then mark the blocks as invalid.
     // This prevents a case where pruned nodes may fail to invalidateblock
@@ -1914,7 +1914,7 @@ bool CChainComponent::InvalidateBlock(CValidationState &state, const CChainParam
 
 bool CChainComponent::CheckActiveChain(CValidationState &state, const CChainParams &chainparams)
 {
-    LOCK(cs);
+    LOCK(cs_main);
 
     CBlockIndex *pOldTipIndex = Tip();  // 1. current block chain tip
     ILogFormat("Current tip block:%s", pOldTipIndex->ToString().c_str());
@@ -2000,7 +2000,7 @@ bool CChainComponent::CheckActiveChain(CValidationState &state, const CChainPara
 
 bool CChainComponent::RewindBlock(const CChainParams &params)
 {
-    LOCK(cs);
+    LOCK(cs_main);
 
     // Note that during -reindex-chainstate we are called with an empty chainActive!
 
@@ -2099,7 +2099,7 @@ int CChainComponent::VerifyBlocks()
 {
     uiInterface.InitMessage(_("Verifying blocks..."));
 
-    LOCK(cs);
+    LOCK(cs_main);
     CBlockIndex *tip = Tip();
     if (tip && tip->nTime > GetAdjustedTime() + 2 * 60 * 60)
     {
@@ -2199,7 +2199,7 @@ void CChainComponent::NotifyHeaderTip()
     static CBlockIndex *pindexHeaderOld = nullptr;
     CBlockIndex *pindexHeader = nullptr;
     {
-        LOCK(cs);
+        LOCK(cs_main);
         pindexHeader = cIndexManager.GetIndexBestHeader();
 
         if (pindexHeader != pindexHeaderOld)
@@ -2285,7 +2285,7 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 if ((cIndexManager.GetBlockIndex(hash) == nullptr) ||
                     (cIndexManager.GetBlockIndex(hash)->nStatus & BLOCK_HAVE_DATA) == 0)
                 {
-                    LOCK(cs);
+                    LOCK(cs_main);
                     CValidationState state;
                     if (AcceptBlock(pblock, state, chainParams, nullptr, true, dbp, nullptr))
                         nLoaded++;
@@ -2328,7 +2328,7 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                             ILogFormat("%s: Processing out of order child %s of %s", __func__,
                                        pblockrecursive->GetHash().ToString(),
                                        head.ToString());
-                            LOCK(cs);
+                            LOCK(cs_main);
                             CValidationState dummy;
                             if (AcceptBlock(pblockrecursive, dummy, chainParams, nullptr, true, &it->second, nullptr))
                             {
@@ -2364,7 +2364,7 @@ bool CChainComponent::AcceptBlock(const std::shared_ptr<const CBlock> &pblock, C
 
     if (fNewBlock)
         *fNewBlock = false;
-    AssertLockHeld(cs);
+    AssertLockHeld(cs_main);
 
     CBlockIndex *pindexDummy = nullptr;
     CBlockIndex *&pindex = ppindex ? *ppindex : pindexDummy;
@@ -2750,7 +2750,7 @@ bool CChainComponent::ResetBlockFailureFlags(CBlockIndex *pindex)
 
 int CChainComponent::GetSpendHeight(const CCoinsViewCache &inputs)
 {
-    LOCK(cs);
+    LOCK(cs_main);
     CBlockIndex *pindexPrev = cIndexManager.GetBlockIndex(inputs.GetBestBlock());
     if (pindexPrev == nullptr)
     {

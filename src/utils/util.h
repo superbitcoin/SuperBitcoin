@@ -11,8 +11,11 @@
 #define BITCOIN_UTIL_H
 
 #if defined(HAVE_CONFIG_H)
+
 #include "config/sbtc-config.h"
+
 #endif
+
 #include "base/base.hpp"
 #include "compat/compat.h"
 #include "fs.h"
@@ -70,6 +73,8 @@ inline std::string _(const char *psz)
 void SetupEnvironment();
 
 bool SetupNetworking();
+
+void SetThreadPriority(int nPriority);
 
 void PrintExceptionContinue(const std::exception *pex, const char *pszThread);
 
@@ -173,6 +178,6 @@ void TraceThread(const char *name, Callable func)
 
 std::string CopyrightHolders(const std::string &strPrefix);
 
-std::vector<std::string> SplitString(const std::string& str, char sep, bool keepEmptyField = false);
+std::vector<std::string> SplitString(const std::string &str, char sep, bool keepEmptyField = false);
 
 #endif // BITCOIN_UTIL_H

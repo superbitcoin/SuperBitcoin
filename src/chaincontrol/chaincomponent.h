@@ -284,7 +284,6 @@ private:
 
     CCriticalSection cs_xnodeGuard;
     std::map<int64_t, std::set<int>> m_nodeCheckPointKnown;
-    CCriticalSection cs;
 
     size_t iCoinCacheUsage = 5000 * 300;
 

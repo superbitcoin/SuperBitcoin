@@ -105,6 +105,12 @@ public:
         return genesis;
     }
 
+    /** Make miner wait to have peers to avoid wasting work */
+    bool MiningRequiresPeers() const
+    {
+        return fMiningRequiresPeers;
+    }
+
     /** Default value for -checkmempool and -checkblockindex argument */
     bool DefaultConsistencyChecks() const
     {
@@ -185,6 +191,7 @@ protected:
     CBlock genesis;
     CPubKey cCheckPointPubKey;
     std::vector<SeedSpec6> vFixedSeeds;
+    bool fMiningRequiresPeers;
     bool fDefaultConsistencyChecks;
     bool fRequireStandard;
     bool fMineBlocksOnDemand;

@@ -38,6 +38,8 @@ public:
 
     virtual bool DoesTxExist(uint256 txHash) = 0;
 
+    virtual unsigned int GetTransactionsUpdated() const = 0;
+
     virtual bool NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) = 0;
 
     virtual bool NetReceiveTxData(ExNode *xnode, CDataStream &stream, uint256 &txHash) = 0;

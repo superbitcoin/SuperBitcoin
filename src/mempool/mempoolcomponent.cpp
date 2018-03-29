@@ -136,7 +136,7 @@ bool CMempoolComponent::LoadMempool(void)
     }
 
     NLogFormat("Imported mempool transactions from disk: %i successes, %i failed, %i expired", count, failed,
-                skipped);
+               skipped);
     return true;
 }
 
@@ -215,4 +215,9 @@ void CMempoolComponent::FlushFeeEstimate()
             ELogFormat("%s: Failed to write fee estimates to %s", __func__, est_path.string());
         bFeeEstimatesInitialized = false;
     }
+}
+
+unsigned int CMempoolComponent::GetTransactionsUpdated() const
+{
+    return mempool.GetTransactionsUpdated();
 }

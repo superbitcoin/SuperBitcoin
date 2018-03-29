@@ -30,6 +30,8 @@ public:
 
     bool DoesTxExist(uint256 txHash) override;
 
+    unsigned int GetTransactionsUpdated() const override;
+
     bool NetRequestTxData(ExNode *xnode, uint256 txHash, bool witness, int64_t timeLastMempoolReq) override;
 
     bool NetReceiveTxData(ExNode *xnode, CDataStream &stream, uint256 &txHash) override;
@@ -39,7 +41,7 @@ public:
 
     bool RemoveOrphanTxForNode(int64_t nodeId) override;
 
-    bool RemoveOrphanTxForBlock(const CBlock* pblock) override;
+    bool RemoveOrphanTxForBlock(const CBlock *pblock) override;
 
 private:
 

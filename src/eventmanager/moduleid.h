@@ -12,7 +12,8 @@ enum SBTCModuleID
     MID_P2P_NET = 64,
     MID_ACCOUNT = 128,
     MID_WALLET = 256,
-    MID_APP = 512,
+    MID_MINER = 512,
+    MID_APP = 1024,
     MID_ALL_MODULE = 0xFFFFFFFF,
 };
 

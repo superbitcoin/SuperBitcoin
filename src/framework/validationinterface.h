@@ -63,6 +63,14 @@ protected:
     {
     }
 
+    virtual void GetScriptForMining(std::shared_ptr<CReserveScript> &)
+    {
+    }
+
+    virtual void ResetRequestCount(const uint256 &hash)
+    {
+    }
+
     /** Notifies listeners of a block being disconnected */
     virtual void BlockDisconnected(const std::shared_ptr<const CBlock> &block)
     {
@@ -148,6 +156,10 @@ public:
     void BlockChecked(const CBlock &, const CValidationState &);
 
     void NewPoWValidBlock(const CBlockIndex *, const std::shared_ptr<const CBlock> &);
+
+    void GetScriptForMining(std::shared_ptr<CReserveScript> &);
+
+    void BlockFound(const uint256 &hash);
 };
 
 CMainSignals &GetMainSignals();
