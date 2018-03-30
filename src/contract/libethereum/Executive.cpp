@@ -28,6 +28,7 @@
 #include <libevm/VMFactory.h>
 #include <libevm/VM.h>
 #include <libethcore/CommonJS.h>
+#include <utils/logger.h>
 #include "Interface.h"
 #include "State.h"
 #include "ExtVM.h"
@@ -351,7 +352,6 @@ bool Executive::call(CallParameters const &_p, u256 const &_gasPrice, Address co
     ////////////////////////////////////////////////
 
     // Transfer ether.
-    std::cout << "Executive::call" << std::endl; //sbtd-vm debug
     m_s.transferBalance(_p.senderAddress, _p.receiveAddress, _p.valueTransfer);
     return !m_ext;
 }
@@ -373,7 +373,6 @@ Executive::create(Address _sender, u256 _endowment, u256 _gasPrice, u256 _gas, b
 
     // Transfer ether before deploying the code. This will also create new
     // account if it does not exist yet.
-    std::cout << "Executive::create" << std::endl; //sbtd-vm debug
     m_s.transferBalance(_sender, m_newAddress, _endowment);
 
     if (m_envInfo.number() >= m_sealEngine.chainParams().u256Param("EIP158ForkBlock"))
@@ -428,11 +427,12 @@ bool Executive::go(OnOpFunc const &_onOp)
         {
             // Create VM instance. Force Interpreter if tracing requested.
             auto vm = _onOp ? VMFactory::create(VMKind::Interpreter) : VMFactory::create();
+
+            ILogFormat("input code = %s",toHex(m_ext->code));
+            ILogFormat("input data = %s",toHex(m_ext->data));
             if (m_isCreation)
             {
-                cout << "Executive::go create m_output=======" << endl;   //sbtc-debug
-                cout << "input code = " << toHex(m_ext->code) << endl;
-                cout << "input data = " << toHex(m_ext->data) << endl;
+                ILogFormat("Executive::go create");
                 auto out = vm->exec(m_gas, *m_ext, _onOp);
                 if (m_res)
                 {
@@ -461,25 +461,23 @@ bool Executive::go(OnOpFunc const &_onOp)
                     m_res->output = out.toVector(); // copy output to execution result
                 if (out.size() < 1)
                 {
-                    cout << "Executive::go create m_ext->code err" << endl;   //sbtc-debug
+                    ILogFormat("Executive::go create m_ext->code err");   //sbtc-debug
                 }
                 m_s.setNewCode(m_ext->myAddress, out.toVector());
             } else
             {
-                cout << "Executive::go call m_output=======" << endl;   //sbtc-debug
-                cout << "input code = " << toHex(m_ext->code) << endl;
-                cout << "input data = " << toHex(m_ext->data) << endl;
+                ILogFormat("Executive::go call");
                 m_output = vm->exec(m_gas, *m_ext, _onOp);
                 if (m_res)
                     // Copy full output:
                     m_res->output = m_output.toVector();
 
-                cout << "m_output = " << toHex(m_res->output) << endl; //sbtc-debug
+                ILogFormat("m_output = %s",toHex(m_res->output)); //sbtc-debug
             }
         }
         catch (VMException const &_e)
         {
-            cout << "VMException=======" << endl;
+            ILogFormat("VMException=======");
             clog(StateSafeExceptions) << "Safe VM Exception. " << diagnostic_information(_e);
             m_gas = 0;
             m_excepted = toTransactionException(_e);

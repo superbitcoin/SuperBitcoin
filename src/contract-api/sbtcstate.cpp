@@ -94,7 +94,6 @@ SbtcState::execute(EnvInfo const &_envInfo, SealEngineFace const &_sealEngine, S
                     throw Exception();
                 }
                 std::unordered_map<dev::Address, Vin> vins = ctx.createVin(*tx);
-                ILogFormat("SbtcState::updateUTXO"); //sbtc debug
 
                 updateUTXO(vins);
             } else
@@ -481,7 +480,6 @@ std::vector<CTxOut> CondensingTX::createVout()
 {
     size_t count = 0;
     std::vector<CTxOut> outs;
-    ILogFormat("CondensingTX::createVout"); //sbtc debug
     for (auto &b : balances)
     {
         if (b.second > 0)
