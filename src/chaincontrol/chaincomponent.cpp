@@ -1920,7 +1920,7 @@ bool CChainComponent::CheckActiveChain(CValidationState &state, const CChainPara
     ILogFormat("Current tip block:%s", pOldTipIndex->ToString().c_str());
     MapCheckpoints checkpoints = chainparams.Checkpoints().mapCheckpoints;
 
-    if (checkpoints.rbegin()->first < 1)
+    if (checkpoints.empty() || checkpoints.rbegin()->first < 1)
         return true;
 
     CChain &chainActive = cIndexManager.GetChain();
