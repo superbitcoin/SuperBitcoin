@@ -5,16 +5,7 @@ link_directories(../rpc)
 add_executable(sbtcd ${sources} ${interfaceH} )
 target_include_directories(sbtcd PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${Secp256k1_INCLUDE_DIR} )
 
-#target_link_libraries(sbtcd
-#        base
-#        sbtccore p2p
-#        miner utils block transaction chain chainstate
-#
-#        compat consensus crypto  policy
-#        rpc script  support
-#        univalue wallet   ${EVENT_LIBRARIES}  libevent_pthreads.so ${Boost_LIBRARIES} miniupnpc ${OPENSSL_LIBRARIES}
-#        ${LIBDB_CXX_LIBRARIES} ${LEVELDB_LIBRARIES} libmemenv.a ${Secp256k1_LIBRARY}
-#        )
+
 
 IF (ENABLE_STATIC_FLAG)
     set(LIB_FILE -ldl libsnappy.a)
@@ -31,13 +22,5 @@ target_link_libraries(sbtcd
         )
 
 
-
-message( ${LEVELDB_LIBRARIES})
-message(-----------Boost_LIBRARIES-------- ${Boost_LIBRARIES})
-message(-----------Secp256k1_LIBRARY-------- ${Secp256k1_LIBRARY})
-message(-----------EVENT_LIBRARIES-------- ${EVENT_LIBRARIES})
-message(-----------OPENSSL_LIBRARIES-------- ${OPENSSL_LIBRARIES})
-message(-----------LIBDB_CXX_LIBRARIES-------- ${LIBDB_CXX_LIBRARIES})
-message(-----------LEVELDB_LIBRARIES-------- ${LEVELDB_LIBRARIES})
-message(-----------LOG4CPP_LIBRARYS-------- ${LOG4CPP_LIBRARYS})
-message(-----------－－－－＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝)
+#
+#message( ${LEVELDB_LIBRARIES})
