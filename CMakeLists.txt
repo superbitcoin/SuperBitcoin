@@ -118,9 +118,9 @@ if ( NOT DEFINED crypto_library )
     # if you have a normal install, you can define crypto_library to the empty string to avoid a build error
     SET( crypto_library crypto)
 endif ()
-if ( FULL_STATIC_BUILD )
-    SET( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
-endif ( FULL_STATIC_BUILD )
+if (ENABLE_STATIC_FLAG)
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libstdc++ -static-libgcc")
+endif ()
 
 if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )
     if( CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL 4.0.0 OR CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.0.0 )
