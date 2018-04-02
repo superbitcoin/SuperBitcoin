@@ -149,7 +149,7 @@ void CMempoolComponent::DumpMempool(void)
 
     {
         LOCK(cs);
-        for (const auto &i : mapDeltas)
+        for (const auto &i : mempool.mapDeltas)
         {
             mapDeltas[i.first] = i.second;
         }
