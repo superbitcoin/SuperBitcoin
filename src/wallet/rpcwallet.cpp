@@ -3646,18 +3646,12 @@ UniValue createcontract(const JSONRPCRequest &request)
     }
 
     UniValue result(UniValue::VOBJ);
+    CValidationState state;
     if (fBroadcast)
     {
-        CValidationState state;
         if (!pwallet->CommitTransaction(wtx, reservekey, g_connman.get(), state))
             throw JSONRPCError(RPC_WALLET_ERROR,
                                "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of the wallet and coins were spent in the copy but not marked as spent here.");
-
-        GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
-        if (!ifTxMempoolObj->GetMemPool().exists(wtx.GetHash()))
-        {
-            throw JSONRPCError(RPC_WALLET_ERROR, strprintf("Error: The transaction was rejected! %s", state.GetRejectReason()));
-        }
 
         std::string txId = wtx.GetHash().GetHex();
         result.push_back(Pair("txid", txId));
@@ -3694,6 +3688,11 @@ UniValue createcontract(const JSONRPCRequest &request)
     {
         string strHex = EncodeHexTx(*wtx.tx, RPCSerializationFlags());
         result.push_back(Pair("raw transaction", strHex));
+    }
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    if (!ifTxMempoolObj->GetMemPool().exists(wtx.GetHash()))
+    {
+        result.push_back(Pair("state", strprintf("Warning: Transaction cannot be broadcast immediately! %s", state.GetRejectReason())));
     }
     return result;
 }
