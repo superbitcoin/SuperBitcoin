@@ -45,8 +45,6 @@ public:
 
     CCoinsViewCache *GetCoinsTip();
 
-    int ConnectBlock();
-
     bool ConnectBlock(const CBlock &block, const CBlockIndex *pIndex, CCoinsViewCache &viewCache);
 
     DisconnectResult DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CCoinsViewCache &view);

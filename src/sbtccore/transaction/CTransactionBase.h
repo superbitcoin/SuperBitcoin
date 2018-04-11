@@ -46,7 +46,7 @@ protected:
     enum Type
     {
         NullTransaction,                ///< Null transaction.
-        Utox2UtoxTransaction,           ///< Utox2UtoxTransaction
+        Utxo2UtxoTransaction,           ///< Utxo2UtxoTransaction
         ContractCreation,               ///< Transaction to create contracts - receiveAddress() is ignored.
         MessageCall                     ///< Transaction to invoke a message call - receiveAddress() is used.
     };

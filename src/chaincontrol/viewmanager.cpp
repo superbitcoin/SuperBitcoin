@@ -53,12 +53,6 @@ void CViewManager::InitCoinsCache()
     pCoinsTip = new CCoinsViewCache(pCoinsCatcher);
 }
 
-int CViewManager::ConnectBlock()
-{
-
-    return 0;
-}
-
 /** Undo the effects of this block (with given index) on the UTXO set represented by coins.
  *  When FAILED is returned, view is left in an indeterminate state. */
 DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CCoinsViewCache &view)
