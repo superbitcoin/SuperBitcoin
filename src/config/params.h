@@ -18,6 +18,7 @@ namespace Consensus
         DEPLOYMENT_TESTDUMMY,
         DEPLOYMENT_CSV, // Deployment of BIP68, BIP112, and BIP113.
         DEPLOYMENT_SEGWIT, // Deployment of BIP141, BIP143, and BIP147.
+        DEPLOYMENT_SBTC_CONTRACT, // Deployment of SBTC_CONTRACT.
         // NOTE: Also add new deployments to VersionBitsDeploymentInfo in versionbits.cpp
                 MAX_VERSION_BITS_DEPLOYMENTS
     };
@@ -53,6 +54,8 @@ namespace Consensus
         int SBTCForkHeight;
         /* SBTC fork difficulty decrease*/
         int SBTCdifDec;
+        /*SBTC contract Fork active */
+        int SBTCContractForkHeight;
         /**
          * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
          * (nPowTargetTimespan / nPowTargetSpacing) which is also used for BIP9 deployments.

@@ -238,6 +238,12 @@ int32_t ComputeBlockVersion(const CBlockIndex *pindexPrev, const Consensus::Para
 
     for (int i = 0; i < (int)Consensus::MAX_VERSION_BITS_DEPLOYMENTS; i++)
     {
+        if ((i == Consensus::DEPLOYMENT_SBTC_CONTRACT) && (pindexPrev != nullptr) &&
+            (pindexPrev->nHeight >= params.SBTCContractForkHeight))
+        {
+            nVersion |= VersionBitsMask(params, (Consensus::DeploymentPos)i);
+            continue;
+        }
         ThresholdState state = VersionBitsState(pindexPrev, params, (Consensus::DeploymentPos)i, versionbitscache);
         if (state == THRESHOLD_LOCKED_IN || state == THRESHOLD_STARTED)
         {
