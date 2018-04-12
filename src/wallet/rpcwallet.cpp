@@ -3649,6 +3649,43 @@ UniValue createcontract(const JSONRPCRequest &request)
     if (fBroadcast)
     {
         CValidationState state;
+        //////////////////////////////////////////////////////////// //sbtc-vm
+        // check contract tx
+        if (!wtx.tx->CheckTransaction(state)) // state filled in by CheckTransaction
+        {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Sender could not be set, transaction was not committed!");
+        }
+
+        CCoinsView dummy;
+        CCoinsViewCache view(&dummy);
+
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+
+        GET_TXMEMPOOL_INTERFACE(ifMempoolObj);
+        CCoinsViewMemPool viewMemPool(pcoinsTip, ifMempoolObj->GetMemPool());
+        view.SetBackend(viewMemPool);
+
+        CAmount nMinGasPrice = 0;
+        CAmount nValueIn = view.GetValueIn(*(wtx.tx));
+        CAmount nValueOut = wtx.tx->GetValueOut();
+        CAmount nFees = nValueIn - nValueOut;
+
+        if (!wtx.tx->CheckSenderScript(view))
+        {
+            throw JSONRPCError(RPC_TYPE_ERROR, "bad-txns-invalid-sender-script");
+        }
+
+        int level = 0;
+        string errinfo;
+
+        GET_CONTRACT_INTERFACE(ifContractObj);
+        if (!ifContractObj->ChecckContractTx(*(wtx.tx), nFees, nMinGasPrice, level, errinfo))
+        {
+            throw JSONRPCError(RPC_TYPE_ERROR, errinfo);
+        }
+        ////////////////////////////////////////////////////////////
+
         if (!pwallet->CommitTransaction(wtx, reservekey, g_connman.get(), state))
             throw JSONRPCError(RPC_WALLET_ERROR,
                                "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of the wallet and coins were spent in the copy but not marked as spent here.");
@@ -3933,6 +3970,43 @@ UniValue sendtocontract(const JSONRPCRequest &request)
     if (fBroadcast)
     {
         CValidationState state;
+        //////////////////////////////////////////////////////////// //sbtc-vm
+        // check contract tx
+        if (!wtx.tx->CheckTransaction(state)) // state filled in by CheckTransaction
+        {
+            throw JSONRPCError(RPC_TYPE_ERROR, "Sender could not be set, transaction was not committed!");
+        }
+
+        CCoinsView dummy;
+        CCoinsViewCache view(&dummy);
+
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CCoinsViewCache *pcoinsTip = ifChainObj->GetCoinsTip();
+
+        GET_TXMEMPOOL_INTERFACE(ifMempoolObj);
+        CCoinsViewMemPool viewMemPool(pcoinsTip, ifMempoolObj->GetMemPool());
+        view.SetBackend(viewMemPool);
+
+        CAmount nMinGasPrice = 0;
+        CAmount nValueIn = view.GetValueIn(*(wtx.tx));
+        CAmount nValueOut = wtx.tx->GetValueOut();
+        CAmount nFees = nValueIn - nValueOut;
+
+        if (!wtx.tx->CheckSenderScript(view))
+        {
+            throw JSONRPCError(RPC_TYPE_ERROR, "bad-txns-invalid-sender-script");
+        }
+
+        int level = 0;
+        string errinfo;
+
+        GET_CONTRACT_INTERFACE(ifContractObj);
+        if (!ifContractObj->ChecckContractTx(*(wtx.tx), nFees, nMinGasPrice, level, errinfo))
+        {
+            throw JSONRPCError(RPC_TYPE_ERROR, errinfo);
+        }
+        ////////////////////////////////////////////////////////////
+
         if (!pwallet->CommitTransaction(wtx, reservekey, g_connman.get(), state))
             throw JSONRPCError(RPC_WALLET_ERROR,
                                "Error: The transaction was rejected! This might happen if some of the coins in your wallet were already spent, such as if you used a copy of the wallet and coins were spent in the copy but not marked as spent here.");

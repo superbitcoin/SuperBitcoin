@@ -16,6 +16,7 @@ struct TransactionReceiptInfo
     uint64_t gasUsed;
     dev::Address contractAddress;
     dev::eth::LogEntries logs;
+    uint32_t excepted;
 };
 
 struct TransactionReceiptInfoSerialized
@@ -30,6 +31,7 @@ struct TransactionReceiptInfoSerialized
     std::vector<dev::u256> gasUsed;
     std::vector<dev::h160> contractAddresses;
     std::vector<logEntriesSerializ> logs;
+    std::vector<uint32_t> excepted;
 };
 
 class StorageResults

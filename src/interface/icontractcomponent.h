@@ -83,6 +83,7 @@ public:
     RPCCallContract(UniValue &result, const string addrContract, std::vector<unsigned char> opcode, string sender,
                     uint64_t gasLimit) = 0;
 
+    virtual string GetExceptedInfo(uint32_t index) = 0;
     //add other interface methods here ...
 };
 

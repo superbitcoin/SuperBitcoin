@@ -225,7 +225,7 @@ bool CContractComponent::ContractInit()
     ////////////////////////////////////////////////////////////////////// //sbtc-vm
     dev::g_logPost = [&](std::string const &s, char const *c)
     { VMLog("%s : %s", s.c_str(), c); };
-//    dev::g_logPost(std::string("\n\n\n\n\n\n\n\n\n\n"), NULL);
+    //    dev::g_logPost(std::string("\n\n\n\n\n\n\n\n\n\n"), NULL);
     //////////////////////////////////////////////////////////////////////
 
 
@@ -511,6 +511,100 @@ bool CContractComponent::RunContractTx(CTransaction tx, CCoinsViewCache *v, CBlo
     return true;
 }
 
+const std::map<std::uint32_t, std::string> exceptionMap =
+        {
+                {0,  "None"},
+                {1,  "Unknown"},
+                {2,  "BadRLP"},
+                {3,  "InvalidFormat"},
+                {4,  "OutOfGasIntrinsic"},
+                {5,  "InvalidSignature"},
+                {6,  "InvalidNonce"},
+                {7,  "NotEnoughCash"},
+                {8,  "OutOfGasBase"},
+                {9,  "BlockGasLimitReached"},
+                {10, "BadInstruction"},
+                {11, "BadJumpDestination"},
+                {12, "OutOfGas"},
+                {13, "OutOfStack"},
+                {14, "StackUnderflow"},
+                {15, "CreateWithValue"},
+        };
+
+uint32_t GetExcepted(dev::eth::TransactionException status)
+{
+    uint32_t index = 0;
+    if (status == dev::eth::TransactionException::None)
+    {
+        index = 0;
+    } else if (status == dev::eth::TransactionException::Unknown)
+    {
+        index = 1;
+    } else if (status == dev::eth::TransactionException::BadRLP)
+    {
+        index = 2;
+    } else if (status == dev::eth::TransactionException::InvalidFormat)
+    {
+        index = 3;
+    } else if (status == dev::eth::TransactionException::OutOfGasIntrinsic)
+    {
+        index = 4;
+    } else if (status == dev::eth::TransactionException::InvalidSignature)
+    {
+        index = 5;
+    } else if (status == dev::eth::TransactionException::InvalidNonce)
+    {
+        index = 6;
+    } else if (status == dev::eth::TransactionException::NotEnoughCash)
+    {
+        index = 7;
+    } else if (status == dev::eth::TransactionException::OutOfGasBase)
+    {
+        index = 8;
+    } else if (status == dev::eth::TransactionException::BlockGasLimitReached)
+    {
+        index = 9;
+    } else if (status == dev::eth::TransactionException::BadInstruction)
+    {
+        index = 10;
+    } else if (status == dev::eth::TransactionException::BadJumpDestination)
+    {
+        index = 11;
+    } else if (status == dev::eth::TransactionException::OutOfGas)
+    {
+        index = 12;
+    } else if (status == dev::eth::TransactionException::OutOfStack)
+    {
+        index = 13;
+    } else if (status == dev::eth::TransactionException::StackUnderflow)
+    {
+        index = 14;
+    } else if (status == dev::eth::TransactionException::CreateWithValue)
+    {
+        index = 15;
+    }
+    auto it = exceptionMap.find(index);
+    if (it != exceptionMap.end())
+    {
+        return it->first;
+    } else
+    {
+        return 0;
+    }
+}
+
+string CContractComponent::GetExceptedInfo(uint32_t index)
+{
+    auto it = exceptionMap.find(index);
+    if (it != exceptionMap.end())
+    {
+        return it->second;
+    } else
+    {
+        return "";
+    }
+}
+
 bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transactionIndex, CCoinsViewCache *v,
                                                 const CBlock &block,
                                                 int nHeight,
@@ -672,11 +766,13 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
                 heightIndexes[key].first = CHeightTxIndexKey(nHeight, resultExec[k].execRes.newAddress);
             }
             heightIndexes[key].second.push_back(tx.GetHash());
+            uint32_t excepted = GetExcepted(resultExec[k].execRes.excepted);
             tri.push_back(
                     TransactionReceiptInfo{block.GetHash(), uint32_t(nHeight), tx.GetHash(), uint32_t(transactionIndex),
                                            resultConvertQtumTX.first[k].from(), resultConvertQtumTX.first[k].to(),
                                            countCumulativeGasUsed, uint64_t(resultExec[k].execRes.gasUsed),
-                                           resultExec[k].execRes.newAddress, resultExec[k].txRec.log()});
+                                           resultExec[k].execRes.newAddress, resultExec[k].txRec.log(),
+                                           excepted});
         }
 
         pStorageRes->addResult(uintToh256(tx.GetHash()), tri);

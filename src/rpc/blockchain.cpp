@@ -1120,6 +1120,9 @@ void transactionReceiptInfoToJSON(const TransactionReceiptInfo &resExec, UniValu
         logEntries.push_back(logEntry);
     }
     entry.push_back(Pair("log", logEntries));
+
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    entry.push_back(Pair("excepted", ifContractObj->GetExceptedInfo(resExec.excepted)));
 }
 
 size_t parseUInt(const UniValue &val, size_t defaultVal)
@@ -1246,7 +1249,7 @@ void parseParam(const UniValue &val, std::vector<boost::optional<dev::h256>> &h2
     auto vals = val.getValues();
     h256s.resize(vals.size());
 
-    std::transform(vals.begin(), vals.end(), h256s.begin(), [](UniValue val) -> boost::optional <dev::h256>
+    std::transform(vals.begin(), vals.end(), h256s.begin(), [](UniValue val) -> boost::optional<dev::h256>
     {
         if (val.isNull())
         {
