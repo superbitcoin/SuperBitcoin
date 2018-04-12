@@ -81,7 +81,7 @@ static bool InitializeLogging(fs::path path)
             log4cpp::OstreamAppender *osAppender = new log4cpp::OstreamAppender("osAppender", &std::cout);
             osAppender->setLayout(pLayout2);
             root.addAppender(osAppender);
-            root.notice("log conf is using defalt !");
+            root.notice("log conf is using default !");
 
         } catch (...)
         {

@@ -3726,6 +3726,11 @@ UniValue createcontract(const JSONRPCRequest &request)
         string strHex = EncodeHexTx(*wtx.tx, RPCSerializationFlags());
         result.push_back(Pair("raw transaction", strHex));
     }
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    if (!ifTxMempoolObj->GetMemPool().exists(wtx.GetHash()))
+    {
+        result.push_back(Pair("state", strprintf("Warning: Transaction cannot be broadcast immediately! %s", state.GetRejectReason())));
+    }
     return result;
 }
 
