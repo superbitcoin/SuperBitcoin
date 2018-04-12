@@ -3646,9 +3646,9 @@ UniValue createcontract(const JSONRPCRequest &request)
     }
 
     UniValue result(UniValue::VOBJ);
+    CValidationState state;
     if (fBroadcast)
     {
-        CValidationState state;
         //////////////////////////////////////////////////////////// //sbtc-vm
         // check contract tx
         if (!wtx.tx->CheckTransaction(state)) // state filled in by CheckTransaction
@@ -3972,9 +3972,9 @@ UniValue sendtocontract(const JSONRPCRequest &request)
 
     UniValue result(UniValue::VOBJ);
 
+    CValidationState state;
     if (fBroadcast)
     {
-        CValidationState state;
         //////////////////////////////////////////////////////////// //sbtc-vm
         // check contract tx
         if (!wtx.tx->CheckTransaction(state)) // state filled in by CheckTransaction
@@ -4030,7 +4030,11 @@ UniValue sendtocontract(const JSONRPCRequest &request)
         string strHex = EncodeHexTx(*wtx.tx, RPCSerializationFlags());
         result.push_back(Pair("raw transaction", strHex));
     }
-
+    GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
+    if (!ifTxMempoolObj->GetMemPool().exists(wtx.GetHash()))
+    {
+        result.push_back(Pair("state", strprintf("Warning: Transaction cannot be broadcast immediately! %s", state.GetRejectReason())));
+    }
     return result;
 }
 
