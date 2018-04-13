@@ -256,39 +256,7 @@ set(   contractfile
    libevmcore/Exceptions.h
    libevmcore/Instruction.cpp
    libevmcore/Instruction.h
-#   libp2p/All.h
-#   libp2p/Capability.cpp
-#   libp2p/Capability.h
-#   libp2p/Common.cpp
-#   libp2p/Common.h
-#   libp2p/Host.cpp
-#   libp2p/Host.h
-#   libp2p/HostCapability.cpp
-#   libp2p/HostCapability.h
-#   libp2p/Network.cpp
-#   libp2p/Network.h
-#   libp2p/NodeTable.cpp
-#   libp2p/NodeTable.h
-#   libp2p/Peer.cpp
-#   libp2p/Peer.h
-#   libp2p/RLPXFrameCoder.cpp
-#   libp2p/RLPXFrameCoder.h
-#   libp2p/RLPXFrameReader.cpp
-#   libp2p/RLPXFrameReader.h
-#   libp2p/RLPXFrameWriter.cpp
-#   libp2p/RLPXFrameWriter.h
-#   libp2p/RLPxHandshake.cpp
-#   libp2p/RLPxHandshake.h
-#   libp2p/RLPXPacket.h
-#   libp2p/RLPXSocket.h
-#   libp2p/RLPXSocketIO.cpp
-#   libp2p/RLPXSocketIO.h
-#   libp2p/Session.cpp
-#   libp2p/Session.h
-#   libp2p/UDP.cpp
-#   libp2p/UDP.h
-#   libp2p/UPnP.cpp
-#   libp2p/UPnP.h
+
 #   libweb3jsonrpc/AccountHolder.cpp
 #   libweb3jsonrpc/AccountHolder.h
 #   libweb3jsonrpc/AdminEth.cpp
