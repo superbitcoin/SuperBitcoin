@@ -216,7 +216,7 @@ CContractComponent::~CContractComponent()
 
 bool CContractComponent::ComponentInitialize()
 {
-    NLogStream() << "initialize CTxMemPool component";
+    NLogStream() << "initialize CContract component";
     return true;
 }
 
@@ -225,9 +225,7 @@ bool CContractComponent::ContractInit()
     ////////////////////////////////////////////////////////////////////// //sbtc-vm
     dev::g_logPost = [&](std::string const &s, char const *c)
     { VMLog("%s : %s", s.c_str(), c); };
-    //    dev::g_logPost(std::string("\n\n\n\n\n\n\n\n\n\n"), NULL);
     //////////////////////////////////////////////////////////////////////
-
 
     if ((Args().IsArgSet("-dgpstorage") && Args().IsArgSet("-dgpevm")) ||
         (!Args().IsArgSet("-dgpstorage") && Args().IsArgSet("-dgpevm")) ||
@@ -860,6 +858,11 @@ void CContractComponent::UpdateState(uint256 hashStateRoot, uint256 hashUTXORoot
     {
         return;
     }
+
+    if (hashStateRoot.size() <= 0 || hashUTXORoot.size() <= 0)
+    {
+        return;
+    }
     globalState->setRoot(uintToh256(hashStateRoot));
     globalState->setRootUTXO(uintToh256(hashUTXORoot));
 }
@@ -884,7 +887,10 @@ void CContractComponent::SetTemporaryState(uint256 hashStateRoot, uint256 hashUT
     {
         return;
     }
-
+    if (hashStateRoot.size() <= 0 || hashUTXORoot.size() <= 0)
+    {
+        return;
+    }
     TemporaryState ts(globalState);
     ts.SetRoot(uintToh256(hashStateRoot), uintToh256(hashUTXORoot));
 }
@@ -986,6 +992,11 @@ UniValue transactionReceiptToJSON(const dev::eth::TransactionReceipt &txRec)
 void CContractComponent::RPCCallContract(UniValue &result, const string addrContract, std::vector<unsigned char> opcode,
                                          string sender, uint64_t gasLimit)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return ;
+    }
 
     dev::Address addrAccount(addrContract);
     dev::Address senderAddress(sender);

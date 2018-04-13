@@ -880,6 +880,10 @@ UniValue getaccountinfo(const JSONRPCRequest &request)
 
     LOCK(cs_main);
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
+
     std::string strAddr = request.params[0].get_str();
     if (strAddr.size() != 40 || !IsHex(strAddr))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect address");
@@ -940,11 +944,14 @@ UniValue getstorage(const JSONRPCRequest &request)
 
     LOCK(cs_main);
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
+
     std::string strAddr = request.params[0].get_str();
     if (strAddr.size() != 40 || !IsHex(strAddr))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Incorrect address");
 
-    GET_CHAIN_INTERFACE(ifChainObj);
     CChain chainActive = ifChainObj->GetActiveChain();
 
     GET_CONTRACT_INTERFACE(ifContractObj);
@@ -1015,6 +1022,10 @@ UniValue callcontract(const JSONRPCRequest &request)
         );
 
     LOCK(cs_main);
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
 
     std::string strAddr = request.params[0].get_str();
     std::string data = request.params[1].get_str();
@@ -1339,6 +1350,9 @@ UniValue searchlogs(const JSONRPCRequest &request)
                                  "0 100 {\"addresses\": [\"12ae42729af478ca92c8c66773a3e32115717be4\"]} {\"topics\": [\"null\",\"b436c2bf863ccd7b8f63171201efd4792066b4ce8e543dde9c3e9e9ab98e216c\"]}")
         );
     GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
+
     if (!ifChainObj->IsLogEvents())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Events indexing disabled");
 
@@ -1432,6 +1446,9 @@ UniValue gettransactionreceipt(const JSONRPCRequest &request)
         );
 
     GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
+
     if (!ifChainObj->IsLogEvents())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "Events indexing disabled");
 
@@ -1471,6 +1488,10 @@ UniValue listcontracts(const JSONRPCRequest &request)
         );
 
     LOCK(cs_main);
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+        throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
 
     int start = 1;
     if (request.params.size() > 0)
