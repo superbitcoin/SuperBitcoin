@@ -185,9 +185,7 @@ set(   contractfile
    libethereum/Block.h
    libethereum/BlockChain.cpp
    libethereum/BlockChain.h
-   libethereum/BlockChainSync.cpp
-   libethereum/BlockChainSync.h
-   libethereum/BlockDetails.cpp
+        libethereum/BlockDetails.cpp
    libethereum/BlockDetails.h
    libethereum/BlockQueue.cpp
    libethereum/BlockQueue.h
@@ -198,11 +196,7 @@ set(   contractfile
    libethereum/CommonNet.h
    libethereum/Defaults.cpp
    libethereum/Defaults.h
-   libethereum/EthereumHost.cpp
-   libethereum/EthereumHost.h
-   libethereum/EthereumPeer.cpp
-   libethereum/EthereumPeer.h
-   libethereum/Executive.cpp
+        libethereum/Executive.cpp
    libethereum/Executive.h
    libethereum/ExtVM.cpp
    libethereum/ExtVM.h
@@ -217,9 +211,7 @@ set(   contractfile
    libethereum/Interface.h
    libethereum/LogFilter.cpp
    libethereum/LogFilter.h
-   libethereum/MiningClient.cpp
-   libethereum/MiningClient.h
-   libethereum/State.cpp
+        libethereum/State.cpp
    libethereum/State.h
    libethereum/Transaction.cpp
    libethereum/Transaction.h
