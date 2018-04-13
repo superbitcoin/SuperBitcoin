@@ -13,8 +13,10 @@
 //! check point version
 static const int CHECK_POINT_VERSION = 70016;
 
+//!  contract version
+static const int SBTC_CONTRACT_VERSION = 70017;
 
-static const int PROTOCOL_VERSION = 70016;
+static const int PROTOCOL_VERSION = 70017;
 
 //! initial proto version, to be increased after version/verack negotiation
 static const int INIT_PROTO_VERSION = 209;

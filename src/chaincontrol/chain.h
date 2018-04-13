@@ -452,7 +452,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        if (this->nVersion >= VERSIONBITS_SBTC_CONTRACT)
+        if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
         {
             READWRITE(hashStateRoot); // sbtc-vm
             READWRITE(hashUTXORoot); // sbtc-vm

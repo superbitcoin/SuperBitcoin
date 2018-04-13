@@ -140,6 +140,8 @@ public:
 
     virtual bool IsSBTCForkEnabled(const int height) = 0;
 
+    virtual bool IsSBTCContractEnabled(const CBlockIndex *pindex) = 0;
+
     //add other interface methods here ...
 };
 
