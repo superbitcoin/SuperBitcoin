@@ -148,9 +148,7 @@ set(   contractfile
    libethashseal/Ethash.h
    libethashseal/EthashAux.cpp
    libethashseal/EthashAux.h
-   libethashseal/EthashClient.cpp
-   libethashseal/EthashClient.h
-   libethashseal/EthashCPUMiner.cpp
+        libethashseal/EthashCPUMiner.cpp
    libethashseal/EthashCPUMiner.h
    libethashseal/EthashProofOfWork.cpp
    libethashseal/EthashProofOfWork.h
@@ -195,12 +193,6 @@ set(   contractfile
    libethereum/BlockQueue.h
    libethereum/ChainParams.cpp
    libethereum/ChainParams.h
-   libethereum/Client.cpp
-   libethereum/Client.h
-   libethereum/ClientBase.cpp
-   libethereum/ClientBase.h
-   libethereum/ClientTest.cpp
-   libethereum/ClientTest.h
    libethereum/CodeSizeCache.h
    libethereum/CommonNet.cpp
    libethereum/CommonNet.h
@@ -289,144 +281,7 @@ set(   contractfile
 #   libp2p/UDP.h
 #   libp2p/UPnP.cpp
 #   libp2p/UPnP.h
-#   libweb3jsonrpc/AccountHolder.cpp
-#   libweb3jsonrpc/AccountHolder.h
-#   libweb3jsonrpc/AdminEth.cpp
-#   libweb3jsonrpc/AdminEth.h
-#   libweb3jsonrpc/AdminEthFace.h
-#   libweb3jsonrpc/AdminNet.cpp
-#   libweb3jsonrpc/AdminNet.h
-#   libweb3jsonrpc/AdminNetFace.h
-#   libweb3jsonrpc/AdminUtils.cpp
-#   libweb3jsonrpc/AdminUtils.h
-#   libweb3jsonrpc/AdminUtilsFace.h
-#   libweb3jsonrpc/DBFace.h
-#   libweb3jsonrpc/Debug.cpp
-#   libweb3jsonrpc/Debug.h
-#   libweb3jsonrpc/DebugFace.h
-#   libweb3jsonrpc/Eth.cpp
-#   libweb3jsonrpc/Eth.h
-#   libweb3jsonrpc/EthFace.h
-#   libweb3jsonrpc/IpcServer.h
-#   libweb3jsonrpc/IpcServerBase.cpp
-#   libweb3jsonrpc/IpcServerBase.h
-#   libweb3jsonrpc/JsonHelper.cpp
-#   libweb3jsonrpc/JsonHelper.h
-#   libweb3jsonrpc/LevelDB.cpp
-#   libweb3jsonrpc/LevelDB.h
-#   libweb3jsonrpc/MemoryDB.cpp
-#   libweb3jsonrpc/MemoryDB.h
-#   libweb3jsonrpc/ModularServer.h
-#   libweb3jsonrpc/Net.cpp
-#   libweb3jsonrpc/Net.h
-#   libweb3jsonrpc/NetFace.h
-#   libweb3jsonrpc/Personal.cpp
-#   libweb3jsonrpc/Personal.h
-#   libweb3jsonrpc/PersonalFace.h
-#   libweb3jsonrpc/SafeHttpServer.cpp
-#   libweb3jsonrpc/SafeHttpServer.h
-#   libweb3jsonrpc/SessionManager.cpp
-#   libweb3jsonrpc/SessionManager.h
-#   libweb3jsonrpc/Test.cpp
-#   libweb3jsonrpc/Test.h
-#   libweb3jsonrpc/TestFace.h
-#   libweb3jsonrpc/UnixSocketServer.cpp
-#   libweb3jsonrpc/UnixSocketServer.h
-#   libweb3jsonrpc/Web3.cpp
-#   libweb3jsonrpc/Web3.h
-#   libweb3jsonrpc/Web3Face.h
-#   libweb3jsonrpc/Whisper.cpp
-#   libweb3jsonrpc/Whisper.h
-#   libweb3jsonrpc/WhisperFace.h
-#   libweb3jsonrpc/WinPipeServer.cpp
-#   libweb3jsonrpc/WinPipeServer.h
-#   libwebthree/WebThree.cpp
-#   libwebthree/WebThree.h
-        #   rlp/main.cpp
-#   test/deprecated/fork.cpp
-#   test/deprecated/kademlia.cpp
-#   test/deprecated/main.cpp
-#   test/deprecated/txTest.cpp
-#   test/external-dependencies/boost.cpp
-#   test/fuzzTesting/createRandomTest.cpp
-#   test/fuzzTesting/fuzzHelper.cpp
-#   test/fuzzTesting/fuzzHelper.h
-#   test/libdevcore/Base36.cpp
-#   test/libdevcore/CommonJS.cpp
-#   test/libdevcore/core.cpp
-#   test/libdevcore/FixedHash.cpp
-#   test/libdevcore/RangeMask.cpp
-#   test/libdevcore/rlp.cpp
-#   test/libdevcrypto/AES.cpp
-#   test/libdevcrypto/crypto.cpp
-#   test/libdevcrypto/hexPrefix.cpp
-#   test/libdevcrypto/MemTrie.cpp
-#   test/libdevcrypto/MemTrie.h
-#   test/libdevcrypto/SecretStore.cpp
-#   test/libdevcrypto/trie.cpp
-#   test/libethcore/commonjs.cpp
-#   test/libethcore/dagger.cpp
-#   test/libethcore/difficulty.cpp
-#   test/libethcore/icap.cpp
-#   test/libethcore/keymanager.cpp
-#   test/libethereum/Block.cpp
-#   test/libethereum/BlockChain.cpp
-#   test/libethereum/BlockChainInsert.cpp
-#   test/libethereum/BlockChainTests.cpp
-#   test/libethereum/BlockChainTestsBoost.cpp
-#   test/libethereum/BlockQueue.cpp
-#   test/libethereum/ClientBase.cpp
-#   test/libethereum/EthereumPeerTest.cpp
-#   test/libethereum/GasPricer.cpp
-#   test/libethereum/Genesis.cpp
-#   test/libethereum/StateTests.cpp
-#   test/libethereum/StateUnitTests.cpp
-#   test/libethereum/Transaction.cpp
-#   test/libethereum/TransactionQueue.cpp
-#   test/libethereum/TransactionTests.cpp
-#   test/libevm/vm.cpp
-#   test/libevm/vm.h
-#   test/libp2p/capability.cpp
-#   test/libp2p/eip-8.cpp
-#   test/libp2p/net.cpp
-#   test/libp2p/peer.cpp
-#   test/libp2p/rlpx.cpp
-#   test/libtesteth/BlockChainHelper.cpp
-#   test/libtesteth/BlockChainHelper.h
-#   test/libtesteth/boostTest.cpp
-#   test/libtesteth/ImportTest.cpp
-#   test/libtesteth/ImportTest.h
-#   test/libtesteth/JsonSpiritHeaders.h
-#   test/libtesteth/Options.cpp
-#   test/libtesteth/Options.h
-#   test/libtesteth/Stats.cpp
-#   test/libtesteth/Stats.h
-#   test/libtesteth/TestHelper.cpp
-#   test/libtesteth/TestHelper.h
-#   test/libtesteth/TestOutputHelper.cpp
-#   test/libtesteth/TestOutputHelper.h
-#   test/libtesteth/TestUtils.cpp
-#   test/libtesteth/TestUtils.h
-#   test/libtestutils/BlockChainLoader.cpp
-#   test/libtestutils/BlockChainLoader.h
-#   test/libtestutils/Common.cpp
-#   test/libtestutils/Common.h
-#   test/libtestutils/FixedClient.cpp
-#   test/libtestutils/FixedClient.h
-#   test/libtestutils/StateLoader.cpp
-#   test/libtestutils/StateLoader.h
-#   test/libweb3core/memorydb.cpp
-#   test/libweb3core/overlaydb.cpp
-#   test/libweb3jsonrpc/AccountHolder.cpp
-#   test/libweb3jsonrpc/Client.cpp
-#   test/libweb3jsonrpc/jsonrpc.cpp
-#   test/libweb3jsonrpc/WebThreeStubClient.h
-#   test/libwhisper/bloomFilter.cpp
-#   test/libwhisper/shhrpc.cpp
-#   test/libwhisper/whisperDB.cpp
-#   test/libwhisper/whisperMessage.cpp
-#   test/libwhisper/whisperTopic.cpp
-#   test/performance/mul64c.c
+#   rlp/main.cpp
    utils/json_spirit/json_spirit.h
    utils/json_spirit/json_spirit_error_position.h
    utils/json_spirit/json_spirit_reader.cpp
