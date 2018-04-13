@@ -1,12 +1,7 @@
 
 set(   contractfile
 
-   eth/AccountManager.cpp
-   eth/AccountManager.h
-   eth/Farm.h
-   ethkey/KeyAux.h
-
-   libdevcore/Assertions.h
+        libdevcore/Assertions.h
    libdevcore/Base64.cpp
    libdevcore/Base64.h
    libdevcore/Common.cpp
