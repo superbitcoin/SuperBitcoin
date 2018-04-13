@@ -1,60 +1,11 @@
 
 set(   contractfile
 
-#   bench/main.cpp
    eth/AccountManager.cpp
    eth/AccountManager.h
    eth/Farm.h
-#   eth/main.cpp
    ethkey/KeyAux.h
-#   ethkey/main.cpp
-   ethminer/FarmClient.h
-#   ethminer/main.cpp
-   ethminer/MinerAux.h
-#   ethvm/main.cpp
-#   evmjit/examples/capi.c
-#   evmjit/examples/examplevm.c
-#   evmjit/include/evm.h
-#   evmjit/include/evmjit.h
-#   evmjit/libevmjit/preprocessor/llvm_includes_end.h
-#   evmjit/libevmjit/preprocessor/llvm_includes_start.h
-#   evmjit/libevmjit/Arith256.cpp
-#   evmjit/libevmjit/Arith256.h
-#   evmjit/libevmjit/Array.cpp
-#   evmjit/libevmjit/Array.h
-#   evmjit/libevmjit/BasicBlock.cpp
-#   evmjit/libevmjit/BasicBlock.h
-#   evmjit/libevmjit/Cache.cpp
-#   evmjit/libevmjit/Cache.h
-#   evmjit/libevmjit/Common.h
-#   evmjit/libevmjit/Compiler.cpp
-#   evmjit/libevmjit/Compiler.h
-#   evmjit/libevmjit/CompilerHelper.cpp
-#   evmjit/libevmjit/CompilerHelper.h
-#   evmjit/libevmjit/Endianness.cpp
-#   evmjit/libevmjit/Endianness.h
-#   evmjit/libevmjit/ExecStats.cpp
-#   evmjit/libevmjit/ExecStats.h
-#   evmjit/libevmjit/Ext.cpp
-#   evmjit/libevmjit/Ext.h
-#   evmjit/libevmjit/GasMeter.cpp
-#   evmjit/libevmjit/GasMeter.h
-#   evmjit/libevmjit/Instruction.cpp
-#   evmjit/libevmjit/Instruction.h
-#   evmjit/libevmjit/JIT.cpp
-#   evmjit/libevmjit/JIT.h
-#   evmjit/libevmjit/Memory.cpp
-#   evmjit/libevmjit/Memory.h
-#   evmjit/libevmjit/Optimizer.cpp
-#   evmjit/libevmjit/Optimizer.h
-#   evmjit/libevmjit/RuntimeManager.cpp
-#   evmjit/libevmjit/RuntimeManager.h
-#   evmjit/libevmjit/Type.cpp
-#   evmjit/libevmjit/Type.h
-#   evmjit/libevmjit/Utils.cpp
-#   evmjit/libevmjit/Utils.h
-#   evmjit/tests/test-evm.cpp
-#   evmjit/tests/test-evmjit-standalone.c
+
    libdevcore/Assertions.h
    libdevcore/Base64.cpp
    libdevcore/Base64.h
