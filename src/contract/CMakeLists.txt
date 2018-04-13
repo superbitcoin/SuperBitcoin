@@ -1,6 +1,5 @@
 
 set(   contractfile
-#add_executable(contractfile
 
 #   bench/main.cpp
    eth/AccountManager.cpp
@@ -148,7 +147,7 @@ set(   contractfile
    libethashseal/Ethash.h
    libethashseal/EthashAux.cpp
    libethashseal/EthashAux.h
-        libethashseal/EthashCPUMiner.cpp
+   libethashseal/EthashCPUMiner.cpp
    libethashseal/EthashCPUMiner.h
    libethashseal/EthashProofOfWork.cpp
    libethashseal/EthashProofOfWork.h
@@ -185,7 +184,7 @@ set(   contractfile
    libethereum/Block.h
    libethereum/BlockChain.cpp
    libethereum/BlockChain.h
-        libethereum/BlockDetails.cpp
+   libethereum/BlockDetails.cpp
    libethereum/BlockDetails.h
    libethereum/BlockQueue.cpp
    libethereum/BlockQueue.h
@@ -196,7 +195,7 @@ set(   contractfile
    libethereum/CommonNet.h
    libethereum/Defaults.cpp
    libethereum/Defaults.h
-        libethereum/Executive.cpp
+   libethereum/Executive.cpp
    libethereum/Executive.h
    libethereum/ExtVM.cpp
    libethereum/ExtVM.h
@@ -211,7 +210,7 @@ set(   contractfile
    libethereum/Interface.h
    libethereum/LogFilter.cpp
    libethereum/LogFilter.h
-        libethereum/State.cpp
+   libethereum/State.cpp
    libethereum/State.h
    libethereum/Transaction.cpp
    libethereum/Transaction.h
@@ -240,7 +239,6 @@ set(   contractfile
    libevmcore/Exceptions.h
    libevmcore/Instruction.cpp
    libevmcore/Instruction.h
-#   rlp/main.cpp
    utils/json_spirit/json_spirit.h
    utils/json_spirit/json_spirit_error_position.h
    utils/json_spirit/json_spirit_reader.cpp
