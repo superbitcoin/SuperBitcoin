@@ -954,6 +954,15 @@ bool CChainComponent::IsSBTCForkEnabled(const int height)
     return height >= Params().GetConsensus().SBTCForkHeight;
 }
 
+bool CChainComponent::IsSBTCContractEnabled(const CBlockIndex *pindex)
+{
+    if (pindex == nullptr)
+    {
+        return false;
+    }
+    return (pindex->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT));
+}
+
 bool CChainComponent::IsSBTCForkHeight(const Consensus::Params &params, const int &height)
 {
     return params.SBTCForkHeight == height;

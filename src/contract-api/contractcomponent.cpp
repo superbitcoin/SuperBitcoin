@@ -253,7 +253,7 @@ bool CContractComponent::ContractInit()
     globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (ifChainObj->GetActiveChain().Tip() != NULL)
+    if (ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
         globalState->setRoot(uintToh256(ifChainObj->GetActiveChain().Tip()->hashStateRoot));
         globalState->setRootUTXO(uintToh256(ifChainObj->GetActiveChain().Tip()->hashUTXORoot));
@@ -298,6 +298,12 @@ uint64_t CContractComponent::GetMinGasPrice(int height)
 {
     uint64_t minGasPrice = 1;
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return 0;
+    }
+
     SbtcDGP sbtcDGP(globalState.get(), fGettingValuesDGP);
     globalSealEngine->setSbtcSchedule(sbtcDGP.getGasSchedule(height));
     minGasPrice = sbtcDGP.getMinGasPrice(height);
@@ -309,6 +315,12 @@ uint64_t CContractComponent::GetBlockGasLimit(int height)
 {
     uint64_t blockGasLimit = 1;
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return 0;
+    }
+
     SbtcDGP sbtcDGP(globalState.get(), fGettingValuesDGP);
     globalSealEngine->setSbtcSchedule(sbtcDGP.getGasSchedule(height));
     blockGasLimit = sbtcDGP.getBlockGasLimit(height);
@@ -318,6 +330,11 @@ uint64_t CContractComponent::GetBlockGasLimit(int height)
 
 bool CContractComponent::AddressInUse(string contractaddress)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return false;
+    }
     dev::Address addrAccount(contractaddress);
     return globalState->addressInUse(addrAccount);
 }
@@ -329,6 +346,10 @@ bool CContractComponent::ChecckContractTx(const CTransaction tx, const CAmount n
 
     GET_CHAIN_INTERFACE(ifChainObj);
     int height = ifChainObj->GetActiveChain().Tip()->nHeight + 1;
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return false;
+    }
 
     uint64_t minGasPrice = GetMinGasPrice(height);
     uint64_t blockGasLimit = GetBlockGasLimit(height);
@@ -465,6 +486,12 @@ bool CContractComponent::RunContractTx(CTransaction tx, CCoinsViewCache *v, CBlo
                                        uint64_t usedGas,
                                        ByteCodeExecResult &testExecResult)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return false;
+    }
+
     SbtcTxConverter convert(tx, v, &pblock->vtx);
 
     ExtractSbtcTX resultConverter;
@@ -595,6 +622,11 @@ uint32_t GetExcepted(dev::eth::TransactionException status)
 
 string CContractComponent::GetExceptedInfo(uint32_t index)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return "";
+    }
     auto it = exceptionMap.find(index);
     if (it != exceptionMap.end())
     {
@@ -614,6 +646,13 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
                                                 std::map<dev::Address, std::pair<CHeightTxIndexKey, std::vector<uint256>>> &heightIndexes,
                                                 int &level, string &errinfo)
 {
+
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return false;
+    }
+
     uint64_t minGasPrice = GetMinGasPrice(nHeight + 1);
     uint64_t blockGasLimit = GetBlockGasLimit(nHeight + 1);
     uint64_t countCumulativeGasUsed = 0;
@@ -802,6 +841,11 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
 
 void CContractComponent::GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return;
+    }
     dev::h256 oldHashStateRoot(globalState->rootHash()); // sbtc-vm
     dev::h256 oldHashUTXORoot(globalState->rootHashUTXO()); // sbtc-vm
 
@@ -811,12 +855,23 @@ void CContractComponent::GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot)
 
 void CContractComponent::UpdateState(uint256 hashStateRoot, uint256 hashUTXORoot)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return;
+    }
     globalState->setRoot(uintToh256(hashStateRoot));
     globalState->setRootUTXO(uintToh256(hashUTXORoot));
 }
 
 std::map<dev::h256, std::pair<dev::u256, dev::u256>> CContractComponent::GetStorageByAddress(string address)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return std::map<dev::h256, std::pair<dev::u256, dev::u256>>();
+    }
+
     dev::Address addrAccount(address);
     auto storage(globalState->storage(addrAccount));
     return storage;
@@ -824,12 +879,23 @@ std::map<dev::h256, std::pair<dev::u256, dev::u256>> CContractComponent::GetStor
 
 void CContractComponent::SetTemporaryState(uint256 hashStateRoot, uint256 hashUTXORoot)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return;
+    }
+
     TemporaryState ts(globalState);
     ts.SetRoot(uintToh256(hashStateRoot), uintToh256(hashUTXORoot));
 }
 
 std::unordered_map<dev::h160, dev::u256> CContractComponent::GetContractList()
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return std::unordered_map<dev::h160, dev::u256>();
+    }
     auto map = globalState->addresses();
     return map;
 };
@@ -837,11 +903,21 @@ std::unordered_map<dev::h160, dev::u256> CContractComponent::GetContractList()
 
 CAmount CContractComponent::GetContractBalance(dev::h160 address)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return CAmount(0);
+    }
     return CAmount(globalState->balance(address));
 }
 
 std::vector<uint8_t> CContractComponent::GetContractCode(dev::Address address)
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return std::vector<uint8_t>();
+    }
     return globalState->code(address);
 }
 
@@ -849,6 +925,11 @@ bool CContractComponent::GetContractVin(dev::Address address, dev::h256 &hash, u
                                         uint8_t &alive)
 {
     bool ret = false;
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return ret;
+    }
     std::unordered_map<dev::Address, Vin> vins = globalState->vins();
     if (vins.count(address))
     {

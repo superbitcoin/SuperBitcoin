@@ -11,7 +11,8 @@
 #include "uint256.h"
 
 /** SBTC CONTRACT VERSION */
-static const int32_t VERSIONBITS_SBTC_CONTRACT = 0x20000004UL;
+static const int32_t VERSIONBITS_SBTC_CONTRACT = 2;
+
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block
@@ -48,7 +49,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        if (this->nVersion >= VERSIONBITS_SBTC_CONTRACT)
+        if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
         {
             READWRITE(hashStateRoot); // sbtc-vm
             READWRITE(hashUTXORoot); // sbtc-vm
@@ -63,7 +64,7 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        if (this->nVersion >= VERSIONBITS_SBTC_CONTRACT)
+        if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
         {
             hashStateRoot.SetNull(); // sbtc-vm
             hashUTXORoot.SetNull(); // sbtc-vm

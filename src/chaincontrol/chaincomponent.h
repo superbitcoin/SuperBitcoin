@@ -212,7 +212,7 @@ public:
 
     bool NetReceiveHeaders(ExNode *xnode, CDataStream &stream) override;
 
-    bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void* filter) override;
+    bool NetRequestBlockData(ExNode *xnode, uint256 blockHash, int blockType, void *filter) override;
 
     bool NetReceiveBlockData(ExNode *xnode, CDataStream &stream, uint256 &blockHash) override;
 
@@ -258,6 +258,8 @@ public:
     CAmount GetBlockSubsidy(int nHeight) override;
 
     bool IsSBTCForkEnabled(const int height) override;
+
+    bool IsSBTCContractEnabled(const CBlockIndex *pindex) override;
 
     CCoinsView *GetCoinViewDB() override;
 
@@ -355,7 +357,6 @@ private:
     bool IsSBTCForkHeight(const Consensus::Params &params, const int &height);
 
 public:
-
 
 
 };

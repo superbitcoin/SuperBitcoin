@@ -141,7 +141,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1510704000; // November 15th, 2017.
 
         consensus.SBTCContractForkHeight = 550000;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SBTC_CONTRACT].bit = 2;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SBTC_CONTRACT].bit = VERSIONBITS_SBTC_CONTRACT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000000723d3581fe1bd55373540a");
@@ -266,7 +266,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1493596800; // May 1st 2017
 
         consensus.SBTCContractForkHeight = 550000;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SBTC_CONTRACT].bit = 2;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SBTC_CONTRACT].bit = VERSIONBITS_SBTC_CONTRACT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00000000000000000000000000000000000000000000002830dab7f76dbb7d63");
@@ -364,7 +364,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
         consensus.SBTCContractForkHeight = 1500;
-        consensus.vDeployments[Consensus::DEPLOYMENT_SBTC_CONTRACT].bit = 2;
+        consensus.vDeployments[Consensus::DEPLOYMENT_SBTC_CONTRACT].bit = VERSIONBITS_SBTC_CONTRACT;
 
         // The best chain should have at least this much work.
         consensus.nMinimumChainWork = uint256S("0x00");
