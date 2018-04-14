@@ -177,7 +177,7 @@ bool CTransaction::PreCheck(CHECK_TYPE type, CValidationState &state) const
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     std::string reason;
     if (Params().RequireStandard() && !IsStandardTx(*this, reason, true))
-            return state.DoS(0, false, REJECT_NONSTANDARD, reason);
+        return state.DoS(0, false, REJECT_NONSTANDARD, reason);
 
     // Only accept nLockTime-using transactions that can be mined in the next
     // block; we don't want our mempool filled up with transactions that can't
@@ -216,6 +216,9 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
         WITNESS_SCALE_FACTOR > MAX_BLOCK_WEIGHT)
         return state.DoS(100, false, REJECT_INVALID, "bad-txns-oversize");
 
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
     // Check for negative or overflow output values
     CAmount nValueOut = 0;
     for (const auto &txout : vout)
@@ -231,6 +234,10 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
         /////////////////////////////////////////////////////////// // sbtc-vm
         if (txout.scriptPubKey.HasOpCall() || txout.scriptPubKey.HasOpCreate())
         {
+            if (!enablecontract)
+            {
+                return state.DoS(100, false, REJECT_INVALID, "not arrive to the contract height,refuse");
+            }
             std::vector<std::vector<unsigned char>> vSolutions;
             txnouttype whichType;
             if (!Solver(txout.scriptPubKey, whichType, vSolutions, true))
@@ -259,8 +266,20 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
     } else
     {
         for (const auto &txin : vin)
+        {
             if (txin.prevout.IsNull())
                 return state.DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null");
+
+            /////////////////////////////////////////////////////////// // sbtc-vm
+            if (txin.scriptSig.HasOpSpend())
+            {
+                if (!enablecontract)
+                {
+                    return state.DoS(100, false, REJECT_INVALID, "not arrive to the contract height,refuse");
+                }
+            }
+            ///////////////////////////////////////////////////////////
+        }
     }
 
     return true;
@@ -573,6 +592,11 @@ bool CTransaction::SequenceLocks(int flags, std::vector<int> *prevHeights, const
 ///////////////////////////////////////////////////////////// //sbtc-vm
 bool CTransaction::HasCreateOrCall() const
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return false;
+    }
     for (const CTxOut &v : vout)
     {
         if (v.scriptPubKey.HasOpCreate() || v.scriptPubKey.HasOpCall())
@@ -585,6 +609,11 @@ bool CTransaction::HasCreateOrCall() const
 
 bool CTransaction::HasOpSpend() const
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return false;
+    }
     for (const CTxIn &i : vin)
     {
         if (i.scriptSig.HasOpSpend())
@@ -595,10 +624,16 @@ bool CTransaction::HasOpSpend() const
     return false;
 }
 
-bool CTransaction::CheckSenderScript(const CCoinsViewCache& view) const
+bool CTransaction::CheckSenderScript(const CCoinsViewCache &view) const
 {
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return false;
+    }
     CScript script = view.AccessCoin(vin[0].prevout).out.scriptPubKey;
-    if(!script.IsPayToPubkeyHash() && !script.IsPayToPubkey()){
+    if (!script.IsPayToPubkeyHash() && !script.IsPayToPubkey())
+    {
         return false;
     }
     return true;
