@@ -137,12 +137,6 @@ UniValue getinfo(const JSONRPCRequest &request)
 #endif
     obj.push_back(Pair("relayfee", ValueFromAmount(::minRelayTxFee.GetFeePerK())));
     obj.push_back(Pair("errors", GetWarnings("statusbar")));
-    GET_CONTRACT_INTERFACE(ifContractObj);//debug
-    uint64_t blockGasLimit = ifContractObj->GetBlockGasLimit(chainActive.Height());
-    uint64_t minGasPrice = CAmount(ifContractObj->GetMinGasPrice(chainActive.Height()));
-    obj.push_back(Pair("blockGasLimit", ValueFromAmount(blockGasLimit)));
-    obj.push_back(Pair("minGasPrice", ValueFromAmount(minGasPrice)));
-
     return obj;
 }
 
