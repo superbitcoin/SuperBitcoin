@@ -859,7 +859,7 @@ void CContractComponent::UpdateState(uint256 hashStateRoot, uint256 hashUTXORoot
         return;
     }
 
-    if (hashStateRoot.size() <= 0 || hashUTXORoot.size() <= 0)
+    if (hashStateRoot.IsNull() || hashUTXORoot.IsNull())
     {
         return;
     }
@@ -887,7 +887,7 @@ void CContractComponent::SetTemporaryState(uint256 hashStateRoot, uint256 hashUT
     {
         return;
     }
-    if (hashStateRoot.size() <= 0 || hashUTXORoot.size() <= 0)
+    if (hashStateRoot.IsNull() || hashUTXORoot.IsNull())
     {
         return;
     }
