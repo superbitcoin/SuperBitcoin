@@ -3427,16 +3427,16 @@ UniValue generate(const JSONRPCRequest &request)
 //sbtc-vm
 UniValue createcontract(const JSONRPCRequest &request)
 {
-    CWallet *const pwallet = GetWalletForJSONRPCRequest(request);
-    if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
-    {
-        return NullUniValue;
-    }
-
     GET_CHAIN_INTERFACE(ifChainObj);
     if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
+    }
+
+    CWallet *const pwallet = GetWalletForJSONRPCRequest(request);
+    if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
+    {
+        return NullUniValue;
     }
 
     int height = ifChainObj->GetActiveChain().Height();
@@ -3734,7 +3734,8 @@ UniValue createcontract(const JSONRPCRequest &request)
     GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
     if (!ifTxMempoolObj->GetMemPool().exists(wtx.GetHash()))
     {
-        result.push_back(Pair("state", strprintf("Warning: Transaction cannot be broadcast immediately! %s", state.GetRejectReason())));
+        result.push_back(Pair("state", strprintf("Warning: Transaction cannot be broadcast immediately! %s",
+                                                 state.GetRejectReason())));
     }
     return result;
 }
@@ -3742,16 +3743,16 @@ UniValue createcontract(const JSONRPCRequest &request)
 //sbtc-vm
 UniValue sendtocontract(const JSONRPCRequest &request)
 {
-    CWallet *const pwallet = GetWalletForJSONRPCRequest(request);
-    if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
-    {
-        return NullUniValue;
-    }
-
     GET_CHAIN_INTERFACE(ifChainObj);
     if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
+    }
+
+    CWallet *const pwallet = GetWalletForJSONRPCRequest(request);
+    if (!EnsureWalletIsAvailable(pwallet, request.fHelp))
+    {
+        return NullUniValue;
     }
 
     int height = ifChainObj->GetActiveChain().Height();
@@ -4043,7 +4044,8 @@ UniValue sendtocontract(const JSONRPCRequest &request)
     GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
     if (!ifTxMempoolObj->GetMemPool().exists(wtx.GetHash()))
     {
-        result.push_back(Pair("state", strprintf("Warning: Transaction cannot be broadcast immediately! %s", state.GetRejectReason())));
+        result.push_back(Pair("state", strprintf("Warning: Transaction cannot be broadcast immediately! %s",
+                                                 state.GetRejectReason())));
     }
     return result;
 }
