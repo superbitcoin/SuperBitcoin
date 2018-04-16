@@ -284,6 +284,7 @@ public:
         nTime = block.nTime;
         nBits = block.nBits;
         nNonce = block.nNonce;
+        nHeight = block.nHeight; // sbtc-evm
         hashStateRoot = block.hashStateRoot; // sbtc-evm
         hashUTXORoot = block.hashUTXORoot; // sbtc-evm
     }
@@ -320,6 +321,7 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
+        block.nHeight = nHeight; // sbtc-evm
         block.hashStateRoot = hashStateRoot; // sbtc-evm
         block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block;
@@ -454,6 +456,7 @@ public:
         READWRITE(nNonce);
         if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
         {
+            READWRITE(nHeight); // sbtc-evm
             READWRITE(hashStateRoot); // sbtc-evm
             READWRITE(hashUTXORoot); // sbtc-evm
         }
@@ -468,6 +471,7 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
+        block.nHeight = nHeight; // sbtc-evm
         block.hashStateRoot = hashStateRoot; // sbtc-evm
         block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block.GetHash();

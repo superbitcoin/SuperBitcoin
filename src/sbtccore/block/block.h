@@ -31,6 +31,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
+    uint32_t nHeight;      // sbtc-evm
     uint256 hashStateRoot; // sbtc-evm
     uint256 hashUTXORoot; // sbtc-evm
 
@@ -52,6 +53,7 @@ public:
         READWRITE(nNonce);
         if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
         {
+            READWRITE(nHeight); // sbtc-evm
             READWRITE(hashStateRoot); // sbtc-evm
             READWRITE(hashUTXORoot); // sbtc-evm
         }
@@ -65,6 +67,7 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
+        nHeight = 0; // sbtc-evm
         hashStateRoot = DEFAULT_HASH_STATE_ROOT; // sbtc-evm
         hashUTXORoot = DEFAULT_HASH_UTXO_ROOT; // sbtc-evm
     }
@@ -128,6 +131,7 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
+        block.nHeight = nHeight; // sbtc-evm
         block.hashStateRoot = hashStateRoot; // sbtc-evm
         block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block;
