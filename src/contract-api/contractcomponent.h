@@ -18,7 +18,6 @@
 /////////////////////////////////////////// //sbtc-vm
 #include "sbtcstate.h"
 #include "sbtcDGP.h"
-//#include "storageresults.h"
 #include "sbtctransaction.h"
 #include <libethereum/ChainParams.h>
 #include <libethashseal/Ethash.h>
@@ -29,29 +28,8 @@
 
 #include "interface/icontractcomponent.h"
 
-//contract executions with less gas than this are not standard
-//Make sure is always equal or greater than MINIMUM_GAS_LIMIT (which we can't reference here due to insane header dependency chains)
-static const uint64_t STANDARD_MINIMUM_GAS_LIMIT = 10000;
-//contract executions with a price cheaper than this (in satoshis) are not standard
-//TODO this needs to be controlled by DGP and needs to be propogated from consensus parameters
-static const uint64_t STANDARD_MINIMUM_GAS_PRICE = 1;
-
 
 using valtype = std::vector<unsigned char>;
-
-
-static const uint64_t DEFAULT_GAS_LIMIT_OP_CREATE = 2500000;
-static const uint64_t DEFAULT_GAS_LIMIT_OP_SEND = 250000;
-static const CAmount DEFAULT_GAS_PRICE = 0.00000040 * COIN;
-static const CAmount MAX_RPC_GAS_PRICE = 0.00000100 * COIN;
-
-
-/** Minimum gas limit that is allowed in a transaction within a block - prevent various types of tx and mempool spam **/
-static const uint64_t MINIMUM_GAS_LIMIT = 10000;
-
-static const uint64_t MEMPOOL_MIN_GAS_LIMIT = 22000;
-
-#define CONTRACT_STATE_DIR "stateContract"
 ///////////////////////////////////////////
 
 struct EthTransactionParams

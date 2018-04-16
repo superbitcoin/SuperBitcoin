@@ -11,6 +11,7 @@
 #include "contractbase.h"
 #include "univalue/include/univalue.h"
 #include "utils/timedata.h"
+#include "contractconfig.h"
 
 static std::unique_ptr<SbtcState> globalState;
 static std::shared_ptr<dev::eth::SealEngineFace> globalSealEngine;
@@ -842,6 +843,8 @@ void CContractComponent::GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot)
     GET_CHAIN_INTERFACE(ifChainObj);
     if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
+        hashStateRoot = DEFAULT_HASH_STATE_ROOT;
+        hashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
         return;
     }
     dev::h256 oldHashStateRoot(globalState->rootHash()); // sbtc-vm

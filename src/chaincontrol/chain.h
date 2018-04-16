@@ -266,8 +266,8 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        hashStateRoot = uint256(); // sbtc-vm
-        hashUTXORoot = uint256(); // sbtc-vm
+        hashStateRoot = DEFAULT_HASH_STATE_ROOT; // sbtc-evm
+        hashUTXORoot = DEFAULT_HASH_UTXO_ROOT; // sbtc-evm
     }
 
     CBlockIndex()
@@ -284,8 +284,8 @@ public:
         nTime = block.nTime;
         nBits = block.nBits;
         nNonce = block.nNonce;
-        hashStateRoot = block.hashStateRoot; // sbtc-vm
-        hashUTXORoot = block.hashUTXORoot; // sbtc-vm
+        hashStateRoot = block.hashStateRoot; // sbtc-evm
+        hashUTXORoot = block.hashUTXORoot; // sbtc-evm
     }
 
     CDiskBlockPos GetBlockPos() const
@@ -320,8 +320,8 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-        block.hashStateRoot = hashStateRoot; // sbtc-vm
-        block.hashUTXORoot = hashUTXORoot; // sbtc-vm
+        block.hashStateRoot = hashStateRoot; // sbtc-evm
+        block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block;
     }
 
@@ -454,8 +454,8 @@ public:
         READWRITE(nNonce);
         if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
         {
-            READWRITE(hashStateRoot); // sbtc-vm
-            READWRITE(hashUTXORoot); // sbtc-vm
+            READWRITE(hashStateRoot); // sbtc-evm
+            READWRITE(hashUTXORoot); // sbtc-evm
         }
     }
 
@@ -468,8 +468,8 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-        block.hashStateRoot = hashStateRoot; // sbtc
-        block.hashUTXORoot = hashUTXORoot; // sbtc
+        block.hashStateRoot = hashStateRoot; // sbtc-evm
+        block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block.GetHash();
     }
 

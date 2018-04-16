@@ -6,6 +6,7 @@
 #ifndef BITCOIN_PRIMITIVES_BLOCK_H
 #define BITCOIN_PRIMITIVES_BLOCK_H
 
+#include <contract-api/contractconfig.h>
 #include "transaction/transaction.h"
 #include "sbtccore/serialize.h"
 #include "uint256.h"
@@ -30,8 +31,8 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    uint256 hashStateRoot; // sbtc-vm
-    uint256 hashUTXORoot; // sbtc-vm
+    uint256 hashStateRoot; // sbtc-evm
+    uint256 hashUTXORoot; // sbtc-evm
 
     CBlockHeader()
     {
@@ -51,8 +52,8 @@ public:
         READWRITE(nNonce);
         if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
         {
-            READWRITE(hashStateRoot); // sbtc-vm
-            READWRITE(hashUTXORoot); // sbtc-vm
+            READWRITE(hashStateRoot); // sbtc-evm
+            READWRITE(hashUTXORoot); // sbtc-evm
         }
     }
 
@@ -64,11 +65,8 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
-        {
-            hashStateRoot.SetNull(); // sbtc-vm
-            hashUTXORoot.SetNull(); // sbtc-vm
-        }
+        hashStateRoot = DEFAULT_HASH_STATE_ROOT; // sbtc-evm
+        hashUTXORoot = DEFAULT_HASH_UTXO_ROOT; // sbtc-evm
     }
 
     bool IsNull() const
@@ -130,8 +128,8 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-        block.hashStateRoot = hashStateRoot; // sbtc-vm
-        block.hashUTXORoot = hashUTXORoot; // sbtc-vm
+        block.hashStateRoot = hashStateRoot; // sbtc-evm
+        block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block;
     }
 
