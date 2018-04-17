@@ -31,7 +31,7 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    uint32_t nHeight;      // sbtc-evm
+    int32_t nHeight;      // sbtc-evm
     uint256 hashStateRoot; // sbtc-evm
     uint256 hashUTXORoot; // sbtc-evm
 

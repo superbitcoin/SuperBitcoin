@@ -456,7 +456,6 @@ public:
         READWRITE(nNonce);
         if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
         {
-            READWRITE(nHeight); // sbtc-evm
             READWRITE(hashStateRoot); // sbtc-evm
             READWRITE(hashUTXORoot); // sbtc-evm
         }
