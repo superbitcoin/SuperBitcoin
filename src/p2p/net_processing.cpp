@@ -1999,7 +1999,7 @@ bool PeerLogicValidation::ProcessMessage(CNode *pfrom, const std::string &strCom
 
     GET_CHAIN_INTERFACE(ifChainObj);
     if ((ifChainObj->GetActiveChain().Tip()->nHeight >= Params().GetConsensus().SBTCContractForkHeight) &&
-        (pfrom->nVersion != 0) && (pfrom->nVersion < PROTOCOL_VERSION))
+        (pfrom->nVersion != 0) && (pfrom->nVersion < SBTC_CONTRACT_VERSION))
     {
         // disconnect from peers older than this proto version
         ELogFormat("peer=%d using obsolete version %i; disconnecting", pfrom->GetId(), pfrom->nVersion);
@@ -2007,7 +2007,7 @@ bool PeerLogicValidation::ProcessMessage(CNode *pfrom, const std::string &strCom
                              CNetMsgMaker(INIT_PROTO_VERSION).Make(NetMsgType::REJECT, std::string(NetMsgType::VERSION),
                                                                    REJECT_OBSOLETE,
                                                                    strprintf("Version must be %d or greater",
-                                                                             PROTOCOL_VERSION)));
+                                                                             SBTC_CONTRACT_VERSION)));
         pfrom->fDisconnect = true;
         return false;
     }
