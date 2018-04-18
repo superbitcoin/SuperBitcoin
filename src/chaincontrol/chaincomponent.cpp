@@ -1512,8 +1512,8 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     if (fJustCheck)  //sbtc-vm
     {
-        uint256 prevHashStateRoot = uint256S("0x21b463e3b52f6201c0ad6c991be0485b6ef8c092e64583ffa655cc1b171fe856");
-        uint256 prevHashUTXORoot = uint256S("0x21b463e3b52f6201c0ad6c991be0485b6ef8c092e64583ffa655cc1b171fe856");
+        uint256 prevHashStateRoot = DEFAULT_HASH_UTXO_ROOT;
+        uint256 prevHashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
         if (pindex->pprev->hashStateRoot != uint256() && pindex->pprev->hashUTXORoot != uint256())
         {
             prevHashStateRoot = pindex->pprev->hashStateRoot;
