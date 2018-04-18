@@ -1129,6 +1129,11 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     assert((pindex->phashBlock == nullptr) || (*pindex->phashBlock == block.GetHash()));
     int64_t nTimeStart = GetTimeMicros();
 
+    if ((pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight) && !IsSBTCContractEnabled(pindex))
+    {
+        return rLogError("%s: Consensus:: Block veriosn error, must sbtc contract block version!", __func__);
+    }
+
     //sbtc-vm
     GET_CONTRACT_INTERFACE(ifContractObj);
     CBlock checkBlock(block.GetBlockHeader());
@@ -2018,6 +2023,10 @@ bool CChainComponent::RewindBlock(const CChainParams &params)
     while (iHeight <= chainActive.Height())
     {
         if (cIndexManager.NeedRewind(iHeight, params.GetConsensus()))
+        {
+            break;
+        }
+        if ((iHeight > params.GetConsensus().SBTCContractForkHeight) && !IsSBTCContractEnabled(chainActive[iHeight]))
         {
             break;
         }

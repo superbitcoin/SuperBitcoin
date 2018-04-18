@@ -518,14 +518,14 @@ void CBlockIndexManager::InvalidChainFound(CBlockIndex *pIndexNew)
         pIndexBestInvalid = pIndexNew;
 
     NLogFormat("%s: invalid block=%s  height=%d  log2_work=%.8g  date=%s", __func__,
-                pIndexNew->GetBlockHash().ToString(), pIndexNew->nHeight,
-                log(pIndexNew->nChainWork.getdouble()) / log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
-                                                                                     pIndexNew->GetBlockTime()));
+               pIndexNew->GetBlockHash().ToString(), pIndexNew->nHeight,
+               log(pIndexNew->nChainWork.getdouble()) / log(2.0), DateTimeStrFormat("%Y-%m-%d %H:%M:%S",
+                                                                                    pIndexNew->GetBlockTime()));
     CBlockIndex *tip = cChainActive.Tip();
     assert (tip);
     NLogFormat("%s:  current best=%s  height=%d  log2_work=%.8g  date=%s", __func__,
-                tip->GetBlockHash().ToString(), cChainActive.Height(), log(tip->nChainWork.getdouble()) / log(2.0),
-                DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
+               tip->GetBlockHash().ToString(), cChainActive.Height(), log(tip->nChainWork.getdouble()) / log(2.0),
+               DateTimeStrFormat("%Y-%m-%d %H:%M:%S", tip->GetBlockTime()));
     //    CheckForkWarningConditions();
 }
 
@@ -914,7 +914,9 @@ void CBlockIndexManager::RewindBlockIndex(const Consensus::Params &params)
         // this block or some successor doesn't HAVE_DATA, so we were unable to
         // rewind all the way.  Blocks remaining on chainActive at this point
         // must not have their validity reduced.
-        if (IsWitnessEnabled(pIndexIter->pprev, params) && !(pIndexIter->nStatus & BLOCK_OPT_WITNESS) &&
+        if (((IsWitnessEnabled(pIndexIter->pprev, params) && !(pIndexIter->nStatus & BLOCK_OPT_WITNESS)) ||
+             ((pIndexIter->nHeight > params.SBTCContractForkHeight) &&
+              !(pIndexIter->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT)))) &&
             !cChainActive.Contains(pIndexIter))
         {
             // Reduce validity
@@ -934,7 +936,7 @@ void CBlockIndexManager::RewindBlockIndex(const Consensus::Params &params)
             setDirtyBlockIndex.insert(pIndexIter);
             // Update indexes
             setBlockIndexCandidates.erase(pIndexIter);
-            std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> ret = mBlocksUnlinked.equal_range(
+            std::pair <std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> ret = mBlocksUnlinked.equal_range(
                     pIndexIter->pprev);
             while (ret.first != ret.second)
             {
@@ -1174,7 +1176,7 @@ bool CBlockIndexManager::FindBlockPos(CValidationState &state, CDiskBlockPos &po
                 if (file)
                 {
                     NLogFormat("Pre-allocating up to position 0x%x in blk%05u.dat", nNewChunks * BLOCKFILE_CHUNK_SIZE,
-                              pos.nFile);
+                               pos.nFile);
                     AllocateFileRange(file, pos.nPos, nNewChunks * BLOCKFILE_CHUNK_SIZE - pos.nPos);
                     fclose(file);
                 }
@@ -1208,7 +1210,7 @@ bool CBlockIndexManager::FindUndoPos(CValidationState &state, int nFile, CDiskBl
             if (file)
             {
                 NLogFormat("Pre-allocating up to position 0x%x in rev%05u.dat", nNewChunks * UNDOFILE_CHUNK_SIZE,
-                          pos.nFile);
+                           pos.nFile);
                 AllocateFileRange(file, pos.nPos, nNewChunks * UNDOFILE_CHUNK_SIZE - pos.nPos);
                 fclose(file);
             }
