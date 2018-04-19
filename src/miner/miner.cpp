@@ -275,6 +275,7 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
 
     // Fill in header
     pblock->hashPrevBlock = pindexPrev->GetBlockHash();
+    pblock->nHeight = pindexPrev->nHeight + 1;           //sbtc-evm
     UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
     pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
     pblock->nNonce = 0;
@@ -340,7 +341,7 @@ bool BlockAssembler::TestPackageTransactions(const CTxMemPool::setEntries &packa
 //sbtc-vm
 bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64_t minGasPrice)
 {
-    uint256 oldHashStateRoot,oldHashUTXORoot;
+    uint256 oldHashStateRoot, oldHashUTXORoot;
     GET_CONTRACT_INTERFACE(ifContractObj);
     ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot);
     // operate on local vars first, then later apply to `this`

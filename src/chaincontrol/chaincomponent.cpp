@@ -1131,7 +1131,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     if ((pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight) && !IsSBTCContractEnabled(pindex))
     {
-        return rLogError("%s: Consensus:: Block veriosn error, must sbtc contract block version!", __func__);
+        return state.DoS(100, false, REJECT_INVALID, "Block veriosn error");
     }
 
     //sbtc-vm
