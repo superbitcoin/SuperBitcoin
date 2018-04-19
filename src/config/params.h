@@ -54,7 +54,7 @@ namespace Consensus
         int SBTCForkHeight;
         /* SBTC fork difficulty decrease*/
         int SBTCdifDec;
-        /*SBTC contract Fork active */
+        /*SBTC contract Fork active ,SBTCContractForkHeight + 1 is the first new block hight*/
         int SBTCContractForkHeight;
         /**
          * Minimum blocks including miner confirmation of the total of 2016 blocks in a retargeting period,
