@@ -470,6 +470,7 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
+        block.nHeight = nHeight;             //sbtc-evm
         block.hashStateRoot = hashStateRoot; // sbtc-evm
         block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block.GetHash();
