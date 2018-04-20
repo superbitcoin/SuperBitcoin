@@ -846,7 +846,7 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
     return true;
 }
 
-void CContractComponent::GetState(uint256 &hashStateRoot, uint256 &hashUTXORoo)
+void CContractComponent::GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
     if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
