@@ -68,8 +68,8 @@ public:
         nBits = 0;
         nNonce = 0;
         nHeight = 0; // sbtc-evm
-        hashStateRoot = DEFAULT_HASH_STATE_ROOT; // sbtc-evm
-        hashUTXORoot = DEFAULT_HASH_UTXO_ROOT; // sbtc-evm
+        hashStateRoot.SetNull(); // sbtc-evm
+        hashUTXORoot.SetNull(); // sbtc-evm
     }
 
     bool IsNull() const

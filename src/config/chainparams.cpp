@@ -6,22 +6,16 @@
 #include <log4cpp/Category.hh>
 
 #include "base/base.hpp"
-#include "argmanager.h"
 #include "chainparams.h"
 #include "sbtccore/block/merkle.h"
 
-#include "tinyformat.h"
-#include "utils/util.h"
 #include "utils/utilstrencodings.h"
 
-#include <assert.h>
 #include <script/standard.h>
 #include <interface/icontractcomponent.h>
-#include <contract-api/contractconfig.h>
 
 #include "chainparamsseeds.h"
 #include "chaincontrol/checkpoints.h"
-#include "utils/base58.h"
 
 
 static CBlock
@@ -47,9 +41,6 @@ CreateGenesisBlock(const char *pszTimestamp, const CScript &genesisOutputScript,
     genesis.vtx.push_back(MakeTransactionRef(std::move(txNew)));
     genesis.hashPrevBlock.SetNull();
     genesis.hashMerkleRoot = BlockMerkleRoot(genesis);
-    //sbtc-vm
-    genesis.hashStateRoot = DEFAULT_HASH_STATE_ROOT;
-    genesis.hashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
     return genesis;
 }
 

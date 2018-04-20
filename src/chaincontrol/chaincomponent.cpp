@@ -1129,10 +1129,24 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     assert((pindex->phashBlock == nullptr) || (*pindex->phashBlock == block.GetHash()));
     int64_t nTimeStart = GetTimeMicros();
 
+    //////////////////////////////////////sbtc-evm
     if ((pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight) && !IsSBTCContractEnabled(pindex))
     {
         return state.DoS(100, false, REJECT_INVALID, "Block veriosn error");
     }
+    //the first new block hight,
+    if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
+    {
+        if (pindex->hashStateRoot != DEFAULT_HASH_STATE_ROOT)
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot error");
+        }
+        if ((pindex->hashUTXORoot != DEFAULT_HASH_UTXO_ROOT))
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot error");
+        }
+    }
+    ////////////////////////////////////////
 
     //sbtc-vm
     GET_CONTRACT_INTERFACE(ifContractObj);
@@ -1512,18 +1526,19 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     if (fJustCheck)  //sbtc-vm
     {
-        uint256 prevHashStateRoot = DEFAULT_HASH_UTXO_ROOT;
+        /////////////////////////////////////////////////// sbtc-evm
+        uint256 prevHashStateRoot = DEFAULT_HASH_STATE_ROOT;
         uint256 prevHashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
         if (pindex->pprev->hashStateRoot != uint256() && pindex->pprev->hashUTXORoot != uint256())
         {
             prevHashStateRoot = pindex->pprev->hashStateRoot;
             prevHashUTXORoot = pindex->pprev->hashUTXORoot;
         }
-        ifContractObj->UpdateState(prevHashStateRoot, prevHashUTXORoot);
+        ifContractObj->UpdateState(prevHashStateRoot,
+                                   prevHashUTXORoot);//after the create new block,immediately recovery state
+        ///////////////////////////////////////////////////
         return true;
     }
-    //    if (fJustCheck)
-    //        return true;
 
     // Write undo information to disk
     if (pindex->GetUndoPos().IsNull() || !pindex->IsValid(BLOCK_VALID_SCRIPTS))

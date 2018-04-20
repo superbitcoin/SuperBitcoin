@@ -252,14 +252,22 @@ bool CContractComponent::ContractInit()
     globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    CBlockIndex *ptip = ifChainObj->GetActiveChain().Tip();
+    if (ptip != nullptr)
     {
-        globalState->setRoot(uintToh256(ifChainObj->GetActiveChain().Tip()->hashStateRoot));
-        globalState->setRootUTXO(uintToh256(ifChainObj->GetActiveChain().Tip()->hashUTXORoot));
+        if (ifChainObj->IsSBTCContractEnabled(ptip))
+        {
+            globalState->setRoot(uintToh256(ifChainObj->GetActiveChain().Tip()->hashStateRoot));
+            globalState->setRootUTXO(uintToh256(ifChainObj->GetActiveChain().Tip()->hashUTXORoot));
+        } else
+        {
+            globalState->setRoot(uintToh256(DEFAULT_HASH_STATE_ROOT));
+            globalState->setRootUTXO(uintToh256(DEFAULT_HASH_UTXO_ROOT));
+        }
     } else
     {
         globalState->setRoot(dev::sha3(dev::rlp("")));
-        globalState->setRootUTXO(uintToh256(Params().GenesisBlock().hashUTXORoot));
+        globalState->setRootUTXO(uintToh256(DEFAULT_HASH_UTXO_ROOT));
         globalState->populateFrom(cp.genesisState);
     }
 
@@ -843,8 +851,6 @@ void CContractComponent::GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot)
     GET_CHAIN_INTERFACE(ifChainObj);
     if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
-        hashStateRoot = DEFAULT_HASH_STATE_ROOT;
-        hashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
         return;
     }
     dev::h256 oldHashStateRoot(globalState->rootHash()); // sbtc-vm
@@ -998,7 +1004,7 @@ void CContractComponent::RPCCallContract(UniValue &result, const string addrCont
     GET_CHAIN_INTERFACE(ifChainObj);
     if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
-        return ;
+        return;
     }
 
     dev::Address addrAccount(addrContract);

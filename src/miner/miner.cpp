@@ -250,12 +250,24 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
 
     //    nBlockMaxSize = blockSizeDGP ? blockSizeDGP : nBlockMaxSize;
 
+    pblock->nHeight = pindexPrev->nHeight + 1; //sbtc-evm
     uint256 oldHashStateRoot, oldHashUTXORoot;
     ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot);
     //    addPriorityTxs(minGasPrice);
     addPackageTxs(nPackagesSelected, nDescendantsUpdated);
     uint256 hashStateRoot, hashUTXORoot;
     ifContractObj->GetState(hashStateRoot, hashUTXORoot);
+    if (pblock->nHeight > Params().GetConsensus().SBTCContractForkHeight)
+    {
+        if (hashStateRoot.IsNull())
+        {
+            hashStateRoot = DEFAULT_HASH_STATE_ROOT;
+        }
+        if (hashUTXORoot.IsNull())
+        {
+            hashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
+        }
+    }
     pblock->hashStateRoot = hashStateRoot;
     pblock->hashUTXORoot = hashUTXORoot;
     ifContractObj->UpdateState(oldHashStateRoot, oldHashUTXORoot);
@@ -275,7 +287,6 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
 
     // Fill in header
     pblock->hashPrevBlock = pindexPrev->GetBlockHash();
-    pblock->nHeight = pindexPrev->nHeight + 1; //sbtc-evm
     UpdateTime(pblock, chainparams.GetConsensus(), pindexPrev);
     pblock->nBits = GetNextWorkRequired(pindexPrev, pblock, chainparams.GetConsensus());
     pblock->nNonce = 0;

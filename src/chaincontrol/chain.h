@@ -266,8 +266,8 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        hashStateRoot = DEFAULT_HASH_STATE_ROOT; // sbtc-evm
-        hashUTXORoot = DEFAULT_HASH_UTXO_ROOT; // sbtc-evm
+        hashStateRoot.SetNull(); // sbtc-evm
+        hashUTXORoot.SetNull(); // sbtc-evm
     }
 
     CBlockIndex()
