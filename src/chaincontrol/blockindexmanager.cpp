@@ -49,6 +49,12 @@ bool CBlockIndexManager::IsReIndexing()
     return bReIndexing;
 }
 
+void CBlockIndexManager::SetReIndexing(bool bReIndexing)
+{
+    this->bReIndexing = bReIndexing;
+    pBlcokTreee->WriteReindexing(bReIndexing);
+}
+
 bool CBlockIndexManager::IsTxIndex()
 {
     return bTxIndex;

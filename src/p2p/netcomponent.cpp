@@ -163,6 +163,31 @@ bool CNetComponent::ComponentInitialize()
         RegisterValidationInterface(pzmqNotificationInterface);
     }
 #endif
+    return true;
+}
+
+bool CNetComponent::ComponentStartup()
+{
+    ILogFormat("startup p2p net component.");
+
+    if (!netConnMgr || !peerLogic)
+    {
+        return false;
+    }
+
+    if (Args().GetArg<bool>("listenonion", DEFAULT_LISTEN_ONION))
+    {
+        StartTorControl();
+    }
+
+    Discover();
+
+    // Map ports with UPnP
+    MapPort(Args().GetArg<bool>("upnp", DEFAULT_UPNP));
+
+
+
+    GET_CHAIN_INTERFACE(ifChainObj);
 
     uint64_t nMaxOutboundLimit = 0; //unlimited unless -maxuploadtarget is set
     uint64_t nMaxOutboundTimeframe = MAX_UPLOAD_TIMEFRAME;
@@ -208,7 +233,7 @@ bool CNetComponent::ComponentInitialize()
     if (nMaxConnections < nUserMaxConnections)
     {
         WLogFormat("Reducing -maxconnections from %d to %d, because of system limitations.", nUserMaxConnections,
-                  nMaxConnections);
+                   nMaxConnections);
     }
 
     ILogFormat("Using at most %i automatic connections (%i file descriptors available)", nMaxConnections, nFD);
@@ -267,28 +292,6 @@ bool CNetComponent::ComponentInitialize()
     {
         netConnOptions.vSeedNodes = Args().GetArgs("-seednode");
     }
-
-    return true;
-}
-
-bool CNetComponent::ComponentStartup()
-{
-    ILogFormat("startup p2p net component.");
-
-    if (!netConnMgr || !peerLogic)
-    {
-        return false;
-    }
-
-    if (Args().GetArg<bool>("listenonion", DEFAULT_LISTEN_ONION))
-    {
-        StartTorControl();
-    }
-
-    Discover();
-
-    // Map ports with UPnP
-    MapPort(Args().GetArg<bool>("upnp", DEFAULT_UPNP));
 
     return netConnMgr->Start(GetApp()->GetScheduler(), netConnOptions);
 }

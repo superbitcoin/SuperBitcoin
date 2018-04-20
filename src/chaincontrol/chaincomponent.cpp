@@ -111,7 +111,7 @@ bool CChainComponent::ComponentInitialize()
         fPruneMode = true;
     }
 
-    bool bReIndex = Args().GetArg<bool>("-reindex", false);
+    bReIndex = Args().GetArg<bool>("-reindex", false);
     bool bReindexChainState = Args().GetArg<bool>("-reindex-chainstate", false);
     bool bTxIndex = Args().GetArg<bool>("-txindex", DEFAULT_TXINDEX);
     bool bLogEvents = Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS);//sbtc-vm
@@ -1179,9 +1179,13 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     if (!hashAssumeValid.IsNull())
     {
         int64_t etime = cIndexManager.GetBlockProofEquivalentTime(hashAssumeValid, pindex, chainparams);
+        ILogFormat("etime = %ld, pindex.height=%d, hash=%s", etime, pindex->nHeight, pindex->phashBlock->ToString());
         fScriptChecks = (etime <= 60 * 60 * 24 * 7 * 2);
     }
-
+    if (pindex->nHeight == 264084)
+    {
+        fScriptChecks = false;
+    }
     int64_t nTime1 = GetTimeMicros();
     nTimeCheck += nTime1 - nTimeStart;
     ILogFormat("- Sanity checks: %.2fms [%.2fs]", 0.001 * (nTime1 - nTimeStart), nTimeCheck * 0.000001);
@@ -2168,7 +2172,8 @@ void CChainComponent::ThreadImport()
             LoadExternalBlockFile(Params(), file, &pos);
             iFile++;
         }
-
+        cIndexManager.SetReIndexing(false);
+        bReIndex = false;
         ILogFormat("Reindexing finished");
     }
 

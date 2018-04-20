@@ -139,6 +139,8 @@ public:
 
     bool IsReIndexing();
 
+    void SetReIndexing(bool bReIndexing);
+
     bool IsTxIndex();
 
     bool IsLogEvents();
