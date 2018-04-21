@@ -286,7 +286,7 @@ CBlockIndex *CBlockIndexManager::InsertBlockIndex(uint256 hash)
 }
 
 int CBlockIndexManager::LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset,
-                                       bool txIndex, bool logEvents)
+                                       bool txIndex)
 {
     Init(iBlockTreeDBCache, bReset);
 
@@ -303,13 +303,40 @@ int CBlockIndexManager::LoadBlockIndex(const Consensus::Params &consensus, int64
     {
         bTxIndex = txIndex;
         pBlcokTreee->WriteFlag("txindex", bTxIndex);
+    }
 
-        bLogEvents = logEvents;  //sbtc-vm
+    return Check(consensus.hashGenesisBlock);
+}
+
+int CBlockIndexManager::LoadLogEvents(bool bReset, bool logEvents)
+{
+    if (pBlcokTreee == nullptr)
+    {
+        return 0;
+    }
+
+//    if (bReset || mBlockIndex.empty())
+//    {
+//        bLogEvents = logEvents;  //sbtc-vm
+//        pBlcokTreee->WriteFlag("logevents", bLogEvents);
+//    }
+
+    // Check for changed -logevents state
+//    if ((bLogEvents != Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS)) && !bLogEvents)
+//    {
+//        return ERR_LOGEVENTS_STATE;
+//    }
+    if (!Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS))
+    {
+        pBlcokTreee->WipeHeightIndex();
+        bLogEvents = false;
+        pBlcokTreee->WriteFlag("logevents", bLogEvents);
+    }else{
+        bLogEvents = true;  //sbtc-vm
         pBlcokTreee->WriteFlag("logevents", bLogEvents);
     }
 
-
-    return Check(consensus.hashGenesisBlock);
+    return 0;
 }
 
 void CBlockIndexManager::UnLoadBlockIndex()
@@ -349,18 +376,6 @@ int CBlockIndexManager::Check(const uint256 hashGenesisBlock)
     if (bTxIndex != Args().GetArg<bool>("-txindex", DEFAULT_TXINDEX))
     {
         return ERR_TXINDEX_STATE;
-    }
-
-    // Check for changed -logevents state
-    if ((bLogEvents != Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS)) && !bLogEvents)
-    {
-        return ERR_LOGEVENTS_STATE;
-    }
-    if (!Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS))
-    {
-        pBlcokTreee->WipeHeightIndex();
-        bLogEvents = false;
-        pBlcokTreee->WriteFlag("logevents", bLogEvents);
     }
 
     // Check for changed -prune state.  What we are concerned about is a user who has pruned blocks
@@ -942,7 +957,7 @@ void CBlockIndexManager::RewindBlockIndex(const Consensus::Params &params)
             setDirtyBlockIndex.insert(pIndexIter);
             // Update indexes
             setBlockIndexCandidates.erase(pIndexIter);
-            std::pair <std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> ret = mBlocksUnlinked.equal_range(
+            std::pair<std::multimap<CBlockIndex *, CBlockIndex *>::iterator, std::multimap<CBlockIndex *, CBlockIndex *>::iterator> ret = mBlocksUnlinked.equal_range(
                     pIndexIter->pprev);
             while (ret.first != ret.second)
             {

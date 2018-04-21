@@ -54,7 +54,7 @@ public:
 
     virtual bool IsTxIndex() const = 0;
 
-    virtual bool IsLogEvents() const = 0;
+    virtual bool IsLogEvents() = 0;
 
     virtual bool IsInitialBlockDownload() = 0;
 

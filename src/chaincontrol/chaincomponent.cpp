@@ -161,8 +161,7 @@ bool CChainComponent::ComponentInitialize()
                 break;
             }
 
-            int ret = cIndexManager.LoadBlockIndex(Params().GetConsensus(), iBlockTreeDBCache, bReset, bTxIndex,
-                                                   bLogEvents);
+            int ret = cIndexManager.LoadBlockIndex(Params().GetConsensus(), iBlockTreeDBCache, bReset, bTxIndex);
             if (ret == ERR_LOAD_INDEX_DB)
             {
                 strLoadError = _("Error loading block database");
@@ -173,10 +172,6 @@ bool CChainComponent::ComponentInitialize()
             } else if (ret == ERR_TXINDEX_STATE)
             {
                 strLoadError = _("You need to rebuild the database using -reindex to change -txindex");
-                break;
-            } else if (ret == ERR_LOGEVENTS_STATE)
-            {
-                strLoadError = _("You need to rebuild the database using -reindex to change -logevents");
                 break;
             } else if (ret == ERR_PRUNE_STATE)
             {
@@ -218,6 +213,13 @@ bool CChainComponent::ComponentInitialize()
             SetTip(cIndexManager.GetBlockIndex(cViewManager.GetCoinsTip()->GetBestBlock()));
 
             //sbtc-vm
+            cIndexManager.LoadLogEvents(bReset, bLogEvents);
+//            if (ret == ERR_LOGEVENTS_STATE)
+//            {
+//                strLoadError = _("You need to rebuild the database using -reindex to change -logevents");
+//                break;
+//            }
+
             GET_CONTRACT_INTERFACE(ifContractObj);
             ifContractObj->ContractInit();
 
@@ -393,8 +395,12 @@ bool CChainComponent::IsTxIndex() const
     return cIndexManager.IsTxIndex();
 }
 
-bool CChainComponent::IsLogEvents() const
+bool CChainComponent::IsLogEvents()
 {
+    if (!IsSBTCContractEnabled(GetActiveChain().Tip()))
+    {
+        return false;
+    }
     return cIndexManager.IsLogEvents();
 }
 

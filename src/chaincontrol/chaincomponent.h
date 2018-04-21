@@ -180,7 +180,7 @@ public:
 
     bool IsTxIndex() const override;
 
-    bool IsLogEvents() const override;
+    bool IsLogEvents() override;
 
     bool IsInitialBlockDownload() override;
 

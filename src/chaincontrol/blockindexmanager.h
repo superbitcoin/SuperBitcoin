@@ -105,7 +105,9 @@ public:
 
     CBlockIndex *FindMostWorkIndex();
 
-    int LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset, bool txIndex,bool logEvents);
+    int LoadLogEvents(bool bReset,bool logEvents);
+
+    int LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset, bool txIndex);
 
     void PruneBlockIndexCandidates();
 
