@@ -252,18 +252,10 @@ bool CContractComponent::ContractInit()
     globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    CBlockIndex *ptip = ifChainObj->GetActiveChain().Tip();
-    if (ptip != nullptr)
+    if (ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
-        if (ifChainObj->IsSBTCContractEnabled(ptip))
-        {
-            globalState->setRoot(uintToh256(ifChainObj->GetActiveChain().Tip()->hashStateRoot));
-            globalState->setRootUTXO(uintToh256(ifChainObj->GetActiveChain().Tip()->hashUTXORoot));
-        } else
-        {
-            globalState->setRoot(uintToh256(DEFAULT_HASH_STATE_ROOT));
-            globalState->setRootUTXO(uintToh256(DEFAULT_HASH_UTXO_ROOT));
-        }
+        globalState->setRoot(uintToh256(ifChainObj->GetActiveChain().Tip()->hashStateRoot));
+        globalState->setRootUTXO(uintToh256(ifChainObj->GetActiveChain().Tip()->hashUTXORoot));
     } else
     {
         globalState->setRoot(dev::sha3(dev::rlp("")));
