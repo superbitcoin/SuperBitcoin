@@ -84,14 +84,14 @@ macro(print_config)
 
 
 
-	message("-- OPENSSL_INCLUDE_DIR  path:                      ${OPENSSL_INCLUDE_DIR}")
-	message("-- _OPENSSL_LIBDIR  path:                      ${_OPENSSL_LIBDIR}")
-	message("-- Boost_INCLUDE_DIR  path:                      ${Boost_INCLUDE_DIR}")
-	message("-- Boost_LIBRARY_DIR  path:                      ${Boost_LIBRARY_DIR}")
-	message("-- MINIUPNPC_INCLUDE_DIR  path:                      ${MINIUPNPC_INCLUDE_DIR}")
-	message("-- Secp256k1_INCLUDE_DIR  path:                      ${Secp256k1_INCLUDE_DIR}")
-	message("-- LOG4CPP_INCLUDE_DIR  path:                      ${LOG4CPP_INCLUDE_DIR}")
-	message("-- LEVELDB_INCLUDE_DIR  path:                      ${LEVELDB_INCLUDE_DIR}")
+#	message("-- OPENSSL_INCLUDE_DIR  path:                      ${OPENSSL_INCLUDE_DIR}")
+#	message("-- _OPENSSL_LIBDIR  path:                      ${_OPENSSL_LIBDIR}")
+#	message("-- Boost_INCLUDE_DIR  path:                      ${Boost_INCLUDE_DIR}")
+#	message("-- Boost_LIBRARY_DIR  path:                      ${Boost_LIBRARY_DIR}")
+#	message("-- MINIUPNPC_INCLUDE_DIR  path:                      ${MINIUPNPC_INCLUDE_DIR}")
+#	message("-- Secp256k1_INCLUDE_DIR  path:                      ${Secp256k1_INCLUDE_DIR}")
+#	message("-- LOG4CPP_INCLUDE_DIR  path:                      ${LOG4CPP_INCLUDE_DIR}")
+#	message("-- LEVELDB_INCLUDE_DIR  path:                      ${LEVELDB_INCLUDE_DIR}")
 
 
 	message("------------------------------------------------------------------------")
