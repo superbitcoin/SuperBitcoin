@@ -1998,7 +1998,7 @@ bool PeerLogicValidation::ProcessMessage(CNode *pfrom, const std::string &strCom
     }
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if ((ifChainObj->GetActiveChain().Tip()->nHeight > Params().GetConsensus().SBTCContractForkHeight) &&
+    if ((ifChainObj->GetActiveChain().Tip()->nHeight >= Params().GetConsensus().SBTCContractForkHeight) &&
         (pfrom->nVersion != 0) && (pfrom->nVersion < SBTC_CONTRACT_VERSION))
     {
         // disconnect from peers older than this proto version
