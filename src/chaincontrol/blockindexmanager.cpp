@@ -295,7 +295,7 @@ int CBlockIndexManager::LoadBlockIndex(const Consensus::Params &consensus, int64
         bool ret = LoadBlockIndexDB(consensus);
         if (!ret)
         {
-            return false;
+            return ERR_LOAD_INDEX_DB;
         }
     }
 
@@ -308,31 +308,22 @@ int CBlockIndexManager::LoadBlockIndex(const Consensus::Params &consensus, int64
     return Check(consensus.hashGenesisBlock);
 }
 
-int CBlockIndexManager::LoadLogEvents(bool bReset, bool logEvents)
+//sbtc-evm
+int CBlockIndexManager::LoadLogEvents()
 {
+    //TODO:LoadLogEvents is able to use, after LoadBlockIndex is called.
     if (pBlcokTreee == nullptr)
     {
-        return 0;
+        return rLogError("%s: pBlcokTreee is not init", __func__);
     }
 
-//    if (bReset || mBlockIndex.empty())
-//    {
-//        bLogEvents = logEvents;  //sbtc-vm
-//        pBlcokTreee->WriteFlag("logevents", bLogEvents);
-//    }
-
-    // Check for changed -logevents state
-//    if ((bLogEvents != Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS)) && !bLogEvents)
-//    {
-//        return ERR_LOGEVENTS_STATE;
-//    }
     if (!Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS))
     {
         pBlcokTreee->WipeHeightIndex();
         bLogEvents = false;
         pBlcokTreee->WriteFlag("logevents", bLogEvents);
     }else{
-        bLogEvents = true;  //sbtc-vm
+        bLogEvents = true;
         pBlcokTreee->WriteFlag("logevents", bLogEvents);
     }
 

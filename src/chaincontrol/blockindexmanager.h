@@ -85,7 +85,6 @@ enum ResultBlockIndex
     ERR_LOAD_GENESIS,
     ERR_INIT_GENESIS,
     ERR_TXINDEX_STATE,
-    ERR_LOGEVENTS_STATE,
     ERR_PRUNE_STATE,
 };
 
@@ -105,7 +104,7 @@ public:
 
     CBlockIndex *FindMostWorkIndex();
 
-    int LoadLogEvents(bool bReset,bool logEvents);
+    int LoadLogEvents();
 
     int LoadBlockIndex(const Consensus::Params &consensus, int64_t iBlockTreeDBCache, bool bReset, bool txIndex);
 

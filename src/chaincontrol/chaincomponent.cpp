@@ -114,7 +114,6 @@ bool CChainComponent::ComponentInitialize()
     bReIndex = Args().GetArg<bool>("-reindex", false);
     bool bReindexChainState = Args().GetArg<bool>("-reindex-chainstate", false);
     bool bTxIndex = Args().GetArg<bool>("-txindex", DEFAULT_TXINDEX);
-    bool bLogEvents = Args().GetArg<bool>("-logevents", DEFAULT_LOGEVENTS);//sbtc-vm
 
     // cache size calculations
     int64_t iTotalCache = (Args().GetArg<int64_t>("-dbcache", nDefaultDbCache) << 20);
@@ -213,13 +212,7 @@ bool CChainComponent::ComponentInitialize()
             SetTip(cIndexManager.GetBlockIndex(cViewManager.GetCoinsTip()->GetBestBlock()));
 
             //sbtc-vm
-            cIndexManager.LoadLogEvents(bReset, bLogEvents);
-//            if (ret == ERR_LOGEVENTS_STATE)
-//            {
-//                strLoadError = _("You need to rebuild the database using -reindex to change -logevents");
-//                break;
-//            }
-
+            cIndexManager.LoadLogEvents();
             GET_CONTRACT_INTERFACE(ifContractObj);
             ifContractObj->ContractInit();
 
