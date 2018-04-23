@@ -1178,7 +1178,6 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     if (!hashAssumeValid.IsNull())
     {
         int64_t etime = cIndexManager.GetBlockProofEquivalentTime(hashAssumeValid, pindex, chainparams);
-        ILogFormat("etime = %ld, pindex.height=%d, hash=%s", etime, pindex->nHeight, pindex->phashBlock->ToString());
         fScriptChecks = (etime <= 60 * 60 * 24 * 7 * 2);
     }
     if (pindex->nHeight == 264084)
