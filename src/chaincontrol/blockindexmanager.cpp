@@ -326,7 +326,8 @@ int CBlockIndexManager::LoadLogEvents()
         pBlcokTreee->WipeHeightIndex();
         bLogEvents = false;
         pBlcokTreee->WriteFlag("logevents", bLogEvents);
-    }else{
+    } else
+    {
         bLogEvents = true;
         pBlcokTreee->WriteFlag("logevents", bLogEvents);
     }

@@ -142,7 +142,7 @@ public:
 
     bool CheckContractTx(const CTransaction tx, const CAmount nFees,
                          CAmount &nMinGasPrice, int &level,
-                         string &errinfo, const CAmount nAbsurdFee = 0, bool rawTx = false) override ;
+                         string &errinfo, const CAmount nAbsurdFee = 0, bool rawTx = false) override;
 
     bool RunContractTx(CTransaction tx, CCoinsViewCache *v, CBlock *pblock,
                        uint64_t minGasPrice,

@@ -19,8 +19,11 @@
 
 #include <unordered_map>
 #include <sbtccore/transaction/CUtxo2UtxoTransaciton.h>
+
 class CTransactionBase;
+
 class CTransaction;
+
 class CUtxo2UtxoTransaciton;
 
 /**

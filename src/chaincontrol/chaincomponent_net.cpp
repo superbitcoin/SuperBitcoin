@@ -422,7 +422,7 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
         if (xnode->retInteger > 0)
         {
             NLogFormat("peer=%d: resetting nUnconnectingHeaders (%d -> 0)", xnode->nodeID,
-                        xnode->retInteger);
+                       xnode->retInteger);
         }
         xnode->retInteger = 0;
 
@@ -506,12 +506,12 @@ bool CChainComponent::NetReceiveHeaders(ExNode *xnode, const std::vector<CBlockH
                     if (ifNetObj->MarkBlockInFlight(xnode->nodeID, pindex->GetBlockHash(), pindex))
                         xnode->nBlocksInFlight++;
                     NLogFormat("Requesting block %s from  peer=%d",
-                                pindex->GetBlockHash().ToString(), xnode->nodeID);
+                               pindex->GetBlockHash().ToString(), xnode->nodeID);
                 }
                 if (vGetData.size() > 1)
                 {
                     NLogFormat("Downloading blocks toward %s (%d) via headers direct fetch",
-                                pindexLast->GetBlockHash().ToString(), pindexLast->nHeight);
+                               pindexLast->GetBlockHash().ToString(), pindexLast->nHeight);
                 }
                 if (vGetData.size() > 0)
                 {

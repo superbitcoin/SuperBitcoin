@@ -344,8 +344,8 @@ bool CContractComponent::AddressInUse(string contractaddress)
 }
 
 bool CContractComponent::CheckContractTx(const CTransaction tx, const CAmount nFees,
-                     CAmount &nMinGasPrice, int &level,
-                     string &errinfo, const CAmount nAbsurdFee, bool rawTx)
+                                         CAmount &nMinGasPrice, int &level,
+                                         string &errinfo, const CAmount nAbsurdFee, bool rawTx)
 {
     dev::u256 txMinGasPrice = 0;
 

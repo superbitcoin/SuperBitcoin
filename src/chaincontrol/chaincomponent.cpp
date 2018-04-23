@@ -1151,7 +1151,6 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     GET_CONTRACT_INTERFACE(ifContractObj);
     CBlock checkBlock(block.GetBlockHeader());
     std::vector<CTxOut> checkVouts;
-    bool bLogEvents = IsLogEvents();
 
     // Check it again in case a previous version let a bad block in
     if (!CheckBlock(block, state, chainparams.GetConsensus(), !fJustCheck, !fJustCheck))
@@ -1367,7 +1366,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             string errinfo;
             ByteCodeExecResult bcer;
             if (!ifContractObj->ContractTxConnectBlock(tx, i, &view, block, pindex->nHeight,
-                                                       bcer, bLogEvents, fJustCheck, heightIndexes,
+                                                       bcer, IsLogEvents(), fJustCheck, heightIndexes,
                                                        level, errinfo))
             {
                 return state.DoS(level, false, REJECT_INVALID, errinfo);
@@ -1556,7 +1555,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         cIndexManager.SetDirtyIndex(pindex);
     }
     //sbtc-vm
-    if (bLogEvents)
+    if (IsLogEvents())
     {
         for (const auto &e: heightIndexes)
         {
@@ -1580,7 +1579,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     nTimeCallbacks += nTime6 - nTime5;
     ILogFormat("Callbacks: %.2fms [%.2fs]", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
     //sbtc-vm
-    if (bLogEvents)
+    if (IsLogEvents())
     {
         ifContractObj->CommitResults();
     }
