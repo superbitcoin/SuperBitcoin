@@ -42,8 +42,9 @@ public:
 
     virtual bool AddressInUse(string contractaddress) = 0;
 
-    virtual bool ChecckContractTx(const CTransaction tx, const CAmount nFees, CAmount &nMinGasPrice, int &level,
-                                  string &errinfo) = 0;
+    virtual bool CheckContractTx(const CTransaction tx, const CAmount nFees,
+                                 CAmount &nMinGasPrice, int &level,
+                                 string &errinfo, const CAmount nAbsurdFee = 0, bool rawTx = false) = 0;
 
     virtual bool RunContractTx(CTransaction tx, CCoinsViewCache *v, CBlock *pblock,
                                uint64_t minGasPrice,
@@ -57,7 +58,7 @@ public:
     ContractTxConnectBlock(CTransaction tx, uint32_t transactionIndex, CCoinsViewCache *v, const CBlock &block,
                            int nHeight,
                            ByteCodeExecResult &bcer,
-                           StorageResults *pStorageRes,
+                           bool bLogEvents,
                            bool fJustCheck,
                            std::map<dev::Address, std::pair<CHeightTxIndexKey, std::vector<uint256>>> &heightIndexes,
                            int &level, string &errinfo) = 0;
@@ -65,6 +66,14 @@ public:
     virtual void GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot) = 0;
 
     virtual void UpdateState(uint256 hashStateRoot, uint256 hashUTXORoot) = 0;
+
+    virtual void DeleteResults(std::vector<CTransactionRef> const &txs) = 0;
+
+    virtual std::vector<TransactionReceiptInfo> GetResult(uint256 const &hashTx) = 0;
+
+    virtual void CommitResults() = 0;
+
+    virtual void ClearCacheResult() = 0;
 
     virtual std::map<dev::h256, std::pair<dev::u256, dev::u256>> GetStorageByAddress(string address) = 0;
 

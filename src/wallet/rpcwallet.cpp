@@ -3439,6 +3439,8 @@ UniValue createcontract(const JSONRPCRequest &request)
         return NullUniValue;
     }
 
+    LOCK2(cs_main, pwallet->cs_wallet);
+
     int height = ifChainObj->GetActiveChain().Height();
 
     GET_CONTRACT_INTERFACE(ifContractObj);
@@ -3476,8 +3478,6 @@ UniValue createcontract(const JSONRPCRequest &request)
                                  "\"60606040525b33600060006101000a81548173ffffffffffffffffffffffffffffffffffffffff02191690836c010000000000000000000000009081020402179055506103786001600050819055505b600c80605b6000396000f360606040526008565b600256\" 6000000 " +
                                  FormatMoney(minGasPrice) + " \"QM72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\" true")
         );
-
-    LOCK2(cs_main, pwallet->cs_wallet);
 
     string bytecode = request.params[0].get_str();
 
@@ -3685,7 +3685,7 @@ UniValue createcontract(const JSONRPCRequest &request)
         string errinfo;
 
         GET_CONTRACT_INTERFACE(ifContractObj);
-        if (!ifContractObj->ChecckContractTx(*(wtx.tx), nFees, nMinGasPrice, level, errinfo))
+        if (!ifContractObj->CheckContractTx(*(wtx.tx), nFees, nMinGasPrice, level, errinfo))
         {
             throw JSONRPCError(RPC_TYPE_ERROR, errinfo);
         }
@@ -3755,6 +3755,8 @@ UniValue sendtocontract(const JSONRPCRequest &request)
         return NullUniValue;
     }
 
+    LOCK2(cs_main, pwallet->cs_wallet);
+
     int height = ifChainObj->GetActiveChain().Height();
 
     GET_CONTRACT_INTERFACE(ifContractObj);
@@ -3793,8 +3795,6 @@ UniValue sendtocontract(const JSONRPCRequest &request)
                                  "\"c6ca2697719d00446d4ea51f6fac8fd1e9310214\" \"54f6127f\" 12.0015 6000000 " +
                                  FormatMoney(minGasPrice) + " \"QM72Sfpbz1BPpXFHz9m3CdqATR44Jvaydd\"")
         );
-
-    LOCK2(cs_main, pwallet->cs_wallet);
 
     std::string contractaddress = request.params[0].get_str();
     if (contractaddress.size() != 40 || !IsHex(contractaddress))
@@ -4017,7 +4017,7 @@ UniValue sendtocontract(const JSONRPCRequest &request)
         string errinfo;
 
         GET_CONTRACT_INTERFACE(ifContractObj);
-        if (!ifContractObj->ChecckContractTx(*(wtx.tx), nFees, nMinGasPrice, level, errinfo))
+        if (!ifContractObj->CheckContractTx(*(wtx.tx), nFees, nMinGasPrice, level, errinfo))
         {
             throw JSONRPCError(RPC_TYPE_ERROR, errinfo);
         }

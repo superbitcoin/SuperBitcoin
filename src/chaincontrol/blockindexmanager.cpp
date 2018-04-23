@@ -259,6 +259,10 @@ bool CBlockIndexManager::Init(int64_t iBlockTreeDBCache, bool bReIndex)
 
     if (bReIndex)
     {
+        //TODO:sbtc-evm ,bReIndex is true ,wipeResults
+        boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
+        StorageResults storageRes(stateDir.string());
+        storageRes.wipeResults();
         pBlcokTreee->WriteReindexing(true);
     }
 

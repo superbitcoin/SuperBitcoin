@@ -171,21 +171,21 @@ public:
     virtual bool AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
                                     bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,
                                     bool fOverrideMempoolLimit = false,
-                                    const CAmount nAbsurdFee = 0);
+                                    const CAmount nAbsurdFee = 0, bool rawTx = false);
 
     /** (try to) add transaction to memory pool with a specified acceptance time **/
     bool AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CValidationState &state,
                                     const CTransactionRef &tx, bool fLimitFree,
                                     bool *pfMissingInputs, int64_t nAcceptTime,
                                     std::list<CTransactionRef> *plTxnReplaced,
-                                    bool fOverrideMempoolLimit, const CAmount nAbsurdFee);
+                                    bool fOverrideMempoolLimit, const CAmount nAbsurdFee, bool rawTx = false);
 
     bool AcceptToMemoryPoolWorker(const CChainParams &chainparams, CValidationState &state,
                                   const CTransactionRef &ptx, bool fLimitFree,
                                   bool *pfMissingInputs, int64_t nAcceptTime,
                                   std::list<CTransactionRef> *plTxnReplaced,
                                   bool fOverrideMempoolLimit, const CAmount &nAbsurdFee,
-                                  std::vector<COutPoint> &coins_to_uncache);
+                                  std::vector<COutPoint> &coins_to_uncache, bool rawTx = false);
 
     void LimitMempoolSize(size_t limit, unsigned long age);
 

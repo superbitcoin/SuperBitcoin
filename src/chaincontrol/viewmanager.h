@@ -47,7 +47,8 @@ public:
 
     bool ConnectBlock(const CBlock &block, const CBlockIndex *pIndex, CCoinsViewCache &viewCache);
 
-    DisconnectResult DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CCoinsViewCache &view);
+    DisconnectResult
+    DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CCoinsViewCache &view, bool *pfClean);
 
     bool Flush();
 

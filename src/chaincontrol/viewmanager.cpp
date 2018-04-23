@@ -55,8 +55,12 @@ void CViewManager::InitCoinsCache()
 
 /** Undo the effects of this block (with given index) on the UTXO set represented by coins.
  *  When FAILED is returned, view is left in an indeterminate state. */
-DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CCoinsViewCache &view)
+DisconnectResult
+CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CCoinsViewCache &view, bool *pfClean)
 {
+    if (pfClean)
+        *pfClean = false;
+
     bool fClean = true;
 
     CBlockUndo blockUndo;
@@ -131,11 +135,9 @@ DisconnectResult CViewManager::DisconnectBlock(const CBlock &block, const CBlock
     ifContractObj->UpdateState(pindex->pprev->hashStateRoot, pindex->pprev->hashUTXORoot);
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (ifChainObj->IsLogEvents())
+    if (pfClean == NULL && ifChainObj->IsLogEvents())
     {
-        boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
-        StorageResults storageRes(stateDir.string());
-        storageRes.deleteResults(block.vtx);
+        ifContractObj->DeleteResults(block.vtx);
         ifChainObj->GetBlockTreeDB()->EraseHeightIndex(pindex->nHeight);
     }
     return fClean ? DISCONNECT_OK : DISCONNECT_UNCLEAN;

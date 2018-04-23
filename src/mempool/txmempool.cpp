@@ -34,10 +34,10 @@ SET_CPP_SCOPED_LOG_CATEGORY(CID_TX_MEMPOOL);
 
 bool CTxMemPool::AcceptToMemoryPool(CValidationState &state, const CTransactionRef &tx, bool fLimitFree,
                                     bool *pfMissingInputs, std::list<CTransactionRef> *plTxnReplaced,
-                                    bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
+                                    bool fOverrideMempoolLimit, const CAmount nAbsurdFee, bool rawTx)
 {
     return AcceptToMemoryPoolWithTime(Params(), state, tx, fLimitFree, pfMissingInputs, GetTime(), plTxnReplaced,
-                                      fOverrideMempoolLimit, nAbsurdFee);
+                                      fOverrideMempoolLimit, nAbsurdFee, rawTx);
 }
 
 /** (try to) add transaction to memory pool with a specified acceptance time **/
@@ -45,11 +45,11 @@ bool CTxMemPool::AcceptToMemoryPoolWithTime(const CChainParams &chainparams, CVa
                                             const CTransactionRef &tx, bool fLimitFree,
                                             bool *pfMissingInputs, int64_t nAcceptTime,
                                             std::list<CTransactionRef> *plTxnReplaced,
-                                            bool fOverrideMempoolLimit, const CAmount nAbsurdFee)
+                                            bool fOverrideMempoolLimit, const CAmount nAbsurdFee, bool rawTx)
 {
     std::vector<COutPoint> coins_to_uncache;
     bool res = AcceptToMemoryPoolWorker(chainparams, state, tx, fLimitFree, pfMissingInputs, nAcceptTime,
-                                        plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, coins_to_uncache);
+                                        plTxnReplaced, fOverrideMempoolLimit, nAbsurdFee, coins_to_uncache, rawTx);
     GET_CHAIN_INTERFACE(ifChainObj);
     if (!res)
     {
@@ -67,7 +67,7 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
                                           bool *pfMissingInputs, int64_t nAcceptTime,
                                           std::list<CTransactionRef> *plTxnReplaced,
                                           bool fOverrideMempoolLimit, const CAmount &nAbsurdFee,
-                                          std::vector<COutPoint> &coins_to_uncache)
+                                          std::vector<COutPoint> &coins_to_uncache, bool rawTx)
 {
 
     const CTransaction &tx = *ptx;
@@ -242,8 +242,11 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
             string errinfo;
 
             GET_CONTRACT_INTERFACE(ifContractObj);
-            if (!ifContractObj->ChecckContractTx(tx, nFees, nMinGasPrice, level, errinfo))
+            if (!ifContractObj->CheckContractTx(tx, nFees, nMinGasPrice, level, errinfo, nAbsurdFee, rawTx))
             {
+                if(REJECT_HIGHFEE == level){
+                    return state.DoS(level, false, REJECT_HIGHFEE, errinfo);
+                }
                 return state.DoS(level, false, REJECT_INVALID, errinfo);
             }
         }
@@ -536,10 +539,10 @@ bool CTxMemPool::AcceptToMemoryPoolWorker(const CChainParams &chainparams, CVali
         for (const CTxMemPool::txiter it : allConflicting)
         {
             NLogFormat("replacing tx %s with %s for %s BTC additional fees, %d delta bytes",
-                        it->GetTx().GetHash().ToString(),
-                        hash.ToString(),
-                        FormatMoney(nModifiedFees - nConflictingFees),
-                        (int)nSize - (int)nConflictingSize);
+                       it->GetTx().GetHash().ToString(),
+                       hash.ToString(),
+                       FormatMoney(nModifiedFees - nConflictingFees),
+                       (int)nSize - (int)nConflictingSize);
             if (plTxnReplaced)
                 plTxnReplaced->push_back(it->GetSharedTx());
         }
@@ -1410,7 +1413,7 @@ void CTxMemPool::Check(const CCoinsViewCache *pcoins) const
         return;
 
     NLogFormat("Checking mempool with %u transactions and %u inputs", (unsigned int)mapTx.size(),
-                (unsigned int)mapNextTx.size());
+               (unsigned int)mapNextTx.size());
 
     uint64_t checkTotal = 0;
     uint64_t innerUsage = 0;
@@ -1882,7 +1885,7 @@ void CTxMemPool::TrimToSize(size_t sizelimit, std::vector<COutPoint> *pvNoSpends
     if (maxFeeRateRemoved > CFeeRate(0))
     {
         NLogFormat("Removed %u txn, rolling minimum fee bumped to %s", nTxnRemoved,
-                    maxFeeRateRemoved.ToString());
+                   maxFeeRateRemoved.ToString());
     }
 }
 

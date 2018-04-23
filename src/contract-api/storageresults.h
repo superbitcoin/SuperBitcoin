@@ -41,6 +41,8 @@ public:
 
     StorageResults(std::string const &_path);
 
+    ~StorageResults();
+
     void addResult(dev::h256 hashTx, std::vector<TransactionReceiptInfo> &result);
 
     void deleteResults(std::vector<CTransactionRef> const &txs);
@@ -48,6 +50,8 @@ public:
     std::vector<TransactionReceiptInfo> getResult(dev::h256 const &hashTx);
 
     void commitResults();
+
+    void clearCacheResult();
 
     void wipeResults();
 
@@ -61,5 +65,11 @@ private:
 
     std::string path;
 
+    leveldb::DB *db;
+
+    leveldb::Options options;
+
     std::unordered_map<dev::h256, std::vector<TransactionReceiptInfo>> m_cache_result;
+
+
 };

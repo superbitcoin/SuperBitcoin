@@ -525,7 +525,7 @@ bool CChainComponent::ReplayBlocks()
 
             ILogFormat("Rolling back %s (%i)", pIndexOld->GetBlockHash().ToString(), pIndexOld->nHeight);
 
-            DisconnectResult res = cViewManager.DisconnectBlock(block, pIndexOld, cache);
+            DisconnectResult res = cViewManager.DisconnectBlock(block, pIndexOld, cache, NULL);
             if (res == DISCONNECT_FAILED)
             {
                 return rLogError("DisconnectBlock failed at %d, hash=%s", pIndexOld->nHeight,
@@ -795,7 +795,7 @@ bool CChainComponent::DisconnectTip(CValidationState &state, const CChainParams 
     {
         CCoinsViewCache view(cViewManager.GetCoinsTip());
         assert(view.GetBestBlock() == pIndexDelete->GetBlockHash());
-        if (cViewManager.DisconnectBlock(block, pIndexDelete, view))
+        if (cViewManager.DisconnectBlock(block, pIndexDelete, view, NULL) != DISCONNECT_OK)
         {
             return rLogError("DisconnectBlock %s failed", pIndexDelete->GetBlockHash().ToString());
         }
@@ -1151,9 +1151,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     GET_CONTRACT_INTERFACE(ifContractObj);
     CBlock checkBlock(block.GetBlockHeader());
     std::vector<CTxOut> checkVouts;
-
-    boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
-    StorageResults storageRes(stateDir.string());
+    bool bLogEvents = IsLogEvents();
 
     // Check it again in case a previous version let a bad block in
     if (!CheckBlock(block, state, chainparams.GetConsensus(), !fJustCheck, !fJustCheck))
@@ -1367,16 +1365,9 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
             int level = 0;
             string errinfo;
-
-            StorageResults *pStorageRes = nullptr;
-            if (IsLogEvents())
-            {
-                pStorageRes = &storageRes;
-            }
-
             ByteCodeExecResult bcer;
             if (!ifContractObj->ContractTxConnectBlock(tx, i, &view, block, pindex->nHeight,
-                                                       bcer, pStorageRes, fJustCheck, heightIndexes,
+                                                       bcer, bLogEvents, fJustCheck, heightIndexes,
                                                        level, errinfo))
             {
                 return state.DoS(level, false, REJECT_INVALID, errinfo);
@@ -1565,7 +1556,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         cIndexManager.SetDirtyIndex(pindex);
     }
     //sbtc-vm
-    if (IsLogEvents())
+    if (bLogEvents)
     {
         for (const auto &e: heightIndexes)
         {
@@ -1589,9 +1580,9 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     nTimeCallbacks += nTime6 - nTime5;
     ILogFormat("Callbacks: %.2fms [%.2fs]", 0.001 * (nTime6 - nTime5), nTimeCallbacks * 0.000001);
     //sbtc-vm
-    if (IsLogEvents())
+    if (bLogEvents)
     {
-        storageRes.commitResults();
+        ifContractObj->CommitResults();
     }
 
     return true;
@@ -1644,6 +1635,7 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
                 cIndexManager.InvalidBlockFound(pIndexNew, state);
 
             ifContratcObj->UpdateState(oldHashStateRoot, oldHashUTXORoot);//sbtc-vm
+            ifContratcObj->ClearCacheResult();//sbtc-vm
 
             return rLogError("ConnectTip(): ConnectBlock %s failed", pIndexNew->GetBlockHash().ToString());
         }
@@ -2596,8 +2588,9 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
         if (nCheckLevel >= 3 && pindex == pindexState &&
             (coins.DynamicMemoryUsage() + GetCoinsTip()->DynamicMemoryUsage()) <= iCoinCacheUsage)
         {
+            bool fClean = true;
             assert(coins.GetBestBlock() == pindex->GetBlockHash());
-            DisconnectResult res = cViewManager.DisconnectBlock(block, pindex, coins);
+            DisconnectResult res = cViewManager.DisconnectBlock(block, pindex, coins, &fClean);
             if (res == DISCONNECT_FAILED)
             {
                 return rLogError("VerifyDB(): *** irrecoverable inconsistency in block data at %d, hash=%s",
@@ -2644,6 +2637,7 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
             if (!ConnectBlock(block, state, pindex, coins, chainparams))
             {
                 ifContractObj->UpdateState(oldHashStateRoot, oldHashUTXORoot); //sbtc-vm
+                ifContractObj->ClearCacheResult(); //sbtc-vm
                 return rLogError("VerifyDB(): *** found unconnectable block at %d, hash=%s", pindex->nHeight,
                                  pindex->GetBlockHash().ToString());
             }
@@ -2757,6 +2751,7 @@ bool CChainComponent::TestBlockValidity(CValidationState &state, const CChainPar
     if (!ConnectBlock(block, state, &indexDummy, viewNew, chainparams, true))
     {
         ifContractObj->UpdateState(oldHashStateRoot, oldHashUTXORoot);//sbtc-vm
+        ifContractObj->ClearCacheResult();//sbtc-vm
         return false;
     }
     assert(state.IsValid());

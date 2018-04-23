@@ -1375,8 +1375,7 @@ UniValue searchlogs(const JSONRPCRequest &request)
     }
 
     UniValue result(UniValue::VARR);
-    boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
-    StorageResults storageRes(stateDir.string());
+    GET_CONTRACT_INTERFACE(ifContractObj);
 
     auto topics = params.topics;
 
@@ -1384,7 +1383,7 @@ UniValue searchlogs(const JSONRPCRequest &request)
     {
         for (const auto &e : hashesTx)
         {
-            std::vector<TransactionReceiptInfo> receipts = storageRes.getResult(uintToh256(e));
+            std::vector<TransactionReceiptInfo> receipts = ifContractObj->GetResult(e);
 
             for (const auto &receipt : receipts)
             {
@@ -1463,10 +1462,8 @@ UniValue gettransactionreceipt(const JSONRPCRequest &request)
 
     uint256 hash(uint256S(hashTemp));
 
-    boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
-    StorageResults storageRes(stateDir.string());
-
-    std::vector<TransactionReceiptInfo> transactionReceiptInfo = storageRes.getResult(uintToh256(hash));
+    GET_CONTRACT_INTERFACE(ifContractObj);
+    std::vector<TransactionReceiptInfo> transactionReceiptInfo = ifContractObj->GetResult(hash);
 
     UniValue result(UniValue::VARR);
     for (TransactionReceiptInfo &t : transactionReceiptInfo)

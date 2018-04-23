@@ -1040,7 +1040,7 @@ UniValue sendrawtransaction(const JSONRPCRequest &request)
         bool fMissingInputs;
         bool fLimitFree = true;
         if (!mempool.AcceptToMemoryPool(state, std::move(tx), fLimitFree, &fMissingInputs, nullptr, false,
-                                        nMaxRawTxFee))
+                                        nMaxRawTxFee,true))
         {
             if (state.IsInvalid())
             {

@@ -15,6 +15,7 @@
 
 static std::unique_ptr<SbtcState> globalState;
 static std::shared_ptr<dev::eth::SealEngineFace> globalSealEngine;
+static StorageResults *pstorageresult = NULL;
 static bool fRecordLogOpcodes = false;
 static bool fIsVMlogFile = false;
 static bool fGettingValuesDGP = false;
@@ -251,6 +252,8 @@ bool CContractComponent::ContractInit()
     dev::eth::ChainParams cp((dev::eth::genesisInfo(dev::eth::Network::sbtcMainNetwork)));
     globalSealEngine = std::unique_ptr<dev::eth::SealEngineFace>(cp.createSealEngine());
 
+    pstorageresult = new StorageResults(stateDir.string());
+
     GET_CHAIN_INTERFACE(ifChainObj);
     if (ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
@@ -271,9 +274,7 @@ bool CContractComponent::ContractInit()
 
     if (!ifChainObj->IsLogEvents())
     {
-        boost::filesystem::path stateDir = GetDataDir() / CONTRACT_STATE_DIR;
-        StorageResults storageRes(stateDir.string());
-        storageRes.wipeResults();
+        pstorageresult->wipeResults();
     }
     return true;
 }
@@ -290,6 +291,10 @@ bool CContractComponent::ComponentShutdown()
 {
     NLogStream() << "shutdown CContract component";
 
+    delete pstorageresult;
+    pstorageresult = NULL;
+    delete globalState.release();
+    globalSealEngine.reset();
     return true;
 }
 
@@ -338,8 +343,9 @@ bool CContractComponent::AddressInUse(string contractaddress)
     return globalState->addressInUse(addrAccount);
 }
 
-bool CContractComponent::ChecckContractTx(const CTransaction tx, const CAmount nFees, CAmount &nMinGasPrice, int &level,
-                                          string &errinfo)
+bool CContractComponent::CheckContractTx(const CTransaction tx, const CAmount nFees,
+                     CAmount &nMinGasPrice, int &level,
+                     string &errinfo, const CAmount nAbsurdFee, bool rawTx)
 {
     dev::u256 txMinGasPrice = 0;
 
@@ -473,7 +479,15 @@ bool CContractComponent::ChecckContractTx(const CTransaction tx, const CAmount n
         return false;
     }
 
+    if (rawTx && nAbsurdFee && dev::u256(nFees) > dev::u256(nAbsurdFee) + sumGas)
+    {
+        level = REJECT_HIGHFEE;
+        errinfo = "absurdly-high-fee" + strprintf("%d > %d", nFees, nAbsurdFee);
+        return false;
+    }
+
     nMinGasPrice = CAmount(txMinGasPrice);
+
     return true;
 }
 
@@ -640,7 +654,7 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
                                                 const CBlock &block,
                                                 int nHeight,
                                                 ByteCodeExecResult &bcer,
-                                                StorageResults *pStorageRes,
+                                                bool bLogEvents,
                                                 bool fJustCheck,
                                                 std::map<dev::Address, std::pair<CHeightTxIndexKey, std::vector<uint256>>> &heightIndexes,
                                                 int &level, string &errinfo)
@@ -794,7 +808,7 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
 
     countCumulativeGasUsed += bcer.usedGas;
     std::vector<TransactionReceiptInfo> tri;
-    if (pStorageRes)
+    if (bLogEvents)
     {
         for (size_t k = 0; k < resultConvertQtumTX.first.size(); k++)
         {
@@ -813,7 +827,7 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
                                            excepted});
         }
 
-        pStorageRes->addResult(uintToh256(tx.GetHash()), tri);
+        pstorageresult->addResult(uintToh256(tx.GetHash()), tri);
     }
 
     blockGasUsed += bcer.usedGas;
@@ -866,6 +880,46 @@ void CContractComponent::UpdateState(uint256 hashStateRoot, uint256 hashUTXORoot
     }
     globalState->setRoot(uintToh256(hashStateRoot));
     globalState->setRootUTXO(uintToh256(hashUTXORoot));
+}
+
+void CContractComponent::DeleteResults(std::vector<CTransactionRef> const &txs)
+{
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return;
+    }
+    pstorageresult->deleteResults(txs);
+}
+
+std::vector<TransactionReceiptInfo> CContractComponent::GetResult(uint256 const &hashTx)
+{
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return std::vector<TransactionReceiptInfo>();
+    }
+    return pstorageresult->getResult(uintToh256(hashTx));
+}
+
+void CContractComponent::CommitResults()
+{
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return;
+    }
+    pstorageresult->commitResults();
+}
+
+void CContractComponent::ClearCacheResult()
+{
+    GET_CHAIN_INTERFACE(ifChainObj);
+    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        return;
+    }
+    pstorageresult->clearCacheResult();
 }
 
 std::map<dev::h256, std::pair<dev::u256, dev::u256>> CContractComponent::GetStorageByAddress(string address)

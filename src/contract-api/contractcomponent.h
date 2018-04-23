@@ -140,8 +140,9 @@ public:
 
     bool AddressInUse(string contractaddress) override;
 
-    bool ChecckContractTx(const CTransaction tx, const CAmount nFees, CAmount &nMinGasPrice, int &level,
-                          string &errinfo) override;
+    bool CheckContractTx(const CTransaction tx, const CAmount nFees,
+                         CAmount &nMinGasPrice, int &level,
+                         string &errinfo, const CAmount nAbsurdFee = 0, bool rawTx = false) override ;
 
     bool RunContractTx(CTransaction tx, CCoinsViewCache *v, CBlock *pblock,
                        uint64_t minGasPrice,
@@ -154,7 +155,7 @@ public:
     bool ContractTxConnectBlock(CTransaction tx, uint32_t transactionIndex, CCoinsViewCache *v, const CBlock &block,
                                 int nHeight,
                                 ByteCodeExecResult &bcer,
-                                StorageResults *pStorageRes,
+                                bool bLogEvents,
                                 bool fJustCheck,
                                 std::map<dev::Address, std::pair<CHeightTxIndexKey, std::vector<uint256>>> &heightIndexes,
                                 int &level, string &errinfo) override;
@@ -162,6 +163,14 @@ public:
     void GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot) override;
 
     void UpdateState(uint256 hashStateRoot, uint256 hashUTXORoot) override;
+
+    void DeleteResults(std::vector<CTransactionRef> const &txs) override;
+
+    std::vector<TransactionReceiptInfo> GetResult(uint256 const &hashTx) override;
+
+    void CommitResults() override;
+
+    void ClearCacheResult() override;
 
     std::map<dev::h256, std::pair<dev::u256, dev::u256>> GetStorageByAddress(string address) override;
 
