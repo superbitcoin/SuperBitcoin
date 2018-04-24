@@ -16,7 +16,7 @@ macro(configure_project)
     option(TESTS "Build with tests" OFF)
     option(ENABLE_ZMQ_FLAG "Build with tests" OFF)
 	option(ENABLE_STATIC_FLAG "enable static falg" ON)
-	option(REVISIVE_FLAG " enable REVISIVE falg" OFF)
+	option(REVISIVE_FLAG " enable REVISIVE falg" ON)
 
 	if (ENABLE_WALLET)
 		SET( ENABLE_WALLET 1 )
