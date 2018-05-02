@@ -6,10 +6,15 @@ add_executable(sbtc-tx ${sources} )
 target_include_directories(sbtc-tx PUBLIC ${CMAKE_CURRENT_BINARY_DIR} )
 
 
+set(LIB_FILE )
+
 IF (ENABLE_STATIC_FLAG)
-    set(LIB_FILE -ldl libsnappy.a)
-ELSE ()
-    set(LIB_FILE )
+    set(LIB_FILE ${LIB_FILE} -ldl libsnappy.a)
+ENDIF ()
+
+# If libgmp exists, secp256k1 will use it at build time. Missing it will cause linking errors.
+IF (GMP_FOUND)
+    set(LIB_FILE ${LIB_FILE} ${GMP_LIBRARIES})
 ENDIF ()
 
 
@@ -20,3 +25,8 @@ target_link_libraries(sbtc-tx
         ${EVENT_LIBRARIES} ${LOG4CPP_LIBRARYS} libevent_pthreads.so ${Boost_LIBRARIES} miniupnpc ${OPENSSL_LIBRARIES}
         ${LIBDB_CXX_LIBRARIES} ${LEVELDB_LIBRARIES} libmemenv.a ${Secp256k1_LIBRARY}  ${LIB_FILE}
         )
+
+# `make install` support
+install(TARGETS sbtc-tx
+    DESTINATION bin)
+

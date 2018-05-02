@@ -16,6 +16,11 @@ IF (ENABLE_STATIC_FLAG)
     set(LIB_FILE ${LIB_FILE} -ldl libsnappy.a)
 ENDIF ()
 
+# If libgmp exists, secp256k1 will use it at build time. Missing it will cause linking errors.
+IF (GMP_FOUND)
+    set(LIB_FILE ${LIB_FILE} ${GMP_LIBRARIES})
+ENDIF ()
+
 
 target_link_libraries(sbtcd
         libboost_random.a ${Secp256k1_LIBRARY}  contract-api eventmanager  libboost_random.a contract libboost_random.a ${Secp256k1_LIBRARY} base chaincontrol
@@ -27,3 +32,8 @@ target_link_libraries(sbtcd
 
 #
 #message( ${LEVELDB_LIBRARIES})
+
+# `make install` support
+install(TARGETS sbtcd
+    DESTINATION bin)
+
