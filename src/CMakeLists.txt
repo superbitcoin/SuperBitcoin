@@ -21,6 +21,7 @@ add_subdirectory( zmq )
 
 find_package(LevelDB)
 find_package(Secp256k1)
+find_package(libzmq)
 find_package(Miniupnpc)
 find_package(OpenSSL)
 find_package(Event)

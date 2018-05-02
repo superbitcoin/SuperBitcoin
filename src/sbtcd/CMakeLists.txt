@@ -6,11 +6,14 @@ add_executable(sbtcd ${sources} ${interfaceH} )
 target_include_directories(sbtcd PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${Secp256k1_INCLUDE_DIR} )
 
 
+set(LIB_FILE )
+
+IF (ENABLE_ZMQ)
+    set(LIB_FILE ${LIB_FILE} zmq ${LIBZMQ_LIBRARIES})
+ENDIF ()
 
 IF (ENABLE_STATIC_FLAG)
-    set(LIB_FILE -ldl libsnappy.a)
-ELSE ()
-    set(LIB_FILE )
+    set(LIB_FILE ${LIB_FILE} -ldl libsnappy.a)
 ENDIF ()
 
 
