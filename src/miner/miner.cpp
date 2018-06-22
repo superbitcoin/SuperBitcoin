@@ -148,7 +148,7 @@ void BlockAssembler::resetBlock()
 }
 
 //sbtc-vm
-void BlockAssembler::RebuildRefundTransaction()
+void BlockAssembler::RebuildRefundTransaction(uint256 hashStateRoot, uint256 hashUTXORoot)
 {
     int refundtx = 0;
     GET_CHAIN_INTERFACE(ifChainObj);
@@ -163,6 +163,15 @@ void BlockAssembler::RebuildRefundTransaction()
     {
         contrTx.vout[i] = vout;
         i++;
+    }
+    if (!(hashStateRoot.IsNull() || hashUTXORoot.IsNull()))
+    {
+        CScript scriptPubKey =
+        CScript() << ParseHex(hashStateRoot.GetHex().c_str()) << ParseHex(hashUTXORoot.GetHex().c_str())
+                << OP_VM_STATE;
+
+        CTxOut txout(0, scriptPubKey);
+        contrTx.vout.push_back(txout);
     }
     pblock->vtx[refundtx] = MakeTransactionRef(std::move(contrTx));
 }
@@ -250,14 +259,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
 
     //    nBlockMaxSize = blockSizeDGP ? blockSizeDGP : nBlockMaxSize;
 
-    pblock->nHeight = pindexPrev->nHeight + 1; //sbtc-evm
     uint256 oldHashStateRoot, oldHashUTXORoot;
     ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot);
     //    addPriorityTxs(minGasPrice);
     addPackageTxs(nPackagesSelected, nDescendantsUpdated);
     uint256 hashStateRoot, hashUTXORoot;
     ifContractObj->GetState(hashStateRoot, hashUTXORoot);
-    if (pblock->nHeight > Params().GetConsensus().SBTCContractForkHeight)
+    if (pindexPrev->nHeight + 1 > Params().GetConsensus().SBTCContractForkHeight)
     {
         if (hashStateRoot.IsNull())
         {
@@ -268,13 +276,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
             hashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
         }
     }
-    pblock->hashStateRoot = hashStateRoot;
-    pblock->hashUTXORoot = hashUTXORoot;
+    //    pblock->hashStateRoot = hashStateRoot;
+    //    pblock->hashUTXORoot = hashUTXORoot;
     ifContractObj->UpdateState(oldHashStateRoot, oldHashUTXORoot);
 
     //this should already be populated by AddBlock in case of contracts, but if no contracts
     //then it won't get populated
-    RebuildRefundTransaction();
+    RebuildRefundTransaction(hashStateRoot, hashUTXORoot);
     ////////////////////////////////////////////////////////
 
     int64_t nTime1 = GetTimeMicros();
@@ -441,7 +449,9 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     }
     //calculate sigops from new refund/proof tx
     this->nBlockSigOpsCost -= (*pblock->vtx[proofTx]).GetLegacySigOpCount();
-    RebuildRefundTransaction();
+    oldHashStateRoot.SetNull();
+    oldHashUTXORoot.SetNull();
+    RebuildRefundTransaction(oldHashStateRoot, oldHashUTXORoot);
     this->nBlockSigOpsCost += (*pblock->vtx[proofTx]).GetLegacySigOpCount();
 
     bceResult.valueTransfers.clear();

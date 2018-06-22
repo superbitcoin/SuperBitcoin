@@ -85,6 +85,10 @@ bool Solver(const CScript &scriptPubKey, txnouttype &typeRet, std::vector<std::v
         // Call contract tx
         mTemplates.insert(std::make_pair(TX_CALL, CScript() << OP_VERSION << OP_GAS_LIMIT << OP_GAS_PRICE
                                                             << OP_DATA << OP_PUBKEYHASH << OP_CALL));
+
+        // vm state
+        mTemplates.insert(std::make_pair(TX_VM_STATE, CScript() << OP_HASH_STATE_ROOT << OP_HASH_UTXO_ROOT
+                                                            << OP_VM_STATE));
     }
 
     vSolutionsRet.clear();
@@ -286,6 +290,16 @@ bool Solver(const CScript &scriptPubKey, txnouttype &typeRet, std::vector<std::v
                     if (vch1.empty())
                         break;
                 }
+            } else if (opcode2 == OP_HASH_STATE_ROOT)
+            {
+                if (vch1.size() != sizeof(uint256))
+                    break;
+                vSolutionsRet.push_back(vch1);
+            } else if (opcode2 == OP_HASH_UTXO_ROOT)
+            {
+                if (vch1.size() != sizeof(uint256))
+                    break;
+                vSolutionsRet.push_back(vch1);
             }
                 ///////////////////////////////////////////////////////////
             else if (opcode1 != opcode2 || vch1 != vch2)

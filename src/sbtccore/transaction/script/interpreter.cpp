@@ -1162,6 +1162,7 @@ bool EvalScript(std::vector<std::vector<unsigned char> > &stack, const CScript &
                         break;
                     case OP_CREATE:
                     case OP_CALL:
+                    case OP_VM_STATE:
                     {
                         valtype scriptRest(pc - 1, pend);
                         stack.push_back(scriptRest);

@@ -257,8 +257,28 @@ bool CContractComponent::ContractInit()
     GET_CHAIN_INTERFACE(ifChainObj);
     if (ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
     {
-        globalState->setRoot(uintToh256(ifChainObj->GetActiveChain().Tip()->hashStateRoot));
-        globalState->setRootUTXO(uintToh256(ifChainObj->GetActiveChain().Tip()->hashUTXORoot));
+        CBlockIndex *pTip = ifChainObj->GetActiveChain().Tip();
+        CBlock block;
+        if (!ReadBlockFromDisk(block, pTip, Params().GetConsensus()))
+        {
+            rLogError("ReadBlockFromDisk failed at %d, hash=%s", pTip->nHeight,
+                      pTip->GetBlockHash().ToString());
+            assert(0);
+            return false;
+        } else
+        {
+            uint256 hashStateRoot;
+            uint256 hashUTXORoot;
+            if(block.GetVMState(hashStateRoot, hashUTXORoot) != RET_VM_STATE_OK)
+            {
+                assert(0);
+                rLogError("GetVMState failed");
+                return false;
+            }else {
+                globalState->setRoot(uintToh256(hashStateRoot));
+                globalState->setRootUTXO(uintToh256(hashUTXORoot));
+            }
+        }
     } else
     {
         globalState->setRoot(dev::sha3(dev::rlp("")));

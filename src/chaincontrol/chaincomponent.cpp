@@ -1133,17 +1133,41 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     {
         return state.DoS(100, false, REJECT_INVALID, "Block veriosn error");
     }
+
+    uint256 blockhashStateRoot;
+    uint256 blockhashUTXORoot;
     //the first new block hight,
     if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
     {
-        if (pindex->hashStateRoot != DEFAULT_HASH_STATE_ROOT)
+        if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
+        }
+        if (blockhashStateRoot != DEFAULT_HASH_STATE_ROOT)
         {
             return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot error");
         }
-        if ((pindex->hashUTXORoot != DEFAULT_HASH_UTXO_ROOT))
+        if (blockhashUTXORoot != DEFAULT_HASH_UTXO_ROOT)
         {
             return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot error");
         }
+    }else if(pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight + 1)
+    {
+        // after SBTCContractForkHeight ,must have blockhashStateRoot and blockhashUTXORoot
+        if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
+        }
+        if (blockhashStateRoot.IsNull())
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot not exist");
+        }
+        if (blockhashUTXORoot.IsNull())
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot not exist");
+        }
+    }else{
+        //  blockhashStateRoot and blockhashUTXORoot is NULL
     }
     ////////////////////////////////////////
 
@@ -1442,7 +1466,6 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     ////////////////////////////////////////////////////////////////// // sbtc-vm
     checkBlock.hashMerkleRoot = BlockMerkleRoot(checkBlock);
-    ifContractObj->GetState(checkBlock.hashStateRoot, checkBlock.hashUTXORoot);
 
     //If this error happens, it probably means that something with AAL created transactions didn't match up to what is expected
     if ((checkBlock.GetHash() != block.GetHash()) && !fJustCheck)
@@ -1504,11 +1527,15 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
                 }
             }
         }
-        if (checkBlock.hashUTXORoot != block.hashUTXORoot)
+
+        uint256 hashStateRoot;
+        uint256 hashUTXORoot;
+        ifContractObj->GetState(hashStateRoot, hashUTXORoot);
+        if (hashUTXORoot != blockhashUTXORoot)
         {
             NLogFormat("Actual block data does not match hashUTXORoot expected by AAL block");
         }
-        if (checkBlock.hashStateRoot != block.hashStateRoot)
+        if (hashStateRoot != blockhashStateRoot)
         {
             NLogFormat("Actual block data does not match hashStateRoot expected by AAL block");
         }
@@ -1521,13 +1548,24 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         /////////////////////////////////////////////////// sbtc-evm
         uint256 prevHashStateRoot = DEFAULT_HASH_STATE_ROOT;
         uint256 prevHashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
-        if (pindex->pprev->hashStateRoot != uint256() && pindex->pprev->hashUTXORoot != uint256())
-        {
-            prevHashStateRoot = pindex->pprev->hashStateRoot;
-            prevHashUTXORoot = pindex->pprev->hashUTXORoot;
+
+        uint256 hashStateRoot;
+        uint256 hashUTXORoot;
+        CBlock prevblock;
+        if (ReadBlockFromDisk(prevblock, pindex->pprev, Params().GetConsensus())) {
+            if(prevblock.GetVMState(hashStateRoot, hashUTXORoot) == RET_VM_STATE_ERR)
+            {
+                ILogFormat("GetVMState err");
+                return false;
+            }
         }
-        ifContractObj->UpdateState(prevHashStateRoot,
-                                   prevHashUTXORoot);//after the create new block,immediately recovery state
+
+//        if (pindex->pprev->hashStateRoot != uint256() && pindex->pprev->hashUTXORoot != uint256())
+        if (hashStateRoot != uint256() && hashUTXORoot != uint256()) {
+            prevHashStateRoot = hashStateRoot;
+            prevHashUTXORoot = hashUTXORoot;
+        }
+        ifContractObj->UpdateState(prevHashStateRoot,prevHashUTXORoot);//after the create new block,immediately recovery state
         ///////////////////////////////////////////////////
         return true;
     }

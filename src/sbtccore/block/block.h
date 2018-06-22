@@ -14,6 +14,14 @@
 /** SBTC CONTRACT VERSION */
 static const int32_t VERSIONBITS_SBTC_CONTRACT = 30;
 
+/* GetVMState */
+enum VM_STATE_ROOT
+{
+    RET_VM_STATE_OK = 1,
+    RET_CONTRACT_UNENBALE = 0,
+    RET_VM_STATE_ERR = -1,
+};
+
 /** Nodes collect new transactions into a block, hash them into a hash tree,
  * and scan through nonce values to make the block's hash satisfy proof-of-work
  * requirements.  When they solve the proof-of-work, they broadcast the block
@@ -31,9 +39,8 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    int32_t nHeight;      // sbtc-evm
-    uint256 hashStateRoot; // sbtc-evm
-    uint256 hashUTXORoot; // sbtc-evm
+    //    uint256 hashStateRoot; // sbtc-evm
+    //    uint256 hashUTXORoot; // sbtc-evm
 
     CBlockHeader()
     {
@@ -51,12 +58,11 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
-        {
-            READWRITE(nHeight); // sbtc-evm
-            READWRITE(hashStateRoot); // sbtc-evm
-            READWRITE(hashUTXORoot); // sbtc-evm
-        }
+        //        if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
+        //        {
+        //            READWRITE(hashStateRoot); // sbtc-evm
+        //            READWRITE(hashUTXORoot); // sbtc-evm
+        //        }
     }
 
     void SetNull()
@@ -67,9 +73,8 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        nHeight = 0; // sbtc-evm
-        hashStateRoot.SetNull(); // sbtc-evm
-        hashUTXORoot.SetNull(); // sbtc-evm
+        //        hashStateRoot.SetNull(); // sbtc-evm
+        //        hashUTXORoot.SetNull(); // sbtc-evm
     }
 
     bool IsNull() const
@@ -131,11 +136,12 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-        block.nHeight = nHeight; // sbtc-evm
-        block.hashStateRoot = hashStateRoot; // sbtc-evm
-        block.hashUTXORoot = hashUTXORoot; // sbtc-evm
+        //        block.hashStateRoot = hashStateRoot; // sbtc-evm
+        //        block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block;
     }
+
+    VM_STATE_ROOT GetVMState(uint256 &hashStateRoot, uint256 &hashUTXORoot) const;
 
     std::string ToString() const;
 };

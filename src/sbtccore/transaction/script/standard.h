@@ -63,6 +63,7 @@ enum txnouttype
     TX_WITNESS_V0_KEYHASH,
     TX_CREATE,   // sbtc-vm
     TX_CALL,
+    TX_VM_STATE,
 };
 
 class CNoDestination

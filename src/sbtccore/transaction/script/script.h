@@ -187,9 +187,12 @@ enum opcodetype
             OP_CREATE = 0xc1,
     OP_CALL = 0xc2,
     OP_SPEND = 0xc3,
+    OP_VM_STATE = 0xc4,  //sbtc-vm
 
     // template matching params
-            OP_GAS_PRICE = 0xf5,    //sbtc-vm
+        OP_HASH_STATE_ROOT = 0xf3,    //sbtc-vm
+    OP_HASH_UTXO_ROOT = 0xf4,    //sbtc-vm
+    OP_GAS_PRICE = 0xf5,    //sbtc-vm
     OP_VERSION = 0xf6,
     OP_GAS_LIMIT = 0xf7,
     OP_DATA = 0xf8,         //sbtc-vm
@@ -808,6 +811,11 @@ public:
     }
 
     ///////////////////////////////////////// //sbtc-vm
+    bool HasOpVmHashState() const
+    {
+        return Find(OP_VM_STATE) == 1;
+    }
+
     bool HasOpCreate() const
     {
         return Find(OP_CREATE) == 1;

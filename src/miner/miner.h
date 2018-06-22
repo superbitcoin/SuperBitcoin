@@ -215,7 +215,7 @@ private:
     void addPackageTxs(int &nPackagesSelected, int &nDescendantsUpdated);
 
     /** Rebuild the coinbase/coinstake transaction to account for new gas refunds **/
-    void RebuildRefundTransaction(); // sbtc-vm
+    void RebuildRefundTransaction(uint256 hashStateRoot, uint256 hashUTXORoot); // sbtc-vm
 
     // helper functions for addPackageTxs()
     /** Remove confirmed (inBlock) entries from given set */

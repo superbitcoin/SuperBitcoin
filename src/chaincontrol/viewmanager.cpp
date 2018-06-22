@@ -10,6 +10,7 @@
 #include "viewmanager.h"
 #include "config/argmanager.h"
 #include "sbtccore/block/undo.h"
+#include "blockfilemanager.h"
 
 SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
@@ -132,7 +133,21 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
 
     //sbtc-vm
     GET_CONTRACT_INTERFACE(ifContractObj);
-    ifContractObj->UpdateState(pindex->pprev->hashStateRoot, pindex->pprev->hashUTXORoot);
+    uint256 hashStateRoot;
+    uint256 hashUTXORoot;
+    CBlock prevblock;
+    if (!ReadBlockFromDisk(prevblock, pindex->pprev, Params().GetConsensus())) {
+        //TODO  LogError
+        rLogError("ReadBlockFromDisk failed at %d, hash=%s", pindex->pprev->nHeight,
+                         pindex->pprev->GetBlockHash().ToString());
+    } else {
+        if(prevblock.GetVMState(hashStateRoot, hashUTXORoot) == RET_VM_STATE_ERR)
+        {
+            ILogFormat("GetVMState err");
+        }
+    }
+    ifContractObj->UpdateState(hashStateRoot, hashUTXORoot);
+   // ifContractObj->UpdateState(pindex->pprev->hashStateRoot, pindex->pprev->hashUTXORoot);
 
     GET_CHAIN_INTERFACE(ifChainObj);
     if (pfClean == NULL && ifChainObj->IsLogEvents())
