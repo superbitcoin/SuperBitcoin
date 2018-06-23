@@ -6,11 +6,19 @@ add_executable(sbtcd ${sources} ${interfaceH} )
 target_include_directories(sbtcd PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${Secp256k1_INCLUDE_DIR} )
 
 
+set(LIB_FILE )
+
+IF (ENABLE_ZMQ)
+    set(LIB_FILE ${LIB_FILE} zmq ${LIBZMQ_LIBRARIES})
+ENDIF ()
 
 IF (ENABLE_STATIC_FLAG)
-    set(LIB_FILE -ldl libsnappy.a)
-ELSE ()
-    set(LIB_FILE )
+    set(LIB_FILE ${LIB_FILE} -ldl libsnappy.a)
+ENDIF ()
+
+# If libgmp exists, secp256k1 will use it at build time. Missing it will cause linking errors.
+IF (GMP_FOUND)
+    set(LIB_FILE ${LIB_FILE} ${GMP_LIBRARIES})
 ENDIF ()
 
 
@@ -24,3 +32,8 @@ target_link_libraries(sbtcd
 
 #
 #message( ${LEVELDB_LIBRARIES})
+
+# `make install` support
+install(TARGETS sbtcd
+    DESTINATION bin)
+

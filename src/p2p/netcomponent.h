@@ -4,6 +4,10 @@
 #include "interface/inetcomponent.h"
 #include "net.h"
 
+#if ENABLE_ZMQ
+#include "zmq/zmqnotificationinterface.h"
+#endif
+
 class PeerLogicValidation;
 class CNetComponent : public INetComponent
 {
@@ -47,5 +51,8 @@ private:
     std::unique_ptr<CConnman>   netConnMgr;
     std::unique_ptr<PeerLogicValidation> peerLogic;
 
+    CZMQNotificationInterface *pzmqNotificationInterface;
+
     CConnman::Options  netConnOptions;
 };
+
