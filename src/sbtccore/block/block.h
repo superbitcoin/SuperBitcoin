@@ -39,8 +39,6 @@ public:
     uint32_t nTime;
     uint32_t nBits;
     uint32_t nNonce;
-    //    uint256 hashStateRoot; // sbtc-evm
-    //    uint256 hashUTXORoot; // sbtc-evm
 
     CBlockHeader()
     {
@@ -58,11 +56,6 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-        //        if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
-        //        {
-        //            READWRITE(hashStateRoot); // sbtc-evm
-        //            READWRITE(hashUTXORoot); // sbtc-evm
-        //        }
     }
 
     void SetNull()
@@ -73,8 +66,6 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-        //        hashStateRoot.SetNull(); // sbtc-evm
-        //        hashUTXORoot.SetNull(); // sbtc-evm
     }
 
     bool IsNull() const
@@ -136,8 +127,6 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-        //        block.hashStateRoot = hashStateRoot; // sbtc-evm
-        //        block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block;
     }
 

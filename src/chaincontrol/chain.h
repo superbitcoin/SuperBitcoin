@@ -237,8 +237,6 @@ public:
     unsigned int nTime;
     unsigned int nBits;
     unsigned int nNonce;
-//    uint256 hashStateRoot; // sbtc-vm
-//    uint256 hashUTXORoot; // sbtc-vm
     //! (memory only) Sequential id assigned to distinguish order in which blocks are received.
     int32_t nSequenceId;
 
@@ -266,8 +264,6 @@ public:
         nTime = 0;
         nBits = 0;
         nNonce = 0;
-//        hashStateRoot.SetNull(); // sbtc-evm
-//        hashUTXORoot.SetNull(); // sbtc-evm
     }
 
     CBlockIndex()
@@ -284,8 +280,6 @@ public:
         nTime = block.nTime;
         nBits = block.nBits;
         nNonce = block.nNonce;
-//        hashStateRoot = block.hashStateRoot; // sbtc-evm
-//        hashUTXORoot = block.hashUTXORoot; // sbtc-evm
     }
 
     CDiskBlockPos GetBlockPos() const
@@ -320,8 +314,6 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-//        block.hashStateRoot = hashStateRoot; // sbtc-evm
-//        block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block;
     }
 
@@ -452,11 +444,6 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
-//        if (this->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT))
-//        {
-//            READWRITE(hashStateRoot); // sbtc-evm
-//            READWRITE(hashUTXORoot); // sbtc-evm
-//        }
     }
 
     uint256 GetBlockHash() const
@@ -468,8 +455,6 @@ public:
         block.nTime = nTime;
         block.nBits = nBits;
         block.nNonce = nNonce;
-//        block.hashStateRoot = hashStateRoot; // sbtc-evm
-//        block.hashUTXORoot = hashUTXORoot; // sbtc-evm
         return block.GetHash();
     }
 

@@ -449,8 +449,6 @@ bool CBlockTreeDB::LoadBlockIndexGuts(const Consensus::Params &consensusParams,
                 pindexNew->nNonce = diskindex.nNonce;
                 pindexNew->nStatus = diskindex.nStatus;
                 pindexNew->nTx = diskindex.nTx;
-//                pindexNew->hashStateRoot  = diskindex.hashStateRoot; // sbtc-vm
-//                pindexNew->hashUTXORoot   = diskindex.hashUTXORoot; // sbtc-vm
 
                 if (!CheckProofOfWork(pindexNew->GetBlockHash(), pindexNew->nBits, consensusParams))
                 {
