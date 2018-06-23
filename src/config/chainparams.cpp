@@ -354,7 +354,7 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 0;
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 999999999999ULL;
 
-        consensus.SBTCContractForkHeight = 1500 - 1; // 1500 is the first new block height
+        consensus.SBTCContractForkHeight = 800 - 1; // 1500 is the first new block height
         consensus.vDeployments[Consensus::DEPLOYMENT_SBTC_CONTRACT].bit = VERSIONBITS_SBTC_CONTRACT;
 
         // The best chain should have at least this much work.

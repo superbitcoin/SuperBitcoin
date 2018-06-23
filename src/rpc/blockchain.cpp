@@ -970,9 +970,9 @@ UniValue getstorage(const JSONRPCRequest &request)
                 CBlock block;
                 if (!ReadBlockFromDisk(block, chainActive[blockNum], Params().GetConsensus()))
                 {
-                    //TODO  LogError
-                    rLogError("ReadBlockFromDisk failed at %d, hash=%s", chainActive[blockNum]->nHeight,
-                              chainActive[blockNum]->GetBlockHash().ToString());
+                    std::ostringstream stringStream;
+                    stringStream << "ReadBlockFromDisk failed at hegiht " << chainActive[blockNum]->nHeight << " hash: " << chainActive[blockNum]->GetBlockHash().ToString();
+                    throw JSONRPCError(RPC_INVALID_PARAMS, stringStream.str());
                 } else
                 {
                     if(block.GetVMState(hashStateRoot, hashUTXORoot) == RET_VM_STATE_ERR){
