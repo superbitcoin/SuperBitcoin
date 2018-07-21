@@ -310,6 +310,12 @@ public:
     {
         return tx->IsCoinBase();
     }
+
+    bool IsSecondTx() const
+    {
+        return tx->IsCoinBase();
+    }
+
 };
 
 /** 

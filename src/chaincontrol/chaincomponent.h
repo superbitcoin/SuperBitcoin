@@ -261,6 +261,8 @@ public:
 
     bool IsSBTCContractEnabled(const CBlockIndex *pindex) override;
 
+    bool IsSBTCForkContractEnabled(const int height) override;
+
     CCoinsView *GetCoinViewDB() override;
 
     CCoinsViewCache *GetCoinsTip() override;

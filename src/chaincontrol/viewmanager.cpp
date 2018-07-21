@@ -83,6 +83,10 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
         return DISCONNECT_FAILED;
     }
 
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(pindex);
+
     // undo transactions in reverse order
     for (int i = block.vtx.size() - 1; i >= 0; i--)
     {
@@ -110,6 +114,10 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
         // restore inputs
         if (i > 0)
         { // not coinbases
+
+            if(enablecontract && tx.IsSecondTx()){
+                continue; //continue
+            }
             CTxUndo &txundo = blockUndo.vtxundo[i - 1];
             if (txundo.vprevout.size() != tx.vin.size())
             {
@@ -149,7 +157,7 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
     ifContractObj->UpdateState(hashStateRoot, hashUTXORoot);
    // ifContractObj->UpdateState(pindex->pprev->hashStateRoot, pindex->pprev->hashUTXORoot);
 
-    GET_CHAIN_INTERFACE(ifChainObj);
+//    GET_CHAIN_INTERFACE(ifChainObj);
     if (pfClean == NULL && ifChainObj->IsLogEvents())
     {
         ifContractObj->DeleteResults(block.vtx);
@@ -161,9 +169,17 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
 /** Apply the effects of a block on the utxo cache, ignoring that it may already have been applied. */
 bool CViewManager::ConnectBlock(const CBlock &block, const CBlockIndex *pIndex, CCoinsViewCache &viewCache)
 {
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = false;
+    if(ifChainObj->IsSBTCForkContractEnabled(pIndex->nHeight))
+    {
+        enablecontract = true;
+    }
+
     for (const CTransactionRef &tx : block.vtx)
     {
-        if (!tx->IsCoinBase())
+        if (!(tx->IsCoinBase() || (enablecontract && tx->IsSecondTx())))
         {
             for (const CTxIn &txin : tx->vin)
             {
@@ -200,8 +216,17 @@ bool CViewManager::Flush()
 
 void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
 {
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = false;
+//    CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
+    if(ifChainObj->IsSBTCForkContractEnabled(nHeight))
+    {
+        enablecontract = true;
+    }
+
     // mark inputs spent
-    if (!tx.IsCoinBase())
+    if (!(tx.IsCoinBase() || (enablecontract && tx.IsSecondTx())))
     {
         txundo.vprevout.reserve(tx.vin.size());
         for (const CTxIn &txin : tx.vin)

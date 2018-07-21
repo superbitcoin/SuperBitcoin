@@ -402,6 +402,9 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
     CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
 
+    //sbtc-evm
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+
     std::string strMode = "template";
     UniValue lpval = NullUniValue;
     std::set<std::string> setClientRules;
@@ -586,7 +589,7 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-        if (tx.IsCoinBase())
+        if (tx.IsCoinBase() || (enablecontract && tx.IsSecondTx()))
             continue;
 
         UniValue entry(UniValue::VOBJ);
@@ -786,7 +789,13 @@ UniValue submitblock(const JSONRPCRequest &request)
     {
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block does not start with a coinbase");
     }
-
+    //sbtc-evm
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    if(enablecontract){
+        if((block.vtx.size() > 1) && (!block.vtx[1]->IsSecondTx())){
+            throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "enable contract,second tx error");
+        }
+    }
     uint256 hash = block.GetHash();
     bool fBlockPresent = false;
     {

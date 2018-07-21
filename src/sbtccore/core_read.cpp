@@ -20,6 +20,8 @@
 #include "utils/utilstrencodings.h"
 #include "framework/version.h"
 
+#include "interface/ichaincomponent.h"
+
 CScript ParseScript(const std::string &s)
 {
     CScript result;
@@ -88,8 +90,12 @@ CScript ParseScript(const std::string &s)
 // Check that all of the input and output scripts of a transaction contains valid opcodes
 bool CheckTxScriptsSanity(const CMutableTransaction &tx)
 {
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+
     // Check input scripts for non-coinbase txs
-    if (!CTransaction(tx).IsCoinBase())
+    if (!(CTransaction(tx).IsCoinBase() || (enablecontract && !CTransaction(tx).IsSecondTx())))
     {
         for (unsigned int i = 0; i < tx.vin.size(); i++)
         {

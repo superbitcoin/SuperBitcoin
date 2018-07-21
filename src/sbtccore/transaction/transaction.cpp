@@ -174,6 +174,17 @@ bool CTransaction::PreCheck(CHECK_TYPE type, CValidationState &state) const
     if (IsCoinBase())
         return state.DoS(100, false, REJECT_INVALID, "coinbase");
 
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    if(enablecontract)
+    {
+        if(IsSecondTx())
+        {
+            return state.DoS(100, false, REJECT_INVALID, "secondtx");
+        }
+    }
+
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     std::string reason;
     if (Params().RequireStandard() && !IsStandardTx(*this, reason, true))
@@ -218,11 +229,21 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
 
     //sbtc-evm
     GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    bool enablecontract = false;
+    CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
+    if(pBlockIndex && ifChainObj->IsSBTCForkContractEnabled(pBlockIndex->nHeight))
+    {
+        enablecontract = true;
+    }
     // Check for negative or overflow output values
     CAmount nValueOut = 0;
     for (const auto &txout : vout)
     {
+        if(enablecontract && IsSecondTx()){
+            if(!(vout.at(0).scriptPubKey.HasOpVmHashState())){
+                return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-hashstate");
+            }
+        }
         if (txout.nValue < 0)
             return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-negative");
         if (txout.nValue > MAX_MONEY)
@@ -267,6 +288,9 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
     {
         for (const auto &txin : vin)
         {
+            if(enablecontract && IsSecondTx()){
+                continue;
+            }
             if (txin.prevout.IsNull())
                 return state.DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null");
 
@@ -350,6 +374,16 @@ unsigned int CTransaction::GetP2SHSigOpCount(const CCoinsViewCache &mapInputs) c
 {
     if (IsCoinBase())
         return 0;
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
+    if(pBlockIndex && (ifChainObj->IsSBTCForkContractEnabled(pBlockIndex->nHeight)))
+    {
+        if(IsSecondTx())
+        {
+            return 0;
+        }
+    }
 
     unsigned int nSigOps = 0;
     for (unsigned int i = 0; i < vin.size(); i++)
@@ -369,6 +403,17 @@ int64_t CTransaction::GetTransactionSigOpCost(const CCoinsViewCache &inputs, int
 
     if (IsCoinBase())
         return nSigOps;
+
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
+    if(pBlockIndex && (ifChainObj->IsSBTCForkContractEnabled(pBlockIndex->nHeight)))
+    {
+        if(IsSecondTx())
+        {
+            return nSigOps;
+        }
+    }
 
     if (flags & SCRIPT_VERIFY_P2SH)
     {
@@ -484,8 +529,18 @@ bool CTransaction::CheckInputs(CValidationState &state, const CCoinsViewCache &i
 {
     if (!IsCoinBase())
     {
-        //        GET_VERIFY_INTERFACE(ifVerifyObj);
+        //sbtc-evm
         GET_CHAIN_INTERFACE(ifChainObj);
+        bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+        if(enablecontract)
+        {
+            if(IsSecondTx())
+            {
+                return true;
+            }
+        }
+
+        //        GET_VERIFY_INTERFACE(ifVerifyObj);
         if (!CheckTxInputs(state, inputs, ifChainObj->GetSpendHeight(inputs)))
             return false;
 

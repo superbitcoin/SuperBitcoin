@@ -2352,7 +2352,7 @@ UniValue getchaintxstats(const JSONRPCRequest &request)
 
 static const CRPCCommand commands[] =
         { //  category              name                      actor (function)         okSafe argNames
-                //  --------------------- ------------------------  -----------------------  ------ ----------
+                //  --------------------- ---------------------- --  -----------------------  ------ ----------
                 {"blockchain", "getblockchaininfo",     &getblockchaininfo,     true, {}},
                 {"blockchain", "getchaintxstats",       &getchaintxstats,       true, {"nblocks",    "blockhash"}},
                 {"blockchain", "getbestblockhash",      &getbestblockhash,      true, {}},

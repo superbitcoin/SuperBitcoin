@@ -17,6 +17,8 @@
 #include "utils/utilmoneystr.h"
 #include "utils/utilstrencodings.h"
 
+#include "interface/ichaincomponent.h"
+
 UniValue ValueFromAmount(const CAmount &amount)
 {
     bool sign = amount < 0;
@@ -200,14 +202,20 @@ void TxToUniv(const CTransaction &tx, const uint256 &hashBlock, UniValue &entry,
     entry.pushKV("vsize", (GetTransactionWeight(tx) + WITNESS_SCALE_FACTOR - 1) / WITNESS_SCALE_FACTOR);
     entry.pushKV("locktime", (int64_t)tx.nLockTime);
 
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+
     UniValue vin(UniValue::VARR);
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         const CTxIn &txin = tx.vin[i];
         UniValue in(UniValue::VOBJ);
-        if (tx.IsCoinBase())
+        if (tx.IsCoinBase()) {
             in.pushKV("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
-        else
+        }else if(enablecontract && tx.IsSecondTx()){
+            in.pushKV("secondtx", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
+        }else
         {
             in.pushKV("txid", txin.prevout.hash.GetHex());
             in.pushKV("vout", (int64_t)txin.prevout.n);

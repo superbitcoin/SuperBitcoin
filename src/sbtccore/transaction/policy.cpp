@@ -13,7 +13,7 @@
 #include "tinyformat.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-
+#include "interface/ichaincomponent.h"
 
 CAmount GetDustThreshold(const CTxOut &txout, const CFeeRate &dustRelayFeeIn)
 {
@@ -177,6 +177,17 @@ bool AreInputsStandard(const CTransaction &tx, const CCoinsViewCache &mapInputs)
     if (tx.IsCoinBase())
         return true; // Coinbases don't use vin normally
 
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    if(enablecontract)
+    {
+        if(tx.IsSecondTx())
+        {
+            return true; // Coinbases don't use vin normally
+        }
+    }
+
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         const CTxOut &prev = mapInputs.AccessCoin(tx.vin[i].prevout).out;
@@ -211,6 +222,17 @@ bool IsWitnessStandard(const CTransaction &tx, const CCoinsViewCache &mapInputs)
 {
     if (tx.IsCoinBase())
         return true; // Coinbases are skipped
+
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    if(enablecontract)
+    {
+        if(tx.IsSecondTx())
+        {
+            return true; // Coinbases are skipped
+        }
+    }
 
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
@@ -421,6 +443,17 @@ bool CPolicy::AreInputsStandard(const CTransaction &tx, const CCoinsViewCache &m
     if (tx.IsCoinBase())
         return true; // Coinbases don't use vin normally
 
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    if(enablecontract)
+    {
+        if(tx.IsSecondTx())
+        {
+            return true; // Coinbases don't use vin normally
+        }
+    }
+
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         const CTxOut &prev = mapInputs.AccessCoin(tx.vin[i].prevout).out;
@@ -459,6 +492,17 @@ bool CPolicy::IsWitnessStandard(const CTransaction &tx, const CCoinsViewCache &m
 {
     if (tx.IsCoinBase())
         return true; // Coinbases are skipped
+
+    //sbtc-evm
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    if(enablecontract)
+    {
+        if(tx.IsSecondTx())
+        {
+            return true; // Coinbases are skipped
+        }
+    }
 
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {

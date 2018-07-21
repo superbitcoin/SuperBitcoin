@@ -398,7 +398,10 @@ public:
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
-
+    bool IsSecondTx() const
+    {
+        return (vin.size() == 2 && vin[0].prevout.IsNull() && vin[1].prevout.IsNull());
+    }
     friend bool operator==(const CTransaction &a, const CTransaction &b)
     {
         return a.hash == b.hash;
