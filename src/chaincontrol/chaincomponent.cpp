@@ -1173,44 +1173,38 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     uint256 blockhashStateRoot;
     uint256 blockhashUTXORoot;
 
-
-    bool enablecontract = [&]()->bool
+    if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
     {
-        if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
+        if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
         {
-            if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
-            {
-                return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
-            }
-            if (blockhashStateRoot != DEFAULT_HASH_STATE_ROOT)
-            {
-                return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot error");
-            }
-            if (blockhashUTXORoot != DEFAULT_HASH_UTXO_ROOT)
-            {
-                return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot error");
-            }
-            return true;
-        }else if(pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight + 1)
+            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
+        }
+        if (blockhashStateRoot != DEFAULT_HASH_STATE_ROOT)
         {
-            // after SBTCContractForkHeight ,must have blockhashStateRoot and blockhashUTXORoot
-            if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
-            {
-                return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
-            }
-            if (blockhashStateRoot.IsNull())
-            {
-                return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot not exist");
-            }
-            if (blockhashUTXORoot.IsNull())
-            {
-                return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot not exist");
-            }
-            return true;
-        }else
-            //  blockhashStateRoot and blockhashUTXORoot is NULL
-        return false;
-    }();
+            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot error");
+        }
+        if (blockhashUTXORoot != DEFAULT_HASH_UTXO_ROOT)
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot error");
+        }
+    }else if(pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight + 1)
+    {
+        // after SBTCContractForkHeight ,must have blockhashStateRoot and blockhashUTXORoot
+        if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
+        }
+        if (blockhashStateRoot.IsNull())
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot not exist");
+        }
+        if (blockhashUTXORoot.IsNull())
+        {
+            return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot not exist");
+        }
+    }
+
+    bool enablecontract = (pindex->nHeight >= chainparams.GetConsensus().SBTCContractForkHeight);
     //the first new block hight,
 
     ////////////////////////////////////////
