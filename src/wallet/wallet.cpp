@@ -1840,7 +1840,7 @@ void CWallet::ReacceptWalletTransactions()
 bool CWalletTx::RelayWalletTransaction(CConnman *connman)
 {
     assert(pwallet->GetBroadcastTransactions());
-    if (!IsCoinBase() && !isAbandoned() && GetDepthInMainChain() == 0)
+    if ((!IsCoinBase() || !IsCoinBase2()) && !isAbandoned() && GetDepthInMainChain() == 0)
     {
         CValidationState state;
         /* GetDepthInMainChain already catches known conflicts. */
@@ -1858,24 +1858,7 @@ bool CWalletTx::RelayWalletTransaction(CConnman *connman)
             }
         }
     }
-    if (!IsCoinBase2() && !isAbandoned() && GetDepthInMainChain() == 0)
-    {
-        CValidationState state;
-        /* GetDepthInMainChain already catches known conflicts. */
-        if (InMempool() || AcceptToMemoryPool(maxTxFee, state))
-        {
-            NLogFormat("Relaying wtx %s", GetHash().ToString());
-            if (connman)
-            {
-                CInv inv(MSG_TX, GetHash());
-                connman->ForEachNode([&inv](CNode *pnode)
-                                     {
-                                         pnode->PushInventory(inv);
-                                     });
-                return true;
-            }
-        }
-    }
+
     return false;
 }
 

@@ -1652,15 +1652,7 @@ ListTransactions(CWallet *const pwallet, const CWalletTx &wtx, const std::string
                 }
                 entry.push_back(Pair("account", account));
                 MaybePushAddress(entry, r.destination);
-                if (wtx.IsCoinBase())
-                {
-                    if (wtx.GetDepthInMainChain() < 1)
-                        entry.push_back(Pair("category", "orphan"));
-                    else if (wtx.GetBlocksToMaturity() > 0)
-                        entry.push_back(Pair("category", "immature"));
-                    else
-                        entry.push_back(Pair("category", "generate"));
-                }else  if (wtx.IsCoinBase2())
+                if (wtx.IsCoinBase() || wtx.IsCoinBase2())
                 {
                     if (wtx.GetDepthInMainChain() < 1)
                         entry.push_back(Pair("category", "orphan"));
