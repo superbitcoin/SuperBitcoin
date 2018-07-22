@@ -313,7 +313,7 @@ public:
 
     bool IsSecondTx() const
     {
-        return tx->IsCoinBase();
+        return tx->IsSecondTx();
     }
 
 };

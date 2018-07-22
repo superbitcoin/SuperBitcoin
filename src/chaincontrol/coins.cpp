@@ -158,10 +158,10 @@ void CCoinsViewCache::AddCoin(const COutPoint &outpoint, Coin &&coin, bool possi
 void AddCoins(CCoinsViewCache &cache, const CTransaction &tx, int nHeight, bool check)
 {
     //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->IsSBTCForkContractEnabled(nHeight);
+//    GET_CHAIN_INTERFACE(ifChainObj);
+//    bool enablecontract = ifChainObj->IsSBTCForkContractEnabled(nHeight);
 
-    bool fCoinbase = tx.IsCoinBase() || (enablecontract && tx.IsSecondTx());
+    bool fCoinbase = tx.IsCoinBase();  // || (enablecontract && tx.IsSecondTx())
     const uint256 &txid = tx.GetHash();
     for (size_t i = 0; i < tx.vout.size(); ++i)
     {
