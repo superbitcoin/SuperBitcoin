@@ -904,17 +904,17 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-length", false, "size limits failed");
 
     // First transaction must be coinbase, the rest must not be
-    if (block.vtx.empty() || !block.vtx[0]->IsCoinBase())
+    if (block.vtx.empty() || !block.vtx[0]->IsCoinBase1())
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "first tx is not coinbase");
 
     if(enablecontract){
         if((block.vtx.size() > 1) && (!block.vtx[1]->IsCoinBase2()))
         {
-            return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "second tx is not evm hash root");
+            return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "coinbase2 tx is not evm hash root");
         }
     }
     for (unsigned int i = 1; i < block.vtx.size(); i++)
-        if (block.vtx[i]->IsCoinBase())
+        if (block.vtx[i]->IsCoinBase1())
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
     //sbtc-evm
     if(enablecontract) {
@@ -1169,45 +1169,50 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         return state.DoS(100, false, REJECT_INVALID, "Block veriosn error");
     }
 
-    bool enablecontract = false;
+
     uint256 blockhashStateRoot;
     uint256 blockhashUTXORoot;
+
+
+    bool enablecontract = [&]()->bool
+    {
+        if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
+        {
+            if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
+            {
+                return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
+            }
+            if (blockhashStateRoot != DEFAULT_HASH_STATE_ROOT)
+            {
+                return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot error");
+            }
+            if (blockhashUTXORoot != DEFAULT_HASH_UTXO_ROOT)
+            {
+                return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot error");
+            }
+            return true;
+        }else if(pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight + 1)
+        {
+            // after SBTCContractForkHeight ,must have blockhashStateRoot and blockhashUTXORoot
+            if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
+            {
+                return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
+            }
+            if (blockhashStateRoot.IsNull())
+            {
+                return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot not exist");
+            }
+            if (blockhashUTXORoot.IsNull())
+            {
+                return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot not exist");
+            }
+            return true;
+        }else
+            //  blockhashStateRoot and blockhashUTXORoot is NULL
+        return false;
+    }();
     //the first new block hight,
-    if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
-    {
-        if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
-        {
-            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
-        }
-        if (blockhashStateRoot != DEFAULT_HASH_STATE_ROOT)
-        {
-            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot error");
-        }
-        if (blockhashUTXORoot != DEFAULT_HASH_UTXO_ROOT)
-        {
-            return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot error");
-        }
-        enablecontract = true;
-    }else if(pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight + 1)
-    {
-        // after SBTCContractForkHeight ,must have blockhashStateRoot and blockhashUTXORoot
-        if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
-        {
-            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot or  hashUTXORoot not exist");
-        }
-        if (blockhashStateRoot.IsNull())
-        {
-            return state.DoS(100, false, REJECT_INVALID, "Block hashStateRoot not exist");
-        }
-        if (blockhashUTXORoot.IsNull())
-        {
-            return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot not exist");
-        }
-        enablecontract = true;
-    }else{
-        //  blockhashStateRoot and blockhashUTXORoot is NULL
-        enablecontract = false;
-    }
+
     ////////////////////////////////////////
 
     //sbtc-vm
@@ -1338,7 +1343,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
         nInputs += tx.vin.size();
 
-        if (!(tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2())))
+        if (!tx.IsCoinBase())
         {
             if (!view.HaveInputs(tx))
             {
@@ -1373,7 +1378,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         }
         txdata.emplace_back(tx);
         bool hasOpSpend = tx.HasOpSpend(); //sbtc-vm
-        if (!(tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2())))
+        if (!tx.IsCoinBase())
         {
             if(!tx.HasCreateOrCall()) {
                 nFees += view.GetValueIn(tx) - tx.GetValueOut();
@@ -1407,7 +1412,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             }
         }
         //sbtc-vm
-        if (tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2()))
+        if (tx.IsCoinBase())
         {
             nValueOut += tx.GetValueOut();
         } else

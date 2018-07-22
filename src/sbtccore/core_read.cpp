@@ -91,11 +91,9 @@ CScript ParseScript(const std::string &s)
 bool CheckTxScriptsSanity(const CMutableTransaction &tx)
 {
     //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
 
     // Check input scripts for non-coinbase txs
-    if (!(CTransaction(tx).IsCoinBase() || (enablecontract && CTransaction(tx).IsCoinBase2())))
+    if (!(CTransaction(tx).IsCoinBase()))
     {
         for (unsigned int i = 0; i < tx.vin.size(); i++)
         {

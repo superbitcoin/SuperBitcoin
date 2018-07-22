@@ -174,16 +174,6 @@ bool CTransaction::PreCheck(CHECK_TYPE type, CValidationState &state) const
     if (IsCoinBase())
         return state.DoS(100, false, REJECT_INVALID, "coinbase");
 
-    //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
-    if(enablecontract)
-    {
-        if(IsCoinBase2())
-        {
-            return state.DoS(100, false, REJECT_INVALID, "secondtx");
-        }
-    }
 
     // Rather not work on nonstandard transactions (unless -testnet/-regtest)
     std::string reason;
@@ -374,16 +364,6 @@ unsigned int CTransaction::GetP2SHSigOpCount(const CCoinsViewCache &mapInputs) c
 {
     if (IsCoinBase())
         return 0;
-    //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
-    if(pBlockIndex && (ifChainObj->IsSBTCForkContractEnabled(pBlockIndex->nHeight)))
-    {
-        if(IsCoinBase2())
-        {
-            return 0;
-        }
-    }
 
     unsigned int nSigOps = 0;
     for (unsigned int i = 0; i < vin.size(); i++)
@@ -404,16 +384,6 @@ int64_t CTransaction::GetTransactionSigOpCost(const CCoinsViewCache &inputs, int
     if (IsCoinBase())
         return nSigOps;
 
-    //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
-    if(pBlockIndex && (ifChainObj->IsSBTCForkContractEnabled(pBlockIndex->nHeight)))
-    {
-        if(IsCoinBase2())
-        {
-            return nSigOps;
-        }
-    }
 
     if (flags & SCRIPT_VERIFY_P2SH)
     {
@@ -529,10 +499,9 @@ bool CTransaction::CheckInputs(CValidationState &state, const CCoinsViewCache &i
 {
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
-    bool iscoinbase2 = enablecontract && IsCoinBase2();
 
-    if (!(IsCoinBase() || iscoinbase2))
+
+    if (!IsCoinBase())
     {
         //        GET_VERIFY_INTERFACE(ifVerifyObj);
         if (!CheckTxInputs(state, inputs, ifChainObj->GetSpendHeight(inputs)))

@@ -84,8 +84,6 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
     }
 
     //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(pindex);
 
     // undo transactions in reverse order
     for (int i = block.vtx.size() - 1; i >= 0; i--)
@@ -115,7 +113,7 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
         if (i > 0)
         { // not coinbases
 
-            if(enablecontract && tx.IsCoinBase2()){
+            if(tx.IsCoinBase()){
                 continue; //continue
             }
             CTxUndo &txundo = blockUndo.vtxundo[i - 1];
@@ -170,16 +168,11 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
 bool CViewManager::ConnectBlock(const CBlock &block, const CBlockIndex *pIndex, CCoinsViewCache &viewCache)
 {
     //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = false;
-    if(ifChainObj->IsSBTCForkContractEnabled(pIndex->nHeight))
-    {
-        enablecontract = true;
-    }
+
 
     for (const CTransactionRef &tx : block.vtx)
     {
-        if (!(tx->IsCoinBase() || (enablecontract && tx->IsCoinBase2())))
+        if (!tx->IsCoinBase())
         {
             for (const CTxIn &txin : tx->vin)
             {
@@ -216,17 +209,9 @@ bool CViewManager::Flush()
 
 void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
 {
-    //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = false;
-//    CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
-    if(ifChainObj->IsSBTCForkContractEnabled(nHeight))
-    {
-        enablecontract = true;
-    }
 
     // mark inputs spent
-    if (!(tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2())))
+    if (!tx.IsCoinBase())
     {
         txundo.vprevout.reserve(tx.vin.size());
         for (const CTxIn &txin : tx.vin)

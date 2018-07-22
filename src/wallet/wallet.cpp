@@ -691,7 +691,7 @@ void CWallet::AddToSpends(const uint256 &wtxid)
 
     assert(mapWallet.count(wtxid));
     CWalletTx &thisTx = mapWallet[wtxid];
-    if (thisTx.IsCoinBase() || thisTx.IsCoinBase2()) // Coinbases don't spend anything!
+    if (thisTx.IsCoinBase()) // Coinbases don't spend anything!
         return;
 
     for (const CTxIn &txin : thisTx.tx->vin)
@@ -1604,7 +1604,7 @@ int CWalletTx::GetRequestCount() const
     int nRequests = -1;
     {
         LOCK(pwallet->cs_wallet);
-        if (IsCoinBase() || IsCoinBase2())
+        if (IsCoinBase())
         {
             // Generated block
             if (!hashUnset())
@@ -1808,7 +1808,7 @@ void CWallet::ReacceptWalletTransactions()
 
         int nDepth = wtx.GetDepthInMainChain();
 
-        if (!(wtx.IsCoinBase() || wtx.IsCoinBase2()) && (nDepth == 0 && !wtx.isAbandoned()))
+        if (!(wtx.IsCoinBase() ) && (nDepth == 0 && !wtx.isAbandoned()))
         {
             mapSorted.insert(std::make_pair(wtx.nOrderPos, &wtx));
         }
@@ -1830,7 +1830,7 @@ void CWallet::ReacceptWalletTransactions()
 bool CWalletTx::RelayWalletTransaction(CConnman *connman)
 {
     assert(pwallet->GetBroadcastTransactions());
-    if (!(IsCoinBase() || IsCoinBase2()) && !isAbandoned() && GetDepthInMainChain() == 0)
+    if (!(IsCoinBase()) && !isAbandoned() && GetDepthInMainChain() == 0)
     {
         CValidationState state;
         /* GetDepthInMainChain already catches known conflicts. */
@@ -1897,7 +1897,7 @@ CAmount CWalletTx::GetDebit(const isminefilter &filter) const
 CAmount CWalletTx::GetCredit(const isminefilter &filter) const
 {
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase() ) && GetBlocksToMaturity() > 0)
         return 0;
 
     CAmount credit = 0;
@@ -1929,7 +1929,7 @@ CAmount CWalletTx::GetCredit(const isminefilter &filter) const
 
 CAmount CWalletTx::GetImmatureCredit(bool fUseCache) const
 {
-    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0 && IsInMainChain())
+    if ((IsCoinBase() ) && GetBlocksToMaturity() > 0 && IsInMainChain())
     {
         if (fUseCache && fImmatureCreditCached)
             return nImmatureCreditCached;
@@ -1947,7 +1947,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
         return 0;
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase()) && GetBlocksToMaturity() > 0)
         return 0;
 
     if (fUseCache && fAvailableCreditCached)
@@ -1973,7 +1973,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
 
 CAmount CWalletTx::GetImmatureWatchOnlyCredit(const bool &fUseCache) const
 {
-    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0 && IsInMainChain())
+    if ((IsCoinBase()) && GetBlocksToMaturity() > 0 && IsInMainChain())
     {
         if (fUseCache && fImmatureWatchCreditCached)
             return nImmatureWatchCreditCached;
@@ -1991,7 +1991,7 @@ CAmount CWalletTx::GetAvailableWatchOnlyCredit(const bool &fUseCache) const
         return 0;
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase()) && GetBlocksToMaturity() > 0)
         return 0;
 
     if (fUseCache && fAvailableWatchCreditCached)
@@ -2311,7 +2311,7 @@ void CWallet::AvailableCoins(std::vector<COutput> &vCoins, bool fOnlySafe, const
             if (!CheckFinalTx(*pcoin))
                 continue;
 
-            if ((pcoin->IsCoinBase() || pcoin->IsCoinBase2()) && pcoin->GetBlocksToMaturity() > 0)
+            if ((pcoin->IsCoinBase()) && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
             int nDepth = pcoin->GetDepthInMainChain();
@@ -3803,7 +3803,7 @@ std::map<CTxDestination, CAmount> CWallet::GetAddressBalances()
             if (!pcoin->IsTrusted())
                 continue;
 
-            if ((pcoin->IsCoinBase() || pcoin->IsCoinBase2()) && pcoin->GetBlocksToMaturity() > 0)
+            if ((pcoin->IsCoinBase() ) && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
             int nDepth = pcoin->GetDepthInMainChain();
@@ -4749,7 +4749,7 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex *&pindexRet) const
 
 int CMerkleTx::GetBlocksToMaturity() const
 {
-    if (!(IsCoinBase() || IsCoinBase2()))
+    if (!(IsCoinBase()))
         return 0;
 
     return std::max(0, (COINBASE_MATURITY + 1) - GetDepthInMainChain());

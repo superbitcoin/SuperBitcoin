@@ -403,7 +403,6 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
 
     //sbtc-evm
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
 
     std::string strMode = "template";
     UniValue lpval = NullUniValue;
@@ -589,7 +588,7 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-        if (tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2()))
+        if (tx.IsCoinBase())
             continue;
 
         UniValue entry(UniValue::VOBJ);
@@ -785,7 +784,7 @@ UniValue submitblock(const JSONRPCRequest &request)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block decode failed");
     }
 
-    if (block.vtx.empty() || !block.vtx[0]->IsCoinBase())
+    if (block.vtx.empty() || !block.vtx[0]->IsCoinBase1())
     {
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block does not start with a coinbase");
     }
