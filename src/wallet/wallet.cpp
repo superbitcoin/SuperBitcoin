@@ -688,16 +688,20 @@ void CWallet::AddToSpends(const uint256 &wtxid)
 {
     //sbtc-evm
     GET_CHAIN_INTERFACE(ifChainObj);
-
+    bool enablecontract = false;
+    if(ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    {
+        enablecontract = true;
+    }
 
     assert(mapWallet.count(wtxid));
     CWalletTx &thisTx = mapWallet[wtxid];
     if (thisTx.IsCoinBase()) // Coinbases don't spend anything!
         return;
-
-    if (thisTx.IsCoinBase2()) // Coinbases don't spend anything!
-        return;
-
+    if(enablecontract) {
+        if (thisTx.IsCoinBase2()) // Coinbases don't spend anything!
+            return;
+    }
 
     for (const CTxIn &txin : thisTx.tx->vin)
         AddToSpends(txin.prevout, wtxid);
@@ -1618,7 +1622,7 @@ int CWalletTx::GetRequestCount() const
                 if (mi != pwallet->mapRequestCount.end())
                     nRequests = (*mi).second;
             }
-        }        else
+        } else
         {
             // Did anyone request this transaction?
             std::map<uint256, int>::const_iterator mi = pwallet->mapRequestCount.find(GetHash());
@@ -1813,12 +1817,7 @@ void CWallet::ReacceptWalletTransactions()
 
         int nDepth = wtx.GetDepthInMainChain();
 
-        if (!wtx.IsCoinBase() && (nDepth == 0 && !wtx.isAbandoned()))
-        {
-            mapSorted.insert(std::make_pair(wtx.nOrderPos, &wtx));
-        }
-
-        if (!wtx.IsCoinBase2() && (nDepth == 0 && !wtx.isAbandoned()))
+        if (!(wtx.IsCoinBase() || wtx.IsCoinBase2()) && (nDepth == 0 && !wtx.isAbandoned()))
         {
             mapSorted.insert(std::make_pair(wtx.nOrderPos, &wtx));
         }
@@ -1840,7 +1839,7 @@ void CWallet::ReacceptWalletTransactions()
 bool CWalletTx::RelayWalletTransaction(CConnman *connman)
 {
     assert(pwallet->GetBroadcastTransactions());
-    if ((!IsCoinBase() || !IsCoinBase2()) && !isAbandoned() && GetDepthInMainChain() == 0)
+    if (!(IsCoinBase() || IsCoinBase2()) && !isAbandoned() && GetDepthInMainChain() == 0)
     {
         CValidationState state;
         /* GetDepthInMainChain already catches known conflicts. */
@@ -1858,7 +1857,6 @@ bool CWalletTx::RelayWalletTransaction(CConnman *connman)
             }
         }
     }
-
     return false;
 }
 
@@ -1908,10 +1906,7 @@ CAmount CWalletTx::GetDebit(const isminefilter &filter) const
 CAmount CWalletTx::GetCredit(const isminefilter &filter) const
 {
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if (IsCoinBase() && GetBlocksToMaturity() > 0)
-        return 0;
-
-    if (IsCoinBase2() && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0)
         return 0;
 
     CAmount credit = 0;
@@ -1943,16 +1938,7 @@ CAmount CWalletTx::GetCredit(const isminefilter &filter) const
 
 CAmount CWalletTx::GetImmatureCredit(bool fUseCache) const
 {
-    if (IsCoinBase() && GetBlocksToMaturity() > 0 && IsInMainChain())
-    {
-        if (fUseCache && fImmatureCreditCached)
-            return nImmatureCreditCached;
-        nImmatureCreditCached = pwallet->GetCredit(*this, ISMINE_SPENDABLE);
-        fImmatureCreditCached = true;
-        return nImmatureCreditCached;
-    }
-
-    if (IsCoinBase2() && GetBlocksToMaturity() > 0 && IsInMainChain())
+    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0 && IsInMainChain())
     {
         if (fUseCache && fImmatureCreditCached)
             return nImmatureCreditCached;
@@ -1970,10 +1956,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
         return 0;
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if (IsCoinBase() && GetBlocksToMaturity() > 0)
-        return 0;
-
-    if (IsCoinBase2() && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0)
         return 0;
 
     if (fUseCache && fAvailableCreditCached)
@@ -1999,16 +1982,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
 
 CAmount CWalletTx::GetImmatureWatchOnlyCredit(const bool &fUseCache) const
 {
-    if (IsCoinBase() && GetBlocksToMaturity() > 0 && IsInMainChain())
-    {
-        if (fUseCache && fImmatureWatchCreditCached)
-            return nImmatureWatchCreditCached;
-        nImmatureWatchCreditCached = pwallet->GetCredit(*this, ISMINE_WATCH_ONLY);
-        fImmatureWatchCreditCached = true;
-        return nImmatureWatchCreditCached;
-    }
-
-    if (IsCoinBase2() && GetBlocksToMaturity() > 0 && IsInMainChain())
+    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0 && IsInMainChain())
     {
         if (fUseCache && fImmatureWatchCreditCached)
             return nImmatureWatchCreditCached;
@@ -2026,10 +2000,7 @@ CAmount CWalletTx::GetAvailableWatchOnlyCredit(const bool &fUseCache) const
         return 0;
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if (IsCoinBase() && GetBlocksToMaturity() > 0)
-        return 0;
-
-    if (IsCoinBase2() && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase() || IsCoinBase2()) && GetBlocksToMaturity() > 0)
         return 0;
 
     if (fUseCache && fAvailableWatchCreditCached)
@@ -2349,10 +2320,7 @@ void CWallet::AvailableCoins(std::vector<COutput> &vCoins, bool fOnlySafe, const
             if (!CheckFinalTx(*pcoin))
                 continue;
 
-            if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
-                continue;
-
-            if (pcoin->IsCoinBase2() && pcoin->GetBlocksToMaturity() > 0)
+            if ((pcoin->IsCoinBase() || pcoin->IsCoinBase2()) && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
             int nDepth = pcoin->GetDepthInMainChain();
@@ -3844,10 +3812,7 @@ std::map<CTxDestination, CAmount> CWallet::GetAddressBalances()
             if (!pcoin->IsTrusted())
                 continue;
 
-            if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
-                continue;
-
-            if (pcoin->IsCoinBase2() && pcoin->GetBlocksToMaturity() > 0)
+            if ((pcoin->IsCoinBase() || pcoin->IsCoinBase2()) && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
             int nDepth = pcoin->GetDepthInMainChain();
@@ -4304,7 +4269,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
             CURRENCY_UNIT, FormatMoney(DEFAULT_FALLBACK_FEE)));
     strUsage += HelpMessageOpt("-discardfee=<amt>", strprintf(
             _("The fee rate (in %s/kB) that indicates your tolerance for discarding change by adding it to the fee (default: %s). "
-                      "Note: An output is discarded if it is dust at this rate, but we will always discard up to the dust relay fee and a discard fee above that is limited by the fee estimate for the longest target"),
+              "Note: An output is discarded if it is dust at this rate, but we will always discard up to the dust relay fee and a discard fee above that is limited by the fee estimate for the longest target"),
             CURRENCY_UNIT, FormatMoney(DEFAULT_DISCARD_FEE)));
     strUsage += HelpMessageOpt("-mintxfee=<amt>", strprintf(
             _("Fees (in %s/kB) smaller than this are considered zero fee for transaction creation (default: %s)"),
@@ -4399,7 +4364,7 @@ CWallet *CWallet::CreateWalletFromFile(const std::string walletFile)
         } else if (nLoadWalletRet == DB_NONCRITICAL_ERROR)
         {
             InitWarning(strprintf(_("Error reading %s! All keys read correctly, but transaction data"
-                                            " or address book entries might be missing or incorrect."),
+                                    " or address book entries might be missing or incorrect."),
                                   walletFile));
         } else if (nLoadWalletRet == DB_TOO_NEW)
         {
@@ -4793,11 +4758,9 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex *&pindexRet) const
 
 int CMerkleTx::GetBlocksToMaturity() const
 {
-    if (!IsCoinBase())
+    if (!(IsCoinBase() || IsCoinBase2()))
         return 0;
 
-    if (!IsCoinBase2())
-        return 0;
     return std::max(0, (COINBASE_MATURITY + 1) - GetDepthInMainChain());
 }
 

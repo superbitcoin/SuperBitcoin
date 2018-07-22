@@ -527,19 +527,13 @@ bool CTransaction::CheckInputs(CValidationState &state, const CCoinsViewCache &i
                                bool fScriptChecks, unsigned int flags, bool cacheSigStore, bool cacheFullScriptStore,
                                PrecomputedTransactionData &txdata, std::vector<CScriptCheck> *pvChecks) const
 {
-    if (!IsCoinBase())
-    {
-        //sbtc-evm
-        GET_CHAIN_INTERFACE(ifChainObj);
-        bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
-        if(enablecontract)
-        {
-            if(IsCoinBase2())
-            {
-                return true;
-            }
-        }
 
+    GET_CHAIN_INTERFACE(ifChainObj);
+    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    bool iscoinbase2 = enablecontract && IsCoinBase2();
+
+    if (!(IsCoinBase() || iscoinbase2))
+    {
         //        GET_VERIFY_INTERFACE(ifVerifyObj);
         if (!CheckTxInputs(state, inputs, ifChainObj->GetSpendHeight(inputs)))
             return false;

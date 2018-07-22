@@ -728,10 +728,7 @@ UniValue getreceivedbyaddress(const JSONRPCRequest &request)
     for (const std::pair<uint256, CWalletTx> &pairWtx : pwallet->mapWallet)
     {
         const CWalletTx &wtx = pairWtx.second;
-        if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
-            continue;
-
-        if (wtx.IsCoinBase2() || !CheckFinalTx(*wtx.tx))
+        if ((wtx.IsCoinBase() || wtx.IsCoinBase2()) || !CheckFinalTx(*wtx.tx))
             continue;
 
         for (const CTxOut &txout : wtx.tx->vout)
@@ -789,10 +786,7 @@ UniValue getreceivedbyaccount(const JSONRPCRequest &request)
     for (const std::pair<uint256, CWalletTx> &pairWtx : pwallet->mapWallet)
     {
         const CWalletTx &wtx = pairWtx.second;
-        if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
-            continue;
-
-        if (wtx.IsCoinBase2() || !CheckFinalTx(*wtx.tx))
+        if ((wtx.IsCoinBase() || wtx.IsCoinBase2()) || !CheckFinalTx(*wtx.tx))
             continue;
 
         for (const CTxOut &txout : wtx.tx->vout)
@@ -1389,10 +1383,7 @@ UniValue ListReceived(CWallet *const pwallet, const UniValue &params, bool fByAc
     {
         const CWalletTx &wtx = pairWtx.second;
 
-        if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
-            continue;
-
-        if (wtx.IsCoinBase2() || !CheckFinalTx(*wtx.tx))
+        if ((wtx.IsCoinBase() || wtx.IsCoinBase2()) || !CheckFinalTx(*wtx.tx))
             continue;
 
         int nDepth = wtx.GetDepthInMainChain();
