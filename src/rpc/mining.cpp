@@ -589,7 +589,7 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-        if (tx.IsCoinBase() || (enablecontract && tx.IsSecondTx()))
+        if (tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2()))
             continue;
 
         UniValue entry(UniValue::VOBJ);
@@ -792,7 +792,7 @@ UniValue submitblock(const JSONRPCRequest &request)
     //sbtc-evm
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
     if(enablecontract){
-        if((block.vtx.size() > 1) && (!block.vtx[1]->IsSecondTx())){
+        if((block.vtx.size() > 1) && (!block.vtx[1]->IsCoinBase2())){
             throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "enable contract,second tx error");
         }
     }

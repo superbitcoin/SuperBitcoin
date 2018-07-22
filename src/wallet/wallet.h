@@ -311,9 +311,9 @@ public:
         return tx->IsCoinBase();
     }
 
-    bool IsSecondTx() const
+    bool IsCoinBase2() const
     {
-        return tx->IsSecondTx();
+        return tx->IsCoinBase2();
     }
 
 };

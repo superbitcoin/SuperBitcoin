@@ -906,7 +906,7 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "first tx is not coinbase");
 
     if(enablecontract){
-        if((block.vtx.size() > 1) && (!block.vtx[1]->IsSecondTx()))
+        if((block.vtx.size() > 1) && (!block.vtx[1]->IsCoinBase2()))
         {
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "second tx is not evm hash root");
         }
@@ -917,7 +917,7 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
     //sbtc-evm
     if(enablecontract) {
         for (unsigned int i = 2; i < block.vtx.size(); i++)
-            if (block.vtx[i]->IsSecondTx())
+            if (block.vtx[i]->IsCoinBase2())
                 return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one secondtx");
     }
     //Don't allow contract opcodes in coinbase   //sbtc-vm
@@ -1330,7 +1330,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
         nInputs += tx.vin.size();
 
-        if (!(tx.IsCoinBase() || (enablecontract && tx.IsSecondTx())))
+        if (!(tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2())))
         {
             if (!view.HaveInputs(tx))
             {
@@ -1365,7 +1365,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         }
         txdata.emplace_back(tx);
         bool hasOpSpend = tx.HasOpSpend(); //sbtc-vm
-        if (!(tx.IsCoinBase() || (enablecontract && tx.IsSecondTx())))
+        if (!(tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2())))
         {
             if(!tx.HasCreateOrCall()) {
                 nFees += view.GetValueIn(tx) - tx.GetValueOut();
@@ -1399,7 +1399,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             }
         }
         //sbtc-vm
-        if (tx.IsCoinBase() || (enablecontract && tx.IsSecondTx()))
+        if (tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2()))
         {
             nValueOut += tx.GetValueOut();
         } else

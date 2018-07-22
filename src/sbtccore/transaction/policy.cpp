@@ -182,7 +182,7 @@ bool AreInputsStandard(const CTransaction &tx, const CCoinsViewCache &mapInputs)
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
     if(enablecontract)
     {
-        if(tx.IsSecondTx())
+        if(tx.IsCoinBase2())
         {
             return true; // Coinbases don't use vin normally
         }
@@ -228,7 +228,7 @@ bool IsWitnessStandard(const CTransaction &tx, const CCoinsViewCache &mapInputs)
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
     if(enablecontract)
     {
-        if(tx.IsSecondTx())
+        if(tx.IsCoinBase2())
         {
             return true; // Coinbases are skipped
         }
@@ -448,7 +448,7 @@ bool CPolicy::AreInputsStandard(const CTransaction &tx, const CCoinsViewCache &m
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
     if(enablecontract)
     {
-        if(tx.IsSecondTx())
+        if(tx.IsCoinBase2())
         {
             return true; // Coinbases don't use vin normally
         }
@@ -498,7 +498,7 @@ bool CPolicy::IsWitnessStandard(const CTransaction &tx, const CCoinsViewCache &m
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
     if(enablecontract)
     {
-        if(tx.IsSecondTx())
+        if(tx.IsCoinBase2())
         {
             return true; // Coinbases are skipped
         }

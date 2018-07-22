@@ -699,7 +699,7 @@ void CWallet::AddToSpends(const uint256 &wtxid)
     if (thisTx.IsCoinBase()) // Coinbases don't spend anything!
         return;
     if(enablecontract) {
-        if (thisTx.IsSecondTx()) // Coinbases don't spend anything!
+        if (thisTx.IsCoinBase2()) // Coinbases don't spend anything!
             return;
     }
 

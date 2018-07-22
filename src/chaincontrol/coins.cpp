@@ -161,7 +161,7 @@ void AddCoins(CCoinsViewCache &cache, const CTransaction &tx, int nHeight, bool 
 //    GET_CHAIN_INTERFACE(ifChainObj);
 //    bool enablecontract = ifChainObj->IsSBTCForkContractEnabled(nHeight);
 
-    bool fCoinbase = tx.IsCoinBase();  // || (enablecontract && tx.IsSecondTx())
+    bool fCoinbase = tx.IsCoinBase();  // || (enablecontract && tx.IsCoinBase2())
     const uint256 &txid = tx.GetHash();
     for (size_t i = 0; i < tx.vout.size(); ++i)
     {
@@ -327,7 +327,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction &tx) const
     //sbtc-evm
     GET_CHAIN_INTERFACE(ifChainObj);
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
-    if(enablecontract && tx.IsSecondTx()){
+    if(enablecontract && tx.IsCoinBase2()){
         return  0;
     }
 
@@ -359,7 +359,7 @@ bool CCoinsViewCache::HaveInputs(const CTransaction &tx) const
     GET_CHAIN_INTERFACE(ifChainObj);
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
 
-    if (!(tx.IsCoinBase() || (enablecontract && tx.IsSecondTx())))
+    if (!(tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2())))
     {
         for (unsigned int i = 0; i < tx.vin.size(); i++)
         {

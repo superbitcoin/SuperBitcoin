@@ -179,7 +179,7 @@ bool CTransaction::PreCheck(CHECK_TYPE type, CValidationState &state) const
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
     if(enablecontract)
     {
-        if(IsSecondTx())
+        if(IsCoinBase2())
         {
             return state.DoS(100, false, REJECT_INVALID, "secondtx");
         }
@@ -239,7 +239,7 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
     CAmount nValueOut = 0;
     for (const auto &txout : vout)
     {
-        if(enablecontract && IsSecondTx()){
+        if(enablecontract && IsCoinBase2()){
             if(!(vout.at(0).scriptPubKey.HasOpVmHashState())){
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-vout-hashstate");
             }
@@ -288,7 +288,7 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
     {
         for (const auto &txin : vin)
         {
-            if(enablecontract && IsSecondTx()){
+            if(enablecontract && IsCoinBase2()){
                 continue;
             }
             if (txin.prevout.IsNull())
@@ -379,7 +379,7 @@ unsigned int CTransaction::GetP2SHSigOpCount(const CCoinsViewCache &mapInputs) c
     CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
     if(pBlockIndex && (ifChainObj->IsSBTCForkContractEnabled(pBlockIndex->nHeight)))
     {
-        if(IsSecondTx())
+        if(IsCoinBase2())
         {
             return 0;
         }
@@ -409,7 +409,7 @@ int64_t CTransaction::GetTransactionSigOpCost(const CCoinsViewCache &inputs, int
     CBlockIndex * pBlockIndex = ifChainObj->GetActiveChain().Tip();
     if(pBlockIndex && (ifChainObj->IsSBTCForkContractEnabled(pBlockIndex->nHeight)))
     {
-        if(IsSecondTx())
+        if(IsCoinBase2())
         {
             return nSigOps;
         }
@@ -534,7 +534,7 @@ bool CTransaction::CheckInputs(CValidationState &state, const CCoinsViewCache &i
         bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
         if(enablecontract)
         {
-            if(IsSecondTx())
+            if(IsCoinBase2())
             {
                 return true;
             }

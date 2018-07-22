@@ -745,7 +745,7 @@ CTxMemPool::CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationSt
     GET_CHAIN_INTERFACE(ifChainObj);
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
     if(enablecontract){
-        if(tx.IsSecondTx()){
+        if(tx.IsCoinBase2()){
             return true;
         }
     }
@@ -1522,7 +1522,7 @@ void CTxMemPool::Check(const CCoinsViewCache *pcoins) const
         {
             CValidationState state;
 
-            bool fCheckResult = tx.IsCoinBase() || (enablecontract && tx.IsSecondTx()) ||
+            bool fCheckResult = tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2()) ||
                                 tx.CheckTxInputs(state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
             ifChainObj->UpdateCoins(tx, mempoolDuplicate, 1000000);
@@ -1542,7 +1542,7 @@ void CTxMemPool::Check(const CCoinsViewCache *pcoins) const
         } else
         {
             bool fCheckResult =
-                    entry->GetTx().IsCoinBase() || (enablecontract && entry->GetTx().IsSecondTx()) || entry->GetTx().CheckTxInputs(state, mempoolDuplicate, nSpendHeight);
+                    entry->GetTx().IsCoinBase() || (enablecontract && entry->GetTx().IsCoinBase2()) || entry->GetTx().CheckTxInputs(state, mempoolDuplicate, nSpendHeight);
             assert(fCheckResult);
             ifChainObj->UpdateCoins(entry->GetTx(), mempoolDuplicate, 1000000);
             stepsSinceLastRemove = 0;

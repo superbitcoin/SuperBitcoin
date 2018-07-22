@@ -41,7 +41,7 @@ VM_STATE_ROOT CBlock::GetVMState(uint256 &hashStateRoot, uint256 &hashUTXORoot) 
     {
         assert(vtx.size() > 1);
         const CTransaction &tx = *(vtx[1]);  // 0
-        assert(tx.IsSecondTx() == true);
+        assert(tx.IsCoinBase2() == true);
 
         int index = 0;
         int i = 0;

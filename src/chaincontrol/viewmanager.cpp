@@ -115,7 +115,7 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
         if (i > 0)
         { // not coinbases
 
-            if(enablecontract && tx.IsSecondTx()){
+            if(enablecontract && tx.IsCoinBase2()){
                 continue; //continue
             }
             CTxUndo &txundo = blockUndo.vtxundo[i - 1];
@@ -179,7 +179,7 @@ bool CViewManager::ConnectBlock(const CBlock &block, const CBlockIndex *pIndex, 
 
     for (const CTransactionRef &tx : block.vtx)
     {
-        if (!(tx->IsCoinBase() || (enablecontract && tx->IsSecondTx())))
+        if (!(tx->IsCoinBase() || (enablecontract && tx->IsCoinBase2())))
         {
             for (const CTxIn &txin : tx->vin)
             {
@@ -226,7 +226,7 @@ void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, 
     }
 
     // mark inputs spent
-    if (!(tx.IsCoinBase() || (enablecontract && tx.IsSecondTx())))
+    if (!(tx.IsCoinBase() || (enablecontract && tx.IsCoinBase2())))
     {
         txundo.vprevout.reserve(tx.vin.size());
         for (const CTxIn &txin : tx.vin)

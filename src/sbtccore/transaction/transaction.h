@@ -398,7 +398,7 @@ public:
     {
         return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
-    bool IsSecondTx() const
+    bool IsCoinBase2() const
     {
         return (vin.size() == 2 && vin[0].prevout.IsNull() && vin[1].prevout.IsNull());
     }

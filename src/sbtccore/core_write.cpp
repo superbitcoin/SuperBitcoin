@@ -213,7 +213,7 @@ void TxToUniv(const CTransaction &tx, const uint256 &hashBlock, UniValue &entry,
         UniValue in(UniValue::VOBJ);
         if (tx.IsCoinBase()) {
             in.pushKV("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
-        }else if(enablecontract && tx.IsSecondTx()){
+        }else if(enablecontract && tx.IsCoinBase2()){
             in.pushKV("secondtx", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
         }else
         {
