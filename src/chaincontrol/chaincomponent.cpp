@@ -857,14 +857,16 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
     // These are checks that are independent of context.
 
     //sbtc-evm
-    bool  enablecontract = false;
-    GET_CHAIN_INTERFACE(ifChainObj);
-
-    CBlockIndex indexBlock(block.GetBlockHeader());
-    if (ifChainObj->IsSBTCForkContractEnabled(indexBlock.nHeight))
-    {   // next block is enable
-        enablecontract = true;
-    }
+    bool  enablecontract =  [&]()->bool
+    {
+        GET_CHAIN_INTERFACE(ifChainObj);
+        CBlockIndex indexBlock(block.GetBlockHeader());
+        if (ifChainObj->IsSBTCForkContractEnabled(indexBlock.nHeight))
+        {   // next block is enable
+           return true;
+        }
+        return false;
+    }();
 
     if (block.fChecked)
         return true;
@@ -918,10 +920,16 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
     if(enablecontract) {
         for (unsigned int i = 2; i < block.vtx.size(); i++)
             if (block.vtx[i]->IsCoinBase2())
-                return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one secondtx");
+                return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase2");
     }
     //Don't allow contract opcodes in coinbase   //sbtc-vm
     if (block.vtx[0]->HasOpSpend() || block.vtx[0]->HasCreateOrCall())
+    {
+        return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
+                         "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
+    }
+    if(enablecontract)
+    if (block.vtx[1]->HasOpSpend() || block.vtx[1]->HasCreateOrCall())
     {
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
                          "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");

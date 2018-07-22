@@ -687,21 +687,12 @@ void CWallet::AddToSpends(const COutPoint &outpoint, const uint256 &wtxid)
 void CWallet::AddToSpends(const uint256 &wtxid)
 {
     //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = false;
-    if(ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
-    {
-        enablecontract = true;
-    }
+
 
     assert(mapWallet.count(wtxid));
     CWalletTx &thisTx = mapWallet[wtxid];
-    if (thisTx.IsCoinBase()) // Coinbases don't spend anything!
+    if (thisTx.IsCoinBase() || thisTx.IsCoinBase2()) // Coinbases don't spend anything!
         return;
-    if(enablecontract) {
-        if (thisTx.IsCoinBase2()) // Coinbases don't spend anything!
-            return;
-    }
 
     for (const CTxIn &txin : thisTx.tx->vin)
         AddToSpends(txin.prevout, wtxid);

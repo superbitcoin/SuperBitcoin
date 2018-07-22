@@ -107,7 +107,8 @@ public:
 
     bool IsCoinBase() const
     {
-        return (vin.size() == 1 && vin[0].prevout.IsNull());
+        //coin base 1 and coinbase2
+        return ((vin.size() == 1 && vin[0].prevout.IsNull())) ||((vin.size() == 2 && vin[0].prevout.IsNull() && vin[1].prevout.IsNull()));
     }
 
     friend bool operator==(const CUtxo2UtxoTransaciton &a, const CUtxo2UtxoTransaciton &b)
