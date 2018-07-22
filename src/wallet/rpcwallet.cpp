@@ -115,6 +115,8 @@ void WalletTxToJSON(const CWalletTx &wtx, UniValue &entry)
     entry.push_back(Pair("confirmations", confirms));
     if (wtx.IsCoinBase())
         entry.push_back(Pair("generated", true));
+    if (wtx.IsCoinBase2())
+        entry.push_back(Pair("coinbase2", true));
     if (confirms > 0)
     {
         entry.push_back(Pair("blockhash", wtx.hashBlock.GetHex()));
@@ -729,6 +731,9 @@ UniValue getreceivedbyaddress(const JSONRPCRequest &request)
         if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
             continue;
 
+        if (wtx.IsCoinBase2() || !CheckFinalTx(*wtx.tx))
+            continue;
+
         for (const CTxOut &txout : wtx.tx->vout)
             if (txout.scriptPubKey == scriptPubKey)
                 if (wtx.GetDepthInMainChain() >= nMinDepth)
@@ -785,6 +790,9 @@ UniValue getreceivedbyaccount(const JSONRPCRequest &request)
     {
         const CWalletTx &wtx = pairWtx.second;
         if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
+            continue;
+
+        if (wtx.IsCoinBase2() || !CheckFinalTx(*wtx.tx))
             continue;
 
         for (const CTxOut &txout : wtx.tx->vout)
@@ -1384,6 +1392,9 @@ UniValue ListReceived(CWallet *const pwallet, const UniValue &params, bool fByAc
         if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
             continue;
 
+        if (wtx.IsCoinBase2() || !CheckFinalTx(*wtx.tx))
+            continue;
+
         int nDepth = wtx.GetDepthInMainChain();
         if (nDepth < nMinDepth)
             continue;
@@ -1649,7 +1660,16 @@ ListTransactions(CWallet *const pwallet, const CWalletTx &wtx, const std::string
                         entry.push_back(Pair("category", "immature"));
                     else
                         entry.push_back(Pair("category", "generate"));
-                } else
+                }else  if (wtx.IsCoinBase2())
+                {
+                    if (wtx.GetDepthInMainChain() < 1)
+                        entry.push_back(Pair("category", "orphan"));
+                    else if (wtx.GetBlocksToMaturity() > 0)
+                        entry.push_back(Pair("category", "immature"));
+                    else
+                        entry.push_back(Pair("category", "generate"));
+                }
+                else
                 {
                     entry.push_back(Pair("category", "receive"));
                 }
