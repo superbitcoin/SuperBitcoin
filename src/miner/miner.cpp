@@ -480,13 +480,8 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     ++nBlockTx;
     this->nBlockSigOpsCost += iter->GetSigOpCost();
 
-    CAmount gasRefunds;
-    for (CTxOut refundVout : bceResult.refundOutputs)
-    {
-        gasRefunds += refundVout.nValue;
-    }
-    CAmount tmp = (iter->GetFee() - gasRefunds);
-    nFees += tmp;   //  xiaofei
+    CAmount tmpFee = (iter->GetFee() - bceResult.refundSender);
+    nFees += tmpFee;   //  xiaofei
 
     inBlock.insert(iter);
     for (CTransaction &t : bceResult.valueTransfers)
@@ -498,7 +493,7 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     }
     //calculate sigops from new refund/proof tx
     this->nBlockSigOpsCost -= (*pblock->vtx[proofTx]).GetLegacySigOpCount();
-    oldHashStateRoot.SetNull();
+    oldHashStateRoot.SetNull();// not update hashroot this moment
     oldHashUTXORoot.SetNull();
     RebuildRefundTransaction(oldHashStateRoot, oldHashUTXORoot);
     this->nBlockSigOpsCost += (*pblock->vtx[proofTx]).GetLegacySigOpCount();
