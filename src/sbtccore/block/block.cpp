@@ -39,6 +39,7 @@ VM_STATE_ROOT CBlock::GetVMState(uint256 &hashStateRoot, uint256 &hashUTXORoot) 
 {
     if (this->nVersion & (((uint32_t) 1) << VERSIONBITS_SBTC_CONTRACT))
     {
+        assert(vtx.size() > 1);
         const CTransaction &tx = *(vtx[1]);  // 0
         assert(tx.IsSecondTx() == true);
 

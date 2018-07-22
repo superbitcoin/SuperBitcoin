@@ -95,7 +95,7 @@ bool CheckTxScriptsSanity(const CMutableTransaction &tx)
     bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
 
     // Check input scripts for non-coinbase txs
-    if (!(CTransaction(tx).IsCoinBase() || (enablecontract && !CTransaction(tx).IsSecondTx())))
+    if (!(CTransaction(tx).IsCoinBase() || (enablecontract && CTransaction(tx).IsSecondTx())))
     {
         for (unsigned int i = 0; i < tx.vin.size(); i++)
         {

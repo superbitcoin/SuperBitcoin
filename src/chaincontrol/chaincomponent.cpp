@@ -983,7 +983,7 @@ bool CChainComponent::IsSBTCContractEnabled(const CBlockIndex *pindex)
     }
     return (pindex->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT));
 }
-//only in height  = SBTCContractForkHeight , // next block is enable
+//check SBTCEnable by hegiht
 bool CChainComponent::IsSBTCForkContractEnabled(const int height)
 {
     return height >= Params().GetConsensus().SBTCContractForkHeight;
