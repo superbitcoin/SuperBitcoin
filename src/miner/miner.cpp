@@ -271,11 +271,11 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
     // Create second transaction.
     if(enablecontract)
     {
-        CMutableTransaction coinbaseTx2;
-        coinbaseTx2.vin.resize(2);
-        coinbaseTx2.vin[0].prevout.SetNull();
-        coinbaseTx2.vin[1].prevout.SetNull();
-        coinbaseTx2.vout.resize(1);
+        CMutableTransaction coinbase2;
+        coinbase2.vin.resize(2);
+        coinbase2.vin[0].prevout.SetNull();
+        coinbase2.vin[1].prevout.SetNull();
+        coinbase2.vout.resize(1);
 
         if (oldHashStateRoot.IsNull())
         {
@@ -288,13 +288,13 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
         CScript scriptPubKey =
                 CScript() << ParseHex(oldHashStateRoot.GetHex().c_str()) << ParseHex(oldHashUTXORoot.GetHex().c_str())
                           << OP_VM_STATE;
-        coinbaseTx2.vout[0].scriptPubKey = scriptPubKey;
-        coinbaseTx2.vout[0].nValue = 0;
-        coinbaseTx2.vin[0].scriptSig = CScript() << nHeight << OP_0;
-        coinbaseTx2.vin[1].scriptSig = CScript() << nHeight << OP_0;
-        originalRewardTx = coinbaseTx2;
+        coinbase2.vout[0].scriptPubKey = scriptPubKey;
+        coinbase2.vout[0].nValue = 0;
+        coinbase2.vin[0].scriptSig = CScript() << nHeight << OP_0;
+        coinbase2.vin[1].scriptSig = CScript() << nHeight << OP_0;
+        originalRewardTx = coinbase2;
         pblock->vtx.emplace_back();
-        pblock->vtx[1] = MakeTransactionRef(std::move(coinbaseTx2));
+        pblock->vtx[1] = MakeTransactionRef(std::move(coinbase2));
     }
 
     //    addPriorityTxs(minGasPrice);
