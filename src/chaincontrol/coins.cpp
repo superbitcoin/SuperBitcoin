@@ -161,7 +161,7 @@ void AddCoins(CCoinsViewCache &cache, const CTransaction &tx, int nHeight, bool 
 //    GET_CHAIN_INTERFACE(ifChainObj);
 //    bool enablecontract = ifChainObj->IsSBTCForkContractEnabled(nHeight);
 
-    bool fCoinbase = tx.IsCoinBase();  // || (enablecontract && tx.IsCoinBase2())
+    bool fCoinbase = tx.IsCoinBase() || tx.IsCoinBase2();
     const uint256 &txid = tx.GetHash();
     for (size_t i = 0; i < tx.vout.size(); ++i)
     {
