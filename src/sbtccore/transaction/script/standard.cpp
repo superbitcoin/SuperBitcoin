@@ -46,6 +46,8 @@ const char *GetTxnOutputType(txnouttype t)
             return "create";
         case TX_CALL:
             return "call";
+        default:
+            return nullptr;
     }
     return nullptr;
 }

@@ -19,13 +19,13 @@
  * @date 2015
  */
 
-#pragma warning(push)
+//#pragma warning(pop)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
 
 #include <boost/math/distributions/normal.hpp>
 
-#pragma warning(pop)
+//#pragma warning(pop)
 #pragma GCC diagnostic pop
 
 #include "BasicGasPricer.h"

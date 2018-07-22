@@ -115,7 +115,7 @@ SbtcState::execute(EnvInfo const &_envInfo, SealEngineFace const &_sealEngine, S
         printfErrorLog(dev::eth::toTransactionException(_e));
         res.excepted = dev::eth::toTransactionException(_e);
         res.gasUsed = _t.gas();
-        const Consensus::Params &consensusParams = Params().GetConsensus();
+//        const Consensus::Params &consensusParams = Params().GetConsensus();
         //sbtc-vm force to clear
         //        if(chainActive.Height() < consensusParams.nFixUTXOCacheHFHeight  && _p != Permanence::Reverted){
         //            deleteAccounts(_sealEngine.deleteAddresses);

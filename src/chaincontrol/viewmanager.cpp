@@ -155,7 +155,7 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
     ifContractObj->UpdateState(hashStateRoot, hashUTXORoot);
    // ifContractObj->UpdateState(pindex->pprev->hashStateRoot, pindex->pprev->hashUTXORoot);
 
-//    GET_CHAIN_INTERFACE(ifChainObj);
+    GET_CHAIN_INTERFACE(ifChainObj);
     if (pfClean == NULL && ifChainObj->IsLogEvents())
     {
         ifContractObj->DeleteResults(block.vtx);
