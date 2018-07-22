@@ -868,7 +868,7 @@ UniValue getblock(const JSONRPCRequest &request)
 UniValue getaccountinfo(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
 
     if (request.fHelp || request.params.size() < 1)
@@ -930,7 +930,7 @@ UniValue getaccountinfo(const JSONRPCRequest &request)
 UniValue getstorage(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
 
     if (request.fHelp || request.params.size() < 1)
@@ -1021,7 +1021,7 @@ UniValue getstorage(const JSONRPCRequest &request)
 UniValue callcontract(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
 
     if (request.fHelp || request.params.size() < 2)
@@ -1345,7 +1345,7 @@ private:
 UniValue searchlogs(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
 
     if (request.fHelp || request.params.size() < 2)
@@ -1449,7 +1449,7 @@ UniValue searchlogs(const JSONRPCRequest &request)
 UniValue gettransactionreceipt(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
 
     if (request.fHelp || request.params.size() < 1)
@@ -1489,7 +1489,7 @@ UniValue gettransactionreceipt(const JSONRPCRequest &request)
 UniValue listcontracts(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
 
     if (request.fHelp)

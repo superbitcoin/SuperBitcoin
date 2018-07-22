@@ -390,7 +390,7 @@ bool CChainComponent::IsTxIndex() const
 
 bool CChainComponent::IsLogEvents()
 {
-    if (!IsSBTCContractEnabled(GetActiveChain().Tip()))
+    if (!GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return false;
     }
@@ -856,17 +856,7 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
 {
     // These are checks that are independent of context.
 
-    //sbtc-evm
-    bool  enablecontract =  [&]()->bool
-    {
-        GET_CHAIN_INTERFACE(ifChainObj);
-        CBlockIndex indexBlock(block.GetBlockHeader());
-        if (ifChainObj->IsSBTCForkContractEnabled(indexBlock.nHeight))
-        {   // next block is enable
-           return true;
-        }
-        return false;
-    }();
+
 
     if (block.fChecked)
         return true;
@@ -907,7 +897,7 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
     if (block.vtx.empty() || !block.vtx[0]->IsCoinBase1())
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "first tx is not coinbase");
 
-    if(enablecontract){
+    if(block.IsSBTCContractEnabled()){
         if((block.vtx.size() > 1) && (!block.vtx[1]->IsCoinBase2()))
         {
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "coinbase2 tx is not evm hash root");
@@ -917,7 +907,7 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
         if (block.vtx[i]->IsCoinBase1())
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
     //sbtc-evm
-    if(enablecontract) {
+    if(block.IsSBTCContractEnabled()) {
         for (unsigned int i = 2; i < block.vtx.size(); i++)
             if (block.vtx[i]->IsCoinBase2())
                 return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase2");
@@ -928,7 +918,7 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
                          "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
     }
-    if(enablecontract)
+    if(block.IsSBTCContractEnabled())
     if (block.vtx[1]->HasOpSpend() || block.vtx[1]->HasCreateOrCall())
     {
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
@@ -983,14 +973,14 @@ bool CChainComponent::IsSBTCForkEnabled(const int height)
     return height >= Params().GetConsensus().SBTCForkHeight;
 }
 
-bool CChainComponent::IsSBTCContractEnabled(const CBlockIndex *pindex)
-{
-    if (pindex == nullptr)
-    {
-        return false;
-    }
-    return (pindex->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT));
-}
+//bool CChainComponent::IsSBTCContractEnabled(const CBlockIndex *pindex)
+//{
+//    if (pindex == nullptr)
+//    {
+//        return false;
+//    }
+//    return (pindex->IsSBTCContractEnabled());
+//}
 //check SBTCEnable by hegiht
 bool CChainComponent::IsSBTCForkContractEnabled(const int height)
 {
@@ -1164,14 +1154,16 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     int64_t nTimeStart = GetTimeMicros();
 
     //////////////////////////////////////sbtc-evm
-    if ((pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight) && !IsSBTCContractEnabled(pindex))
+    if ((pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight) && !pindex->IsSBTCContractEnabled())
     {
         return state.DoS(100, false, REJECT_INVALID, "Block veriosn error");
     }
 
 
-    uint256 blockhashStateRoot;
+    uint256 blockhashStateRoot ;
     uint256 blockhashUTXORoot;
+    blockhashStateRoot.SetNull();
+    blockhashUTXORoot.SetNull();
 
     if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
     {
@@ -1204,7 +1196,11 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         }
     }
 
-    bool enablecontract = (pindex->nHeight >= chainparams.GetConsensus().SBTCContractForkHeight);
+//    bool enablecontract = [&]()->bool{
+//        GET_CHAIN_INTERFACE(ifChainObj);
+//        return ifChainObj->IsSBTCContractEnabled(pindex);
+//    }();
+
     //the first new block hight,
 
     ////////////////////////////////////////
@@ -2116,7 +2112,7 @@ bool CChainComponent::RewindBlock(const CChainParams &params)
         {
             break;
         }
-        if ((iHeight > params.GetConsensus().SBTCContractForkHeight) && !IsSBTCContractEnabled(chainActive[iHeight]))
+        if ((iHeight > params.GetConsensus().SBTCContractForkHeight) && !(chainActive[iHeight])->IsSBTCContractEnabled())
         {
             break;
         }

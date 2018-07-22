@@ -328,7 +328,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction &tx) const
 
     //sbtc-evm
     GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    bool enablecontract =ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
     if(enablecontract && tx.IsCoinBase2()){
         return  0;
     }

@@ -255,7 +255,7 @@ bool CContractComponent::ContractInit()
     pstorageresult = new StorageResults(stateDir.string());
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         CBlockIndex *pTip = ifChainObj->GetActiveChain().Tip();
         CBlock block;
@@ -323,7 +323,7 @@ uint64_t CContractComponent::GetMinGasPrice(int height)
     uint64_t minGasPrice = 1;
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return 0;
     }
@@ -340,7 +340,7 @@ uint64_t CContractComponent::GetBlockGasLimit(int height)
     uint64_t blockGasLimit = 1;
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return 0;
     }
@@ -355,7 +355,7 @@ uint64_t CContractComponent::GetBlockGasLimit(int height)
 bool CContractComponent::AddressInUse(string contractaddress)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return false;
     }
@@ -371,7 +371,7 @@ bool CContractComponent::CheckContractTx(const CTransaction tx, const CAmount nF
 
     GET_CHAIN_INTERFACE(ifChainObj);
     int height = ifChainObj->GetActiveChain().Tip()->nHeight + 1;
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return false;
     }
@@ -520,7 +520,7 @@ bool CContractComponent::RunContractTx(CTransaction tx, CCoinsViewCache *v, CBlo
                                        ByteCodeExecResult &testExecResult)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return false;
     }
@@ -656,7 +656,7 @@ uint32_t GetExcepted(dev::eth::TransactionException status)
 string CContractComponent::GetExceptedInfo(uint32_t index)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return "";
     }
@@ -681,7 +681,7 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
 {
 
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return false;
     }
@@ -875,7 +875,7 @@ bool CContractComponent::ContractTxConnectBlock(CTransaction tx, uint32_t transa
 void CContractComponent::GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return;
     }
@@ -889,7 +889,7 @@ void CContractComponent::GetState(uint256 &hashStateRoot, uint256 &hashUTXORoot)
 void CContractComponent::UpdateState(uint256 hashStateRoot, uint256 hashUTXORoot)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return;
     }
@@ -905,7 +905,7 @@ void CContractComponent::UpdateState(uint256 hashStateRoot, uint256 hashUTXORoot
 void CContractComponent::DeleteResults(std::vector<CTransactionRef> const &txs)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return;
     }
@@ -915,7 +915,7 @@ void CContractComponent::DeleteResults(std::vector<CTransactionRef> const &txs)
 std::vector<TransactionReceiptInfo> CContractComponent::GetResult(uint256 const &hashTx)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return std::vector<TransactionReceiptInfo>();
     }
@@ -925,7 +925,7 @@ std::vector<TransactionReceiptInfo> CContractComponent::GetResult(uint256 const 
 void CContractComponent::CommitResults()
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return;
     }
@@ -935,7 +935,7 @@ void CContractComponent::CommitResults()
 void CContractComponent::ClearCacheResult()
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return;
     }
@@ -945,7 +945,7 @@ void CContractComponent::ClearCacheResult()
 std::map<dev::h256, std::pair<dev::u256, dev::u256>> CContractComponent::GetStorageByAddress(string address)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return std::map<dev::h256, std::pair<dev::u256, dev::u256>>();
     }
@@ -958,7 +958,7 @@ std::map<dev::h256, std::pair<dev::u256, dev::u256>> CContractComponent::GetStor
 void CContractComponent::SetTemporaryState(uint256 hashStateRoot, uint256 hashUTXORoot)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return;
     }
@@ -973,7 +973,7 @@ void CContractComponent::SetTemporaryState(uint256 hashStateRoot, uint256 hashUT
 std::unordered_map<dev::h160, dev::u256> CContractComponent::GetContractList()
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return std::unordered_map<dev::h160, dev::u256>();
     }
@@ -985,7 +985,7 @@ std::unordered_map<dev::h160, dev::u256> CContractComponent::GetContractList()
 CAmount CContractComponent::GetContractBalance(dev::h160 address)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return CAmount(0);
     }
@@ -995,7 +995,7 @@ CAmount CContractComponent::GetContractBalance(dev::h160 address)
 std::vector<uint8_t> CContractComponent::GetContractCode(dev::Address address)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return std::vector<uint8_t>();
     }
@@ -1007,7 +1007,7 @@ bool CContractComponent::GetContractVin(dev::Address address, dev::h256 &hash, u
 {
     bool ret = false;
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return ret;
     }
@@ -1068,7 +1068,7 @@ void CContractComponent::RPCCallContract(UniValue &result, const string addrCont
                                          string sender, uint64_t gasLimit)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
     {
         return;
     }

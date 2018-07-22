@@ -744,7 +744,7 @@ CTxMemPool::CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationSt
     //sbtc-evm
     //todo here have some problem
     GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    bool enablecontract = ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
     if(enablecontract){
         if(tx.IsCoinBase2()){
             return true;
@@ -1432,7 +1432,7 @@ void CTxMemPool::Check(const CCoinsViewCache *pcoins) const
     const int64_t nSpendHeight = ifChainObj->GetSpendHeight(mempoolDuplicate);
 
     //sbtc-evm
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    bool enablecontract = ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
 
     LOCK(cs);
     std::list<const CTxMemPoolEntry *> waitingOnDependants;

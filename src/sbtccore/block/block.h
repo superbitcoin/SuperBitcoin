@@ -79,6 +79,10 @@ public:
     {
         return (int64_t)nTime;
     }
+    bool IsSBTCContractEnabled() const
+    {
+        return (nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT));
+    }
 };
 
 

@@ -789,7 +789,7 @@ UniValue submitblock(const JSONRPCRequest &request)
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block does not start with a coinbase");
     }
     //sbtc-evm
-    bool enablecontract = ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip());
+    bool enablecontract = ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
     if(enablecontract){
         if((block.vtx.size() > 1) && (!block.vtx[1]->IsCoinBase2())){
             throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "enable contract,second tx error");
