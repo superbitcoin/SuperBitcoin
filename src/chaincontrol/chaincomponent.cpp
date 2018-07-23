@@ -894,32 +894,32 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
     if (block.vtx.empty() || !block.vtx[0]->IsCoinBase1())
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "first tx is not coinbase");
 
-    if(block.IsSBTCContractEnabled()){
-        if((block.vtx.size() > 1) && (!block.vtx[1]->IsCoinBase2()))
-        {
-            return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "coinbase2 tx is not evm hash root");
-        }
-    }
     for (unsigned int i = 1; i < block.vtx.size(); i++)
         if (block.vtx[i]->IsCoinBase1())
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
+
     //sbtc-evm
-    if(block.IsSBTCContractEnabled()) {
+    if(block.IsSBTCContractEnabled()){
+
+        //Don't allow contract opcodes in coinbase   //sbtc-vm
+        if (block.vtx[0]->HasOpSpend() || block.vtx[0]->HasCreateOrCall())
+        {
+            return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
+                             "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
+        }
+
+        if(!(block.vtx.size() > 1) || (!block.vtx[1]->IsCoinBase2()))
+        {
+            return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "coinbase2 tx is not evm hash root");
+        }
+
+        if (block.vtx[1]->HasOpSpend() || block.vtx[1]->HasCreateOrCall()) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
+                             "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
+        }
         for (unsigned int i = 2; i < block.vtx.size(); i++)
             if (block.vtx[i]->IsCoinBase2())
                 return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase2");
-    }
-    //Don't allow contract opcodes in coinbase   //sbtc-vm
-    if (block.vtx[0]->HasOpSpend() || block.vtx[0]->HasCreateOrCall())
-    {
-        return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
-                         "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
-    }
-    if(block.IsSBTCContractEnabled())
-    if (block.vtx[1]->HasOpSpend() || block.vtx[1]->HasCreateOrCall())
-    {
-        return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
-                         "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
     }
 
     bool lastWasContract = false; //sbtc-vm
