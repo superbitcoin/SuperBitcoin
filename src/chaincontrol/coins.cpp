@@ -157,10 +157,6 @@ void CCoinsViewCache::AddCoin(const COutPoint &outpoint, Coin &&coin, bool possi
 
 void AddCoins(CCoinsViewCache &cache, const CTransaction &tx, int nHeight, bool check)
 {
-    //sbtc-evm
-//    GET_CHAIN_INTERFACE(ifChainObj);
-//    bool enablecontract = ifChainObj->IsSBTCForkContractEnabled(nHeight);
-
     bool fCoinbase = tx.IsCoinBase();
     const uint256 &txid = tx.GetHash();
     for (size_t i = 0; i < tx.vout.size(); ++i)
@@ -321,17 +317,8 @@ unsigned int CCoinsViewCache::GetCacheSize() const
 
 CAmount CCoinsViewCache::GetValueIn(const CTransaction &tx) const
 {
-
-
     if (tx.IsCoinBase())
         return 0;
-
-    //sbtc-evm
-    GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract =ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
-    if(enablecontract && tx.IsCoinBase2()){
-        return  0;
-    }
 
     CAmount nResult = 0;
     for (unsigned int i = 0; i < tx.vin.size(); i++)
@@ -358,8 +345,6 @@ bool CCoinsViewCache::HaveInputs(const CUtxo2UtxoTransaciton &tx) const
 
 bool CCoinsViewCache::HaveInputs(const CTransaction &tx) const
 {
-    //sbtc-evm
-
     if (!tx.IsCoinBase())
     {
         for (unsigned int i = 0; i < tx.vin.size(); i++)

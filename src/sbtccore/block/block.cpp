@@ -44,7 +44,7 @@ VM_STATE_ROOT CBlock::GetVMState(uint256 &hashStateRoot, uint256 &hashUTXORoot) 
         assert(tx.IsCoinBase2() == true);
 
         int index = 0;
-        int i = 0;
+        unsigned int  i = 0;
         for (i = 0; i < tx.vout.size(); i++)
         {
             if (tx.vout[i].scriptPubKey.HasOpVmHashState())

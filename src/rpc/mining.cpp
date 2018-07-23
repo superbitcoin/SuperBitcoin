@@ -402,8 +402,6 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     GET_TXMEMPOOL_INTERFACE(ifTxMempoolObj);
     CTxMemPool &mempool = ifTxMempoolObj->GetMemPool();
 
-    //sbtc-evm
-
     std::string strMode = "template";
     UniValue lpval = NullUniValue;
     std::set<std::string> setClientRules;

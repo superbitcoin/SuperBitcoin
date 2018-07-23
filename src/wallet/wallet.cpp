@@ -686,9 +686,6 @@ void CWallet::AddToSpends(const COutPoint &outpoint, const uint256 &wtxid)
 
 void CWallet::AddToSpends(const uint256 &wtxid)
 {
-    //sbtc-evm
-
-
     assert(mapWallet.count(wtxid));
     CWalletTx &thisTx = mapWallet[wtxid];
     if (thisTx.IsCoinBase()) // Coinbases don't spend anything!

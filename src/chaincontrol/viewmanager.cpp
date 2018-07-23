@@ -83,8 +83,6 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
         return DISCONNECT_FAILED;
     }
 
-    //sbtc-evm
-
     // undo transactions in reverse order
     for (int i = block.vtx.size() - 1; i >= 0; i--)
     {
@@ -167,9 +165,6 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
 /** Apply the effects of a block on the utxo cache, ignoring that it may already have been applied. */
 bool CViewManager::ConnectBlock(const CBlock &block, const CBlockIndex *pIndex, CCoinsViewCache &viewCache)
 {
-    //sbtc-evm
-
-
     for (const CTransactionRef &tx : block.vtx)
     {
         if (!tx->IsCoinBase())

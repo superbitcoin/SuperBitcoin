@@ -855,9 +855,6 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
                                  bool fCheckMerkleRoot)
 {
     // These are checks that are independent of context.
-
-
-
     if (block.fChecked)
         return true;
 
@@ -1159,12 +1156,11 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         return state.DoS(100, false, REJECT_INVALID, "Block veriosn error");
     }
 
-
     uint256 blockhashStateRoot ;
     uint256 blockhashUTXORoot;
     blockhashStateRoot.SetNull();
     blockhashUTXORoot.SetNull();
-
+    //the first new block hight,
     if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
     {
         if(block.GetVMState(blockhashStateRoot, blockhashUTXORoot) != RET_VM_STATE_OK)
@@ -1200,9 +1196,6 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 //        GET_CHAIN_INTERFACE(ifChainObj);
 //        return ifChainObj->IsSBTCContractEnabled(pindex);
 //    }();
-
-    //the first new block hight,
-
     ////////////////////////////////////////
 
     //sbtc-vm

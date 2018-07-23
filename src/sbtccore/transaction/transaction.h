@@ -404,7 +404,7 @@ public:
 
     bool IsCoinBase1() const
     {
-        return (vin.size() == 1 && vin[0].prevout.IsNull()) || IsCoinBase2();
+        return (vin.size() == 1 && vin[0].prevout.IsNull());
     }
 
     bool IsCoinBase2() const
