@@ -406,10 +406,13 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     UniValue lpval = NullUniValue;
     std::set<std::string> setClientRules;
     int64_t nMaxVersionPreVB = -1;
+    std::string addr = "";
     if (!request.params[0].isNull())
     {
         const UniValue &oparam = request.params[0].get_obj();
         const UniValue &modeval = find_value(oparam, "mode");
+        addr  = find_value(oparam, "address").get_str();
+
         if (modeval.isStr())
             strMode = modeval.get_str();
         else if (modeval.isNull())
@@ -554,7 +557,16 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
         fLastTemplateSupportsSegwit = fSupportsSegwit;
 
         // Create new block
-        CScript scriptDummy = CScript() << OP_TRUE;
+//        CScript scriptDummy = CScript() << OP_TRUE;
+
+        CBitcoinAddress btcSenderAddress(addr);
+        if (!btcSenderAddress.IsValid())
+        {
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address");
+        }
+        CKeyID keyid;
+        btcSenderAddress.GetKeyID(keyid);
+        CScript scriptDummy = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyid) << OP_EQUALVERIFY << OP_CHECKSIG;
         pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptDummy, fSupportsSegwit);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
