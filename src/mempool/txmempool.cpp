@@ -744,7 +744,15 @@ CTxMemPool::CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationSt
     //sbtc-evm
     //todo here have some problem
     GET_CHAIN_INTERFACE(ifChainObj);
-    bool enablecontract = ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+
+    bool enablecontract =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+
+
     if(enablecontract){
         if(tx.IsCoinBase2()){
             return true;

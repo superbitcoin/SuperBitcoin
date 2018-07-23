@@ -3431,7 +3431,13 @@ UniValue generate(const JSONRPCRequest &request)
 UniValue createcontract(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
+    bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+    if (!IsEnabled)
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
     }
@@ -3747,7 +3753,13 @@ UniValue createcontract(const JSONRPCRequest &request)
 UniValue sendtocontract(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
+    bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+    if (!IsEnabled)
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
     }

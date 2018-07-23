@@ -610,8 +610,14 @@ bool CTransaction::SequenceLocks(int flags, std::vector<int> *prevHeights, const
 ///////////////////////////////////////////////////////////// //sbtc-vm
 bool CTransaction::HasCreateOrCall() const
 {
-    GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
+
+    bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+    if (!IsEnabled)
     {
         return false;
     }
@@ -627,8 +633,13 @@ bool CTransaction::HasCreateOrCall() const
 
 bool CTransaction::HasOpSpend() const
 {
-    GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
+    bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+    if (!IsEnabled)
     {
         return false;
     }
@@ -644,8 +655,14 @@ bool CTransaction::HasOpSpend() const
 
 bool CTransaction::CheckSenderScript(const CCoinsViewCache &view) const
 {
-    GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
+
+    bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+    if (!IsEnabled)
     {
         return false;
     }
