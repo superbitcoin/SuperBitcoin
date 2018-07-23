@@ -2195,13 +2195,13 @@ void CChainComponent::ThreadImport()
             FILE *file = OpenBlockFile(pos, true);
             if (!file)
                 break; // This error is logged in OpenBlockFile
-            ILogFormat("Reindexing block file blk%05u.dat...", (unsigned int)iFile);
+            NLogFormat("Reindexing block file blk%05u.dat...", (unsigned int)iFile);
             LoadExternalBlockFile(Params(), file, &pos);
             iFile++;
         }
         cIndexManager.SetReIndexing(false);
         bReIndex = false;
-        ILogFormat("Reindexing finished");
+        NLogFormat("Reindexing finished");
     }
 
     if (cIndexManager.NeedInitGenesisBlock(Params()))
@@ -2220,12 +2220,12 @@ void CChainComponent::ThreadImport()
         if (file)
         {
             fs::path pathBootstrapOld = GetDataDir() / "bootstrap.dat.old";
-            ILogFormat("Importing bootstrap.dat...");
+            NLogFormat("Importing bootstrap.dat...");
             LoadExternalBlockFile(Params(), file, nullptr);
             RenameOver(pathBootstrap, pathBootstrapOld);
         } else
         {
-            ILogFormat("Warning: Could not open bootstrap file %s", pathBootstrap.string());
+            NLogFormat("Warning: Could not open bootstrap file %s", pathBootstrap.string());
         }
     }
 
@@ -2234,7 +2234,7 @@ void CChainComponent::ThreadImport()
         FILE *file = fsbridge::fopen(strFile, "rb");
         if (file)
         {
-            ILogFormat("Importing blocks file %s...", strFile);
+            NLogFormat("Importing blocks file %s...", strFile);
             LoadExternalBlockFile(Params(), file, nullptr);
         } else
         {
@@ -2252,7 +2252,7 @@ void CChainComponent::ThreadImport()
 
     if (Args().GetArg<bool>("-stopafterblockimport", false))
     {
-        ILogFormat("Stopping after block import");
+        NLogFormat("Stopping after block import");
         return;
     }
 }
