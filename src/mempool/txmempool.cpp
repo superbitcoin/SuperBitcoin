@@ -751,8 +751,6 @@ CTxMemPool::CheckInputsFromMempoolAndCache(const CTransaction &tx, CValidationSt
         return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
     }();
 
-
-
     if(enablecontract){
         if(tx.IsCoinBase2()){
             return true;
@@ -1440,7 +1438,10 @@ void CTxMemPool::Check(const CCoinsViewCache *pcoins) const
     const int64_t nSpendHeight = ifChainObj->GetSpendHeight(mempoolDuplicate);
 
     //sbtc-evm
-    bool enablecontract = ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    bool enablecontract =  [&]()->bool{
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
 
     LOCK(cs);
     std::list<const CTxMemPoolEntry *> waitingOnDependants;

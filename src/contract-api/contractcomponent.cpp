@@ -995,8 +995,6 @@ void CContractComponent::ClearCacheResult()
         if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
         return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
     }();
-
-
     if (!IsEnabled)
     {
         return;
@@ -1043,8 +1041,12 @@ void CContractComponent::SetTemporaryState(uint256 hashStateRoot, uint256 hashUT
 
 std::unordered_map<dev::h160, dev::u256> CContractComponent::GetContractList()
 {
-    GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled())
+   bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+    if (!IsEnabled)
     {
         return std::unordered_map<dev::h160, dev::u256>();
     }
@@ -1062,7 +1064,7 @@ CAmount CContractComponent::GetContractBalance(dev::h160 address)
     }();
     if (!IsEnabled)
     {
-           return CAmount(0);
+       return CAmount(0);
     }
     return CAmount(globalState->balance(address));
 }
