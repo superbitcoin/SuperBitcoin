@@ -480,7 +480,13 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     ++nBlockTx;
     this->nBlockSigOpsCost += iter->GetSigOpCost();
 
-    CAmount tmpFee = (iter->GetFee() - bceResult.refundSender);
+    CAmount gasRefunds = 0;
+    for (CTxOut refundVout : testExecResult.refundOutputs)
+    {
+        gasRefunds += refundVout.nValue;  //one contract tx, need to refund gas
+    }
+
+    CAmount tmpFee = (iter->GetFee() - gasRefunds);
     nFees += tmpFee;   //  xiaofei
 
     inBlock.insert(iter);
