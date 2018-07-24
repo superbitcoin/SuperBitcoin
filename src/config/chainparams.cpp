@@ -130,8 +130,8 @@ public:
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].bit = 1;
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nStartTime = 1479168000; // November 15th, 2016.
         consensus.vDeployments[Consensus::DEPLOYMENT_SEGWIT].nTimeout = 1510704000; // November 15th, 2017.
-
-        consensus.SBTCContractForkHeight = 530555 - 1; // 525555 is the first new block height
+      // todo add 144*1000  for temp we will fix minerpoool compatible problem
+        consensus.SBTCContractForkHeight = 530555+144*1000 - 1; // 525555 is the first new block height
         consensus.vDeployments[Consensus::DEPLOYMENT_SBTC_CONTRACT].bit = VERSIONBITS_SBTC_CONTRACT;
 
         // The best chain should have at least this much work.

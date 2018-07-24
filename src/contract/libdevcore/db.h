@@ -21,8 +21,8 @@
 
 #pragma once
 
-#pragma warning(push)
-#pragma warning(disable: 4100 4267)
+//#pragma warning(push)
+//#pragma warning(disable: 4100 4267)
 #if ETH_ROCKSDB
 #include <rocksdb/db.h>
 #include <rocksdb/write_batch.h>
@@ -34,5 +34,5 @@ namespace ldb = rocksdb;
 
 namespace ldb = leveldb;
 #endif
-#pragma warning(pop)
+//#pragma warning(pop)
 #define DEV_LDB 1
