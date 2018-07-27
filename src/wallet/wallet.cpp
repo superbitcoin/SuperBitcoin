@@ -1805,7 +1805,7 @@ void CWallet::ReacceptWalletTransactions()
 
         int nDepth = wtx.GetDepthInMainChain();
 
-        if (!wtx.IsCoinBase() && (nDepth == 0 && !wtx.isAbandoned()))
+        if (!(wtx.IsCoinBase() ) && (nDepth == 0 && !wtx.isAbandoned()))
         {
             mapSorted.insert(std::make_pair(wtx.nOrderPos, &wtx));
         }
@@ -1827,7 +1827,7 @@ void CWallet::ReacceptWalletTransactions()
 bool CWalletTx::RelayWalletTransaction(CConnman *connman)
 {
     assert(pwallet->GetBroadcastTransactions());
-    if (!IsCoinBase() && !isAbandoned() && GetDepthInMainChain() == 0)
+    if (!(IsCoinBase()) && !isAbandoned() && GetDepthInMainChain() == 0)
     {
         CValidationState state;
         /* GetDepthInMainChain already catches known conflicts. */
@@ -1894,7 +1894,7 @@ CAmount CWalletTx::GetDebit(const isminefilter &filter) const
 CAmount CWalletTx::GetCredit(const isminefilter &filter) const
 {
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if (IsCoinBase() && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase() ) && GetBlocksToMaturity() > 0)
         return 0;
 
     CAmount credit = 0;
@@ -1926,7 +1926,7 @@ CAmount CWalletTx::GetCredit(const isminefilter &filter) const
 
 CAmount CWalletTx::GetImmatureCredit(bool fUseCache) const
 {
-    if (IsCoinBase() && GetBlocksToMaturity() > 0 && IsInMainChain())
+    if ((IsCoinBase() ) && GetBlocksToMaturity() > 0 && IsInMainChain())
     {
         if (fUseCache && fImmatureCreditCached)
             return nImmatureCreditCached;
@@ -1944,7 +1944,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
         return 0;
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if (IsCoinBase() && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase()) && GetBlocksToMaturity() > 0)
         return 0;
 
     if (fUseCache && fAvailableCreditCached)
@@ -1970,7 +1970,7 @@ CAmount CWalletTx::GetAvailableCredit(bool fUseCache) const
 
 CAmount CWalletTx::GetImmatureWatchOnlyCredit(const bool &fUseCache) const
 {
-    if (IsCoinBase() && GetBlocksToMaturity() > 0 && IsInMainChain())
+    if ((IsCoinBase()) && GetBlocksToMaturity() > 0 && IsInMainChain())
     {
         if (fUseCache && fImmatureWatchCreditCached)
             return nImmatureWatchCreditCached;
@@ -1988,7 +1988,7 @@ CAmount CWalletTx::GetAvailableWatchOnlyCredit(const bool &fUseCache) const
         return 0;
 
     // Must wait until coinbase is safely deep enough in the chain before valuing it
-    if (IsCoinBase() && GetBlocksToMaturity() > 0)
+    if ((IsCoinBase()) && GetBlocksToMaturity() > 0)
         return 0;
 
     if (fUseCache && fAvailableWatchCreditCached)
@@ -2308,7 +2308,7 @@ void CWallet::AvailableCoins(std::vector<COutput> &vCoins, bool fOnlySafe, const
             if (!CheckFinalTx(*pcoin))
                 continue;
 
-            if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
+            if ((pcoin->IsCoinBase()) && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
             int nDepth = pcoin->GetDepthInMainChain();
@@ -3800,7 +3800,7 @@ std::map<CTxDestination, CAmount> CWallet::GetAddressBalances()
             if (!pcoin->IsTrusted())
                 continue;
 
-            if (pcoin->IsCoinBase() && pcoin->GetBlocksToMaturity() > 0)
+            if ((pcoin->IsCoinBase() ) && pcoin->GetBlocksToMaturity() > 0)
                 continue;
 
             int nDepth = pcoin->GetDepthInMainChain();
@@ -4257,7 +4257,7 @@ std::string CWallet::GetWalletHelpString(bool showDebug)
             CURRENCY_UNIT, FormatMoney(DEFAULT_FALLBACK_FEE)));
     strUsage += HelpMessageOpt("-discardfee=<amt>", strprintf(
             _("The fee rate (in %s/kB) that indicates your tolerance for discarding change by adding it to the fee (default: %s). "
-                      "Note: An output is discarded if it is dust at this rate, but we will always discard up to the dust relay fee and a discard fee above that is limited by the fee estimate for the longest target"),
+              "Note: An output is discarded if it is dust at this rate, but we will always discard up to the dust relay fee and a discard fee above that is limited by the fee estimate for the longest target"),
             CURRENCY_UNIT, FormatMoney(DEFAULT_DISCARD_FEE)));
     strUsage += HelpMessageOpt("-mintxfee=<amt>", strprintf(
             _("Fees (in %s/kB) smaller than this are considered zero fee for transaction creation (default: %s)"),
@@ -4352,7 +4352,7 @@ CWallet *CWallet::CreateWalletFromFile(const std::string walletFile)
         } else if (nLoadWalletRet == DB_NONCRITICAL_ERROR)
         {
             InitWarning(strprintf(_("Error reading %s! All keys read correctly, but transaction data"
-                                            " or address book entries might be missing or incorrect."),
+                                    " or address book entries might be missing or incorrect."),
                                   walletFile));
         } else if (nLoadWalletRet == DB_TOO_NEW)
         {
@@ -4746,8 +4746,9 @@ int CMerkleTx::GetDepthInMainChain(const CBlockIndex *&pindexRet) const
 
 int CMerkleTx::GetBlocksToMaturity() const
 {
-    if (!IsCoinBase())
+    if (!(IsCoinBase()))
         return 0;
+
     return std::max(0, (COINBASE_MATURITY + 1) - GetDepthInMainChain());
 }
 

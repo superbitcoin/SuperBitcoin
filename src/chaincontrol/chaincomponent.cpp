@@ -390,7 +390,13 @@ bool CChainComponent::IsTxIndex() const
 
 bool CChainComponent::IsLogEvents()
 {
-    if (!IsSBTCContractEnabled(GetActiveChain().Tip()))
+    bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+    if (!IsEnabled)
     {
         return false;
     }
@@ -855,7 +861,6 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
                                  bool fCheckMerkleRoot)
 {
     // These are checks that are independent of context.
-
     if (block.fChecked)
         return true;
 
@@ -892,17 +897,35 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
         return state.DoS(100, false, REJECT_INVALID, "bad-blk-length", false, "size limits failed");
 
     // First transaction must be coinbase, the rest must not be
-    if (block.vtx.empty() || !block.vtx[0]->IsCoinBase())
+    if (block.vtx.empty() || !block.vtx[0]->IsCoinBase1())
         return state.DoS(100, false, REJECT_INVALID, "bad-cb-missing", false, "first tx is not coinbase");
+
     for (unsigned int i = 1; i < block.vtx.size(); i++)
-        if (block.vtx[i]->IsCoinBase())
+        if (block.vtx[i]->IsCoinBase1())
             return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase");
 
-    //Don't allow contract opcodes in coinbase   //sbtc-vm
-    if (block.vtx[0]->HasOpSpend() || block.vtx[0]->HasCreateOrCall())
-    {
-        return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
-                         "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
+    //sbtc-evm
+    if(block.IsSBTCContractEnabled()){
+
+        //Don't allow contract opcodes in coinbase   //sbtc-vm
+        if (block.vtx[0]->HasOpSpend() || block.vtx[0]->HasCreateOrCall())
+        {
+            return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
+                             "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
+        }
+
+        if(!(block.vtx.size() > 1) || (!block.vtx[1]->IsCoinBase2()))
+        {
+            return state.DoS(100, false, REJECT_INVALID, "bad-cb2-missing", false, "coinbase2 tx is not evm hash root");
+        }
+
+        if (block.vtx[1]->HasOpSpend() || block.vtx[1]->HasCreateOrCall()) {
+            return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
+                             "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
+        }
+        for (unsigned int i = 2; i < block.vtx.size(); i++)
+            if (block.vtx[i]->IsCoinBase2())
+                return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase2");
     }
 
     bool lastWasContract = false; //sbtc-vm
@@ -953,13 +976,18 @@ bool CChainComponent::IsSBTCForkEnabled(const int height)
     return height >= Params().GetConsensus().SBTCForkHeight;
 }
 
-bool CChainComponent::IsSBTCContractEnabled(const CBlockIndex *pindex)
+//bool CChainComponent::IsSBTCContractEnabled(const CBlockIndex *pindex)
+//{
+//    if (pindex == nullptr)
+//    {
+//        return false;
+//    }
+//    return (pindex->IsSBTCContractEnabled());
+//}
+//check SBTCEnable by hegiht
+bool CChainComponent::IsSBTCForkContractEnabled(const int height)
 {
-    if (pindex == nullptr)
-    {
-        return false;
-    }
-    return (pindex->nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT));
+    return height >= Params().GetConsensus().SBTCContractForkHeight;
 }
 
 bool CChainComponent::IsSBTCForkHeight(const Consensus::Params &params, const int &height)
@@ -1129,13 +1157,15 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     int64_t nTimeStart = GetTimeMicros();
 
     //////////////////////////////////////sbtc-evm
-    if ((pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight) && !IsSBTCContractEnabled(pindex))
+    if ((pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight) && !pindex->IsSBTCContractEnabled())
     {
         return state.DoS(100, false, REJECT_INVALID, "Block veriosn error");
     }
 
-    uint256 blockhashStateRoot;
+    uint256 blockhashStateRoot ;
     uint256 blockhashUTXORoot;
+    blockhashStateRoot.SetNull();
+    blockhashUTXORoot.SetNull();
     //the first new block hight,
     if (pindex->nHeight == chainparams.GetConsensus().SBTCContractForkHeight + 1)
     {
@@ -1166,9 +1196,12 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         {
             return state.DoS(100, false, REJECT_INVALID, "Block hashUTXORoot not exist");
         }
-    }else{
-        //  blockhashStateRoot and blockhashUTXORoot is NULL
     }
+
+//    bool enablecontract = [&]()->bool{
+//        GET_CHAIN_INTERFACE(ifChainObj);
+//        return ifChainObj->IsSBTCContractEnabled(pindex);
+//    }();
     ////////////////////////////////////////
 
     //sbtc-vm
@@ -1286,13 +1319,15 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
 
     ///////////////////////////////////////////////////////// // sbtc-vm
     std::map<dev::Address, std::pair<CHeightTxIndexKey, std::vector<uint256>>> heightIndexes;
-    CAmount gasRefunds = 0;
+//    CAmount gasRefunds = 0;
 
     uint64_t nValueOut = 0;
     uint64_t nValueIn = 0;
     /////////////////////////////////////////////////////////
     for (unsigned int i = 0; i < block.vtx.size(); i++)
     {
+        CAmount gasRefunds = 0;
+        CAmount nFeesContract = 0;
         const CTransaction &tx = *(block.vtx[i]);
 
         nInputs += tx.vin.size();
@@ -1334,7 +1369,11 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         bool hasOpSpend = tx.HasOpSpend(); //sbtc-vm
         if (!tx.IsCoinBase())
         {
-            nFees += view.GetValueIn(tx) - tx.GetValueOut();
+            if(!tx.HasCreateOrCall()) {
+                nFees += view.GetValueIn(tx) - tx.GetValueOut();
+            }else{
+                nFeesContract = view.GetValueIn(tx) - tx.GetValueOut();
+            }
 
             std::vector<CScriptCheck> vChecks;
             bool fCacheResults = fJustCheck; /* Don't cache results if we're actually connecting blocks (still consult the cache, though) */
@@ -1404,6 +1443,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             {
                 checkBlock.vtx.push_back(MakeTransactionRef(std::move(t)));
             }
+            nFees += (nFeesContract - gasRefunds);
         }
         /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1424,21 +1464,20 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
                nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
 
     ////////////////////////////////////////////////////////////////// // sbtc-vm
-    if (nFees < gasRefunds)
-    { //make sure it won't overflow
-        return state.DoS(1000, false, REJECT_INVALID, "bad-blk-fees-greater-gasrefund");
-    }
-    std::vector<CTxOut> vTempVouts = block.vtx[0]->vout;
-    std::vector<CTxOut>::iterator it;
-    for (size_t i = 0; i < checkVouts.size(); i++)
-    {
-        it = std::find(vTempVouts.begin(), vTempVouts.end(), checkVouts[i]);
-        if (it == vTempVouts.end())
-        {
-            return state.DoS(100, false, REJECT_INVALID, "Gas refund missing");
-        } else
-        {
-            vTempVouts.erase(it);
+//    if (nFees < gasRefunds)
+//    { //make sure it won't overflow
+//        return state.DoS(1000, false, REJECT_INVALID, "bad-blk-fees-greater-gasrefund");
+//    }
+    if(block.vtx.size() > 1) {
+        std::vector<CTxOut> vTempVouts = block.vtx[1]->vout;
+        std::vector<CTxOut>::iterator it;
+        for (size_t i = 0; i < checkVouts.size(); i++) {
+            it = std::find(vTempVouts.begin(), vTempVouts.end(), checkVouts[i]);
+            if (it == vTempVouts.end()) {
+                return state.DoS(100, false, REJECT_INVALID, "Gas refund missing");
+            } else {
+                vTempVouts.erase(it);
+            }
         }
     }
     //////////////////////////////////////////////////////////////////
@@ -2072,7 +2111,7 @@ bool CChainComponent::RewindBlock(const CChainParams &params)
         {
             break;
         }
-        if ((iHeight > params.GetConsensus().SBTCContractForkHeight) && !IsSBTCContractEnabled(chainActive[iHeight]))
+        if ((iHeight > params.GetConsensus().SBTCContractForkHeight) && !(chainActive[iHeight])->IsSBTCContractEnabled())
         {
             break;
         }

@@ -33,7 +33,7 @@ bool CNetComponent::ComponentInitialize()
         return rLogError("Initializing networking failed");
     }
 
-    GET_CHAIN_INTERFACE(ifChainObj);
+//    GET_CHAIN_INTERFACE(ifChainObj);
 
     netConnMgr.reset(new CConnman(GetRand(std::numeric_limits<uint64_t>::max()),
                                   GetRand(std::numeric_limits<uint64_t>::max())));

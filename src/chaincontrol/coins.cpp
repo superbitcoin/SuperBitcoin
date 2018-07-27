@@ -327,6 +327,7 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction &tx) const
 
 bool CCoinsViewCache::HaveInputs(const CUtxo2UtxoTransaciton &tx) const
 {
+    //included  coinbase1  and coinbase2
     if (!tx.IsCoinBase())
     {
         for (unsigned int i = 0; i < tx.vin.size(); i++)

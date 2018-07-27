@@ -113,8 +113,10 @@ void WalletTxToJSON(const CWalletTx &wtx, UniValue &entry)
     GET_CHAIN_INTERFACE(ifChainObj);
     int confirms = wtx.GetDepthInMainChain();
     entry.push_back(Pair("confirmations", confirms));
-    if (wtx.IsCoinBase())
+    if (wtx.IsCoinBase1())
         entry.push_back(Pair("generated", true));
+    if (wtx.IsCoinBase2())
+        entry.push_back(Pair("coinbase2", true));
     if (confirms > 0)
     {
         entry.push_back(Pair("blockhash", wtx.hashBlock.GetHex()));
@@ -726,7 +728,7 @@ UniValue getreceivedbyaddress(const JSONRPCRequest &request)
     for (const std::pair<uint256, CWalletTx> &pairWtx : pwallet->mapWallet)
     {
         const CWalletTx &wtx = pairWtx.second;
-        if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
+        if ((wtx.IsCoinBase()) || !CheckFinalTx(*wtx.tx))
             continue;
 
         for (const CTxOut &txout : wtx.tx->vout)
@@ -784,7 +786,7 @@ UniValue getreceivedbyaccount(const JSONRPCRequest &request)
     for (const std::pair<uint256, CWalletTx> &pairWtx : pwallet->mapWallet)
     {
         const CWalletTx &wtx = pairWtx.second;
-        if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
+        if ((wtx.IsCoinBase()) || !CheckFinalTx(*wtx.tx))
             continue;
 
         for (const CTxOut &txout : wtx.tx->vout)
@@ -1381,7 +1383,7 @@ UniValue ListReceived(CWallet *const pwallet, const UniValue &params, bool fByAc
     {
         const CWalletTx &wtx = pairWtx.second;
 
-        if (wtx.IsCoinBase() || !CheckFinalTx(*wtx.tx))
+        if ((wtx.IsCoinBase()) || !CheckFinalTx(*wtx.tx))
             continue;
 
         int nDepth = wtx.GetDepthInMainChain();
@@ -1641,7 +1643,7 @@ ListTransactions(CWallet *const pwallet, const CWalletTx &wtx, const std::string
                 }
                 entry.push_back(Pair("account", account));
                 MaybePushAddress(entry, r.destination);
-                if (wtx.IsCoinBase())
+                if (wtx.IsCoinBase() )
                 {
                     if (wtx.GetDepthInMainChain() < 1)
                         entry.push_back(Pair("category", "orphan"));
@@ -1649,7 +1651,8 @@ ListTransactions(CWallet *const pwallet, const CWalletTx &wtx, const std::string
                         entry.push_back(Pair("category", "immature"));
                     else
                         entry.push_back(Pair("category", "generate"));
-                } else
+                }
+                else
                 {
                     entry.push_back(Pair("category", "receive"));
                 }
@@ -3428,7 +3431,13 @@ UniValue generate(const JSONRPCRequest &request)
 UniValue createcontract(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+    if (!IsEnabled)
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
     }
@@ -3744,7 +3753,13 @@ UniValue createcontract(const JSONRPCRequest &request)
 UniValue sendtocontract(const JSONRPCRequest &request)
 {
     GET_CHAIN_INTERFACE(ifChainObj);
-    if (!ifChainObj->IsSBTCContractEnabled(ifChainObj->GetActiveChain().Tip()))
+    bool IsEnabled =  [&]()->bool{
+        GET_CHAIN_INTERFACE(ifChainObj);
+        if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
+        return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
+    }();
+
+    if (!IsEnabled)
     {
         throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
     }

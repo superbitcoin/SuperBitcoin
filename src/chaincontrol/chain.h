@@ -317,6 +317,12 @@ public:
         return block;
     }
 
+    bool IsSBTCContractEnabled() const
+    {
+        return (nVersion & (((uint32_t)1) << VERSIONBITS_SBTC_CONTRACT));
+    }
+
+
     uint256 GetBlockHash() const
     {
         return *phashBlock;

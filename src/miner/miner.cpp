@@ -150,12 +150,23 @@ void BlockAssembler::resetBlock()
 //sbtc-vm
 void BlockAssembler::RebuildRefundTransaction(uint256 hashStateRoot, uint256 hashUTXORoot)
 {
-    int refundtx = 0;
-    GET_CHAIN_INTERFACE(ifChainObj);
+
+//    int refundtx = 0;
+//    GET_CHAIN_INTERFACE(ifChainObj);
 
     CMutableTransaction contrTx(originalRewardTx);
-    contrTx.vout[refundtx].nValue = nFees + ifChainObj->GetBlockSubsidy(nHeight);
-    contrTx.vout[refundtx].nValue -= bceResult.refundSender;
+//    contrTx.vout[refundtx].nValue = nFees + ifChainObj->GetBlockSubsidy(nHeight);
+//    contrTx.vout[refundtx].nValue -= bceResult.refundSender;
+    if (!(hashStateRoot.IsNull() || hashUTXORoot.IsNull()))
+    {
+        CScript scriptPubKey =
+                CScript() << ParseHex(hashStateRoot.GetHex().c_str()) << ParseHex(hashUTXORoot.GetHex().c_str())
+                          << OP_VM_STATE;
+
+        contrTx.vout[0].scriptPubKey = scriptPubKey;
+        contrTx.vout[0].nValue = 0;
+    }
+
     //note, this will need changed for MPoS
     int i = contrTx.vout.size();
     contrTx.vout.resize(contrTx.vout.size() + bceResult.refundOutputs.size());
@@ -164,16 +175,7 @@ void BlockAssembler::RebuildRefundTransaction(uint256 hashStateRoot, uint256 has
         contrTx.vout[i] = vout;
         i++;
     }
-    if (!(hashStateRoot.IsNull() || hashUTXORoot.IsNull()))
-    {
-        CScript scriptPubKey =
-        CScript() << ParseHex(hashStateRoot.GetHex().c_str()) << ParseHex(hashUTXORoot.GetHex().c_str())
-                << OP_VM_STATE;
-
-        CTxOut txout(0, scriptPubKey);
-        contrTx.vout.push_back(txout);
-    }
-    pblock->vtx[refundtx] = MakeTransactionRef(std::move(contrTx));
+    pblock->vtx[1] = MakeTransactionRef(std::move(contrTx));
 }
 
 std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &scriptPubKeyIn, bool fMineWitnessTx)
@@ -225,15 +227,16 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
 
     // Create coinbase transaction.
     CMutableTransaction coinbaseTx;
+    CMutableTransaction coinbaseTxBak;
+
     coinbaseTx.vin.resize(1);
     coinbaseTx.vin[0].prevout.SetNull();
     coinbaseTx.vout.resize(1);
     coinbaseTx.vout[0].scriptPubKey = scriptPubKeyIn;
     coinbaseTx.vout[0].nValue = nFees + ifChainObj->GetBlockSubsidy(nHeight);
     coinbaseTx.vin[0].scriptSig = CScript() << nHeight << OP_0;
-    originalRewardTx = coinbaseTx; //sbtc-vm
+    coinbaseTxBak = coinbaseTx; //sbtc-vm
     pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTx));
-
 
     int nPackagesSelected = 0;
     int nDescendantsUpdated = 0;
@@ -261,9 +264,42 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
 
     uint256 oldHashStateRoot, oldHashUTXORoot;
     ifContractObj->GetState(oldHashStateRoot, oldHashUTXORoot);
+
+    bool enablecontract = false;
+    enablecontract = ifChainObj->IsSBTCForkContractEnabled(pindexPrev->nHeight);
+
+    // Create second transaction.
+    if(enablecontract)
+    {
+        CMutableTransaction coinbase2;
+        coinbase2.vin.resize(2);
+        coinbase2.vin[0].prevout.SetNull();
+        coinbase2.vin[1].prevout.SetNull();
+        coinbase2.vout.resize(1);
+
+        if (oldHashStateRoot.IsNull())
+        {
+            oldHashStateRoot = DEFAULT_HASH_STATE_ROOT;
+        }
+        if (oldHashUTXORoot.IsNull())
+        {
+            oldHashUTXORoot = DEFAULT_HASH_UTXO_ROOT;
+        }
+        CScript scriptPubKey =
+                CScript() << ParseHex(oldHashStateRoot.GetHex().c_str()) << ParseHex(oldHashUTXORoot.GetHex().c_str())
+                          << OP_VM_STATE;
+        coinbase2.vout[0].scriptPubKey = scriptPubKey;
+        coinbase2.vout[0].nValue = 0;
+        coinbase2.vin[0].scriptSig = CScript() << nHeight << OP_0;
+        coinbase2.vin[1].scriptSig = CScript() << nHeight << OP_0;
+        originalRewardTx = coinbase2;
+        pblock->vtx.emplace_back();
+        pblock->vtx[1] = MakeTransactionRef(std::move(coinbase2));
+    }
+
     //    addPriorityTxs(minGasPrice);
-    addPackageTxs(nPackagesSelected, nDescendantsUpdated);
     uint256 hashStateRoot, hashUTXORoot;
+    addPackageTxs(nPackagesSelected, nDescendantsUpdated);
     ifContractObj->GetState(hashStateRoot, hashUTXORoot);
     if (pindexPrev->nHeight + 1 > Params().GetConsensus().SBTCContractForkHeight)
     {
@@ -282,7 +318,12 @@ std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript &sc
 
     //this should already be populated by AddBlock in case of contracts, but if no contracts
     //then it won't get populated
-    RebuildRefundTransaction(hashStateRoot, hashUTXORoot);
+    if(enablecontract) {
+        RebuildRefundTransaction(hashStateRoot, hashUTXORoot);
+    }
+
+    coinbaseTxBak.vout[0].nValue = nFees + ifChainObj->GetBlockSubsidy(nHeight);
+    pblock->vtx[0] = MakeTransactionRef(std::move(coinbaseTxBak));
     ////////////////////////////////////////////////////////
 
     int64_t nTime1 = GetTimeMicros();
@@ -393,7 +434,7 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
         nBlockSigOpsCost += t.GetLegacySigOpCount();
     }
 
-    int proofTx = 0;
+    int proofTx = 1; // 0
 
     //calculate sigops from new refund/proof tx
 
@@ -438,7 +479,16 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     this->nBlockWeight += iter->GetTxWeight();
     ++nBlockTx;
     this->nBlockSigOpsCost += iter->GetSigOpCost();
-    nFees += iter->GetFee();
+
+    CAmount gasRefunds = 0;
+    for (CTxOut refundVout : testExecResult.refundOutputs)
+    {
+        gasRefunds += refundVout.nValue;  //one contract tx, need to refund gas
+    }
+
+    CAmount tmpFee = (iter->GetFee() - gasRefunds);
+    nFees += tmpFee;   //  xiaofei
+
     inBlock.insert(iter);
     for (CTransaction &t : bceResult.valueTransfers)
     {
@@ -449,7 +499,7 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
     }
     //calculate sigops from new refund/proof tx
     this->nBlockSigOpsCost -= (*pblock->vtx[proofTx]).GetLegacySigOpCount();
-    oldHashStateRoot.SetNull();
+    oldHashStateRoot.SetNull();// not update hashroot this moment
     oldHashUTXORoot.SetNull();
     RebuildRefundTransaction(oldHashStateRoot, oldHashUTXORoot);
     this->nBlockSigOpsCost += (*pblock->vtx[proofTx]).GetLegacySigOpCount();

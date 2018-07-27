@@ -39,11 +39,12 @@ VM_STATE_ROOT CBlock::GetVMState(uint256 &hashStateRoot, uint256 &hashUTXORoot) 
 {
     if (this->nVersion & (((uint32_t) 1) << VERSIONBITS_SBTC_CONTRACT))
     {
-        const CTransaction &tx = *(vtx[0]);
-        assert(tx.IsCoinBase() == true);
+        assert(vtx.size() > 1);
+        const CTransaction &tx = *(vtx[1]);  // 0
+        assert(tx.IsCoinBase2() == true);
 
         int index = 0;
-        int i = 0;
+        unsigned int  i = 0;
         for (i = 0; i < tx.vout.size(); i++)
         {
             if (tx.vout[i].scriptPubKey.HasOpVmHashState())

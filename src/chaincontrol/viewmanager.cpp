@@ -110,6 +110,10 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
         // restore inputs
         if (i > 0)
         { // not coinbases
+
+            if(tx.IsCoinBase()){
+                continue; //continue
+            }
             CTxUndo &txundo = blockUndo.vtxundo[i - 1];
             if (txundo.vprevout.size() != tx.vin.size())
             {
@@ -200,6 +204,7 @@ bool CViewManager::Flush()
 
 void CViewManager::UpdateCoins(const CTransaction &tx, CCoinsViewCache &inputs, CTxUndo &txundo, int nHeight)
 {
+
     // mark inputs spent
     if (!tx.IsCoinBase())
     {

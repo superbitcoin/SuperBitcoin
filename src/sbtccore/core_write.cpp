@@ -205,9 +205,11 @@ void TxToUniv(const CTransaction &tx, const uint256 &hashBlock, UniValue &entry,
     {
         const CTxIn &txin = tx.vin[i];
         UniValue in(UniValue::VOBJ);
-        if (tx.IsCoinBase())
+        if (tx.IsCoinBase1()) {
             in.pushKV("coinbase", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
-        else
+        }else if(tx.IsCoinBase2()){
+            in.pushKV("coinbase2", HexStr(txin.scriptSig.begin(), txin.scriptSig.end()));
+        }else
         {
             in.pushKV("txid", txin.prevout.hash.GetHex());
             in.pushKV("vout", (int64_t)txin.prevout.n);

@@ -339,6 +339,9 @@ private:
     const uint256 hash;
 
     uint256 ComputeHash() const;
+
+
+
 public:
     /** Construct a CTransaction that qualifies as IsNull() */
     CTransaction();
@@ -396,7 +399,17 @@ public:
 
     bool IsCoinBase() const
     {
+        return IsCoinBase1() || IsCoinBase2();
+    }
+
+    bool IsCoinBase1() const
+    {
         return (vin.size() == 1 && vin[0].prevout.IsNull());
+    }
+
+    bool IsCoinBase2() const
+    {
+        return (vin.size() == 2 && vin[0].prevout.IsNull() && vin[1].prevout.IsNull());
     }
 
     friend bool operator==(const CTransaction &a, const CTransaction &b)

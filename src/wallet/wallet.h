@@ -308,8 +308,19 @@ public:
 
     bool IsCoinBase() const
     {
-        return tx->IsCoinBase();
+        return IsCoinBase1() || IsCoinBase2();
     }
+
+    bool IsCoinBase1() const
+    {
+        return tx->IsCoinBase1();
+    }
+
+    bool IsCoinBase2() const
+    {
+        return tx->IsCoinBase2();
+    }
+
 };
 
 /** 
