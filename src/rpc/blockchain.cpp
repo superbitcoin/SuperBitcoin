@@ -1032,11 +1032,12 @@ UniValue getstorage(const JSONRPCRequest &request)
 
 UniValue callcontract(const JSONRPCRequest &request)
 {
-    if (![&]()->bool{
+    bool IsEnabled =  [&]()->bool{
         GET_CHAIN_INTERFACE(ifChainObj);
         if(ifChainObj->GetActiveChain().Tip()== nullptr) return false;
         return ifChainObj->GetActiveChain().Tip()->IsSBTCContractEnabled();
-    }())
+    }();
+    if (!IsEnabled)
     {
          throw JSONRPCError(RPC_INTERNAL_ERROR, "not arrive to the contract height,disabled");
     }

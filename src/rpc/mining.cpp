@@ -406,13 +406,10 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     UniValue lpval = NullUniValue;
     std::set<std::string> setClientRules;
     int64_t nMaxVersionPreVB = -1;
-    std::string addr = "";
     if (!request.params[0].isNull())
     {
         const UniValue &oparam = request.params[0].get_obj();
         const UniValue &modeval = find_value(oparam, "mode");
-        addr  = find_value(oparam, "address").get_str();
-
         if (modeval.isStr())
             strMode = modeval.get_str();
         else if (modeval.isNull())
@@ -557,16 +554,7 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
         fLastTemplateSupportsSegwit = fSupportsSegwit;
 
         // Create new block
-//        CScript scriptDummy = CScript() << OP_TRUE;
-
-        CBitcoinAddress btcSenderAddress(addr);
-        if (!btcSenderAddress.IsValid())
-        {
-            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid address");
-        }
-        CKeyID keyid;
-        btcSenderAddress.GetKeyID(keyid);
-        CScript scriptDummy = CScript() << OP_DUP << OP_HASH160 << ToByteVector(keyid) << OP_EQUALVERIFY << OP_CHECKSIG;
+        CScript scriptDummy = CScript() << OP_TRUE;
         pblocktemplate = BlockAssembler(Params()).CreateNewBlock(scriptDummy, fSupportsSegwit);
         if (!pblocktemplate)
             throw JSONRPCError(RPC_OUT_OF_MEMORY, "Out of memory");
@@ -592,13 +580,12 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
     UniValue transactions(UniValue::VARR);
     std::map<uint256, int64_t> setTxIndex;
     int i = 0;
-    for (const auto &it : pblock->vtx)
-    {
+    for (const auto &it : pblock->vtx) {
         const CTransaction &tx = *it;
         uint256 txHash = tx.GetHash();
         setTxIndex[txHash] = i++;
 
-        if (tx.IsCoinBase())
+        if (tx.IsCoinBase1())
             continue;
 
         UniValue entry(UniValue::VOBJ);
@@ -608,10 +595,12 @@ UniValue getblocktemplate(const JSONRPCRequest &request)
         entry.push_back(Pair("hash", tx.GetWitnessHash().GetHex()));
 
         UniValue deps(UniValue::VARR);
-        for (const CTxIn &in : tx.vin)
-        {
-            if (setTxIndex.count(in.prevout.hash))
-                deps.push_back(setTxIndex[in.prevout.hash]);
+        if (!tx.IsCoinBase2())
+        {  //coinbase2  have no vin
+            for (const CTxIn &in : tx.vin) {
+                if (setTxIndex.count(in.prevout.hash))
+                    deps.push_back(setTxIndex[in.prevout.hash]);
+            }
         }
         entry.push_back(Pair("depends", deps));
 

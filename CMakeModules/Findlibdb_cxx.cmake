@@ -6,9 +6,9 @@ MESSAGE(STATUS "Using bundled Findlibdb.cmake...")
 
 find_path(
 		LIBDB_CXX_INCLUDE_DIR
-		db_cxx.h
-		/usr/include/
-		/usr/local/include/
+		NAMES libdb_cxx
+		DOC "libdb include dir"
+
 )
 
 
@@ -20,7 +20,7 @@ ENDIF ()
 find_library(
 		LIBDB_CXX_LIBRARIES
 		NAMES ${LIB_FILE}
-		PATHS /usr/lib/ /usr/local/lib/
+		DOC "libdb library"
 )
 
 set(LIBDB_INCLUDE_DIRS ${LIBDB_CXX_INCLUDE_DIR})
