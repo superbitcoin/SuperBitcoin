@@ -2,6 +2,7 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+#include <config/consensus.h>
 #include "coins.h"
 
 #include "random.h"
@@ -325,21 +326,6 @@ CAmount CCoinsViewCache::GetValueIn(const CTransaction &tx) const
     return nResult;
 }
 
-bool CCoinsViewCache::HaveInputs(const CUtxo2UtxoTransaciton &tx) const
-{
-    //included  coinbase1  and coinbase2
-    if (!tx.IsCoinBase())
-    {
-        for (unsigned int i = 0; i < tx.vin.size(); i++)
-        {
-            if (!HaveCoin(tx.vin[i].prevout))
-            {
-                return false;
-            }
-        }
-    }
-    return true;
-}
 
 bool CCoinsViewCache::HaveInputs(const CTransaction &tx) const
 {

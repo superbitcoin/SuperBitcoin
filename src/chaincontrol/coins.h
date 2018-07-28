@@ -18,13 +18,12 @@
 #include <stdint.h>
 
 #include <unordered_map>
-#include <sbtccore/transaction/CUtxo2UtxoTransaciton.h>
+
 
 class CTransactionBase;
 
 class CTransaction;
 
-class CUtxo2UtxoTransaciton;
 
 /**
  * A UTXO entry.
@@ -347,7 +346,6 @@ public:
     //! Check whether all prevouts of the transaction are present in the UTXO set represented by this view
     bool HaveInputs(const CTransaction &tx) const;
 
-    bool HaveInputs(const CUtxo2UtxoTransaciton &tx) const;
 
 private:
     CCoinsMap::iterator FetchCoin(const COutPoint &outpoint) const;
