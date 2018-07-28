@@ -111,7 +111,7 @@ CViewManager::DisconnectBlock(const CBlock &block, const CBlockIndex *pindex, CC
         if (i > 0)
         { // not coinbases
 
-            if(tx.IsCoinBase()){
+            if(tx.IsCoinBase2()){
                 continue; //continue
             }
             CTxUndo &txundo = blockUndo.vtxundo[i - 1];

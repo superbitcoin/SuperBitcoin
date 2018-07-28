@@ -6,8 +6,6 @@
 
 #include "random.h"
 
-#include <interface/ichaincomponent.h>
-
 bool CCoinsView::GetCoin(const COutPoint &outpoint, Coin &coin) const
 {
     return false;

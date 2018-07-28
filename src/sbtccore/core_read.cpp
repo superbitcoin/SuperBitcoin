@@ -20,8 +20,6 @@
 #include "utils/utilstrencodings.h"
 #include "framework/version.h"
 
-#include "interface/ichaincomponent.h"
-
 CScript ParseScript(const std::string &s)
 {
     CScript result;

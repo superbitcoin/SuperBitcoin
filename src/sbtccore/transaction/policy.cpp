@@ -13,7 +13,7 @@
 #include "tinyformat.h"
 #include "utils/util.h"
 #include "utils/utilstrencodings.h"
-#include "interface/ichaincomponent.h"
+
 
 CAmount GetDustThreshold(const CTxOut &txout, const CFeeRate &dustRelayFeeIn)
 {

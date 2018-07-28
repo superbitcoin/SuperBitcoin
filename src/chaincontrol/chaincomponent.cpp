@@ -1357,10 +1357,15 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         bool hasOpSpend = tx.HasOpSpend(); //sbtc-vm
         if (!tx.IsCoinBase())
         {
+            CAmount tmpCalcFee = view.GetValueIn(tx) - tx.GetValueOut();
+            if(tmpCalcFee < 0)
+            {
+                return state.DoS(100, false, REJECT_INVALID, "tx nFee is error");
+            }
             if(!tx.HasCreateOrCall()) {
-                nFees += view.GetValueIn(tx) - tx.GetValueOut();
+                nFees += tmpCalcFee;
             }else{
-                nFeesContract = view.GetValueIn(tx) - tx.GetValueOut();
+                nFeesContract = tmpCalcFee;
             }
 
             std::vector<CScriptCheck> vChecks;
@@ -1431,6 +1436,11 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             {
                 checkBlock.vtx.push_back(MakeTransactionRef(std::move(t)));
             }
+            if(nFeesContract < gasRefunds)
+            {
+                return state.DoS(100, false, REJECT_INVALID, "contract tx nFee is error");
+            }
+
             nFees += (nFeesContract - gasRefunds);//contract tx Actual fee
         }
         /////////////////////////////////////////////////////////////////////////////////////////

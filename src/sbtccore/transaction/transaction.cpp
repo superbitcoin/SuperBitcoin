@@ -278,9 +278,6 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
     {
         for (const auto &txin : vin)
         {
-            if(enablecontract && IsCoinBase2()){
-                continue;
-            }
             if (txin.prevout.IsNull())
                 return state.DoS(10, false, REJECT_INVALID, "bad-txns-prevout-null");
 

@@ -17,8 +17,6 @@
 #include "utils/utilmoneystr.h"
 #include "utils/utilstrencodings.h"
 
-#include "interface/ichaincomponent.h"
-
 UniValue ValueFromAmount(const CAmount &amount)
 {
     bool sign = amount < 0;

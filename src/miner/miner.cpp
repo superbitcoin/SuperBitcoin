@@ -486,7 +486,9 @@ bool BlockAssembler::AttemptToAddContractToBlock(CTxMemPool::txiter iter, uint64
         gasRefunds += refundVout.nValue;  //one contract tx, need to refund gas
     }
 
+    assert(iter->GetFee() >= gasRefunds);
     CAmount tmpFee = (iter->GetFee() - gasRefunds);
+    assert(tmpFee >= 0);
     nFees += tmpFee;   //  xiaofei
 
     inBlock.insert(iter);

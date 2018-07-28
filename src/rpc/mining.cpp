@@ -797,7 +797,7 @@ UniValue submitblock(const JSONRPCRequest &request)
 
     if(enablecontract){
         if((block.vtx.size() > 1) && (!block.vtx[1]->IsCoinBase2())){
-            throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "enable contract,second tx error");
+            throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "enable contract,coinbase2 is error");
         }
     }
     uint256 hash = block.GetHash();
