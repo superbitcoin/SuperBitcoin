@@ -78,9 +78,10 @@ static bool InitializeLogging(fs::path path)
             log4cpp::Category &root = log4cpp::Category::getRoot().getInstance("RootName");//从系统中得到Category的根;
             root.addAppender(rollfileAppender);
             root.setPriority(log4cpp::Priority::NOTICE);//设置Category的优先级;
-            log4cpp::OstreamAppender *osAppender = new log4cpp::OstreamAppender("osAppender", &std::cout);
-            osAppender->setLayout(pLayout2);
-            root.addAppender(osAppender);
+//            log4cpp::OstreamAppender *osAppender = new log4cpp::OstreamAppender("osAppender", &std::cout);
+//            osAppender->setLayout(pLayout2);
+//            root.addAppender(osAppender);
+            std::cout << "log conf is using default !" << std::endl;
             root.notice("log conf is using default !");
 
         } catch (...)
