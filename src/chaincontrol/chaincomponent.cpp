@@ -2600,7 +2600,7 @@ bool CChainComponent::VerifyDB(const CChainParams &chainparams, CCoinsView *coin
     if (nCheckDepth <= 0 || nCheckDepth > chainActive.Height())
         nCheckDepth = chainActive.Height();
     nCheckLevel = std::max(0, std::min(4, nCheckLevel));
-    ILogFormat("Verifying last %i blocks at level %i", nCheckDepth, nCheckLevel);
+    NLogFormat("Verifying last %i blocks at level %i", nCheckDepth, nCheckLevel);
     CCoinsViewCache coins(coinsview);
     CBlockIndex *pindexState = chainActive.Tip();
     CBlockIndex *pindexFailure = nullptr;
@@ -2783,7 +2783,7 @@ bool CChainComponent::ProcessNewBlock(const CChainParams &chainparams, const std
         if (!ret)
         {
             GetMainSignals().BlockChecked(*pblock, state);
-            return rLogError("%s: AcceptBlock FAILED", __func__);
+            return rLogError("%s: block: %s AcceptBlock FAILED", __func__,pblock->ToString());
         }
     }
 
@@ -2792,7 +2792,7 @@ bool CChainComponent::ProcessNewBlock(const CChainParams &chainparams, const std
     CValidationState state; // Only used to report errors, not invalidity - ignore it
     if (!ActivateBestChain(state, chainparams, pblock))
     {
-        return rLogError("%s: ActivateBestChain failed", __func__);
+        return rLogError("%s: block:%s ActivateBestChain failed", __func__,pblock->ToString());
     }
 
     return true;
