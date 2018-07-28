@@ -94,8 +94,8 @@ static bool InitializeLogging(fs::path path)
 
 static std::string LicenseInfo()
 {
-    const std::string URL_SOURCE_CODE = "<https://github.com/bitcoin/bitcoin>";
-    const std::string URL_WEBSITE = "<https://bitcoincore.org>";
+    const std::string URL_SOURCE_CODE = "<https://github.com/superbitcoin/SuperBitcoin>";
+    const std::string URL_WEBSITE = "<http://superbtc.org>";
 
     return CopyrightHolders(strprintf(_("Copyright (C) %i-%i"), 2009, COPYRIGHT_YEAR) + " ") + "\n" +
            "\n" +
@@ -117,10 +117,15 @@ static std::string LicenseInfo()
            "\n";
 }
 
+static string GetVersionStr()
+{
+    return strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" +
+    FormatParagraph(LicenseInfo());
+}
+
 static void PrintVersion()
 {
-    std::cout << strprintf(_("%s Daemon"), _(PACKAGE_NAME)) + " " + _("version") + " " + FormatFullVersion() + "\n" +
-                 FormatParagraph(LicenseInfo()) << std::endl;
+    std::cout << GetVersionStr() << std::endl;
 }
 
 IBaseApp::IBaseApp() noexcept : nVersion(1), bShutdown(false)
@@ -206,6 +211,7 @@ bool IBaseApp::Shutdown()
 void IBaseApp::PrintAppStartupInfo()
 {
     //NOOP
+    NLogFormat("%s",GetVersionStr());
 }
 
 IComponent *IBaseApp::FindComponent(int id) const
