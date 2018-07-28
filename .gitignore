@@ -1,5 +1,8 @@
 *.tar.gz
 
+src/config/sbtc-config.h
+src/sbtccore/build.h
+
 *.exe
 src/bitcoin
 src/bitcoind
