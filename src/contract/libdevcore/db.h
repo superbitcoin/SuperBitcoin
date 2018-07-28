@@ -21,7 +21,7 @@
 
 #pragma once
 
-//#pragma warning(pop)
+//#pragma warning(push)
 //#pragma warning(disable: 4100 4267)
 #if ETH_ROCKSDB
 #include <rocksdb/db.h>
