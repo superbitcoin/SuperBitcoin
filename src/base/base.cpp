@@ -50,45 +50,17 @@ static bool InitializeLogging(fs::path path)
     }
     // set logpath for the log4cpp to get the log directories
     setenv("logpath", logPath.string().c_str(), 1);
-
-    bool bOk = true;
     try
     {
         log4cpp::PropertyConfigurator::configure((path / fs::path("log.conf")).string().c_str());
     } catch (log4cpp::ConfigureFailure &f)
     {
         std::cout << f.what() << std::endl;
-        std::cout << "using default log conf" << __FILE__ << __LINE__ << std::endl;
-        bOk = false;
+        std::cout << "there is not log.conf you must copy the log.conf to -datadir" <<  std::endl;
+        exit(2);
     }
 
-    if (!bOk)
-    {
-        try
-        {
-            log4cpp::PatternLayout *pLayout1 = new log4cpp::PatternLayout();//创建一个Layout;
-            pLayout1->setConversionPattern("%d: %p  %x: %m%n");//指定布局格式;
 
-            log4cpp::PatternLayout *pLayout2 = new log4cpp::PatternLayout();
-            pLayout2->setConversionPattern("%d: %p  %x: %m%n");
-
-            log4cpp::RollingFileAppender *rollfileAppender = new log4cpp::RollingFileAppender(
-                    "rollfileAppender", (path / fs::path("sbtc.log")).string().c_str(), 100 * 1024, 1);
-            rollfileAppender->setLayout(pLayout1);
-            log4cpp::Category &root = log4cpp::Category::getRoot().getInstance("RootName");//从系统中得到Category的根;
-            root.addAppender(rollfileAppender);
-            root.setPriority(log4cpp::Priority::NOTICE);//设置Category的优先级;
-//            log4cpp::OstreamAppender *osAppender = new log4cpp::OstreamAppender("osAppender", &std::cout);
-//            osAppender->setLayout(pLayout2);
-//            root.addAppender(osAppender);
-            std::cout << "log conf is using default !" << std::endl;
-            root.notice("log conf is using default !");
-
-        } catch (...)
-        {
-            return false;
-        }
-    }
 
     return true;
 }
