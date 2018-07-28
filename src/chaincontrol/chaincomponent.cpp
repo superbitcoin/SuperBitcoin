@@ -2157,7 +2157,7 @@ bool CChainComponent::LoadChainTip(const CChainParams &chainparams)
     {
         // In case we just added the genesis block, connect it now, so
         // that we always have a chainActive.Tip() when we return.
-        ILogFormat("%s: Connecting genesis block...", __func__);
+        NLogFormat("%s: Connecting genesis block...", __func__);
         CValidationState state;
         if (!ActivateBestChain(state, chainparams, nullptr))
         {
@@ -2176,7 +2176,7 @@ bool CChainComponent::LoadChainTip(const CChainParams &chainparams)
 
     cIndexManager.PruneBlockIndexCandidates();
 
-    ILogFormat("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f",
+    NLogFormat("Loaded best chain: hashBestChain=%s height=%d date=%s progress=%f",
                chainActive.Tip()->GetBlockHash().ToString().c_str(), chainActive.Height(),
                DateTimeStrFormat("%Y-%m-%d %H:%M:%S", chainActive.Tip()->GetBlockTime()).c_str(),
                GuessVerificationProgress(chainparams.TxData(), chainActive.Tip()));
@@ -2362,7 +2362,7 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 bool bParentNotFound = (cIndexManager.GetBlockIndex(block.hashPrevBlock) == nullptr) ? true : false;
                 if (hash != chainParams.GetConsensus().hashGenesisBlock && bParentNotFound)
                 {
-                    ILogFormat("%s: Out of order block %s, parent %s not known", __func__,
+                    NLogFormat("%s: Out of order block %s, parent %s not known", __func__,
                                hash.ToString(),
                                block.hashPrevBlock.ToString());
                     if (dbp)
@@ -2383,7 +2383,7 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
                 } else if (hash != chainParams.GetConsensus().hashGenesisBlock &&
                            cIndexManager.GetBlockIndex(hash)->nHeight % 1000 == 0)
                 {
-                    ILogFormat("Block Import: already had block %s at height %d", hash.ToString(),
+                    NLogFormat("Block Import: already had block %s at height %d", hash.ToString(),
                                cIndexManager.GetBlockIndex(hash)->nHeight);
                 }
 
@@ -2440,7 +2440,7 @@ bool CChainComponent::LoadExternalBlockFile(const CChainParams &chainParams, FIL
         AbortNode(std::string("System error: ") + e.what());
     }
     if (nLoaded > 0)
-        ILogFormat("Loaded %i blocks from external file in %dms", nLoaded, GetTimeMillis() - nStart);
+        NLogFormat("Loaded %i blocks from external file in %dms", nLoaded, GetTimeMillis() - nStart);
     return nLoaded > 0;
 }
 
