@@ -920,12 +920,12 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
         }
 
         if (block.vtx[1]->HasOpSpend() || block.vtx[1]->HasCreateOrCall()) {
-            return state.DoS(100, false, REJECT_INVALID, "bad-cb-contract", false,
-                             "coinbase must not contain OP_SPEND, OP_CALL, or OP_CREATE");
+            return state.DoS(100, false, REJECT_INVALID, "bad-cb2-contract", false,
+                             "coinbase2 must not contain OP_SPEND, OP_CALL, or OP_CREATE");
         }
         for (unsigned int i = 2; i < block.vtx.size(); i++)
             if (block.vtx[i]->IsCoinBase2())
-                return state.DoS(100, false, REJECT_INVALID, "bad-cb-multiple", false, "more than one coinbase2");
+                return state.DoS(100, false, REJECT_INVALID, "bad-cb2-multiple", false, "more than one coinbase2");
     }
 
     bool lastWasContract = false; //sbtc-vm
@@ -976,14 +976,6 @@ bool CChainComponent::IsSBTCForkEnabled(const int height)
     return height >= Params().GetConsensus().SBTCForkHeight;
 }
 
-//bool CChainComponent::IsSBTCContractEnabled(const CBlockIndex *pindex)
-//{
-//    if (pindex == nullptr)
-//    {
-//        return false;
-//    }
-//    return (pindex->IsSBTCContractEnabled());
-//}
 //check SBTCEnable by hegiht
 bool CChainComponent::IsSBTCForkContractEnabled(const int height)
 {
@@ -1159,7 +1151,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
     //////////////////////////////////////sbtc-evm
     if ((pindex->nHeight > chainparams.GetConsensus().SBTCContractForkHeight) && !pindex->IsSBTCContractEnabled())
     {
-        return state.DoS(100, false, REJECT_INVALID, "Block veriosn error");
+        return state.DoS(100, false, REJECT_INVALID, "Contract Block veriosn error");
     }
 
     uint256 blockhashStateRoot ;
@@ -1198,10 +1190,6 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
         }
     }
 
-//    bool enablecontract = [&]()->bool{
-//        GET_CHAIN_INTERFACE(ifChainObj);
-//        return ifChainObj->IsSBTCContractEnabled(pindex);
-//    }();
     ////////////////////////////////////////
 
     //sbtc-vm
@@ -1443,7 +1431,7 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
             {
                 checkBlock.vtx.push_back(MakeTransactionRef(std::move(t)));
             }
-            nFees += (nFeesContract - gasRefunds);
+            nFees += (nFeesContract - gasRefunds);//contract tx Actual fee
         }
         /////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1464,11 +1452,8 @@ CChainComponent::ConnectBlock(const CBlock &block, CValidationState &state, CBlo
                nInputs <= 1 ? 0 : 0.001 * (nTime3 - nTime2) / (nInputs - 1), nTimeConnect * 0.000001);
 
     ////////////////////////////////////////////////////////////////// // sbtc-vm
-//    if (nFees < gasRefunds)
-//    { //make sure it won't overflow
-//        return state.DoS(1000, false, REJECT_INVALID, "bad-blk-fees-greater-gasrefund");
-//    }
     if(block.vtx.size() > 1) {
+        //check coinbase2 vout must contain all gas refund vouts.
         std::vector<CTxOut> vTempVouts = block.vtx[1]->vout;
         std::vector<CTxOut>::iterator it;
         for (size_t i = 0; i < checkVouts.size(); i++) {
