@@ -57,6 +57,7 @@ static bool InitializeLogging(fs::path path)
     {
         std::cout << f.what() << std::endl;
         std::cout << "there is not log.conf you must copy the log.conf to -datadir" <<  std::endl;
+        std::cout << "you can get the file at https://github.com/superbitcoin/SuperBitcoin/blob/master/src/sbtcd/log.conf" <<  std::endl;
         exit(2);
     }
 
