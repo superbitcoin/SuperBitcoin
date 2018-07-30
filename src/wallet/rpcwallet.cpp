@@ -1,5 +1,5 @@
 // Copyright (c) 2010 Satoshi Nakamoto
-// Copyright (c) 2009-2016 The Bitcoin Core developers
+// Copyright (c) 2009-2016 The Super Bitcoin Core developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -310,7 +310,7 @@ UniValue setaccount(const JSONRPCRequest &request)
                 "setaccount \"address\" \"account\"\n"
                         "\nDEPRECATED. Sets the account associated with the given address.\n"
                         "\nArguments:\n"
-                        "1. \"address\"         (string, required) The bitcoin address to be associated with an account.\n"
+                        "1. \"address\"         (string, required) The Super Bitcoin address to be associated with an account.\n"
                         "2. \"account\"         (string, required) The account to assign the address to.\n"
                         "\nExamples:\n"
                 + HelpExampleCli("setaccount", "\"1D1ZrZNe3JUo7ZycKEYQQiQAWd9y54F4XX\" \"tabby\"")
@@ -360,7 +360,7 @@ UniValue getaccount(const JSONRPCRequest &request)
                 "getaccount \"address\"\n"
                         "\nDEPRECATED. Returns the account associated with the given address.\n"
                         "\nArguments:\n"
-                        "1. \"address\"         (string, required) The bitcoin address for account lookup.\n"
+                        "1. \"address\"         (string, required) The Super Bitcoin address for account lookup.\n"
                         "\nResult:\n"
                         "\"accountname\"        (string) the account address\n"
                         "\nExamples:\n"
@@ -482,7 +482,7 @@ UniValue sendtoaddress(const JSONRPCRequest &request)
                         "\nSend an amount to a given address.\n"
                 + HelpRequiringPassphrase(pwallet) +
                 "\nArguments:\n"
-                        "1. \"address\"            (string, required) The bitcoin address to send to.\n"
+                        "1. \"address\"            (string, required) The Super Bitcoin address to send to.\n"
                         "2. \"amount\"             (numeric or string, required) The amount in " + CURRENCY_UNIT +
                 " to send. eg 0.1\n"
                         "3. \"comment\"            (string, optional) A comment used to store what the transaction is for. \n"
@@ -578,7 +578,7 @@ UniValue listaddressgroupings(const JSONRPCRequest &request)
                         "[\n"
                         "  [\n"
                         "    [\n"
-                        "      \"address\",            (string) The bitcoin address\n"
+                        "      \"address\",            (string) The Super Bitcoin address\n"
                         "      amount,                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
                         "      \"account\"             (string, optional) DEPRECATED. The account\n"
                         "    ]\n"
@@ -630,7 +630,7 @@ UniValue signmessage(const JSONRPCRequest &request)
                         "\nSign a message with the private key of an address"
                 + HelpRequiringPassphrase(pwallet) + "\n"
                         "\nArguments:\n"
-                        "1. \"address\"         (string, required) The bitcoin address to use for the private key.\n"
+                        "1. \"address\"         (string, required) The Super Bitcoin address to use for the private key.\n"
                         "2. \"message\"         (string, required) The message to create a signature of.\n"
                         "\nResult:\n"
                         "\"signature\"          (string) The signature of the message encoded in base 64\n"
@@ -691,7 +691,7 @@ UniValue getreceivedbyaddress(const JSONRPCRequest &request)
                 "getreceivedbyaddress \"address\" ( minconf )\n"
                         "\nReturns the total amount received by the given address in transactions with at least minconf confirmations.\n"
                         "\nArguments:\n"
-                        "1. \"address\"         (string, required) The bitcoin address for transactions.\n"
+                        "1. \"address\"         (string, required) The Super Bitcoin address for transactions.\n"
                         "2. minconf             (numeric, optional, default=1) Only include transactions confirmed at least this many times.\n"
                         "\nResult:\n"
                         "amount   (numeric) The total amount in " + CURRENCY_UNIT + " received at this address.\n"
@@ -955,7 +955,7 @@ UniValue sendfrom(const JSONRPCRequest &request)
                         "                       Specifying an account does not influence coin selection, but it does associate the newly created\n"
                         "                       transaction with the account, so the account's balance computation and transaction history can reflect\n"
                         "                       the spend.\n"
-                        "2. \"toaddress\"         (string, required) The bitcoin address to send funds to.\n"
+                        "2. \"toaddress\"         (string, required) The Super Bitcoin address to send funds to.\n"
                         "3. amount                (numeric or string, required) The amount in " + CURRENCY_UNIT +
                 " (transaction fee is added on top).\n"
                         "4. minconf               (numeric, optional, default=1) Only use funds with at least this many confirmations.\n"
@@ -1029,7 +1029,7 @@ UniValue sendmany(const JSONRPCRequest &request)
                         "1. \"fromaccount\"         (string, required) DEPRECATED. The account to send the funds from. Should be \"\" for the default account\n"
                         "2. \"amounts\"             (string, required) A json object with addresses and amounts\n"
                         "    {\n"
-                        "      \"address\":amount   (numeric or string) The bitcoin address is the key, the numeric amount (can be string) in " +
+                        "      \"address\":amount   (numeric or string) The Super Bitcoin address is the key, the numeric amount (can be string) in " +
                 CURRENCY_UNIT + " is the value\n"
                         "      ,...\n"
                         "    }\n"
@@ -1709,7 +1709,7 @@ UniValue listtransactions(const JSONRPCRequest &request)
                         "  {\n"
                         "    \"account\":\"accountname\",       (string) DEPRECATED. The account name associated with the transaction. \n"
                         "                                                It will be \"\" for the default account.\n"
-                        "    \"address\":\"address\",    (string) The bitcoin address of the transaction. Not present for \n"
+                        "    \"address\":\"address\",    (string) The Super Bitcoin address of the transaction. Not present for \n"
                         "                                                move transactions (category = move).\n"
                         "    \"category\":\"send|receive|move\", (string) The transaction category. 'move' is a local (off blockchain)\n"
                         "                                                transaction between accounts, and not associated with an address,\n"
@@ -1934,7 +1934,7 @@ UniValue listsinceblock(const JSONRPCRequest &request)
                         "{\n"
                         "  \"transactions\": [\n"
                         "    \"account\":\"accountname\",       (string) DEPRECATED. The account name associated with the transaction. Will be \"\" for the default account.\n"
-                        "    \"address\":\"address\",    (string) The bitcoin address of the transaction. Not present for move transactions (category = move).\n"
+                        "    \"address\":\"address\",    (string) The Super Bitcoin address of the transaction. Not present for move transactions (category = move).\n"
                         "    \"category\":\"send|receive\",     (string) The transaction category. 'send' has negative amounts, 'receive' has positive amounts.\n"
                         "    \"amount\": x.xxx,          (numeric) The amount in " + CURRENCY_UNIT +
                 ". This is negative for the 'send' category, and for the 'move' category for moves \n"
@@ -2099,7 +2099,7 @@ UniValue gettransaction(const JSONRPCRequest &request)
                         "  \"details\" : [\n"
                         "    {\n"
                         "      \"account\" : \"accountname\",      (string) DEPRECATED. The account name involved in the transaction, can be \"\" for the default account.\n"
-                        "      \"address\" : \"address\",          (string) The bitcoin address involved in the transaction\n"
+                        "      \"address\" : \"address\",          (string) The Super Bitcoin address involved in the transaction\n"
                         "      \"category\" : \"send|receive\",    (string) The category, either 'send' or 'receive'\n"
                         "      \"amount\" : x.xxx,                 (numeric) The amount in " + CURRENCY_UNIT + "\n"
                         "      \"label\" : \"label\",              (string) A comment for the address/transaction, if any\n"
@@ -2889,7 +2889,7 @@ UniValue listunspent(const JSONRPCRequest &request)
                         "  {\n"
                         "    \"txid\" : \"txid\",          (string) the transaction id \n"
                         "    \"vout\" : n,               (numeric) the vout value\n"
-                        "    \"address\" : \"address\",    (string) the bitcoin address\n"
+                        "    \"address\" : \"address\",    (string) The Super Bitcoin address\n"
                         "    \"account\" : \"account\",    (string) DEPRECATED. The associated account, or \"\" for the default account\n"
                         "    \"scriptPubKey\" : \"key\",   (string) the script key\n"
                         "    \"amount\" : x.xxx,         (numeric) the transaction output amount in " + CURRENCY_UNIT +
@@ -3054,7 +3054,7 @@ UniValue fundrawtransaction(const JSONRPCRequest &request)
                         "1. \"hexstring\"           (string, required) The hex string of the raw transaction\n"
                         "2. options                 (object, optional)\n"
                         "   {\n"
-                        "     \"changeAddress\"          (string, optional, default pool address) The bitcoin address to receive the change\n"
+                        "     \"changeAddress\"          (string, optional, default pool address) The Super Bitcoin address to receive the change\n"
                         "     \"changePosition\"         (numeric, optional, default random) The index of the change output\n"
                         "     \"includeWatching\"        (boolean, optional, default false) Also select inputs which are watch only\n"
                         "     \"lockUnspents\"           (boolean, optional, default false) Lock selected unspent outputs\n"

@@ -40,7 +40,7 @@ SET_CPP_SCOPED_LOG_CATEGORY(CID_BLOCK_CHAIN);
 
 void CChainComponent::ThreadScriptCheck()
 {
-    RenameThread("bitcoin-scriptch");
+    RenameThread("super_bitcoin-scriptch");
     scriptCheckQueue.Thread();
 }
 
@@ -2216,7 +2216,7 @@ int CChainComponent::VerifyBlocks()
 
 void CChainComponent::ThreadImport()
 {
-    RenameThread("bitcoin-loadblk");
+    RenameThread("super_bitcoin-loadblk");
 
     if (bReIndex)
     {
