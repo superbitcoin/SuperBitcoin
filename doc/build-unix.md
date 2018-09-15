@@ -1,6 +1,6 @@
 UNIX BUILD NOTES
 ====================
-Some notes on how to build Bitcoin Core in Unix.
+Some notes on how to build Super Bitcoin Core in Unix.
 
 (for OpenBSD specific instructions, see [build-openbsd.md](build-openbsd.md))
 
@@ -18,11 +18,10 @@ To Build
 ---------------------
 
 ```bash
-./autogen.sh
-./configure
-make
-make install # optional
-```
+mkdir buliddir
+cd buliddir
+cmake ..
+make 
 
 This will build bitcoin-qt as well if the dependencies are met.
 
