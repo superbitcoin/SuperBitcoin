@@ -265,7 +265,7 @@ bool CTransaction::CheckTransaction(CValidationState &state, bool fCheckDuplicat
         std::set<COutPoint> vInOutPoints;
         for (const auto &txin : vin)
         {
-            if (!vInOutPoints.insert(txin.prevout).second)
+            if (!IsCoinBase() && !vInOutPoints.insert(txin.prevout).second)  //fix Bitcoin Core CVE-2018-17144
                 return state.DoS(100, false, REJECT_INVALID, "bad-txns-inputs-duplicate");
         }
     }

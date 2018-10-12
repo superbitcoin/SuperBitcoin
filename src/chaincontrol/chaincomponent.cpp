@@ -932,7 +932,7 @@ bool CChainComponent::CheckBlock(const CBlock &block, CValidationState &state, c
     // Check transactions
     for (const auto &tx : block.vtx)
     {
-        if (!tx->CheckTransaction(state, false))
+        if (!tx->CheckTransaction(state, true)) //fix Bitcoin Core CVE-2018-17144
         {
             return state.Invalid(false, state.GetRejectCode(), state.GetRejectReason(),
                                  strprintf("Transaction check failed (tx hash %s) %s", tx->GetHash().ToString(),
