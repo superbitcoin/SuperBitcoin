@@ -839,12 +839,16 @@ UniValue setcheckpoint(const JSONRPCRequest &request)
 
 UniValue listcheckpoint(const JSONRPCRequest &request)
 {
-    if (request.fHelp || request.params.size() != 0)
+
+    int conter= 0;
+    if (request.fHelp || request.params.size() != 1)
     {
+         conter = request.params[0].get_int();
         throw std::runtime_error(
-                "setcheckpoint \"filepath\"\n"
-                        "\nadd new checkpoint and send it out.\n"
-                        "\nArguments:\n"
+                "listcheckpoint \"nearest number\"\n"
+
+                        "\nArguments: \n"
+                        "1. nearest number (numeric) Number of nearest checkpoint\n"
                         "\nResult:\n"
                         "\nExamples:\n"
                 + HelpExampleCli("listcheckpoint", "")
@@ -853,13 +857,20 @@ UniValue listcheckpoint(const JSONRPCRequest &request)
 
     const CChainParams &chainParams = Params();
     UniValue retArray(UniValue::VARR);
+
     const MapCheckpoints &checkpoints = chainParams.Checkpoints().mapCheckpoints;
+
     for (const MapCheckpoints::value_type &i : reverse_iterate(checkpoints))
     {
+
         UniValue retObj(UniValue::VOBJ);
         retObj.push_back(Pair("height", i.first));
         retObj.push_back(Pair("hash", i.second.GetHex()));
         retArray.push_back(retObj);
+        if(--conter > 0)
+        {
+            break;
+        }
     }
     return retArray;
 }
