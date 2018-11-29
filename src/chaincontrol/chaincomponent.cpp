@@ -1968,7 +1968,7 @@ int CChainComponent::AutoFinalizeBlock(){
     CChain &chainActive = GetActiveChain();
     int height_cur = chainActive.Height();
     int64_t depth = Args().GetArg<int64_t>("-maxreorgdepth", 10);
-    int height_check =     - depth;
+    int height_check =  height_cur   - depth;
 
     if(height_check <= 0) return -1;
 
