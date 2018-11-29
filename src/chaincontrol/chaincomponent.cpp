@@ -1735,6 +1735,8 @@ bool CChainComponent::ConnectTip(CValidationState &state, const CChainParams &ch
     // Update chainActive & related variables.
     UpdateTip(pIndexNew, chainparams);
 
+    AutoFinalizeBlock();
+
     int64_t nTime6 = GetTimeMicros();
     nTimePostConnect += nTime6 - nTime5;
     nTimeTotal += nTime6 - nTime1;
@@ -1959,6 +1961,18 @@ bool CChainComponent::ActivateBestChain(CValidationState &state, const CChainPar
     }
 
     return true;
+}
+
+int CChainComponent::AutoFinalizeBlock(){
+
+    CChain &chainActive = GetActiveChain();
+    int height_cur = chainActive.Height();
+    int64_t depth = Args().GetArg<int64_t>("-maxreorgdepth", 10);
+    int height_check =     - depth;
+
+    if(height_check <= 0) return -1;
+
+    return  Params().AddCheckPoint(height_check, chainActive[height_check]->GetBlockHash());
 }
 
 bool CChainComponent::InvalidateBlock(CValidationState &state, const CChainParams &chainparams, CBlockIndex *pindex)

@@ -296,6 +296,9 @@ void CApp::InitOptionMap()
                                                                      defaultChainParams->DefaultConsistencyChecks()).c_str()},
             {"checkpoints",          bpo::value<string>(),
                                                                                   "Disable expensive verification for known chain history(parameters:: n, no, y, yes)"},
+            {"maxreorgdepth",        bpo::value<int64_t >(),
+                    "Height difference of irreversible blocks,default=10"},
+
             {"disablesafemode",      bpo::value<string>(),
                                                                                   "Disable safemode, override a real safe mode event(parameters:: n, no, y, yes)"},
             {"testsafemode",         bpo::value<string>(),                        "Force safe mode(parameters:: n, no, y, yes)"},

@@ -201,6 +201,8 @@ public:
     bool ActivateBestChain(CValidationState &state, const CChainParams &chainparams,
                            std::shared_ptr<const CBlock> pblock) override;
 
+    int AutoFinalizeBlock();
+
     // P2P network message response.
     bool NetRequestCheckPoint(ExNode *xnode, int height) override;
 
